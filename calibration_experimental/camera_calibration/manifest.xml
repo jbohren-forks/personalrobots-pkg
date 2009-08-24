@@ -13,6 +13,7 @@
   <depend package="geometry_msgs"/>
   <depend package="std_srvs"/>
   <depend package="sensor_msgs"/>
+  <depend package="camera_calibration_parsers"/>
   <depend package="topic_synchronizer2"/>
 
   <export>

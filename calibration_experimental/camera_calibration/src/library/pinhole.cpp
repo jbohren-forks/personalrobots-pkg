@@ -1,8 +1,7 @@
 #include "camera_calibration/pinhole.h"
-#include "camera_calibration/file_io.h"
+#include <camera_calibration_parsers/parse.h>
 
 #include <algorithm>
-#include <boost/algorithm/string/predicate.hpp>
 
 namespace camera_calibration {
 
@@ -87,35 +86,23 @@ void PinholeCameraModel::undistort(IplImage* src, IplImage* dst) const
 
 bool PinholeCameraModel::load(const std::string& file_name)
 {
-  bool success = false;
-  if (boost::iends_with(file_name, ".ini"))
-    success = readIntrinsicsIni(file_name, camera_name_, image_width_, image_height_, K, D);
-  else if (boost::iends_with(file_name, ".yml") ||
-           boost::iends_with(file_name, ".yaml"))
-    success = readIntrinsicsYml(file_name, camera_name_, image_width_, image_height_, K, D);
-
+  using namespace camera_calibration_parsers;
+  bool success = readCalibration(file_name, camera_name_, image_width_, image_height_, K, D);
   if (success)
     initUndistortMap();
-  
   return success;
 }
 
 bool PinholeCameraModel::save(const std::string& file_name) const
 {
-  if (boost::iends_with(file_name, ".ini"))
-    return writeIntrinsicsIni(file_name, camera_name_, image_width_, image_height_, K, D);
-  if (boost::iends_with(file_name, ".yml") || boost::iends_with(file_name, ".yaml"))
-    return writeIntrinsicsYml(file_name, camera_name_, image_width_, image_height_, K, D);
-
-  return false;
+  using namespace camera_calibration_parsers;
+  return writeCalibration(file_name, camera_name_, image_width_, image_height_, K, D);
 }
 
 bool PinholeCameraModel::parse(const std::string& buffer, const std::string& format)
 {
-  if (format != "ini")
-    return false;
-  
-  bool success = parseIntrinsicsIni(buffer, camera_name_, image_width_, image_height_, K, D);
+  using namespace camera_calibration_parsers;
+  bool success = parseCalibration(buffer, format, camera_name_, image_width_, image_height_, K, D);
   if (success)
     initUndistortMap();
   return success;
