@@ -12,7 +12,7 @@
   <depend package="opencv_latest"/>
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L{prefix}/lib -lcamera_calibration_parsers" />
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcamera_calibration_parsers" />
   </export>
 
 </package>
