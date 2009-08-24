@@ -810,7 +810,6 @@ end_image_thread:
     return htons(0xFFFF - sum);
   }
 
-  // TODO: parsing is basically duplicated in prosilica_node
   bool loadIntrinsics(double* K, double* D, double* R, double* P)
   {
     // Retrieve contents of user memory
