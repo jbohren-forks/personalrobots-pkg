@@ -15,4 +15,5 @@
   <depend package="experimental_controllers"/>
   <depend package="mechanism_control"/>
   <depend package="mechanism_model"/>
+  <depend package="manipulation_msgs"/>
 </package>
