@@ -247,6 +247,8 @@ protected:
     int m_pose_count; // the number of poses
     CvSize m_patch_size; // size of each image
     IplImage** m_samples; // an array of length m_pose_count containing the patch in different poses 
+    IplImage* m_input_patch;
+    IplImage* m_train_patch;
     CvMat** m_pca_coeffs; // an array of length m_pose_count containing pca decomposition of the patch in different poses
     CvAffinePose* m_affine_poses; // an array of poses
     CvMat** m_transforms; // an array of affine transforms corresponding to poses

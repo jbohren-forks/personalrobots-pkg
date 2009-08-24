@@ -87,6 +87,9 @@ class CvOneWayDescriptorBase
         // returns the number of pyramid levels
         int GetPyrLevels() const {return m_pyr_levels;};
         
+        // returns the number of descriptors
+        int GetDescriptorCount() const {return m_train_feature_count;};
+        
         // CreateDescriptorsFromImage: creates descriptors for each of the input features
         // - src: input image
         // - features: input features
@@ -146,6 +149,12 @@ class CvOneWayDescriptorBase
         
         // SetPCALow: sets the low resolution pca matrices (copied to internal structures)
         void SetPCALow(CvMat* avg, CvMat* eigenvectors);
+        
+        void GetLowPCA(CvMat** avg, CvMat** eigenvectors)
+        {
+            *avg = m_pca_avg;
+            *eigenvectors = m_pca_eigenvectors;
+        };
         
         
     protected:

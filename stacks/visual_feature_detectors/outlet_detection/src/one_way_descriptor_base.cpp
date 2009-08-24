@@ -13,6 +13,7 @@
 
 #include <cv.h>
 using namespace cv;
+#include <highgui.h>
 
 CvMat* ConvertImageToMatrix(IplImage* patch)
 {
@@ -187,10 +188,10 @@ void CvOneWayDescriptorBase::FindDescriptor(IplImage* src, Point2f pt, int& desc
 
 void CvOneWayDescriptorBase::FindDescriptor(IplImage* patch, int& desc_idx, int& pose_idx, float& distance) const
 {
-#if 1
+#if 0
     ::FindOneWayDescriptor(m_train_feature_count, m_descriptors, patch, desc_idx, pose_idx, distance, m_pca_avg, m_pca_eigenvectors);
 #else
-    const float scale_min = 0.8f;
+    const float scale_min = 0.7f;
     const float scale_max = 1.2f;
     const float scale_step = 1.1f;
     float scale = 1.0f;
@@ -441,7 +442,7 @@ int CvOneWayDescriptorObject::MatchPointToPart(CvPoint pt) const
 int CvOneWayDescriptorObject::GetDescriptorPart(int desc_idx) const
 {
     //    return MatchPointToPart(GetDescriptor(desc_idx)->GetCenter());
-    return m_part_id[desc_idx];
+    return desc_idx < m_object_feature_count ? m_part_id[desc_idx] : -1;
 }
 
 CvOneWayDescriptorObject::CvOneWayDescriptorObject(CvSize patch_size, int pose_count, const char* train_path, 
