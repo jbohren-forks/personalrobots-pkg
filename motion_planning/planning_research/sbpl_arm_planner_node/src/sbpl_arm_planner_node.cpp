@@ -540,9 +540,20 @@ bool SBPLArmPlannerNode::setGoalPosition(const std::vector<motion_planning_msgs:
 // geometry_msgs/Point orientation_tolerance_above
 // geometry_msgs/Point orientation_tolerance_below
 
+   if(bGoalPositionConstraint_)
+  {
     sbpl_tolerance[i][0]  = goals[i].position_tolerance_above.x;
     sbpl_tolerance[i][1]  = goals[i].orientation_tolerance_above.x;
     sbpl_type[i] = goals[i].type;
+  }
+ else
+ {
+    sbpl_tolerance[i][0] = 0.03;
+    sbpl_tolerance[i][1] = 0.03;
+    sbpl_type[i] = motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z +
+         + motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y;
+
+ }
 
     ROS_INFO("goal %d: xyz: %.2f %.2f %.2f  (tol: %.3f) rpy: %.2f %.2f %.2f  (tol: %.3f)",
 	     i, sbpl_goal[i][0],sbpl_goal[i][1],sbpl_goal[i][2],sbpl_tolerance[i][0],sbpl_goal[i][3],sbpl_goal[i][4],sbpl_goal[i][5], sbpl_tolerance[i][1]);
@@ -764,7 +775,7 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
   tf::Stamped<tf::Pose> pose_stamped;
   bCartesianPlanner_ = true;
 	bGoalPositionConstraint_ = true;
-	
+
   //empty old goals
   goal_pose_constraint_.resize(0);
   goal_pose_constraint_.resize(req.goal_constraints.get_pose_constraint_size());
@@ -782,7 +793,7 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
   if(req.goal_constraints.get_pose_constraint_size() <= 0)
   {
 		ROS_INFO("[planToPosition] No pose constraints given but there might be joint constraints...");
-		
+
 		if(req.goal_constraints.get_joint_constraint_size() >= (unsigned int)num_joints_)
 		{
 			unsigned int nind = 0;
@@ -799,19 +810,18 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
 					break;
 				}
 			}
-			
+
 			// run forward kinematics to get pose
 			ROS_INFO("Running FK to compute end effector goal position");
 			sbpl_arm_env_.ComputeEndEffectorPos(angles, xyz_m, rpy_r);
 			ROS_INFO("goal position: xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
 		}
-
 		else
 		{
 			ROS_INFO("[planToPosition] No pose constraints given. Unable to plan.");
-    	return false;
+		    	return false;
 		}
-		
+
 		bGoalPositionConstraint_ = false;
   }
 
@@ -821,12 +831,13 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
   //transform goal into planning_frame_
 	if(bGoalPositionConstraint_)
 	{
+		ROS_INFO("there is a pose constraint");
 		for(i = 0; i < req.goal_constraints.get_pose_constraint_size(); i++)
 		{
 			goal_pose_constraint_[i] = req.goal_constraints.pose_constraint[i];
 			poseStampedMsgToTF( goal_pose_constraint_[i].pose, pose_stamped);
 			ROS_DEBUG("[planToPosition] converted pose_constraint to tf");
-	
+
 			if (!tf_.canTransform(planning_frame_, pose_stamped.frame_id_, pose_stamped.stamp_, ros::Duration(3.0)))
 			{
 				ROS_ERROR("[sbpl_arm_planner_node] Cannot transform from %s to %s",pose_stamped.frame_id_.c_str(), planning_frame_.c_str());
@@ -839,22 +850,27 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
 	}
 	else
 	{
-		goal_pose_constraint_[0] = req.goal_constraints.pose_constraint[0];
+		ROS_INFO("there is a joint constraint");
+		goal_pose_constraint_.resize(1);
+		ROS_INFO("resized goal_pose_constraint");
+		goal_pose_constraint_[0].pose.header.stamp = ros::Time::now();
+		goal_pose_constraint_[0].pose.header.frame_id = planning_frame_;
+		goal_pose_constraint_[0].pose.header.seq = 0;
 		goal_pose_constraint_[0].pose.pose.position.x = xyz_m[0];
 		goal_pose_constraint_[0].pose.pose.position.y = xyz_m[1];
 		goal_pose_constraint_[0].pose.pose.position.z = xyz_m[2];
-		
+
 		// get orientation as a quaternion
 		btQuaternion joint_pos_goal(rpy_r[0],rpy_r[1],rpy_r[2]);
 		goal_pose_constraint_[0].pose.pose.orientation.x = joint_pos_goal.getX();
 		goal_pose_constraint_[0].pose.pose.orientation.y = joint_pos_goal.getY();
 		goal_pose_constraint_[0].pose.pose.orientation.z = joint_pos_goal.getZ();
 		goal_pose_constraint_[0].pose.pose.orientation.w = joint_pos_goal.getW();
-		
+
 		ROS_INFO("goal position: %.3f %.3f %.3f  goal quaternion: X: %.3f Y:%.3f Z:%.3f W:%.3f",goal_pose_constraint_[0].pose.pose.position.x,goal_pose_constraint_[0].pose.pose.position.y,goal_pose_constraint_[0].pose.pose.position.z,
-						 goal_pose_constraint_[0].pose.pose.orientation.x = joint_pos_goal.getX(),goal_pose_constraint_[0].pose.pose.orientation.x = joint_pos_goal.getY(),goal_pose_constraint_[0].pose.pose.orientation.x = joint_pos_goal.getZ(),goal_pose_constraint_[0].pose.pose.orientation.x = joint_pos_goal.getW());
+						 goal_pose_constraint_[0].pose.pose.orientation.x,goal_pose_constraint_[0].pose.pose.orientation.y,goal_pose_constraint_[0].pose.pose.orientation.z,goal_pose_constraint_[0].pose.pose.orientation.w);
 	}
-	
+
   // get the starting position of the specific arm joints the planner will be planning for
   start.set_vals_size(num_joints_);
   for(i = 0; i < req.get_start_state_size(); i++)
@@ -879,10 +895,10 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
     ROS_INFO("[planToPosition] successfully set starting configuration");
 
     updateOccupancyGrid();
-	
+
 		mPlanning_.lock();
 		bPlanning_ = true;
-		
+
     if(visualize_goal_)
       visualizeGoalPosition(goal_pose_constraint_[0].pose);
 
@@ -965,7 +981,7 @@ bool SBPLArmPlannerNode::planKinematicPath(motion_planning_msgs::GetMotionPlan::
     return false;
   }
 
-  if(planner_type_ == "joint_space" || (req.goal_constraints.get_pose_constraint_size() <= 0 && req.goal_constraints.get_joint_constraint_size() > 0))
+  if(planner_type_ == "joint_space" && req.goal_constraints.get_pose_constraint_size() <= 0 && req.goal_constraints.get_joint_constraint_size() > 0)
   {
     if(req.goal_constraints.get_joint_constraint_size() <= 0)
     {
