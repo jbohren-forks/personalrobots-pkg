@@ -54,7 +54,7 @@ from launchman import app
 
 class TaskGroup:
   def __init__(self, manager):
-    self.task = TaskStatus(None, None, None, None, None)
+    self.task = AppUpdate(None, None, None, None, None)
     self.app = None
     self.runner = None
     self.childGroups = []
@@ -76,7 +76,7 @@ class TaskGroup:
       loader.load(fn, config)
     except:
       self.task.status = "error"
-      self.manager.pub.publish(self.task)
+      self.manager.app_update.publish(self.task)
       return
 
     self.runner = ROSLaunchRunner(rospy.get_param("/run_id"), config, is_core=False)
@@ -104,9 +104,14 @@ class TaskGroup:
 
 class TaskManager:
   def __init__(self):
-    self.pub = rospy.Publisher("TaskStatus", TaskStatus, self)
+    self.app_update = rospy.Publisher("app_update", AppUpdate, self)
+    self.app_status = rospy.Publisher("app_status", AppStatus, self)
     self._taskGroups = {}
     self._apps = {}
+
+  def _send_status(self):
+    apps = self._apps.keys()
+    self.app_status.publish(AppStatus(apps))
 
   def start_task(self, req):
     a = app.App(req.taskid)
@@ -141,12 +146,13 @@ class TaskManager:
     group.task.started = rospy.get_rostime()
     group.task.status = "starting"
 
-    self.pub.publish(group.task)
+    self.app_update.publish(group.task)
 
     group.launch()
 
     group.task.status = "running"
-    self.pub.publish(group.task)
+    self.app_update.publish(group.task)
+    self._send_status()
 
     return StartTaskResponse("done")
 
@@ -159,7 +165,7 @@ class TaskManager:
     print "_stopTask", group.app.provides
 
     group.task.status = "stopping"
-    self.pub.publish(group.task)
+    self.app_update.publish(group.task)
 
     print "childGroups", group, group.childGroups
     for cgroup in group.childGroups[:]:
@@ -168,7 +174,7 @@ class TaskManager:
     group.stop()
 
     group.task.status = "stopped"
-    self.pub.publish(group.task)
+    self.app_update.publish(group.task)
 
     if group.app.depends:
       pgroup = self._taskGroups.get(group.app.depends.strip(), None)
@@ -178,6 +184,7 @@ class TaskManager:
     if group.app.provides:
       print "removing", group.app.provides
       del self._taskGroups[group.app.provides]
+
 
   def stop_task(self, req):
     app = self._apps[req.taskid]
@@ -191,11 +198,14 @@ class TaskManager:
 
     del self._apps[req.taskid]
 
+    self._send_status()
+
     return StopTaskResponse("done")
 
   def status_update(self, req):
+    self._send_status()
     for provides, group in self._taskGroups.items():
-      self.pub.publish(group.task)
+      self.app_update.publish(group.task)
     return StatusUpdateResponse("done")
 
 

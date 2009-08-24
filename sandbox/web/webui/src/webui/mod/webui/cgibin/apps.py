@@ -30,7 +30,7 @@ class MyPage(MBPage.MBPage):
       aprefix = prefix + ".%d" % i
       app.hdfExport(aprefix, hdf)
       app.fetchApp(aprefix, hdf)
-
+      
 def run(context):
   return MyPage(context, pagename="apps", nologin=1)
 

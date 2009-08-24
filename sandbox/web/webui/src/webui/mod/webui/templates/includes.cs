@@ -10,9 +10,11 @@
     <script type="text/javascript" src="jslib/pr2_pb.js"></script> 
     <script type="text/javascript" src="jslib/pr2_widgets.js"></script> 
 
+<?cs if:0 ?>
     <script type='text/javascript' src='http://www.google.com/jsapi'></script>
     <script type='text/javascript'>
       google.load("visualization", "1", {packages:["linechart"]});
       google.load("visualization", "1", {packages:["gauge"]});
     </script>
+<?cs /if ?>
 

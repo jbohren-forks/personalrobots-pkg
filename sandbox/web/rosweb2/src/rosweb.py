@@ -275,7 +275,7 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         if len(rwttopics) == 0:
           logging.warning("no valid topics")
-          self.send_response(404)
+          self.send_failure()
           return
           
         messages = []
@@ -348,8 +348,8 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return 0
         return 1
 
-    def send_success(self, buf = "{}", callback = None):
-      self.send_response(200)
+    def _send_responsepage(self, retcode=200, buf = "{}", callback = None):
+      self.send_response(retcode)
       if callback:
         buf = callback + "(" + buf + ");"
         self.send_header('Content-Type', 'text/javascript')
@@ -359,6 +359,12 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.end_headers()
       
       self.wfile.write(buf)
+
+    def send_success(self, buf = "{}", callback=None):
+      self._send_responsepage(200, buf, callback)
+
+    def send_failure(self, buf = "{}", callback=None):
+      self._send_responsepage(404, buf, callback)
 
     def handle_ROS(self, path, qdict):
       cstring = self.headers.get('Cookie', '')
@@ -406,7 +412,11 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         logging.debug("service call: name=%s, args=%s" % (name, args))
         rospy.wait_for_service(name)
         service_proxy = rospy.ServiceProxy(name, service_class)
-        msg = service_proxy(request)
+        try:
+          msg = service_proxy(request)
+        except rospy.ServiceException:
+          self.send_failure()
+          return
         msg = rosjson.ros_message_to_json(msg)
 
         logging.debug("service call: name=%s, resp=%s" % (name, msg))

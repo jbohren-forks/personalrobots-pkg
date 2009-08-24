@@ -4,6 +4,9 @@
 
 import os, sys
 
+PKG = 'webui' # this package name
+import roslib; roslib.load_manifest(PKG) 
+
 if 1:
   script_dir = ''
   try:

@@ -28,8 +28,8 @@ class MBPage(CSPage):
 
 #        hdf.setValue("Query.debug", "1")
 #        hdf.setValue("Config.DebugPassword","1")
-        hdf.setValue("Config.CompressionEnabled","0")
-        hdf.setValue("Config.WhiteSpaceStrip","0")
+        hdf.setValue("Config.CompressionEnabled","1")
+        hdf.setValue("Config.WhiteSpaceStrip","1")
 
         self.login = None
         self.username = None
