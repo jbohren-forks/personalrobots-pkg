@@ -40,22 +40,22 @@ using namespace std;
 
 void gb::setDefaultRsNthetas(){
     //default rs
-    vector<float> rs_(6);
-    rs_[0]=0.00000;
-    rs_[1]=0.08000;
-    rs_[2]=0.16000;
-    rs_[3]=0.32000;
-    rs_[4]=0.64000;
-    rs_[5]=1.00000;
+    rs.resize(6);
+    rs[0]=0.00000;
+    rs[1]=0.08000;
+    rs[2]=0.16000;
+    rs[3]=0.32000;
+    rs[4]=0.64000;
+    rs[5]=1.00000;
 
     //default nthetas
-    vector<int> nthetas_(6);
-    nthetas_[0]=1;
-    nthetas_[1]=8;
-    nthetas_[2]=8;
-    nthetas_[3]=10;
-    nthetas_[4]=12;
-    nthetas_[5]=12;
+    nthetas.resize(6);
+    nthetas[0]=1;
+    nthetas[1]=8;
+    nthetas[2]=8;
+    nthetas[3]=10;
+    nthetas[4]=12;
+    nthetas[5]=12;
 
     for (unsigned int i=0; i< rs.size(); i++){
         rs[i] *= winSize.width/2;
@@ -277,7 +277,7 @@ void gb::compute_gb(vector<Mat>& fbr, vector< vector<float> > & features){
         compute_sample_rois(CurrImgSize, rois,  roi_center);
 
         cout << "start compute_gb_single_scale" << endl;
-        gb::compute_gb_single_scale(fbr, features,CurrImgSize, rois,  roi_center);
+        gb::compute_gb_single_scale(fbr, features, CurrImgSize, rois,  roi_center);
 
         // resizing rois
         for (unsigned int k=0; k< rois.size(); k++){

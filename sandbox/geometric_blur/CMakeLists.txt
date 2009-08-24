@@ -18,6 +18,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rospack_add_library (${PROJECT_NAME} src/gb.cpp)
 
+rospack_add_executable (gb_test example/cal_gb_des.cpp)
+target_link_libraries (gb_test geometric_blur)
+
 #uncomment if you have defined messages
 #genmsg()
 #uncomment if you have defined services

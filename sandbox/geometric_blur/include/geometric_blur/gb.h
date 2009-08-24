@@ -49,10 +49,10 @@ public:
     gb(): nbins(4), DenseSample(true), alpha(0.5), beta(1){}
     gb( int nbins_, bool gammaCorrection_, Size paddingTL_, Size paddingBR_,
         bool DenseSample_, float ScaleRatio_, int NumScale_, Size winSize_, Size winStride_,
-        float alpha_, float beta_, vector<float> rs_, vector<int> nthetas_):
+        float alpha_, float beta_):
         nbins(nbins_),  gammaCorrection(gammaCorrection_), paddingTL(paddingTL_), paddingBR(paddingBR_),
         DenseSample(DenseSample_), ScaleRatio(ScaleRatio_), NumScale(NumScale_), winSize(winSize_), winStride(winStride_),
-        alpha(alpha_), beta(beta_), rs(rs_), nthetas(nthetas_){ setDefaultRsNthetas();}
+        alpha(alpha_), beta(beta_){ setDefaultRsNthetas();}
     ~gb(){}
 
     // methods

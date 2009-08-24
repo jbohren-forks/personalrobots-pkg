@@ -1,0 +1,2 @@
+
+../bin/gb_test 1.1 50 50 10 10 ./test.png ./test.gb ./test.roi
