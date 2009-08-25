@@ -1,9 +1,9 @@
 <launch>
   <include file="$(find door_demos_gazebo)/launch/pr2_and_door.launch"/>
   <include file="$(find milestone2_actions)/milestone2.launch" />
-  <node pkg="doors_core" type="test_executive"/>
+  <node pkg="doors_core" type="test_executive" output="screen" />
   <!--<node pkg="rosrecord" type="rosrecord" args=" -f door_demos_test.bag " />-->
-  <test test-name="door_demos_test_open_door" pkg="door_demos_gazebo" type="door_demo_test_exec_test.py" time-limit="1000" output="screen" />
+  <test test-name="door_demos_test_open_door" pkg="door_demos_gazebo" type="door_demo_test_exec_test.py" time-limit="1000" />
   <node pkg="rostopic" type="rostopic" args="list" output="screen" />
   <param name="/base_shadow_filter/notifier_tolerance" value="0.09" type="double" />
   <param name="/tilt_shadow_filter/notifier_tolerance" value="0.09" type="double" />
