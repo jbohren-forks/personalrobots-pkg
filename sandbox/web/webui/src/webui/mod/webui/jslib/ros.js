@@ -73,7 +73,7 @@ var MessagePump = Class.create({
    } catch (e) {
      ros_debug("Error with evalMessages.");
    }
-   this.pump(); 
+   setTimeout("gPump.pump();", 500);
  },
       
  evalMessages: function(json_result) {
@@ -208,7 +208,7 @@ var OnOffButtonWidget = Class.create({
       this.domobj.setAttribute("class", "buttonOff");
     }
 
-    this.pump.service_call("status_update", []);
+    //this.pump.service_call("status_update", []);
   },
 
   receive: function(msg) {
@@ -430,7 +430,7 @@ var RosOut_Widget = Class.create({
   initialize: function(domobj) {
     this.pump = null;
     this.domobj = domobj;
-    this.topics = ['/rosout_agg'];
+    this.topics = ['/rosout'];
     this.maxlines = parseInt(domobj.getAttribute("maxlines", "100"));
 
     this.tbl = null;
@@ -454,7 +454,7 @@ var RosOut_Widget = Class.create({
       var c, tn;
       c = row.insertCell(0);
       c.className = "rosout";
-      c.style.width = "2%";
+      c.style.width = "5%";
       var level = "";
       if(msg.level == "16") level="Fatal";
       if(msg.level == "8") level="Error";
@@ -466,16 +466,16 @@ var RosOut_Widget = Class.create({
 
       c = row.insertCell(1);
       c.className = "rosout";
-      c.style.width = "90%";
+      c.style.width = "80%";
       tn = document.createTextNode(msg.msg);
       c.appendChild(tn);
 
 
-      //      c = row.insertCell(2);
-      //      c.style.width = "10%";
-      //      c.className = "rosout";
-      //      tn = document.createTextNode(msg.name);
-      //      c.appendChild(tn);
+      c = row.insertCell(2);
+      c.style.width = "15%";
+      c.className = "rosout";
+      tn = document.createTextNode(msg.name);
+      c.appendChild(tn);
 
       //      c = row.insertCell(3);
       //      c.style.width = "5%";

@@ -92,7 +92,9 @@ class AppRunner:
     self.runner.launch() 
 
   def stop(self):
-    if not self.runner: return
+    if not self.runner: 
+      print "no runner", self
+      return
     self.runner.stop()
     self.runner = None
 
@@ -158,7 +160,6 @@ class TaskManager:
 
     runner.launch()
 
-    time.sleep(1)
     runner.task.status = "running"
     self.app_update.publish(runner.task)
     self._send_status()
@@ -178,7 +179,6 @@ class TaskManager:
       self._stopTask(cgroup)
 
     runner.stop()
-    time.sleep(1)
 
     runner.task.status = "stopped"
     self.app_update.publish(runner.task)

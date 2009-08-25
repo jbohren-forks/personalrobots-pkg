@@ -159,7 +159,12 @@ class ROSWebTopic(object):
             
             msg_class = roslib.scriptutil.get_message_class(topic_type)
 
-            self.sub = rospy.Subscriber(self.topic, msg_class, self.topic_callback)
+            #print "RosWebtopic", self.topic, msg_class
+            try:
+              self.sub = rospy.Subscriber(self.topic, msg_class, self.topic_callback)
+            except:
+              print self.topic, msg_class
+              raise 
             self.initialized = True
         except ROSWebException:
             raise
@@ -178,6 +183,7 @@ class ROSWebTopic(object):
     def topic_callback(self, data):
         try:
             self.factory.cond.acquire()
+
             self.messages.append((self.factory.counter, data))
             self.factory.counter = self.factory.counter + 1
             self.messages = self.messages[-20:]
@@ -236,6 +242,7 @@ class VirtualTopic(object):
   def callback(self, data):
     try:
       self.factory.cond.acquire()
+
       self.messages.append((self.factory.counter, data))
       self.factory.counter = self.factory.counter + 1
       self.messages = self.messages[-3:]
@@ -311,7 +318,7 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     lastSince = max(t, lastSince)
         finally:
             self.server.factory.cond.release()
-            
+
         buf = cStringIO.StringIO()
         buf.write("{")
         buf.write('"since": %s,' % lastSince)
