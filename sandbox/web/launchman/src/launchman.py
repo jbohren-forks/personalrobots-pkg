@@ -101,10 +101,17 @@ class AppRunner:
   def process_died(self, process_name, exit_code):
     #print "process_died", process_name, exit_code
     #print self.runner.pm.procs
+    if not self.runner: return
+
     if len(self.runner.pm.procs) == 1:
       self.runner = None
-      #print "ALL DONE!"
+      print "ALL DONE!"
       self.manager._stopTask(self)
+    else:
+      print "too many procs", self.runner.pm.procs
+      self.runner = None
+      self.manager._stopTask(self)
+      
       
 
   def __repr__(self):
