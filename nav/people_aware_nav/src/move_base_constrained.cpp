@@ -246,7 +246,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon& forbi
         ROS_INFO ("Passing plan to controller");
         if(new_plan_){
           new_plan_ = false;
-          if(!tc_->updatePlan(global_plan_)){
+          if(!tc_->setPlan(global_plan_)){
             resetState();
             ROS_WARN("move_base aborted because it failed to pass the plan from the planner to the controller");
             return robot_actions::ABORTED;
@@ -260,7 +260,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon& forbi
           last_valid_control_ = ros::Time::now();
 
         //check for success
-        if(tc_->goalReached()){
+        if(tc_->isGoalReached()){
           if(attempted_rotation_){
             valid_control = false;
             if(done_half_rotation_){

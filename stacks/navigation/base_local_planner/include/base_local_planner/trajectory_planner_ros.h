@@ -103,6 +103,27 @@ namespace base_local_planner {
       ~TrajectoryPlannerROS();
       
       /**
+       * @brief  Given the current position, orientation, and velocity of the robot, compute velocity commands to send to the base
+       * @param cmd_vel Will be filled with the velocity command to be passed to the robot base
+       * @return True if a valid trajectory was found, false otherwise
+       */
+      bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
+
+      /**
+       * @brief  Set the plan that the controller is following
+       * @param orig_global_plan The plan to pass to the controller
+       * @return True if the plan was updated successfully, false otherwise
+       */
+      bool setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan);
+
+      /**
+       * @brief  Check if the goal pose has been achieved
+       * @return True if achieved, false otherwise
+       */
+      bool isGoalReached();
+
+    private:
+      /**
        * @brief  Used for display purposes, allows the footprint of the robot to be drawn in visualization tools
        * @param x_i The x position of the robot
        * @param y_i The y position of the robot
@@ -111,35 +132,6 @@ namespace base_local_planner {
        */
       std::vector<geometry_msgs::Point> drawFootprint(double x_i, double y_i, double theta_i);
 
-      /**
-       * @brief  Given the current position, orientation, and velocity of the robot, compute velocity commands to send to the base
-       * @param cmd_vel Will be filled with the velocity command to be passed to the robot base
-       * @return True if a valid trajectory was found, false otherwise
-       */
-      bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
-
-      /**
-       * @brief  Update the plan that the controller is following
-       * @param orig_global_plan The plan to pass to the controller
-       * @return True if the plan was updated successfully, false otherwise
-       */
-      bool updatePlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan);
-
-      /**
-       * @brief  Returns the local goal the robot is pursuing
-       * @param x Will be set to the x position of the goal in world coordinates 
-       * @param y Will be set to the y position of the goal in world coordinates 
-       * @return 
-       */
-      void getLocalGoal(double& x, double& y);
-
-      /**
-       * @brief  Check if the goal pose has been achieved
-       * @return True if achieved, false otherwise
-       */
-      bool goalReached();
-
-    private:
       /**
        * @brief  Check whether the robot is stopped or not
        * @return True if the robot is stopped, false otherwise

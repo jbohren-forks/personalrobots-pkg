@@ -236,7 +236,7 @@ namespace base_local_planner {
     }
   }
 
-  bool TrajectoryPlannerROS::goalReached(){
+  bool TrajectoryPlannerROS::isGoalReached(){
     if(!initialized_){
       ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
       return false;
@@ -305,7 +305,7 @@ namespace base_local_planner {
     return false;
   }
 
-  bool TrajectoryPlannerROS::updatePlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan){
+  bool TrajectoryPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan){
     if(!initialized_){
       ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
       return false;
@@ -512,16 +512,6 @@ namespace base_local_planner {
     publishPlan(transformed_plan, g_plan_pub_, 0.0, 1.0, 0.0, 0.0);
     publishPlan(local_plan, l_plan_pub_, 0.0, 0.0, 1.0, 0.0);
     return true;
-  }
-
-  void TrajectoryPlannerROS::getLocalGoal(double& x, double& y){
-    if(!initialized_){
-      ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
-      return;
-    }
-
-    tc_->getLocalGoal(x, y);
-    return;
   }
 
   void TrajectoryPlannerROS::prunePlan(const tf::Stamped<tf::Pose>& global_pose, std::vector<geometry_msgs::PoseStamped>& plan, std::vector<geometry_msgs::PoseStamped>& global_plan){

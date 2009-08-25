@@ -318,13 +318,13 @@ namespace move_base {
       rotate_plan.push_back(rotate_goal_msg);
 
       //pass the rotation goal to the controller
-      if(!tc_->updatePlan(rotate_plan)){
+      if(!tc_->setPlan(rotate_plan)){
         ROS_ERROR("Failed to pass global plan to the controller, aborting in place rotation attempt.");
         return;
       }
 
       geometry_msgs::Twist cmd_vel;
-      while(!isPreemptRequested() && ros_node_.ok() && !tc_->goalReached()){
+      while(!isPreemptRequested() && ros_node_.ok() && !tc_->isGoalReached()){
         if(tc_->computeVelocityCommands(cmd_vel)){
           //make sure that we send the velocity command to the base
           vel_pub_.publish(cmd_vel);
@@ -403,7 +403,7 @@ namespace move_base {
         case PLANNING:
           ROS_DEBUG("In planning state");
           if(makePlan(goal, global_plan)){
-            if(!tc_->updatePlan(global_plan)){
+            if(!tc_->setPlan(global_plan)){
               //ABORT and SHUTDOWN COSTMAPS
               ROS_ERROR("Failed to pass global plan to the controller, aborting.");
               resetState();
@@ -434,7 +434,7 @@ namespace move_base {
           ROS_DEBUG("In controlling state");
 
           //check to see if we've reached our goal
-          if(tc_->goalReached()){
+          if(tc_->isGoalReached()){
             ROS_DEBUG("Goal reached!");
             resetState();
             return robot_actions::SUCCESS;

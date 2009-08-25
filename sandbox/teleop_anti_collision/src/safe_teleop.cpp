@@ -273,7 +273,7 @@ namespace safe_teleop{
     rotate_plan.push_back(rotate_goal_msg);
 
     //pass the rotation goal to the controller
-    if(!tc_->updatePlan(rotate_plan)){
+    if(!tc_->setPlan(rotate_plan)){
       ROS_ERROR("Failed to pass global plan to the controller, aborting in place rotation attempt.");
       return false;
     }
@@ -432,7 +432,7 @@ namespace safe_teleop{
       case PLANNING:
         ROS_DEBUG("In planning state");
         if(makePlan(goal, global_plan)){
-          if(!tc_->updatePlan(global_plan)){
+          if(!tc_->setPlan(global_plan)){
             //ABORT and SHUTDOWN COSTMAPS
             ROS_ERROR("Failed to pass global plan to the controller, aborting.");
             resetState();
@@ -466,7 +466,7 @@ namespace safe_teleop{
         ROS_DEBUG("In controlling state");
 
         //check to see if we've reached our goal
-        if(tc_->goalReached()){
+        if(tc_->isGoalReached()){
           ROS_DEBUG("Goal reached!");
           resetState();
           as_.setSucceeded();
@@ -520,7 +520,7 @@ namespace safe_teleop{
             break;
           case EXECUTE_ROTATE_1:
             ROS_DEBUG("In in-place rotation state 1");
-            if(tc_->goalReached()){
+            if(tc_->isGoalReached()){
               clearing_state_ = IN_PLACE_ROTATION_2;
             }
             else if(!rotateRobot()){
@@ -540,7 +540,7 @@ namespace safe_teleop{
             break;
           case EXECUTE_ROTATE_2:
             ROS_DEBUG("In in-place rotation state 2");
-            if(tc_->goalReached() || !rotateRobot()){
+            if(tc_->isGoalReached() || !rotateRobot()){
               clearing_state_ = AGGRESSIVE_RESET;
               state_ = PLANNING;
             }

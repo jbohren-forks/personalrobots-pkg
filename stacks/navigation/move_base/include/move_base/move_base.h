@@ -49,8 +49,8 @@
 #include <vector>
 #include <string>
 #include <nav_msgs/GetPlan.h>
-#include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Twist.h>
+#include <visualization_msgs/Marker.h>
 
 #include <pluginlib/class_loader.h>
 

@@ -45,8 +45,8 @@ namespace nav_core {
   class BaseLocalPlanner{
     public:
       virtual bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel) = 0;
-      virtual bool goalReached() = 0;
-      virtual bool updatePlan(const std::vector<geometry_msgs::PoseStamped>& plan) = 0;
+      virtual bool isGoalReached() = 0;
+      virtual bool setPlan(const std::vector<geometry_msgs::PoseStamped>& plan) = 0;
 
       virtual void initialize(std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros) = 0;
 
