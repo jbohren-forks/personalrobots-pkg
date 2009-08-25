@@ -6,11 +6,11 @@
  * @brief Obtain the base pose at a given distance normal to the door frame. The token object has all the parameters
  * of a door message.
  */
-constraint  door_get_robot_pose_for_door(x, y, z, qx, qy, qz, qw, token_object, distance){
+/*constraint  door_get_robot_pose_for_door(x, y, z, qx, qy, qz, qw, token_object, distance){
   x <: numeric && y <: x && z <: x && 
   qx <: x && qy <: x && qz <: x && qw <: x &&
   token_object <: Object && distance <: x
-}
+}*/
 
 // Control constants for distances from door for detection, grasping and moving through the doorway
 float DETECTION_RANGE = -1.0;
