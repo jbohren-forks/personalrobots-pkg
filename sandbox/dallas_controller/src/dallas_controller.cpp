@@ -73,7 +73,7 @@ bool DallasController::starting()
 
 void DallasController::update()
 {
-  double time = robot_->hw_->current_time_;
+  double time = robot_->getTime();
   double dt = time - last_time_;
 
 
