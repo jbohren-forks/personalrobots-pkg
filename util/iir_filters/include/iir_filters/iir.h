@@ -40,7 +40,6 @@
 #include <boost/algorithm/string.hpp>
 #include "ros/node.h"
 
-#include "urdf/parser.h"
 #include "filters/transfer_function.h"
 #include "filters/filter_base.h"
 #include "iir_filters/Filter.h"
