@@ -13,7 +13,6 @@ The Robot Pose EKF package is used to estimate the 3D pose of a robot, based on 
 <depend package="std_msgs" />
 <depend package="geometry_msgs" />
 <depend package="sensor_msgs" />
-<depend package="deprecated_msgs" />
 <depend package="nav_msgs" />
 <depend package="tf" />
 </package>
