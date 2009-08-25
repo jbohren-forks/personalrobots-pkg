@@ -9,6 +9,6 @@
   <depend stack="ros"/>
   <depend stack="common_msgs"/>
   <depend stack="diagnostics"/>
-  <depend stack="driver_base"/>
+  <depend stack="driver_common"/>
   <depend stack="imaging_pipeline"/>
 </stack>
