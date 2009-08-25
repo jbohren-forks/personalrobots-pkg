@@ -1,3 +1,5 @@
+#ifndef PR2_IK_PR2_IK_SOLVER_H
+#define PR2_IK_PR2_IK_SOLVER_H
 //Software License Agreement (BSD License)
 
 //Copyright (c) 2008, Willow Garage, Inc.
@@ -32,12 +34,14 @@
 
 #include <mechanism_model/robot.h>
 #include <mechanism_model/chain.h>
+#include <mechanism_model/link.h>
 
 #include <urdf/parser.h>
 #include <pr2_ik/pr2_ik.h>
 
 #include <kdl/chainiksolver.hpp>
 #include <Eigen/Array>
+#include "tf/transform_datatypes.h"
 
 namespace pr2_ik
 {
@@ -130,3 +134,4 @@ namespace pr2_ik
     double search_discretization_angle_;
   };
 }
+#endif// PR2_IK_PR2_IK_SOLVER_H
