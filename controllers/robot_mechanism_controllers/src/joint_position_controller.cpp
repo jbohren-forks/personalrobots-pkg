@@ -118,7 +118,7 @@ bool JointPositionController::init(mechanism::RobotState *robot, const ros::Node
     new realtime_tools::RealtimePublisher<robot_mechanism_controllers::JointControllerState>
     (node_, "state", 1));
 
-  sub_command_ = node_.subscribe<std_msgs::Float64>("set_command", 1, &JointPositionController::setCommandCB, this);
+  sub_command_ = node_.subscribe<std_msgs::Float64>("command", 1, &JointPositionController::setCommandCB, this);
 
   return init(robot, joint_name, pid);
 }
