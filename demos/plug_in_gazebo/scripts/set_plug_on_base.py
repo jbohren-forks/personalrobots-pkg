@@ -48,7 +48,7 @@ import rospy, rostest
 
 from std_msgs.msg import String
 from nav_robot_actions.msg import MoveBaseState
-from geometry_msgs.msg import Pose,Quaternion,Point, PoseStamped, PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose,Quaternion,Point, PoseStamped, PoseWithCovariance, TwistWithCovariance
 from nav_msgs.msg import Odometry
 import tf.transformations as tft
 from numpy import float64
@@ -95,13 +95,13 @@ magnet_q = [1,0,0,0]
 def  plugP3DInput(p3d):
     global xyz,rpy,goal_reached
     if not goal_reached:
-      p3d_x = p3d.pos.position.x
-      p3d_y = p3d.pos.position.y
-      p3d_z = p3d.pos.position.z
-      p3d_qw = p3d.pos.orientation.w
-      p3d_qx = p3d.pos.orientation.x
-      p3d_qy = p3d.pos.orientation.y
-      p3d_qz = p3d.pos.orientation.z
+      p3d_x = p3d.pose.pose.position.x
+      p3d_y = p3d.pose.pose.position.y
+      p3d_z = p3d.pose.pose.position.z
+      p3d_qw = p3d.pose.pose.orientation.w
+      p3d_qx = p3d.pose.pose.orientation.x
+      p3d_qy = p3d.pose.pose.orientation.y
+      p3d_qz = p3d.pose.pose.orientation.z
 
       # check plug position from goal
       e = tft.euler_from_quaternion([p3d_qx,p3d_qy,p3d_qz,p3d_qw])
@@ -123,8 +123,8 @@ def  plugP3DInput(p3d):
 def  magnetP3DInput(p3d):
     global xyz,rpy,goal_reached,magnet_p,magnet_q,magnet_e
     if not goal_reached:
-      magnet_p = [p3d.pos.position.x - x_origin, p3d.pos.position.y - y_origin, p3d.pos.position.z - z_origin]
-      magnet_q = [p3d.pos.orientation.x, p3d.pos.orientation.y, p3d.pos.orientation.z, p3d.pos.orientation.w]
+      magnet_p = [p3d.pose.pose.position.x - x_origin, p3d.pose.pose.position.y - y_origin, p3d.pose.pose.position.z - z_origin]
+      magnet_q = [p3d.pose.pose.orientation.x, p3d.pose.pose.orientation.y, p3d.pose.pose.orientation.z, p3d.pose.pose.orientation.w]
       magnet_e = tft.euler_from_quaternion([magnet_q[0],magnet_q[1],magnet_q[2],magnet_q[3]])
 
 def main():
@@ -162,15 +162,18 @@ def main():
         #create a temp header for publishers
         h = rospy.Header();
         h.stamp = rospy.get_rostime();
-        h.frame_id = "map"
+        h.frame_id = "/map"
         # publish pose
-        p = Point(xyz[0]+magnet_p[0],xyz[1]+magnet_p[1],xyz[2]+magnet_p[2])
+        #p = Point(xyz[0]+magnet_p[0],xyz[1]+magnet_p[1],xyz[2]+magnet_p[2])
+        #p = Point(xyz[0],xyz[1],xyz[2])
+        p = Point(0,0,0)
         tmpq = tft.quaternion_multiply(tft.quaternion_from_euler(rpy[0],rpy[1],rpy[2],'rxyz'),magnet_q)
-        q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
+        #q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
+        q = Quaternion(1,0,0,0)
         pose = PoseWithCovariance(Pose(p,q),COV)
-        poseWithRatesStamped = Odometry(h,pose,TwistWithCovariance());
+        poseWithRatesStamped = Odometry(h,"/map",pose,TwistWithCovariance());
         pub_pose.publish(poseWithRatesStamped)
-        time.sleep(0.05)
+        time.sleep(1.05)
 
 def print_usage(exit_code = 0):
     print '''Commands:
