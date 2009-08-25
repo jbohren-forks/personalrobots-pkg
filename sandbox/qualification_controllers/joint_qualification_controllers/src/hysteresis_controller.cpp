@@ -147,7 +147,7 @@ bool HysteresisController::init( mechanism::RobotState *robot, const ros::NodeHa
     return false;
   }
 
-  initial_time_ = robot_->hw_->current_time_;
+  initial_time_ = robot_->getTime();
   initial_position_ = joint_->position_;
 
   // Set values in test data output
@@ -182,7 +182,7 @@ bool HysteresisController::starting()
 {
   velocity_controller_->starting();
   
-  initial_time_ = robot_->hw_->current_time_;
+  initial_time_ = robot_->getTime();
   initial_position_ = joint_->position_;
 
   count_ = 0;
@@ -197,7 +197,7 @@ void HysteresisController::update()
     return;
   }
 
-  double time = robot_->hw_->current_time_;
+  double time = robot_->getTime();
   velocity_controller_->update();
   
   if (state_ == STOPPED || state_ == STARTING || state_ == MOVING)

@@ -149,7 +149,7 @@ bool SineSweepController::init(mechanism::RobotState *robot, const ros::NodeHand
   test_data_.arg_value[5] = amplitude;
   test_data_.arg_value[6] = duration_;
 
-  initial_time_ = robot_->hw_->current_time_;
+  initial_time_ = robot_->getTime();
 
   call_service_.reset(new realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response>(n, "/test_data"));
 
@@ -158,7 +158,7 @@ bool SineSweepController::init(mechanism::RobotState *robot, const ros::NodeHand
 
 bool SineSweepController::starting()
 {
-  initial_time_ = robot_->hw_->current_time_;
+  initial_time_ = robot_->getTime();
   count_ = 0;
 
   return true;
@@ -166,7 +166,7 @@ bool SineSweepController::starting()
 
 void SineSweepController::update()
 {
-  double time = robot_->hw_->current_time_;
+  double time = robot_->getTime();
   // wait until the joint is calibrated if it isn't a wheel
   if(!joint_state_->calibrated_ && joint_state_->joint_->name_.find("wheel_joint") != string::npos)
   {

@@ -76,7 +76,7 @@ bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandl
     robot_data_.joint_data[i].index = i;
     robot_data_.joint_data[i].name = joint->name_;
     robot_data_.joint_data[i].is_cal = 0;
-    robot_data_.joint_data[i].has_safety = joint->has_safety_limits_;
+    robot_data_.joint_data[i].has_safety = joint->has_safety_code_ && joint->has_joint_limits_;
 
     // Assign type strings based on type
     switch (joint->type_)
@@ -109,13 +109,13 @@ bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandl
   }
 
   // Assign actuators
-  actuator_count_ = robot_->hw_->actuators_.size();
+  actuator_count_ = robot_->model_->actuators_.size();
   robot_data_.num_actuators = actuator_count_;
   robot_data_.actuator_data.resize(actuator_count_);
   
   for (int i = 0; i < actuator_count_; i++)
   {
-    Actuator *actuator = robot_->hw_->actuators_[i];
+    Actuator *actuator = robot_->model_->actuators_[i];
    
     robot_data_.actuator_data[i].index = i;
     robot_data_.actuator_data[i].name = actuator->name_;
@@ -125,7 +125,7 @@ bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandl
 
   n.param("timeout", timeout_, 30.0);
 
-  initial_time_ = robot_->hw_->current_time_;
+  initial_time_ = robot_->getTime();
 
   call_service_.reset(new realtime_tools::RealtimeSrvCall<joint_qualification_controllers::RobotData::Request, joint_qualification_controllers::RobotData::Response>(n, "/robot_checkout"));
 
@@ -134,7 +134,7 @@ bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandl
 
 bool CheckoutController::starting()
 {
-  initial_time_ = robot_->hw_->current_time_;
+  initial_time_ = robot_->getTime();
 
   data_sent_ = false;
 
@@ -143,7 +143,7 @@ bool CheckoutController::starting()
 
 void CheckoutController::update()
 {
-  double time = robot_->hw_->current_time_;
+  double time = robot_->getTime();
   bool cal = false;
   bool enabled = false;
 
@@ -157,7 +157,7 @@ void CheckoutController::update()
   switch (state_)
   {
   case STARTING:
-    initial_time_ = robot_->hw_->current_time_;
+    initial_time_ = robot_->getTime();
     state_ = LISTENING;
     break;
   case LISTENING:
@@ -189,7 +189,7 @@ void CheckoutController::update()
     enabled = true;
     for (int i = 0; i < actuator_count_; i++)
     {
-      if (!robot_->hw_->actuators_[i]->state_.is_enabled_)
+      if (!robot_->model_->actuators_[i]->state_.is_enabled_)
       {
         enabled = false;
         break;
@@ -259,7 +259,7 @@ void CheckoutController::analysis(double time)
     robot_data_.joint_data[i].is_cal = robot_->joint_states_[i].calibrated_;
 
   for (int i = 0; i < actuator_count_; i++)
-    robot_data_.actuator_data[i].enabled = robot_->hw_->actuators_[i]->state_.is_enabled_;
+    robot_data_.actuator_data[i].enabled = robot_->model_->actuators_[i]->state_.is_enabled_;
     
   return; 
 }

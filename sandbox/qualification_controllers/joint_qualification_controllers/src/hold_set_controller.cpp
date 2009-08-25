@@ -190,7 +190,7 @@ bool HoldSetController::init(mechanism::RobotState *robot, const ros::NodeHandle
 
 bool HoldSetController::starting()
 {
-  initial_time_ = robot_->hw_->current_time_;
+  initial_time_ = robot_->getTime();
   return true;
 }
 
@@ -200,7 +200,7 @@ void HoldSetController::update()
   if (!flex_state_->calibrated_ || !lift_state_->calibrated_)
     return;
       
-  double time = robot_->hw_->current_time_;
+  double time = robot_->getTime();
   
   if (time - initial_time_ > timeout_ && state_ != DONE) 
   {
