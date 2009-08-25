@@ -9,7 +9,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/ROS</url>
 
-  <depend stack="geometry"/> <!-- tf, angles --> 
   <depend stack="ros"/> <!-- rosconsole, rospy, roslaunch, rostest, roscpp, std_msgs, rostopic--> 
   <depend stack="common_msgs"/> <!-- geometry_msgs, diagnostic_msgs, sensor_msgs --> 
 
