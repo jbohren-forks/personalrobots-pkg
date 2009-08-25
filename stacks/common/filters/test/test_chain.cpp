@@ -142,6 +142,63 @@ TEST(MultiChannelFilterChain, TwoFilters){
     EXPECT_NEAR(input1[i], v1a[i], epsilon);
   }
 }
+
+TEST(MultiChannelFilterChain, TransferFunction){
+  double epsilon = 1e-4;
+ 
+  filters::MultiChannelFilterChain<double> chain("double");
+  EXPECT_TRUE(chain.configure(3, "TransferFunction" ));
+ 
+  std::vector<double> in1,in2,in3,in4,in5,in6,in7;
+  std::vector<double> out1;
+
+  in1.push_back(10.0);
+  in1.push_back(10.0);
+  in1.push_back(10.0);
+  //
+  in2.push_back(70.0);
+  in2.push_back(30.0);
+  in2.push_back(8.0);
+  //
+  in3.push_back(-1.0);
+  in3.push_back(5.0);
+  in3.push_back(22.0);
+  //
+  in4.push_back(44.0);
+  in4.push_back(23.0);
+  in4.push_back(8.0);
+  //
+  in5.push_back(10.0);
+  in5.push_back(10.0);
+  in5.push_back(10.0);
+  //
+  in6.push_back(5.0);
+  in6.push_back(-1.0);
+  in6.push_back(5.0);
+  //
+  in7.push_back(6.0);
+  in7.push_back(-30.0);
+  in7.push_back(2.0);
+  //
+  out1.push_back(17.1112);
+  out1.push_back(9.0285);
+  out1.push_back(8.3102);
+  EXPECT_TRUE(chain.update(in1, in1));
+  EXPECT_TRUE(chain.update(in2, in2));
+  EXPECT_TRUE(chain.update(in3, in3));
+  EXPECT_TRUE(chain.update(in4, in4));
+  EXPECT_TRUE(chain.update(in5, in5));
+  EXPECT_TRUE(chain.update(in6, in6));
+  EXPECT_TRUE(chain.update(in7, in7));
+
+  chain.clear();
+
+  for(unsigned int i=0; i<out1.size(); i++)
+  {
+    EXPECT_NEAR(out1[i], in7[i], epsilon);
+  }
+}
+
 /*
 TEST(MultiChannelFilterChain, OverlappingNames){
   filters::MultiChannelFilterChain<double> chain("double");

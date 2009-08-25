@@ -138,11 +138,12 @@ public:
   bool configure(XmlRpc::XmlRpcValue& config)
   {
     /*************************** Parse the XmlRpcValue ***********************************/
-
     //Verify proper naming and structure    
     if (config.getType() != XmlRpc::XmlRpcValue::TypeArray)
     {
       ROS_ERROR("The filter chain specification must be a list. but is of of XmlRpcType %d", config.getType());
+      ROS_ERROR("The xml passed in is formatted as follows:\n %s", config.toXml().c_str());
+
       return false;
     }
 
@@ -333,11 +334,12 @@ public:
   bool configure(unsigned int size, XmlRpc::XmlRpcValue& config)
   {
     /*************************** Parse the XmlRpcValue ***********************************/
-
     //Verify proper naming and structure    
     if (config.getType() != XmlRpc::XmlRpcValue::TypeArray)
     {
       ROS_ERROR("The filter chain specification must be a list. but is of of XmlRpcType %d", config.getType());
+      ROS_ERROR("The xml passed in is formatted as follows:\n %s", config.toXml().c_str());
+
       return false;
     }
 

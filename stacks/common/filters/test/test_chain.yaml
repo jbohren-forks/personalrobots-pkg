@@ -29,6 +29,15 @@ TwoFilters:
       name: median_test2
       type: MultiChannelMedianFilterDouble
       params: {number_of_observations: 5}
+
+TransferFunction:
+  filter_chain:
+    -
+      name: transfer_function
+      type: MultiChannelTransferFunctionFilterDouble
+      params:
+        a: [1.0, -1.760041880343169, 1.182893262037831]
+        b: [0.018098933007514, 0.054296799022543, 0.054296799022543, 0.018098933007514]
     
 MeanFilterFloat5:
   filter_chain:
