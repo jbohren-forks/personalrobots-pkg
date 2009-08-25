@@ -291,6 +291,17 @@ int
       return -1;
   }
 
+
+  // go to the last location
+  double X = 27.3095662355 + 3 - 25.7, Y = 25.8414441058 - 25.7;
+  ROS_INFO("Moving to %f %f", X, Y);
+  goal_msg.pose.position.x = X;
+  goal_msg.pose.position.y = Y;
+  goal_msg.pose.position.z = 0;
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  while (move_base_local.execute(goal_msg, goal_msg) != robot_actions::SUCCESS) {cout << "re-trying move base local" << endl;};
+
   // stop remaining controllers
   ROS_INFO("Stop controllers");
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
