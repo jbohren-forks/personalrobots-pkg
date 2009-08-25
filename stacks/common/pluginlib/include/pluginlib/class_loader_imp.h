@@ -48,7 +48,6 @@ namespace pluginlib {
   {
     //Pull possible files from manifests of packages which depend on this package and export class
     std::vector<std::string> paths;
-
     ros::package::getPlugins(package, attrib_name, paths);
 
     //The poco factory for base class T
@@ -157,7 +156,15 @@ namespace pluginlib {
     }
     else
     {
-      ROS_ERROR("According to the loaded plugin descriptions the class %s with base class type %s does not exist", lookup_name.c_str(), base_class_.c_str());
+      //\todo make this a function call
+      std::string declared_types;
+      std::vector<std::string> types = getDeclaredClasses();
+      for ( unsigned int i = 0; i < types.size(); i ++)
+      {
+        declared_types = declared_types + std::string(" ") + types[i];
+      }
+      ROS_ERROR("According to the loaded plugin descriptions the class %s with base class type %s does not exist.  Declared types are %s", 
+                lookup_name.c_str(), base_class_.c_str(), declared_types.c_str() );
       return false;
     }
     library_path.append(Poco::SharedLibrary::suffix());
