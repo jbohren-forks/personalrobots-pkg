@@ -43,9 +43,12 @@
 
 using namespace std;
 
-namespace KDL{
+namespace kdl_parser{
 
-bool treeFromRobotModel(urdf::Model& robot_model, Tree& tree);
+bool treeFromFile(const string& file, KDL::Tree& tree);
+bool treeFromString(const string& xml, KDL::Tree& tree);
+bool treeFromXml(TiXmlElement *root, KDL::Tree& tree);
+bool treeFromRobotModel(urdf::Model& robot_model, KDL::Tree& tree);
 }
 
 #endif

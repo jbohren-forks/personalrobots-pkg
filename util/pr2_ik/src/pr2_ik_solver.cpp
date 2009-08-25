@@ -178,7 +178,7 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
 
   // create robot chain from root to tip
   KDL::Tree tree;
-  if (!KDL::treeFromRobotModel(robot_model_, tree))
+  if (!kdl_parser::treeFromRobotModel(robot_model_, tree))
     ROS_ERROR("Could not initialize tree object");
   if (!tree.getChain(root_name, tip_name, chain_))
     ROS_ERROR("Could not initialize chain object");

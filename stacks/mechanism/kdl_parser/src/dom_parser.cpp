@@ -36,9 +36,12 @@
 
 #include "kdl_parser/dom_parser.hpp"
 #include <kdl/frames_io.hpp>
-using namespace std;
 
-namespace KDL{
+
+using namespace std;
+using namespace KDL;
+
+namespace kdl_parser{
 
 
 // construct vector
@@ -125,12 +128,47 @@ bool addChildrenToTree(boost::shared_ptr<const urdf::Link> root, Tree& tree)
 }
 
 
+bool treeFromFile(const string& file, Tree& tree)
+{
+  TiXmlDocument urdf_xml;
+  urdf_xml.LoadFile(file);
+  TiXmlElement *root = urdf_xml.FirstChildElement("robot");
+  if (!root){
+    cerr << "Could not parse the xml" << endl;
+    return false;
+  }
+  return treeFromXml(root, tree);
+}
+
+
+bool treeFromString(const string& xml, Tree& tree)
+{
+  TiXmlDocument urdf_xml;
+  urdf_xml.Parse(xml.c_str());
+  TiXmlElement *root = urdf_xml.FirstChildElement("robot");
+  if (!root){
+    cerr << "Could not parse the xml" << endl;
+    return false;
+  }
+  return treeFromXml(root, tree);
+}
+
+bool treeFromXml(TiXmlElement *root, Tree& tree)
+{
+  urdf::Model robot_model;
+  if (!robot_model.initFile("pr2.urdf")){
+    cerr << "Could not generate robot model" << endl; 
+    return false;
+  }
+  return treeFromRobotModel(robot_model, tree);
+}
+
 
 bool treeFromRobotModel(urdf::Model& robot_model, Tree& tree)
 {
   tree = Tree(robot_model.getRoot()->name);
 
-  //  add all children                                                                                                                                                                 
+  //  add all children
   for (size_t i=0; i<robot_model.getRoot()->child_links.size(); i++)
     if (!addChildrenToTree(robot_model.getRoot()->child_links[i], tree))
       return false;

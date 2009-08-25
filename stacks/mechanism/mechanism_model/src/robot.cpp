@@ -58,7 +58,7 @@ bool Robot::initXml(TiXmlElement *root)
   }
 
   // Constructs a kdl robot model from the robot description.
-  if (!treeFromRobotModel(robot_description, robot_model_)){
+  if (!kdl_parser::treeFromRobotModel(robot_description, robot_model_)){
     ROS_ERROR("Mechanism Model failed to construct a kdl tree from the robot model");
     return false;
   }

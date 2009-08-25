@@ -50,7 +50,7 @@ int main()
   {cerr << "Could not generate robot model" << endl; return false;}
 
   Tree my_tree;
-  if (!treeFromRobotModel(robot_model, my_tree)) 
+  if (!kdl_parser::treeFromRobotModel(robot_model, my_tree)) 
   {cerr << "Could not extract kdl tree" << endl; return false;}
 
   // walk through tree

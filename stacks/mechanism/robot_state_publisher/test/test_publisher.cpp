@@ -73,7 +73,7 @@ protected:
 
     // constructs a kdl tree from the robot model
     Tree tree;
-    if (!treeFromRobotModel(robot_model, tree))
+    if (!kdl_parser::treeFromRobotModel(robot_model, tree))
       ROS_ERROR("Failed to extract kdl tree from robot model");
 
     publisher = new JointStateListener(tree);
