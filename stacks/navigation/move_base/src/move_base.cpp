@@ -383,7 +383,7 @@ namespace move_base {
 
   void MoveBase::executeCb(const move_base_msgs::MoveBaseGoalConstPtr& move_base_goal)
   {
-    geometry_msgs::PoseStamped goal = move_base_goal->target_pose;
+    geometry_msgs::PoseStamped goal = goalToGlobalFrame(move_base_goal->target_pose);
     std::vector<geometry_msgs::PoseStamped> global_plan;
 
     ros::Rate r(controller_frequency_);
