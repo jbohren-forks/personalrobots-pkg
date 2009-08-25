@@ -2,7 +2,7 @@
   <description>
   A node that uses the 3dmgx_driver.
   </description>
-  <author>Jeremy Leibs</author>
+  <author>Jeremy Leibs, Blaise Gassend</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>

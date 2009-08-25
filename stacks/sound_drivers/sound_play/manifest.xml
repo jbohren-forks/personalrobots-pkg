@@ -20,6 +20,7 @@ This node has been tested on the Logitech USB speakers on the PR2 and on some bu
   <export>
     <cpp cflags="-I${prefix}/msg/cpp" />
   </export>
+  <url>http://www.ros.org/wiki/sound_play</url>
 </package>
 
 

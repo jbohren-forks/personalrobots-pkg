@@ -11,7 +11,7 @@
   <depend package="self_test" />
   <depend package="diagnostic_updater" />
   <depend package="dynamic_reconfigure" />
-  <url>http://pr.willowgarage.com/wiki/Hokuyo_TOP-URG</url>
+  <url>http://www.ros.org/wiki/hokuyo_node</url>
   <export>
     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp"/>
   </export>

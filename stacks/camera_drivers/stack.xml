@@ -7,4 +7,8 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/camera_drivers</url>
   <depend stack="ros"/>
+  <depend stack="common_msgs"/>
+  <depend stack="diagnostics"/>
+  <depend stack="driver_base"/>
+  <depend stack="imaging_pipeline"/>
 </stack>

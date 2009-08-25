@@ -8,6 +8,7 @@
   <author>Jeremy Leibs</author>
   <license>LGPL</license>
   <review status="API cleared" notes="2009-03-30"/>
+  <url>http://www.ros.org/wiki/imu_node</url>
   <depend package="rosconsole"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -l3dmgx2"/>

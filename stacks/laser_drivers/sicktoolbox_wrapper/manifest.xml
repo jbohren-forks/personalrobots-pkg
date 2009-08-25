@@ -4,6 +4,7 @@
     library for interfacing with the SICK LMS2xx lasers.
   </description>
   <author>Morgan Quigley</author>
+  <url>www.ros.org/wiki/sicktoolbox_wrapper</url>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="sicktoolbox"/>
