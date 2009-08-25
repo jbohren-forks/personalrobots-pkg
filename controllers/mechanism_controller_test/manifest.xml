@@ -7,7 +7,6 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="hardware_interface" />
-  <depend package="wg_robot_description_parser" />
   <depend package="mechanism_control" />
 
   <!-- The controllers packages for testing -->
