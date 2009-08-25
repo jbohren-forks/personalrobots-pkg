@@ -3,7 +3,7 @@ all: installed
 SVN_REVISION= -r 30395
 SVN_DIR = bfl-svn
 SVN_URL = http://svn.mech.kuleuven.be/repos/orocos/trunk/bfl
-SVN_PATCH = 
+SVN_PATCH = total.patch
 INSTALL_DIR = bfl-boost
 CMAKE = cmake
 BOOST_INCLUDE =$(shell rosboost-cfg --include_dirs)
