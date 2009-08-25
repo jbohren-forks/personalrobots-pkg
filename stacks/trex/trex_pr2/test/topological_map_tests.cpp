@@ -88,7 +88,7 @@ topological_map::OccupancyGrid& GRID_3_3_ALL_CONNECTED(){
  * Given a spatial window, pich a random float in that area
  */
 void pickPointInSpace(unsigned int W, unsigned int H, double& x, double& y){
-  double mantissa = 100.0 / (rand() % 100 + 1); 
+  double mantissa = (rand() % 100) / 101.0;
   x = (rand() % W) + mantissa;
   y = (rand() % H) + mantissa;
 }
@@ -541,11 +541,11 @@ TEST(executive_trex_pr2, map_accessor){
   for(unsigned int counter = 0; counter < 10000; counter++){
     // Obtain random values for x and y
     double x, y;
-    pickPointInSpace(WIDTH_24 + 5, HEIGHT_21 + 5, x, y);
+    pickPointInSpace(3, 3, x, y);
 
     try{
       TopologicalMapAdapter::instance()->getRegion(x, y);
-      bool valid = x < WIDTH_24 && y < HEIGHT_21;
+      bool valid = x < 3 && y < 3;
       ROS_INFO_COND(!valid, "Should be on the map but isn't with (%f, %f)", x, y);
       ASSERT_TRUE(valid);
     }
@@ -639,7 +639,7 @@ TEST(executive_trex_pr2, map_region_from_position_constraint){
     try{
       // Obtain random values for x and y
       double x, y;
-      pickPointInSpace(WIDTH_24 + 5, HEIGHT_21 + 5, x, y);
+      pickPointInSpace(3, 3, x, y);
       unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
       // Now bind x and y - should propagate
       v_x.specify(x);

@@ -28,19 +28,19 @@ ReleaseHandle release_handle = new ReleaseHandle(External);
 
 ArmsTucked::True{
   met_by(safety_tuck_arms.Active p);
-  p.status == SUCCESS;
-  p.duration <= SAFETY_TUCK_ARMS_DURATION_BOUND;
+  isSucceded(p.object) == true;
+  p.max_duration <= SAFETY_TUCK_ARMS_DURATION_BOUND;
 }
 
 TiltLaserReady::True{
   met_by(set_laser_tilt.Active p);
-  p.status == SUCCESS;
+  isSucceded(p.object) == true;
 }
 
 GripperFree::True{
-  met_by(release_handle.Active cmd);
-  cmd.status == SUCCESS;
-  cmd.max_duration <= RELEASE_HANDLE_DURATION_BOUND;
+  met_by(release_handle.Active p);
+  isSucceded(p.object) == true;
+  p.max_duration <= RELEASE_HANDLE_DURATION_BOUND;
 }
 
 SafetyTuckArms::Active{

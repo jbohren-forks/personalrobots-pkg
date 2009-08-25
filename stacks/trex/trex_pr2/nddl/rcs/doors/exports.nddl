@@ -24,8 +24,7 @@ int LATCH_STATE_LOCKED = 1;
 int LATCH_STATE_LATCHED = 2;
 int LATCH_STATE_UNLATCHED = 3;
 
-class DoorManipulationBehavior extends ROSAction {
-  bool update_controller; // If true, will force an update on successful termination
+class DoorAction extends ROSAction {
 
   /**
    * The parameters here 
@@ -112,33 +111,66 @@ class DoorManipulationBehavior extends ROSAction {
     defaultOnCommit(rot_dir, UNKNOWN);
   }
 
-  DoorManipulationBehavior(Mode _mode){
+  DoorAction(Mode _mode){
     super(_mode);
-    update_controller = true;
-  }
-
-  DoorManipulationBehavior(Mode _mode, bool _update_controller){
-    super(_mode);
-    update_controller = _update_controller;
   }
 }
 
 /**
- * Behavior to grasp the handle once in a position to do so
+ * Action to grasp the handle once in a position to do so
  */
-class GraspHandle extends DoorManipulationBehavior {
-
+class GraspHandle extends DoorAction {
   GraspHandle(Mode _mode){
     super(_mode);
   }
 };
 
+/**
+ * 
+ */
+class MoveBaseDoor extends DoorAction {
+  MoveBaseDoor(Mode _mode){
+    super(_mode);
+  }
+};
 
 /**
- * Behavior to grasp the handle once in a position to do so
+ * Use this to make contact with the door prior to pushing
  */
-class UnlatchHandle extends DoorManipulationBehavior {
+class TouchDoor extends DoorAction {
+  TouchDoor(Mode _mode){
+    super(_mode);
+  }
+};
 
+/**
+ * Use this to push a door open while moving. Does not require the handle to be grasped
+ */
+class PushDoor extends DoorAction {
+  PushDoor(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * Action to open the door, assuming it is ajar, and assuming it has a grasp on the handle
+ */
+class OpenDoor extends DoorAction {
+  OpenDoor(Mode _mode){
+    super(_mode);
+  }
+};
+
+class DoorActionWithFeedback extends DoorAction {
+  DoorActionWithFeedback(Mode _mode){
+    super(_mode);
+  }
+}
+
+/**
+ * Action to grasp the handle once in a position to do so
+ */
+class UnlatchHandle extends DoorActionWithFeedback {
   UnlatchHandle(Mode _mode){
     super(_mode);
   }
@@ -147,8 +179,7 @@ class UnlatchHandle extends DoorManipulationBehavior {
 /**
  * DetectDoor is activated to search for the door. It will assume it is in a suitable observation position facing the door
  */
-class DetectDoor extends DoorManipulationBehavior {
-
+class DetectDoor extends DoorActionWithFeedback {
   DetectDoor(Mode _mode){
     super(_mode);
   }
@@ -157,51 +188,8 @@ class DetectDoor extends DoorManipulationBehavior {
 /**
  * DetectHandle is activated to search for the door. It will assume it is in a suitable observation position facing the door
  */
-class DetectHandle extends DoorManipulationBehavior {
-
+class DetectHandle extends DoorActionWithFeedback {
   DetectHandle(Mode _mode){
     super(_mode);
-  }
-};
-
-
-/**
- * 
- */
-class MoveBaseDoor extends DoorManipulationBehavior {
-
-  MoveBaseDoor(Mode _mode){
-    super(_mode);
-  }
-
-};
-
-/**
- * Use this to make contact with the door prior to pushing
- */
-class TouchDoor extends DoorManipulationBehavior {
-
-  TouchDoor(Mode _mode){
-    super(_mode, false);
-  }
-};
-
-/**
- * Use this to push a door open while moving. Does not require the handle to be grasped
- */
-class PushDoor extends DoorManipulationBehavior {
-
-  PushDoor(Mode _mode){
-    super(_mode, false);
-  }
-};
-
-/**
- * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
- */
-class OpenDoor extends DoorManipulationBehavior {
-
-  OpenDoor(Mode _mode){
-    super(_mode, false);
   }
 };

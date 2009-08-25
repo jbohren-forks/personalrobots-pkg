@@ -75,9 +75,9 @@ namespace TREX {
   /**
    * @brief Singleton accessor
    */
-  ExecutiveId Executive::request(bool playback, bool hyper){
+  ExecutiveId Executive::request(bool playback, bool hyper, bool enable_event_log){
     if(s_id == ExecutiveId::noId()){
-      new Executive(playback, hyper);
+      new Executive(playback, hyper, enable_event_log);
     }
     return s_id;
   }
@@ -85,7 +85,7 @@ namespace TREX {
   /**
    * @brief Executive constructor sets up the trex agent instance
    */
-  Executive::Executive(bool playback, bool hyper)
+  Executive::Executive(bool playback, bool hyper, bool enable_event_log)
     : m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(playback), hyper_(hyper)
   {
     s_id = m_id;
@@ -94,36 +94,27 @@ namespace TREX {
     // ROS Parameters for running the agent
     ros::NodeHandle node_handle;
 
-    double ping_frequency(1.0);
     double update_rate(1.0);
     std::string input_file = "";
     std::string path = "";
     int time_limit(0);
     std::string start_dir = "";
     std::string log_dir = "";
-    double broadcast_plan_rate(0.0);
-    node_handle.param("/trex/ping_frequency", ping_frequency, ping_frequency);
     node_handle.param("/trex/update_rate", update_rate, update_rate);
     node_handle.param("/trex/input_file", input_file, input_file);
     node_handle.param("/trex/path", path, path);
     node_handle.param("/trex/time_limit", time_limit, time_limit);
     node_handle.param("/trex/start_dir", start_dir, start_dir);
     node_handle.param("/trex/log_dir", log_dir, log_dir);
-    node_handle.param("/trex/broadcast_plan_rate", broadcast_plan_rate, broadcast_plan_rate);
 
     checkError(log_dir != "", "You must set /trex/log_dir");
     checkError(start_dir != "", "You must set /trex/start_dir");
     checkError(input_file != "", "You must set /trex/input_file");
 
-    // Bind the watchdog loop sleep time from input controller frequency
-    if(ping_frequency > 0)
-      watchDogCycleTime_ = 1 / ping_frequency;
-
     // Bind TREX environment variables
     setenv("TREX_PATH", path.c_str(), 1);
     setenv("TREX_START_DIR", start_dir.c_str(), 1);
     setenv("TREX_LOG_DIR", log_dir.c_str(), 1);
-
 
     // When not running in playback mode, we enable generation of a log file
     if (!playback_) {
@@ -158,7 +149,7 @@ namespace TREX {
     if (playback_) {
       // Run the agent off of a clock that reads from the log file "clock.log"
       agent_clock_ = new TREX::PlaybackClock(true);
-    } else if (hyper_) {
+    } else if (hyper_ || enable_event_log) {
       // Run the agent off of a clock that runs as fast as possible
       agent_clock_ = new TREX::PseudoClock(0, 50, true);
     } else {
@@ -168,10 +159,7 @@ namespace TREX {
     }
 
     // Allocate the agent
-    TREX::Agent::initialize(*input_xml_root_, *agent_clock_, time_limit);
-
-    // Set up  watchdog thread message generation
-    new boost::thread(boost::bind(&Executive::watchDogLoop, this));
+    TREX::Agent::initialize(*input_xml_root_, *agent_clock_, time_limit, enable_event_log);
 
     ROS_INFO("Executive created.\n");
   }
@@ -191,7 +179,7 @@ namespace TREX {
     ROS_INFO("Cleaning up log...\n");
     TREX::Agent::cleanupLog();
     ROS_INFO("Resetting agent...\n");
-    TREX::Agent::reset(); //FIXME: This does not work.
+    TREX::Agent::reset();
     ROS_INFO("Destructing Executive...\n");
 
 
@@ -250,15 +238,11 @@ namespace TREX {
     s_id = ExecutiveId::noId();
   }
 
-  void Executive::watchDogLoop(){
-    ros::NodeHandle node_handle;
-    ros::Publisher pub = node_handle.advertise<std_msgs::Empty>("trex/ping", 1);
-
-    std_msgs::Empty pingMsg;
-    while(!Agent::terminated()){
-      pub.publish(pingMsg);
-      usleep((unsigned int) rint(watchDogCycleTime_ * 1e6));
-    }
+  /**
+   * @brief Causes the agent to dump all it's deliberative reactor assemblies to disk.
+   */
+  void Executive::dumpAssemblies() {
+    TREX::Agent::instance()->dumpAssemblies();
   }
 
 

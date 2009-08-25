@@ -239,14 +239,8 @@ namespace TREX{
       ConstraintEngineId constraintEngine = ((ConstraintEngine*) assembly.getComponent("ConstraintEngine"))->getId();
 
       // Constraint Registration
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::CalcOrConstraint, "calc_or", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::SubsetOfConstraint, "in", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::CalcDistanceConstraint, "calcDistance", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::FloorFunction, "calcFloor", "Default");
-      
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::NearestLocation, "nearestReachableLocation", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::RandomSelection, "randomSelect", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::AllBoundsSetConstraint, "all_bounds_set", "Default");
 
       // Eq Constr

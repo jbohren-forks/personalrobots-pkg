@@ -2,6 +2,7 @@
 #define H_ROSStateAdapter
 
 #include "trex_ros/ros_adapter.h"
+#include "ros/ros.h"
 #include "Domains.hh"
 
 namespace TREX {
@@ -15,7 +16,10 @@ namespace TREX {
     virtual ~ROSStateAdapter(){}
 
   protected:
-    virtual void handleCallback(){
+    virtual void handleCallback(const boost::shared_ptr<const S> msg){
+      stateMsgLock.lock();
+      stateMsg = *msg;
+      stateMsgLock.unlock();
       ROSAdapter::handleCallback();
     }
 
@@ -28,11 +32,13 @@ namespace TREX {
     virtual void fillObservationParameters(ObservationByValue* obs) = 0;
 
     S stateMsg; /*!< The ros message on which we get observation updates */
-
+    boost::mutex stateMsgLock;
   private:
+    ros::NodeHandle _node;
+    ros::Subscriber _state_sub;
     void registerSubscribers() {
       TREX_INFO("ros:debug", nameString() << "Registering subscriber for " << timelineName << " on topic " << stateTopic);
-      ros::Node::instance()->subscribe(stateTopic, stateMsg, &TREX::ROSStateAdapter<S>::handleCallback, this, QUEUE_MAX());
+      _state_sub = _node.subscribe<S>(stateTopic, QUEUE_MAX(), boost::bind(&TREX::ROSStateAdapter<S>::handleCallback, this, _1));
     }
 
     const std::string predicate;

@@ -19,6 +19,19 @@ using namespace TREX;
 
 namespace trex_pr2 {
 
+  // Allocate this such that when it is deallocated it will clean up the map
+  TopologicalMapAdapter::Manager s_mapManager;
+
+  TopologicalMapAdapter::Manager::~Manager(){
+    TopologicalMapAdapter::cleanup();
+  }
+
+  void TopologicalMapAdapter::cleanup(){
+    TopologicalMapAdapter* m = TopologicalMapAdapter::instance();
+    if(m != NULL)
+      delete m;
+  }
+
   TopologicalGoalManager::TopologicalGoalManager(const TiXmlElement& configData) : GoalManager(configData){}
 
   double TopologicalGoalManager::computeDistance(const Position& p1, const Position& p2){
@@ -126,13 +139,7 @@ namespace trex_pr2 {
     std::string fileNameStr = TREX::findFile(fileName.toString());
     std::string doorOverridesStr = fileNameStr+".door_overrides.xml";
     std::string outletOverrideStr = fileNameStr+".outlet_overrides.xml";
-    std::ifstream is(fileNameStr.c_str());
-    ROS_INFO("Loading the topological map from file");
-    _map = new TopologicalMapAdapter(is, doorOverridesStr, outletOverrideStr);
-  }
-
-  MapInitializeFromFileConstraint::~MapInitializeFromFileConstraint(){
-    delete _map;
+    _map = TopologicalMapAdapter::createInstance(fileNameStr, doorOverridesStr, outletOverrideStr);
   }
 
   //*******************************************************************************************
@@ -397,10 +404,8 @@ namespace trex_pr2 {
     :Constraint(name, propagatorName, constraintEngine, variables),
      _region(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))),
      _x1(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
-     _y1(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
-     _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
-     _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))){
-    checkError(variables.size() == 5, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+     _y1(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))){
+    checkError(variables.size() == 3, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
     checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
@@ -410,12 +415,12 @@ namespace trex_pr2 {
   void MapGetDoorwayFromPointsConstraint::handleExecute(){
     // Wait till inputs are bound. This is a common pattern for functions and could be mapped into a base class with an input and output
     // list
-    if(!_x1.isSingleton() || !_y1.isSingleton() || !_x2.isSingleton() || !_y2.isSingleton())
+    if(!_x1.isSingleton() || !_y1.isSingleton())
       return;
 
     debugMsg("map:get_doorway_from_points",  "BEFORE: "  << TREX::timeString() << toString());
 
-    unsigned int region_id = TopologicalMapAdapter::instance()->getNearestDoorway(_x2.getSingletonValue(), _y2.getSingletonValue());
+    unsigned int region_id = TopologicalMapAdapter::instance()->getNearestDoorway(_x1.getSingletonValue(), _y1.getSingletonValue());
 
     // If it is not a doorway, then set to zero
     getCurrentDomain(getScope()[0]).set(region_id);
@@ -670,6 +675,20 @@ namespace trex_pr2 {
    ************************************************************************/
 
   TopologicalMapAdapter* TopologicalMapAdapter::_singleton = NULL;
+  std::string TopologicalMapAdapter::_fileNameStr("");
+
+  TopologicalMapAdapter* TopologicalMapAdapter::createInstance(const std::string& fileNameStr, 
+							       const std::string& doorOverridesStr,
+							       const std::string& outletOverrideStr){
+    if(_singleton == NULL || _fileNameStr != fileNameStr){
+      std::ifstream is(fileNameStr.c_str());
+      ROS_INFO("Loading the topological map from file");
+      _singleton = new TopologicalMapAdapter(is, doorOverridesStr, outletOverrideStr);
+      _fileNameStr = fileNameStr;
+    }
+
+    return _singleton;
+  }
 
   TopologicalMapAdapter* TopologicalMapAdapter::instance(){
     return _singleton;
@@ -687,7 +706,7 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
     _map->readDoorApproachOverrides(door_overrides);
     _map->readOutletApproachOverrides(outlet_overrides);
 
-    debugMsg("map:initialization", toPPM());
+    debugMsg("debug", toPPM());
   }
 
   std::string TopologicalMapAdapter::toPPM(){

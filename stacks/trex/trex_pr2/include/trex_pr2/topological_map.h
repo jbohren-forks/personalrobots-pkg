@@ -62,8 +62,6 @@ namespace trex_pr2 {
     
     virtual void handleExecute(){}
 
-    virtual ~MapInitializeFromFileConstraint();
-
   private:
 
     TopologicalMapAdapter* _map;
@@ -221,8 +219,6 @@ namespace trex_pr2 {
     IntervalIntDomain& _region;
     IntervalDomain& _x1;
     IntervalDomain& _y1;
-    IntervalDomain& _x2;
-    IntervalDomain& _y2;
   };
 
 
@@ -394,10 +390,29 @@ namespace trex_pr2 {
   public:
 
     /**
+     * @brief A simple utility class used to cleanup after execution (on destruction)
+     */
+    class Manager {
+    public:
+      Manager(){}
+      ~Manager();
+    };
+
+    /**
+     * @brief Singleton call to create an instance of a map. If already allocated, it will return
+     * the currently available instance.
+     */
+    static TopologicalMapAdapter* createInstance(const std::string& fileNameStr, 
+						 const std::string& doorOverridesStr,
+						 const std::string& outletOverrideStr);
+
+    /**
      * @brief Singleton accessor
      * @return NULL if no instance created yet.
      */
     static TopologicalMapAdapter* instance();
+
+    static void cleanup();
 
     /**
      * @brief Constructor reading in from a serialized file of a prior map
@@ -540,6 +555,7 @@ namespace trex_pr2 {
 
   private:
     static TopologicalMapAdapter* _singleton;
+    static std::string _fileNameStr;
 
     // Helper method to visualize the graph as a post script file
     void toPostScriptFile();

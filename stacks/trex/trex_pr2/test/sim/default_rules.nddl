@@ -1,14 +1,14 @@
 /**
  * For now, assume a fixed duration, and always return success.
  */
-DoorManipulationBehavior::Active{
+DoorAction::Active{
   meets(Inactive s);
   eq(s.status, SUCCESS);
   defaultOnCommit(duration, 1);
 }
 
 // Set the farme id to be odom_bombined for testing purposes
-DoorManipulationBehavior::Inactive{
+DoorAction::Inactive{
   frame_id == "odom_combined";
 }
 
@@ -22,9 +22,13 @@ MoveBase::Active{
   meets(Inactive s);
   eq(s.status, SUCCESS);
   defaultOnCommit(duration, 1);
-  meets(base_state.Holds bs);
   eq_pose_msg(s.object, object);
-  eq_pose_msg(bs.object, object);
+
+  // Only update the base state if we are working in the map frame
+  if(object == move_base){
+    meets(base_state.Holds bs);
+    eq_pose_msg(bs.object, object);
+  }
 }
 
 StopAction::Active{

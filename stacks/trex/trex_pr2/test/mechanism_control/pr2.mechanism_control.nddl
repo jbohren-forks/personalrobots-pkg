@@ -18,4 +18,4 @@ right_arm_first before right_arm_second;
 right_arm_second before tilt_scanner_active;
 
 // Force tilt scanner inactive
-eq(tilt_scanner_active.duration, 30);
+tilt_scanner_active.duration = 30;

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# This script is used to set parameters for the executive assuming a common structure which is based on the usage of
+# the file system hierarchy as a search path, bottom up to resolve file names.
 import roslib; roslib.load_manifest('trex_ros')
 import rospy
 
@@ -31,9 +33,9 @@ if(len(argv) < 2):
   print("usage: launch [start_dir] launch_file [roslaunch args]")
   exit(-1)
 
-# Process arguments
+# Process arguments. We allow for the default case where there are
 if len(argv) == 3:
-  start_dir = argv[1]
+  start_dir = argv[1].rstrip("/")
   launch_base = os.path.splitext(argv[2])[0] + ".launch"
   roslaunch_args = argv[3:]
 else:
@@ -41,11 +43,11 @@ else:
   launch_base = os.path.splitext(argv[1])[0] + ".launch"
   roslaunch_args = argv[2:]
 
-# Generate target start path
+# Generate target start path, by appending the start_dir to the current dir
 cwd = os.getcwd()
 start_dir = os.path.join(cwd,start_dir)
 
-# Traverse up the inheritance directory strcuture until the launchfile
+# Traverse up the inheritance directory structure until the launchfile
 # "basename.launch" is found.
 launch_dir = start_dir
 

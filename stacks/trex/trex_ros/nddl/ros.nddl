@@ -10,14 +10,18 @@ typedef int [-1, 1] TIME_ERROR_BOUND;
  */
 
 /**
- * Specialize to mark all ROS State Variables
+ * Specialize to mark all ROS State Variables. Note that it can be internal or external, since we may choose
+ * to simulate it with NDDL.
  */
 class ROSStateVariable extends AgentTimeline {
 
   predicate Holds{}
 
-  ROSStateVariable(Mode _mode){
-    super(_mode, "Holds");
+  ROSStateVariable(Mode _mode){ super(_mode, "Holds"); }
+  ROSStateVariable(Mode _mode, string _default_value, bool _persistent){ super(_mode, _default_value, _persistent); }
+
+  ROSStateVariable(Mode _mode, string _pred){
+    super(_mode, _pred);
   }
 
   ROSStateVariable(Mode _mode, string _pred){
@@ -40,10 +44,11 @@ class StateMachine extends AgentTimeline {
     // Be default will be UNDEFINED
     defaultOnCommit(status, UNDEFINED);
     // Should always be integrated in the mission profile
-    temporalDistance(start, [1, +inf], missionEnd);
+    temporalDistance(start, [1, +inf], MISSION_END);
   }
   
   StateMachine(){ super(Internal, "Inactive"); }
+  StateMachine(Mode _mode, string _default_value, bool _persistent){ super(Internal, "Inactive", _persistent); }
 };
 
 /**
@@ -52,12 +57,6 @@ class StateMachine extends AgentTimeline {
  */
 class ROSAction extends Behavior {
 
-  predicate Active{
-    int max_duration; // In seconds
-  }
-
-  predicate Inactive {}
-
   ROSAction(Mode _mode){
     super(_mode);
   }
@@ -65,8 +64,8 @@ class ROSAction extends Behavior {
 
 ROSAction::Active{
   int time_since_dispatch;
-  addEq(dispatch_time, time_since_dispatch, start);
-  leq(time_since_dispatch, 100); // Magic number to break the plan if 100 ticks passes between dispatch and starting
+  dispatch_time + time_since_dispatch == start;
+  time_since_dispatch <= 100; // Magic number to break the plan if 100 ticks passes between dispatch and starting
 }
 
 /**
@@ -75,7 +74,14 @@ ROSAction::Active{
 class BooleanTimeline extends AgentTimeline {
   predicate True{}
   predicate False{};
+
+  /**
+   * Persistent by default
+   */
   BooleanTimeline(Mode _mode, string _default_value){
-    super(_mode, _default_value);
+    super(_mode, _default_value, true);
+  }
+  BooleanTimeline(Mode _mode, string _default_value, bool _persistent){
+    super(_mode, _default_value, _persistent);
   }
 };

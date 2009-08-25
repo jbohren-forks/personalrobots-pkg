@@ -64,16 +64,11 @@ namespace trex_ros {
     }
 
     ~StopAction(){
-
-      for(std::set<std::string>::const_iterator it = _active_topics.begin(); it != _active_topics.end(); ++it){
-	const std::string& topic = *it;
-
-	ROS_DEBUG("Unadvertizing %s\n", topic.c_str());
-	ros::Node::instance()->unadvertise(topic);
-      }
     }
 
   protected:
+    ros::NodeHandle _node;
+    std::vector<std::pair<std::string, ros::Publisher> > _preempt_pubs;
 
     virtual robot_actions::ResultStatus execute(const std_msgs::String& goal, std_msgs::Empty& feedback){
 
@@ -97,7 +92,11 @@ namespace trex_ros {
 	}
 
 	ROS_DEBUG("Dispatching premption command on topic %s\n", preempt_topic.c_str());
-	ros::Node::instance()->publish(preempt_topic, std_msgs::Empty());
+	for (unsigned int i = 0; i < _preempt_pubs.size(); i++) {
+	  if(_preempt_pubs[i].first == preempt_topic) {
+	    _preempt_pubs[i].second.publish(std_msgs::Empty());
+	  }
+	}
 	SLEEP_DURATION.sleep();
       }
 
@@ -106,12 +105,13 @@ namespace trex_ros {
 
     void advertiseIfNeeded(const std::string& topic){
       if(_active_topics.find(topic) == _active_topics.end()){
-	ros::Node::instance()->advertise<std_msgs::Empty>(topic, 1);;
+	ros::Publisher pub = _node.advertise<std_msgs::Empty>(topic, 1);
+	_preempt_pubs.push_back(std::pair<std::string, ros::Publisher>(std::string(topic), pub));
 	_active_topics.insert(topic);
 	const ros::Time START_TIME = ros::Time::now();
 	ros::Duration SLEEP_DURATION(0.010);
 	const ros::Duration DURATION_BOUND(10.0);
-	while(ros::Node::instance()->numSubscribers(topic) < 1){
+	while(pub.getNumSubscribers() < 1){
 	  ros::Duration elapsed_time = ros::Time::now() - START_TIME;
 
 	  if(elapsed_time > DURATION_BOUND){
@@ -129,8 +129,7 @@ namespace trex_ros {
 }
 
 int main(int argc, char** argv){ 
-  ros::init(argc, argv);
-  ros::Node node("trex_ros/actions");
+  ros::init(argc, argv, "trex_ros/actions");
 
   // Allocate an action runner with an update rate of 10 Hz
   trex_ros::StopAction stop_action;
@@ -139,7 +138,7 @@ int main(int argc, char** argv){
 
   // Miscellaneous
   runner.run();
-  node.spin();
+  ros::spin();
   return 0;
 }
 

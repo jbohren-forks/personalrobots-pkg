@@ -109,23 +109,30 @@ fact(recharge_controller.Inactive);
  ***********************************************************************************/
 RechargeController::Positioning{
   contained_by(recharger.Active rc);
-  contains_start(move_base.Active cmd);
-  ends cmd;
-  cmd.status == SUCCESS;
-  cmd.max_duration <= MOVE_BASE_DURATION_BOUND;
-  // Bind pose based on approach pose for the outlet
-  map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc.outlet_id);
-  cmd.frame_id == rc.frame_id;
-  meets(FindingOutlet);
+  if(isTimedOut(rc.object)){
+    duration == 1;
+    meets(Inactive s);
+    s.status == PREEMPTED;
+  }
+  else {
+    contains(move_base.Active cmd);
+    ends cmd;
+    isSucceded(cmd.object) == true;
+    cmd.max_duration <= MOVE_BASE_DURATION_BOUND;
+    // Bind pose based on approach pose for the outlet
+    map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc.outlet_id);
+    cmd.frame_id == rc.frame_id;
+    meets(FindingOutlet);
+  }
 }
 
 RechargeController::FindingOutlet{
   contained_by(recharger.Active);
-  contains_start(detect_outlet_coarse.Active cmd);
+  contains(detect_outlet_coarse.Active cmd);
   ends cmd;
   cmd.max_duration <= DETECT_OUTLET_COARSE_DURATION_BOUND;
 
-  if(cmd.status == SUCCESS){
+  if(isSucceded(cmd.object)){
     meets(Approaching);
   }
   else{
@@ -135,7 +142,7 @@ RechargeController::FindingOutlet{
 
 RechargeController::Approaching{
   contained_by(recharger.Active);
-  contains_start(move_base_local.Active cmd);
+  contains(move_base_local.Active cmd);
   ends cmd;
   cmd.max_duration <= MOVE_BASE_LOCAL_DURATION_BOUND;
 
@@ -146,7 +153,7 @@ RechargeController::Approaching{
   plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.6, 
 			cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
 
-  if(cmd.status == SUCCESS){
+  if(isSucceded(cmd.object)){
     meets(LocalizingOutlet);
   }
   else{
@@ -156,11 +163,11 @@ RechargeController::Approaching{
 
 RechargeController::LocalizingOutlet{
   contained_by(recharger.Active);
-  contains_start(detect_outlet_fine.Active cmd);
+  contains(detect_outlet_fine.Active cmd);
   ends cmd;
   cmd.max_duration <= DETECT_OUTLET_FINE_DURATION_BOUND;
 
-  if(cmd.status == SUCCESS){
+  if(isSucceded(cmd.object)){
     meets(FindingPlug);
   }
   else{
@@ -170,11 +177,11 @@ RechargeController::LocalizingOutlet{
 
 RechargeController::FindingPlug{
   contained_by(recharger.Active);
-  contains_start(detect_plug_on_base.Active cmd);
+  contains(detect_plug_on_base.Active cmd);
   ends cmd;
   cmd.max_duration <= DETECT_PLUG_ON_BASE_DURATION_BOUND;
 
-  if(cmd.status == SUCCESS){
+  if(isSucceded(cmd.object)){
     meets(GraspingPlug);
   }
   else{
@@ -184,11 +191,11 @@ RechargeController::FindingPlug{
 
 RechargeController::GraspingPlug{
   contained_by(recharger.Active);
-  contains_start(move_and_grasp_plug.Active cmd);
+  contains(move_and_grasp_plug.Active cmd);
   ends cmd;
   cmd.max_duration <= MOVE_AND_GRASP_PLUG_DURATION_BOUND;
 
-  if(cmd.status == SUCCESS){
+  if(isSucceded(cmd.object)){
     meets(LocalizingPlugInGripper);
   }
   else{
@@ -198,11 +205,11 @@ RechargeController::GraspingPlug{
 
 RechargeController::LocalizingPlugInGripper{
   contained_by(recharger.Active);
-  contains_start(localize_plug_in_gripper.Active cmd);
+  contains(localize_plug_in_gripper.Active cmd);
   ends cmd;
   cmd.max_duration <= LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND;
 
-  if(cmd.status == SUCCESS){
+  if(isSucceded(cmd.object)){
     meets(PluggingIn);
   }
   else{
@@ -221,8 +228,7 @@ RechargeController::PluggingIn{
   cmd.max_duration <= PLUG_IN_DURATION_BOUND;
   cmd.outlet_id == rc.outlet_id;
 
-  if(cmd.status == SUCCESS){
-    // @see Inactive rule for how the start time gets bound
+  if(isSucceded(cmd.object)){
     meets(Inactive s);
     s.status == SUCCESS;
   }
@@ -235,7 +241,7 @@ RechargeController::Inactive{
   starts(plug_stowed.True);
   // Update the recharger with feedback
   starts(recharger.Inactive rc);
-  eq(rc.status, status);
+  rc.status == status;
 }
 
 /***********************************************************************************/
@@ -243,7 +249,7 @@ RechargeController::Inactive{
 // The plug gets stowed by the plug_stow action
 PlugStowed::True{
   met_by(stow_plug.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
 }
 // Use prior plug state
 StowPlug::Active{
@@ -275,12 +281,12 @@ MoveAndGraspPlug::Inactive{
 // Unplug to become unplugged!
 PluggedIn::False{
   met_by(unplug.Active cmd);
-  cmd.status == SUCCESS;
   cmd.max_duration <= UNPLUG_DURATION_BOUND;
+  isSucceded(cmd.object) == true;
 }
 // If plug_in succeeds, it will transition internal state
 PlugIn::Active{
-  if(status == SUCCESS){
+  if(isSucceded(this.object)){
     meets(plugged_in.True);
   }
 }
@@ -288,6 +294,7 @@ PlugIn::Active{
 ArmsClear::True{
   met_by(plugs_untuck_arms.Active cmd);
   cmd.max_duration <= PLUGS_UNTUCK_ARMS_DURATION_BOUND;
+  isSucceded(cmd.object) == true;
 }
 // The arms are not clear if they are tucked
 ArmsTucked::True{

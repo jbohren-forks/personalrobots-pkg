@@ -33,7 +33,7 @@ namespace TREX {
      * @brief Handle state update message from the controller. This will fill the _state_msg parameters and
      * also handle the interpretation of the control flags to trigger state updates
      */
-    virtual void handleCallback(){
+    virtual void handleCallback(const boost::shared_ptr<const State> state){
       // Parent callback will handle initialization
       ROSAdapter::handleCallback();
 
@@ -42,12 +42,12 @@ namespace TREX {
       if(lastUpdated == getCurrentTick())
 	return;
 
-      bool nowActive = (_state_msg.status.value == _state_msg.status.ACTIVE);
+      bool nowActive = (state->status.value == state->status.ACTIVE);
 
       if(nowActive != is_active) {
 	// Copy observation
-	_observation.lock();
-	_observation =_state_msg;
+	_observationLock.lock();
+	_observation = *state;
 
 	// Update marker to prevent overwrite
 	lastUpdated = getCurrentTick();
@@ -55,7 +55,7 @@ namespace TREX {
 	TREX_INFO("ros:debug:synchronization", nameString() << "Received transition to " << LabelStr(getResultStatus(_observation).getSingletonValue()).toString());
 	ROS_DEBUG("%sReceived transition to %s",  nameString().c_str(), LabelStr(getResultStatus(_observation).getSingletonValue()).c_str());
 
-	_observation.unlock();
+	_observationLock.unlock();
       }
     }
 
@@ -63,14 +63,12 @@ namespace TREX {
       ROS_INFO("%sRegistering subscriber for %s on topic: %s", 
 		nameString().c_str(), timelineName.c_str(), _feedback_topic.c_str());
 
-      ros::Node::instance()->subscribe(_feedback_topic, _state_msg, &TREX::ROSActionAdapter<Goal, State, Feedback>::handleCallback, this, QUEUE_MAX());
+      _feedback_sub = _node.subscribe<State>(_feedback_topic, QUEUE_MAX(), boost::bind(&TREX::ROSActionAdapter<Goal, State, Feedback>::handleCallback, this, _1));
     }
 
     void unregisterSubscribers() {
       ROS_INFO("%sUn-Registering subscriber for %s on topic: %s", 
 		nameString().c_str(), timelineName.c_str(), _feedback_topic.c_str());
-
-      ros::Node::instance()->unsubscribe(_feedback_topic);
     }
 
     void registerPublishers(){
@@ -79,13 +77,13 @@ namespace TREX {
       ROS_INFO("%sRegistering publisher for %s on topic: %s", 
 	       nameString().c_str(), timelineName.c_str(), _request_topic.c_str());
 
-      ros::Node::instance()->advertise<Goal>(_request_topic, QUEUE_MAX());
+      _goal_pub = _node.advertise<Goal>(_request_topic, QUEUE_MAX());
 
       // Preemption dispatch setup
       ROS_INFO("%sRegistering publisher for %s on topic: %s", 
 	       nameString().c_str(), timelineName.c_str(), _preempt_topic.c_str());
 
-      ros::Node::instance()->advertise<std_msgs::Empty>(_preempt_topic, QUEUE_MAX());
+      _preempt_pub = _node.advertise<std_msgs::Empty>(_preempt_topic, QUEUE_MAX());
     }
 
     void unregisterPublishers(){
@@ -94,13 +92,9 @@ namespace TREX {
       ROS_INFO("%sUn-Registering publisher for %s on topic: %s", 
 	       nameString().c_str(), timelineName.c_str(), _request_topic.c_str());
 
-      ros::Node::instance()->unadvertise(_request_topic);
-
       // Preemption dispatch setup
       ROS_INFO("%sUn-Registering publisher for %s on topic: %s", 
 	       nameString().c_str(), timelineName.c_str(), _preempt_topic.c_str());
-
-      ros::Node::instance()->unadvertise(_preempt_topic);
     }
 
     Observation* getObservation(){
@@ -120,7 +114,7 @@ namespace TREX {
 
       ObservationByValue* obs = NULL;
 
-      _observation.lock();
+      //_observation.lock();
 
       if(_observation.status.value != _observation.status.ACTIVE && (is_active || (getCurrentTick() == 0))){
 	TREX_INFO("ros:debug:synchronization", nameString() << "Transitioning INACTIVE with status=" << 
@@ -151,7 +145,7 @@ namespace TREX {
 
       TREX_INFO("ros:debug:synchronization", nameString() << "Observation retrieved.");
 
-      _observation.unlock();
+      //_observation.unlock();
 
       lastPublished = lastUpdated;
 
@@ -207,7 +201,7 @@ namespace TREX {
 	Goal goal_msg;
 	fillDispatchParameters(goal_msg, goal);
 	setDurationBound(goal);
-	ros::Node::instance()->publish(_request_topic, goal_msg);
+	_goal_pub.publish(goal_msg);
       }
       else {
 	preempt();
@@ -255,11 +249,10 @@ namespace TREX {
     void preempt(){
       TREX_INFO("ros:debug:dispatching",  "Sending preemption message.");
       std_msgs::Empty recall_msg;
-      ros::Node::instance()->publish(_preempt_topic, recall_msg);
+      _preempt_pub.publish(recall_msg);
     }
-
-    State _state_msg; /*!< This message is used for the feedback callback handler */
     State _observation; /*!< This message is where we copy the state update on a transition */
+    boost::mutex _observationLock;
     const LabelStr inactivePredicate;
     const LabelStr activePredicate;
     bool is_active;
@@ -271,6 +264,9 @@ namespace TREX {
     ros::Time _start_time; /*!< Start time of the action */
     ros::Duration _max_duration; /*!< Maximum duration an action can be active. If elapsed time exceeds this then it will be preempted until it
 				   becomes inactive */
+    ros::NodeHandle _node;
+    ros::Subscriber _feedback_sub;
+    ros::Publisher _goal_pub, _preempt_pub;
   };
 }
 #endif

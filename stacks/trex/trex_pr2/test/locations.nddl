@@ -34,3 +34,5 @@ MAP_KEY outlet_in_meeting_room = 38;
 
 MAP_KEY outlet_in_stus_office = 39;
 MAP_KEY outlet_in_room_next_to_printer = 40;
+
+map_initialize_from_file("willow.tmap");

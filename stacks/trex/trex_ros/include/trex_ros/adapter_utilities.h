@@ -9,7 +9,6 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point32.h>
 #include <std_msgs/String.h>
-//#include <pr2_robot_actions/ServoToOutlet.h> //Not used?
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 

@@ -28,7 +28,7 @@ namespace TREX{
     /**
      * Creates and instance of the singleton and adds a reference.
      */
-    static ExecutiveId request(bool playback = false, bool hyper = false);
+    static ExecutiveId request(bool playback = false, bool hyper = false, bool enable_event_log = false);
 
     /**
      * Releases a reference to the singleton.
@@ -40,7 +40,7 @@ namespace TREX{
      */
     static bool isExecutiveActive();
 
-    Executive(bool playback, bool hyper);
+    Executive(bool playback, bool hyper, bool enable_event_log);
 
     ~Executive();
 
@@ -48,22 +48,6 @@ namespace TREX{
      * @brief Main execution leak
      */
     void run();
-    /*
-    template<class T>
-    void registerPublisher(const std::string &topic, size_t max_queue){
-      ros::Node::instance()->advertise<T>(topic, max_queue);
-    }
-
-    template<class M, class T>
-    void registerSubscriber(const std::string &_topic, M &_msg, void (T::*fp)(), T* obj, int max_queue){
-      ros::Node::instance()->subscribe(_topic, _msg, fp, obj, max_queue);
-    }
-
-    template<class M>
-    void publishMsg(const std::string &_topic, M &msg){
-      ros::Node::instance()->publish(_topic, msg);
-    }
-    */
 
     /**
      * @brief Initializes interactive mode.
@@ -79,6 +63,11 @@ namespace TREX{
      * @brief Allow a reset of the current instance - deallocate it.
      */
     void reset();
+
+    /**
+     * @brief Causes the agent to dump all it's deliberative reactor assemblies to disk.
+     */
+    void dumpAssemblies();
 
   private:
 

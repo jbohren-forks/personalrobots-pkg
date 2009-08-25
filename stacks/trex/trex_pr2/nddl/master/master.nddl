@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2009, Willow Garage, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,11 @@
 // Priority for goals
 typedef int [0 5] PRIORITY;
 
-class M2Goals extends AgentTimeline {
+// Set a global duration bound for top level goal
+int GLOBAL_DURATION_BOUND = 6000;
+
+class M2Goals extends Behavior {
   predicate Active{
-    ResultStatus status;
     MAP_KEY outlet_id;
     string frame_id;
     float time_stamp;
@@ -54,13 +56,7 @@ class M2Goals extends AgentTimeline {
     map_get_outlet_approach_pose(x, y, z, qx, qy, qz, qw, outlet_id);
   }
 
-  predicate Inactive{
-    ResultStatus status;
-  }
-
-  M2Goals(){
-    super(Internal, "Inactive", false);
-  }
+  M2Goals(){ super(Internal); }
 };
 
 // Internal Timelines
@@ -73,33 +69,46 @@ BaseState base_state = new BaseState(External);
 
 M2Goals::Active{
  default(frame_id, "map");
- meets(Inactive s); // Successor state
+
+ max_duration <= GLOBAL_DURATION_BOUND;
 
  // Must get to the target location
  contains(navigator.Active cmd_nav);
  eq_pose_msg(cmd_nav.object, object);
  cmd_nav.frame_id == frame_id;
- cmd_nav.status == SUCCESS;
 
  // Now have to conditionally handle the case of recharging since we might not need to do it. If not recharging,
  // then this goal will be terminated on the transition to the desired inactive navigation state. Otherwise it will
  // end when recharging is done.
  if(outlet_id == NO_KEY){
-   concurrent(end, cmd_nav.end);
-   s.status == SUCCESS;
+   ends cmd_nav;
  }
  else {
-   ends(recharger.Active cmd_recharge);
-   cmd_nav before cmd_recharge;
-   s.status == cmd_recharge.status;
-   cmd_recharge.outlet_id == outlet_id;
-   cmd_recharge.frame_id == frame_id;
+   if(isSucceded(cmd_nav.object)){
+     ends(recharger.Active cmd_recharge);
+     cmd_recharge.outlet_id == outlet_id;
+     cmd_recharge.frame_id == frame_id;
+     cmd_nav before cmd_recharge;
+   }
  }
 }
 
+// If navigation fails, transition goal timeline with status
+Navigator::Inactive{
+  if(status != SUCCESS){
+    starts_during(m2_goals.Inactive m);
+    m.status == status;
+  }
+}
+
+// Recharger transition always transitions m2 goals
+Recharger::Inactive{
+  starts_during(m2_goals.Inactive m);
+  m.status == status;
+}
+
 /**
- * If a goal does not succeed then we should regenerate it for later. This is were it would be nice to be able
- * to say - if(status != SUCCESS){}
+ * If a goal does not succeed then we should regenerate it for later. 
  */
 M2Goals::Inactive{
   if(status != SUCCESS){

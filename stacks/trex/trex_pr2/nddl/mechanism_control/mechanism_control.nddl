@@ -19,7 +19,7 @@ SwitchControllers::Active{
 
 HeadMechanism::use_head_controller{
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_head_controllers);
   subsetOf(cmd.down_list, all_head_controllers);
   head_controller != cmd.down_list;
@@ -29,7 +29,7 @@ HeadMechanism::use_head_controller{
 
 TiltLaserMechanism::use_laser_tilt_controller{ 
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_laser_tilt_controllers);
   subsetOf(cmd.down_list, all_laser_tilt_controllers);
   laser_tilt_controller != cmd.down_list;
@@ -37,7 +37,7 @@ TiltLaserMechanism::use_laser_tilt_controller{
 
 RightArmMechanism::use_composite_cartesian_trajectory_controller{
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
   r_arm_cartesian_wrench_controller != cmd.down_list;
@@ -46,10 +46,9 @@ RightArmMechanism::use_composite_cartesian_trajectory_controller{
   r_arm_cartesian_trajectory_controller != cmd.down_list;
 }
 
-
 RightArmMechanism::use_constraint_composite_cartesian_trajectory_controller{
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
   r_arm_constraint_cartesian_wrench_controller != cmd.down_list;
@@ -60,7 +59,7 @@ RightArmMechanism::use_constraint_composite_cartesian_trajectory_controller{
 
 RightArmMechanism::use_constraint_composite_cartesian_pose_controller{
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
   r_arm_constraint_cartesian_wrench_controller != cmd.down_list;
@@ -68,10 +67,9 @@ RightArmMechanism::use_constraint_composite_cartesian_pose_controller{
   r_arm_constraint_cartesian_pose_controller != cmd.down_list;
 }
 
-
 RightArmMechanism::use_composite_tff_controller{
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
   r_arm_constraint_cartesian_wrench_controller != cmd.down_list;
@@ -80,7 +78,7 @@ RightArmMechanism::use_composite_tff_controller{
 
 RightArmMechanism::use_joint_trajectory_controller{
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
   r_arm_joint_trajectory_controller != cmd.down_list;
@@ -88,16 +86,15 @@ RightArmMechanism::use_joint_trajectory_controller{
 
 RightArmMechanism::use_cartesian_trajectory_controller{
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
   r_arm_cartesian_trajectory_controller != cmd.down_list;
 }
 
-
 RightArmMechanism::use_hybrid_controller{
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
   r_arm_hybrid_controller != cmd.down_list;
@@ -105,7 +102,7 @@ RightArmMechanism::use_hybrid_controller{
 
 RightGripperMechanism::use_effort_controller{
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_right_gripper_controllers);
   subsetOf(cmd.down_list, all_right_gripper_controllers);
   r_gripper_effort_controller != cmd.down_list;
@@ -113,7 +110,7 @@ RightGripperMechanism::use_effort_controller{
 
 RightGripperMechanism::use_position_controller{
   met_by(switch_controllers.Active cmd);
-  cmd.status == SUCCESS;
+  isSucceded(cmd.object) == true;
   subsetOf(cmd.up_list, all_right_gripper_controllers);
   subsetOf(cmd.down_list, all_right_gripper_controllers);
   r_gripper_position_controller != cmd.down_list;

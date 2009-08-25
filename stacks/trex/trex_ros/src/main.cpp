@@ -94,6 +94,7 @@ Publishes to (name/type):
 #include <signal.h>
 #include <unistd.h>
 #include <signal.h>
+#include <strings.h>
 
 #include "trex_ros/executive.h"
 
@@ -115,6 +116,11 @@ Publishes to (name/type):
 #include <unistd.h>
 
 TREX::ExecutiveId g_executive;
+bool g_request_shutdown = false;
+bool g_signal_wait = true;
+bool g_executive_created = false;
+bool g_valid_event_log = true;
+
 
 namespace trex_ros {
 
@@ -132,9 +138,7 @@ namespace trex_ros {
   }
 
   // Run parameters
-  bool g_playback,
-       g_hyper,
-       g_console;
+  bool g_playback, g_hyper, g_console, g_validate;
   
   // Tick position management
   TREX::TICK consoleStopTick,
@@ -153,22 +157,39 @@ namespace trex_ros {
     std::cout << " + :- Enable pattern e.g. '+Agent'" << std::endl;
     std::cout << " - :- Disable pattern e.g. '-Agent'" << std::endl;
     std::cout << " ! :- Disable all debug messages" << std::endl;
-    std::cout << " PW :- Start PlanWorks output" << std::endl;
-    std::cout << " EPW :- End PlanWorks output" << std::endl;
+    std::cout << " P :- Execute a db dump at the current tick" << std::endl;
+    std::cout << " PS :- Start dumping the db at each tick" << std::endl;
+    std::cout << " PE :- Stop dumping the db at each tick" << std::endl;
     std::cout << " H :- Help" << std::endl;
   }
 
+  std::string cmdLine;
+  bool cmdPresent;
+  
+  void cmdLineThread() {
+    getline(std::cin, cmdLine);
+    cmdPresent = true;
+  }
+  
   
   void printConsolePopup() {
     std::string cmdString, cmdStringRaw;
     bool cmdValid = false;
 
+
     std::cout << "At tick " << currentTick << ", H for help." << std::endl;
-    while (!cmdValid) {
+    while (!cmdValid && !TREX::Agent::terminated()) {
       std::cout << "> ";
-      getline(std::cin, cmdStringRaw);
+      cmdLine = "";
+      cmdPresent = false;
+      boost::thread command_thread = boost::thread(cmdLineThread);
+      while (!cmdPresent && !TREX::Agent::terminated()) {
+	TREX::Clock::sleep(0.01);
+      }
+      cmdStringRaw = cmdLine;
       cmdString = cmdStringRaw;
       std::transform(cmdString.begin(), cmdString.end(), cmdString.begin(), toupper);
+
       const char cmd = cmdString.length() == 0 ? 0 : cmdString.at(0);
       if (!cmd) {
 	cmdValid = false;
@@ -178,9 +199,11 @@ namespace trex_ros {
 	cmdValid = false;
       } else if(cmd == 'Q' || cmd == 'q'){
 	// Quit
-	std::cout << "Goodbye :-)" << std::endl;
 	cmdValid = true;
-	exit(0);
+	g_request_shutdown = true;
+	while(!TREX::Agent::terminated()) {
+	  TREX::Clock::sleep(1);
+	}
       } else if(cmd == 'N' || cmd == 'n'){
 	// Step to the next tick
 	consoleStopTick = currentTick + 1;
@@ -200,11 +223,15 @@ namespace trex_ros {
 	    cmdValid = true;
 	    std::cout << "Doing a rewind." << std::endl;
 
+	    g_executive_created = false;
+	    
 	    // Reset the executive
 	    g_executive->reset();
 
 	    // Re-initialize the executive with the initial arguments
 	    g_executive = TREX::Executive::request(g_playback, g_hyper);
+	    g_executive_created = true;
+	    g_executive->interactiveInit();
 	  } else if (currentTick == consoleStopTick) {
 	    cmdValid = false;
 	    std::cout << "Already at that tick." << std::endl;
@@ -220,12 +247,17 @@ namespace trex_ros {
 	std::ifstream config(TREX::findFile("Debug.cfg").c_str());
 	DebugMessage::readConfigFile(config);
 	cmdValid = false;
-      } else if(cmdString == "PW"){
-	std::cout << "Enable plan works." << std::endl;
-	DebugMessage::enableMatchingMsgs("", "PlanWorks");
-      } else if(cmdString == "EPW"){
-	std::cout << "Disable plan works." << std::endl;
-	DebugMessage::disableMatchingMsgs("", "PlanWorks");
+      } else if(strcasecmp(cmdString.c_str(),"ps") == 0){
+	std::cout << "Enable continuous plan dump." << std::endl;
+	DebugMessage::enableMatchingMsgs("", "ExportReactorState");
+	DebugMessage::enableMatchingMsgs("", "ExportPlan");
+      } else if(strcasecmp(cmdString.c_str(),"pe") == 0){
+	std::cout << "Disable continuous plan dump." << std::endl;
+	DebugMessage::disableMatchingMsgs("", "ExportPlan");
+      } else if(cmd == 'P' || cmd == 'p'){
+	std::cout << "Exporting plan... ";
+	g_executive->dumpAssemblies();
+	std::cout << "Done." << std::endl;
       } else if(cmd == '+'){
 	std::string pattern = cmdStringRaw.substr(1);
 	std::cout << "Enable pattern: " << pattern << std::endl;
@@ -245,6 +277,8 @@ namespace trex_ros {
 	cmdValid = false;
       }
     }
+    if (TREX::Agent::terminated()) 
+      ROS_INFO("Agent is terminated");
   }
 
   /**
@@ -262,6 +296,9 @@ namespace trex_ros {
       }
 
       // Step agent forward
+      if (TREX::Agent::terminated()) {
+	break;
+      }
       if (!g_executive->step()) {
 	// Mission complete
 	std::cout << "Agent has completed its mission." << std::endl;
@@ -271,23 +308,31 @@ namespace trex_ros {
   }
 }
 
-
-
 /**
  * @brief Handle cleanup on exit
  */
 void cleanup(){
+  ROS_INFO("Run clean up");
   if(g_executive.isId()){
+    ROS_INFO("Delete executive in clean up");
     delete (TREX::Executive*) g_executive;
     g_executive = TREX::ExecutiveId::noId();
   }
   exit(0);
 }
 
+TEST(trex, validatEventLog){
+  if(!g_valid_event_log){
+    ROS_ERROR("Invalid event stream. Compare .error and .valid files");
+  }
+
+  ASSERT_EQ(g_valid_event_log, true);
+}
+
 /**
  * Test for validating expected output. This will have to evolve
  */
-TEST(trex, validateOutput){
+TEST(trex, validateAssertions){
   bool success = TREX::TestMonitor::success();
   if(!success){
     ROS_ERROR("\n%s", TREX::TestMonitor::toString().c_str());
@@ -295,8 +340,6 @@ TEST(trex, validateOutput){
 
   ASSERT_EQ(success, true);
 }
-
-bool g_signal_wait = true, g_executive_created = false;
 
 void signalHandler() {
   sigset_t signal_set;
@@ -312,6 +355,12 @@ void signalHandler() {
       ROS_INFO("Recived signal %d", sig);
     }
     
+    if (g_request_shutdown) {
+      sig = SIGTERM;
+      ROS_INFO("Another part of the program requested shutdown.");
+      g_request_shutdown = false;
+    }
+    
     switch(sig) {
     case SIGKILL:
     case SIGTERM:
@@ -321,6 +370,7 @@ void signalHandler() {
 	ROS_INFO("Agent is not created yet - exiting.");
 	ros::shutdown();
 	if(g_executive.isId()){
+	  ROS_INFO("Deleting the executive in sighandler");
 	  delete (TREX::Executive*) g_executive;
 	  g_executive = TREX::ExecutiveId::noId();
 	}
@@ -328,6 +378,7 @@ void signalHandler() {
       } else if (!TREX::Agent::terminated()) {
 	ROS_INFO("Attempting to terminate the agent.");
 	TREX::Agent::terminate();
+	ROS_INFO("Agent terminated.");
       } else {
 	ROS_INFO("We are already exiting - doing nothing with signal");
       }
@@ -339,7 +390,7 @@ void signalHandler() {
       break;
     }
   }
-  ROS_ERROR("Signal handler exited");
+  ROS_INFO("Signal handler exited");
 }
 
 void stopSignalHandlers() {
@@ -352,6 +403,10 @@ void stopSignalHandlers() {
   sigaddset(&sig_set, SIGQUIT);
   sigaddset(&sig_set, SIGINT);
   pthread_sigmask(SIG_BLOCK, &sig_set, NULL);
+}
+
+void spinThread() {
+  ros::spin();
 }
 
 int trexMain(int argc, char **argv)
@@ -369,6 +424,7 @@ int trexMain(int argc, char **argv)
 
 
 
+  boost::thread spin_thread = boost::thread(spinThread);
 
 
   // Display help if requested
@@ -389,6 +445,7 @@ int trexMain(int argc, char **argv)
     std::cout << "--hyper:           Run at 100% CPU for debugging. This enforces no limit on execution steps during each tick, and does not\n";
     std::cout << "                   sleep if there is time left before the next tick.\n";
     std::cout << "--console:         Run in interactive mode. This will have no effect on the number of execution steps during each tick.\n";
+    std::cout << "--gtest:           Apply validation tests on completion.";
     return 0;
   }
 
@@ -398,6 +455,7 @@ int trexMain(int argc, char **argv)
   g_playback = trex_ros::isArg(argc, argv, "--playback");
   g_hyper = trex_ros::isArg(argc, argv, "--hyper");
   g_console = trex_ros::isArg(argc, argv, "--console");
+  g_validate = trex_ros::isArg(argc, argv, "--gtest");
 
   // Hyper and playback make different assumptions about the execution steps in each tick
   if (g_playback && g_hyper) {
@@ -407,7 +465,7 @@ int trexMain(int argc, char **argv)
 
   try{
     // Get executive singleton
-    g_executive = TREX::Executive::request(g_playback, g_hyper);
+    g_executive = TREX::Executive::request(g_playback, g_hyper, g_validate);
 
     g_executive_created = true;
     ROS_INFO("Finished creating executive");
@@ -437,7 +495,11 @@ int trexMain(int argc, char **argv)
     ROS_ERROR("Terminating execution. See logs/latest/TREX.log for clues and see cfg/debug.cfg to enable useful debugging messages to aid in analysis.");
     ROS_ERROR("You can also grep for trex:error and trex:warn in logs/latest directory");
   }
+  else if(g_validate){
+    g_valid_event_log = TREX::validateResults(TREX::Agent::instance()->getName().toString().c_str());
+  }
 
+  ROS_INFO("Deleting the executive");
   delete (TREX::Executive*) g_executive;
   g_executive = TREX::ExecutiveId::noId();
 
@@ -445,11 +507,11 @@ int trexMain(int argc, char **argv)
 
   g_signal_wait = false;
 
-
+  spin_thread.join();
   signal_handler_thread.join();
 
   // Parse command line arguments to see if we must apply test case validation
-  if(trex_ros::isArg(argc, argv, "--gtest")){
+  if(g_validate && success != -1){
     testing::InitGoogleTest(&argc, argv);
     success = RUN_ALL_TESTS();
   }

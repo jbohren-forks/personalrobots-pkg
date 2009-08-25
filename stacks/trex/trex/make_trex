@@ -42,12 +42,6 @@ function run_jam {
 
 
 if [ "$1" = "test" ] ; then
-  cd `rospack find trex`/PLASMA/src/PLASMA
-  jam run-checkin-tests
-  if [ $? -ne 0 ] ; then
-    echo "PLASMA tests failed."
-    exit 1
-  fi
   cd `rospack find trex`/TREX/agent/test
   jam agent-module-tests
   if [ $? -ne 0 ] ; then
