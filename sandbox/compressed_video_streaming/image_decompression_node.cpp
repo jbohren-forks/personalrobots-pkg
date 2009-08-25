@@ -149,7 +149,7 @@ public:
     {
     	if(oggpacket.packetno != 0)
     	{
-    		ROS_DEBUG("Dumping header packet because packet# is non-zero: %d.", oggpacket.packetno);
+    		ROS_DEBUG("Dumping header packet because packet# is non-zero: %d.", (int)oggpacket.packetno);
     		return;
     	}
     	//static th_setup_info* setup_info_ptr = null;

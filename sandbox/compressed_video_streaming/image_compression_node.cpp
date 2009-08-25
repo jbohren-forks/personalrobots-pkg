@@ -57,11 +57,12 @@
 
 #define null 0
 
-//#include <ogg/ogg.h>
-//#include <theora/theora.h>
 #include <theora/codec.h>
 #include <theora/theoraenc.h>
 #include <theora/theoradec.h>
+
+#include <ogg/ogg.h>
+#include <shout/shout.h>
 
 using std::vector;
 
