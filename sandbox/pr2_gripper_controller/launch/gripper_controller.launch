@@ -7,11 +7,11 @@
   <param name="pr2_gripper_controller/proportional_offset" type="double" value = ".08" />
   <param name="pr2_gripper_controller/break_stiction_type" type="string" value = "ramp" />
   <param name="pr2_gripper_controller/timeout" type="double" value = "0.0" />
-  <param name="pr2_gripper_controller/force" type="double" value = "17.0" />
+  <param name="pr2_gripper_controller/force" type="double" value = "17" />
   <param name="pr2_gripper_controller/force_increase" type="double" value = "3.0" />
   
   <!-- Gripper effort controller -->
-  <rosparam file="$(find pr2_default_controllers)/pr2_gripper_controller.yaml" command="load" ns="pr2_gripper_controller" />
+  <rosparam file="$(find experimental_controllers)/launch/pr2_gripper_controller.yaml" command="load" ns="pr2_gripper_controller" />
   <node pkg="mechanism_control" type="spawner.py" args="pr2_gripper_controller" />
   
 </launch>
