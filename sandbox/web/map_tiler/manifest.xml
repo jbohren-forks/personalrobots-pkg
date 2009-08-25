@@ -1,0 +1,19 @@
+<package>
+  <description brief="map_tiler">
+
+     rosweb plugin to serve map tiles as jpeg
+
+  </description>
+  <author>Rob Wheeler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/map_tiler</url>
+  <depend package="rosweb2"/>
+  <depend package="nav_msgs"/>
+  <export>
+    <rosweb2 plugin="map_tiler.handler"/>
+  </export>
+
+</package>
+
+
