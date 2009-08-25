@@ -1,0 +1,302 @@
+#!/usr/bin/env python
+
+# ROS Stuff
+PKG = 'movearm_tools' # this package name
+NAME = 'movearm_gui'
+
+
+import roslib; roslib.load_manifest(PKG)
+import rospy
+from std_msgs.msg import *
+from nav_msgs.msg import *
+from move_arm.msg import MoveArmActionGoal
+from movearm_tools.srv import ArmCtrlCmd
+from motion_planning_msgs.msg import PoseConstraint
+
+import sys
+import csv
+import copy
+import re
+import os
+import StringIO
+
+import gtk
+import pygtk
+import gtk.gdk
+
+control_window = None
+# Graph structures
+graph = None
+
+# Global status
+log_path = ""
+data_path = ""
+tick = 0
+progress = None
+
+##############################################################################
+# MyDotWindow
+#   This window allows the user to browse and interact with the token network.
+##############################################################################
+
+#pub_move_torso = rospy.Publisher('/torso_lift_position_controller/set_command', Float64)
+pub_position_arm = rospy.Publisher('/move_right_arm/goal', MoveArmActionGoal)
+#pub_arm_cmd = rospy.wait_for_service('/arm_cmd_line_server', ArmCtrlCmd)
+pub_gripper_force = rospy.Publisher('/r_gripper_effort_controller/command', Float64)
+
+rospy.wait_for_service('arm_cmd_line_server')
+arm_cmd_svc = rospy.ServiceProxy('arm_cmd_line_server', ArmCtrlCmd)
+
+class MoveArmWindow(gtk.Window):
+	
+  planning_frame = String()
+  allowed_time = Float64()
+	
+
+  def callback(self, widget, selfclone, data):
+    #print data, "was pressed."
+    if(data == "Position Arm"):
+      goal = MoveArmActionGoal();    
+      goal.goal.goal_constraints.pose_constraint = [PoseConstraint()];
+      goal.goal.goal_constraints.pose_constraint[0].type = PoseConstraint.POSITION_X + PoseConstraint.POSITION_Y + PoseConstraint.POSITION_Z + PoseConstraint.ORIENTATION_R + PoseConstraint.ORIENTATION_P + PoseConstraint.ORIENTATION_Y;
+      goal.goal.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
+      goal.goal.goal_constraints.pose_constraint[0].pose.header.stamp = rospy.rostime.get_rostime()
+      goal.goal.goal_constraints.pose_constraint[0].pose.header.frame_id = self.planning_frame
+      goal.goal.goal_constraints.pose_constraint[0].pose.pose.position.x = float(self.bottle_x.get_text());
+      goal.goal.goal_constraints.pose_constraint[0].pose.pose.position.y = float(self.bottle_y.get_text());
+      goal.goal.goal_constraints.pose_constraint[0].pose.pose.position.z = float(self.bottle_z.get_text());
+    
+      goal.goal.goal_constraints.pose_constraint[0].pose.pose.orientation.x = 0;
+      goal.goal.goal_constraints.pose_constraint[0].pose.pose.orientation.y = 0;
+      goal.goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = 0;
+      goal.goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = 1;
+      
+      goal.goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.04;
+      goal.goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.04;
+      goal.goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.04;
+      goal.goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.04;
+      goal.goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.04;
+      goal.goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.04;
+    
+      goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.2;
+      goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.2;
+      goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.2;
+      goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.2;
+      goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.2;
+      goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.2;    
+      
+      goal.goal.goal_constraints.pose_constraint[0].orientation_importance = 0.01;
+
+      pub_position_arm.publish(goal);
+      print "publishing goal to move_arm";
+    elif(data == "Open Gripper"):
+      gripper_goal = Float64();
+      gripper_goal.data = 100.0;
+      pub_gripper_force.publish(gripper_goal)
+      print "opening gripper";
+    elif(data == "Close Gripper"):
+      gripper_goal = Float64();
+      gripper_goal.data = -50.0;
+      pub_gripper_force.publish(gripper_goal)
+      print "closing gripper";
+    elif(data == "use_base"):
+      planning_frame = "/base_link"
+      print "goal is in base_link"
+    elif(data == "use_torso"):
+      planning_frame = "/torso_lift_link"
+      print "goal is in torso_lift_link";
+    elif(data == "do cmd"):
+      cmd = String()
+      allowed_time = Float64()
+      cmd = "move " + self.poseIK_x.get_text() + " " + self.poseIK_y.get_text() + " " + self.poseIK_z.get_text()
+      cmd_time = self.allowed_time
+      print "command: " + cmd
+      arm_cmd_res = arm_cmd_svc(cmd, cmd_time)
+      print "response: " + str(arm_cmd_res)
+    elif(data == "IK deltaX"):
+      cmd = String()
+      allowed_time = Float64()
+      cmd = "move " + str(float(self.bottle_x.get_text()) + float(self.delta_x.get_text())) + " " + self.bottle_y.get_text() + " " + self.bottle_z.get_text()
+      cmd_time = self.allowed_time
+      print "command: " + cmd
+      arm_cmd_res = arm_cmd_svc(cmd, cmd_time)
+      print "response: " + str(arm_cmd_res)
+    elif(data == "plan cmd"):
+      cmd = String()
+      allowed_time = Float64()
+      cmd = " " + self.posePlan_x.get_text() + " " + self.posePlan_y.get_text() + " " + self.posePlan_z.get_text()
+      cmd_time = self.allowed_time
+      print "command: " + cmd
+      arm_cmd_res = arm_cmd_svc(cmd, cmd_time)
+      print "response: " + str(arm_cmd_res)
+    else:
+      print ".. and it don't exist."
+
+    print "--------"
+
+  def __init__(self):
+    super(MoveArmWindow,self).__init__()
+    self.set_title("MoveArm")
+    self.set_position(gtk.WIN_POS_CENTER)
+
+    vbox = gtk.VBox(False, 8)
+
+		# set defaults
+    self.planning_frame = "/torso_lift_link"
+    self.allowed_time = 40
+
+    ################################################
+    frame = gtk.Frame("Arm Command Tool: ")
+    table = gtk.Table(5,10,homogeneous=False)
+    row = 0
+
+    #######################
+    label = gtk.Label("goal frame: ")
+    base_button = gtk.Button("base link")
+    torso_button = gtk.Button("torso lift link")
+    
+    halign = gtk.Alignment(1,0.5,0,0.5)
+    halign.add(label)
+    table.attach(halign, 0,1,row,row+1, gtk.FILL, gtk.FILL,0,0)
+    table.attach(base_button, 1,3,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(torso_button, 3,5,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    base_button.connect("clicked", self.callback, self, "use_base")
+    torso_button.connect("clicked", self.callback, self, "use_torso")
+
+    row = row+1
+    #######################
+    label = gtk.Label("MoveArm Pose Constraint (x,y,z): ")
+    self.bottle_x = gtk.Entry()
+    self.bottle_y = gtk.Entry()
+    self.bottle_z = gtk.Entry()
+
+    self.bottle_x.set_size_request(height=-1,width=55)
+    self.bottle_y.set_size_request(height=-1,width=55)
+    self.bottle_z.set_size_request(height=-1,width=55)
+
+    self.send_bottle_pose = gtk.Button("Go")
+    self.send_bottle_pose.connect("clicked", self.callback, self, "Position Arm")
+
+    halign = gtk.Alignment(1,0.5,0,0.5)
+    halign.add(label)
+
+    table.attach(halign, 0,1,row,row+1, gtk.FILL, gtk.FILL,0,0)
+    table.attach(self.bottle_x, 1,2,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.bottle_y, 2,3,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.bottle_z, 3,4,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.send_bottle_pose, 4,5,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+
+    row = row+1
+    #######################
+				
+    dXlabel = gtk.Label("MoveIK deltaX: ")
+    self.delta_x = gtk.Entry()
+    self.delta_x.set_size_request(height=-1,width=55)
+
+    self.send_deltaX = gtk.Button("Go")
+    self.send_deltaX.connect("clicked", self.callback, self, "IK deltaX")
+
+    halign = gtk.Alignment(1,0.5,0,0.5)
+    halign.add(dXlabel)
+
+    table.attach(halign, 0,1,row,row+1, gtk.FILL, gtk.FILL,0,0)
+    table.attach(self.delta_x, 1,2,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.send_deltaX, 2,3,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+
+    row = row+1
+    #######################
+    do_label = gtk.Label("MoveIK Pose Constraint (x,y,z): ")
+    self.poseIK_x = gtk.Entry()
+    self.poseIK_y = gtk.Entry()
+    self.poseIK_z = gtk.Entry()
+
+    self.poseIK_x.set_size_request(height=-1,width=55)
+    self.poseIK_y.set_size_request(height=-1,width=55)
+    self.poseIK_z.set_size_request(height=-1,width=55)
+
+    self.send_poseIK = gtk.Button("Go")
+    self.send_poseIK.connect("clicked", self.callback, self, "do cmd")
+
+    halign = gtk.Alignment(1,0.5,0,0.5)
+    halign.add(do_label)
+
+    table.attach(halign, 0,1,row,row+1, gtk.FILL, gtk.FILL,0,0)
+    table.attach(self.poseIK_x, 1,2,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.poseIK_y, 2,3,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.poseIK_z, 3,4,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.send_poseIK, 4,5,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+
+    row = row+1
+    #######################
+    do_label = gtk.Label("MovePlan Pose Constraint (x,y,z): ")
+    self.posePlan_x = gtk.Entry()
+    self.posePlan_y = gtk.Entry()
+    self.posePlan_z = gtk.Entry()
+
+    self.posePlan_x.set_size_request(height=-1,width=55)
+    self.posePlan_y.set_size_request(height=-1,width=55)
+    self.posePlan_z.set_size_request(height=-1,width=55)
+
+    self.send_posePlan = gtk.Button("Go")
+    self.send_posePlan.connect("clicked", self.callback, self, "plan cmd")
+
+    halign = gtk.Alignment(1,0.5,0,0.5)
+    halign.add(do_label)
+
+    table.attach(halign, 0,1,row,row+1, gtk.FILL, gtk.FILL,0,0)
+    table.attach(self.posePlan_x, 1,2,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.posePlan_y, 2,3,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.posePlan_z, 3,4,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.send_posePlan, 4,5,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+
+    row = row+1
+    #######################
+    obutton = gtk.Button("Open Gripper")
+    table.attach(obutton, 0,5,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    obutton.connect("clicked", self.callback, self, "Open Gripper")
+    row = row + 1
+    #######################
+    cbutton = gtk.Button("Close Gripper")
+    table.attach(cbutton, 0,5,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    cbutton.connect("clicked", self.callback, self, "Close Gripper")
+
+    row = row + 1
+    #######################
+    padding = gtk.Alignment(1.0,0.5,1,1)
+    padding.set_padding(4,4,4,4)
+    padding.add(table)
+
+    frame.add(padding)
+    vbox.pack_start(frame, False, False, 4)
+		
+    #######################
+
+    #button = gtk.Button("Open Gripper")
+    #table.attach(button, 0,5,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    #button.connect("clicked", self.callback, self, "Open Gripper")
+
+    #row = row+1
+    #######################
+
+    self.add(vbox)
+    self.connect('destroy', gtk.main_quit)
+    self.show_all()
+
+##############################################################################
+# main()
+#   This instantiates all of the GUI windows, and loads the data from command
+#   line arguments.
+##############################################################################
+def main():
+
+  rospy.init_node('movearm_gui', anonymous=True)
+
+
+  # Spawn a control window
+  movearm_window = MoveArmWindow()
+
+  # Run gtk
+  gtk.main()
+
+if __name__ == '__main__':
+  main()
