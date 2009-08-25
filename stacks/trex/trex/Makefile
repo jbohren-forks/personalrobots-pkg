@@ -23,7 +23,7 @@ includes: trex plasma
 	@if [ ! -d include ]; then echo "Try to make" ; fi
 
 # GET plasma
-PLASMA_REVISION=5624
+PLASMA_REVISION=5634
 plasma:
 	@if [ -n "`svn info PLASMA | grep 'http://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch http://europa-pso.googlecode.com/svn/PLASMA/trunk && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; cd `rospack find trex` && ./touch_nddl3.sh ; fi ;
 	@if [ -n "`svn info PLASMA | grep 'https://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch https://europa-pso.googlecode.com/svn/PLASMA/trunk && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; cd `rospack find trex` && ./touch_nddl3.sh ; fi ;
@@ -37,7 +37,7 @@ plasma:
 #	touch patch-PLASMA 
 
 # Get TREX
-TREX_REVISION=230
+TREX_REVISION=231
 trex: plasma
 # If ROS_TREX_GOOGLE_CODE_USERNAME is defined in the environment, check
 # out with that username. This will allow commits to be made directly back
