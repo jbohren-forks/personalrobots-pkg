@@ -2,7 +2,7 @@
   <include file="$(find 3dnav_pr2)/launch/prX.machine" />
   
   <rosparam ns="/robot_description_planning" command="load" file="$(find 3dnav_pr2)/params/planning/planning.yaml" />
-  <node machine="two" pkg="chomp_motion_planner" name="chomp_planner_shortrange" type="chomp_planner_node" args="collision_map:=collision_map_occ" respawn="true" output="screen" clear_params="true">
+  <node machine="four" pkg="chomp_motion_planner" name="chomp_planner_shortrange" type="chomp_planner_node" args="collision_map:=collision_map_occ" respawn="true" output="screen" clear_params="true">
     
     <rosparam command="load" file="$(find chomp_motion_planner)/config/chomp_pr2_right_arm.yaml" />
     <param name="animate_path" value="false"/>
