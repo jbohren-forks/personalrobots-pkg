@@ -142,7 +142,7 @@ public:
     //Verify proper naming and structure    
     if (config.getType() != XmlRpc::XmlRpcValue::TypeArray)
     {
-      ROS_ERROR("The filter chain specification must be a list.");
+      ROS_ERROR("The filter chain specification must be a list. but is of of XmlRpcType %d", config.getType());
       return false;
     }
 
@@ -151,7 +151,7 @@ public:
     {
       if(config[i].getType() != XmlRpc::XmlRpcValue::TypeStruct)
       {
-        ROS_ERROR("Filters must be specified as maps");
+        ROS_ERROR("Filters must be specified as maps, but they are XmlRpcType:%d", config[i].getType());
         return false;
       }
       else if (!config[i].hasMember("type"))
@@ -171,7 +171,7 @@ public:
         {
           if(config[j].getType() != XmlRpc::XmlRpcValue::TypeStruct)
           {
-            ROS_ERROR("Filters must be specified as maps");
+            ROS_ERROR("Filters must be specified as maps, but they are XmlRpcType:%d", config[j].getType());
             return false;
           }
 
@@ -179,7 +179,7 @@ public:
               ||config[i]["name"].getType() != XmlRpc::XmlRpcValue::TypeString
               || config[j]["name"].getType() != XmlRpc::XmlRpcValue::TypeString)
           {
-            ROS_ERROR("Filters names must be strings");
+            ROS_ERROR("Filters names must be strings, but they are XmlRpcTypes:%d and %d", config[i].getType(), config[j].getType());
             return false;
           }
 
@@ -337,7 +337,7 @@ public:
     //Verify proper naming and structure    
     if (config.getType() != XmlRpc::XmlRpcValue::TypeArray)
     {
-      ROS_ERROR("The filter chain specification must be a list.");
+      ROS_ERROR("The filter chain specification must be a list. but is of of XmlRpcType %d", config.getType());
       return false;
     }
 
@@ -346,7 +346,7 @@ public:
     {
       if(config[i].getType() != XmlRpc::XmlRpcValue::TypeStruct)
       {
-        ROS_ERROR("Filters must be specified as maps");
+        ROS_ERROR("Filters must be specified as maps, but they are XmlRpcType:%d", config[i].getType());
         return false;
       }
       else if (!config[i].hasMember("type"))
