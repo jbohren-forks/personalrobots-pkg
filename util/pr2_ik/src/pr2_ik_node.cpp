@@ -82,7 +82,7 @@ namespace pr2_ik {
 
   void PR2IKNode::initFK()
   {
-    pr2_ik_solver_.chain_.toKDL(kdl_chain_);
+    kdl_chain_ = pr2_ik_solver_.chain_;
     jnt_to_pose_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
   }
 
@@ -92,7 +92,7 @@ namespace pr2_ik {
   {
     for(int i=0; i< dimension_; i++)
     {
-      if(pr2_ik_solver_.chain_.getJoint(i)->name_ == name)
+      if(pr2_ik_solver_.chain_.getSegment(i).getJoint().getName() == name)
       {
         return i;
       }
@@ -182,7 +182,7 @@ namespace pr2_ik {
     response.names.resize(dimension_);
     for(int i=0; i < dimension_; i++)
     {
-      response.names[i] = pr2_ik_solver_.chain_.getJoint(i)->name_;
+      response.names[i] = pr2_ik_solver_.chain_.getSegment(i).getJoint().getName();
     }
     return true;
   }

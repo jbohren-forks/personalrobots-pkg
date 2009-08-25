@@ -33,7 +33,8 @@
 #include <ros/node.h>
 #include <Eigen/Array>
 #include <pr2_ik/pr2_ik_solver.h>
-
+#include <boost/shared_ptr.hpp>
+#include <kdl_parser/dom_parser.hpp>
 #include "ros/node_handle.h"
 
 using namespace Eigen;
@@ -44,7 +45,7 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
   active_ = false;
   int free_angle;
   std::string urdf_xml,full_urdf_xml;
-  ros::Node::instance()->param("~urdf_xml", urdf_xml,std::string("robot_description"));
+  ros::Node::instance()->param("~urdf_xml", urdf_xml,std::string("robot_description_new"));
 
   ros::NodeHandle node_handle;
   node_handle.searchParam(urdf_xml,full_urdf_xml);
@@ -69,7 +70,6 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
     ROS_FATAL("Could not parse the xml from %s\n", urdf_xml.c_str());
     exit(1);
   }
-  urdf::normalizeXml(root_element);
   robot_model_.initXml(root);
 
   // get name of root and tip from the parameter server
@@ -84,7 +84,7 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
     exit(1);
   }
 
-  std::vector<tf::Transform> link_offset;
+  std::vector<urdf::Pose> link_offset;
 
   double torso_shoulder_offset_x;
 
@@ -106,25 +106,25 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
 
 
   int num_joints = 0;
-  mechanism::Link *link = robot_model_.getLink(tip_name);
+  boost::shared_ptr<const urdf::Link> link = robot_model_.getLink(tip_name);
 
   while(link && num_joints < 7)
   {
-    mechanism::Joint *joint = robot_model_.getJoint(link->joint_name_);
+    boost::shared_ptr<const urdf::Joint> joint = robot_model_.getJoint(link->parent_joint->name);
     if(!joint)
     {
-      ROS_ERROR("Could not find joint: %s",link->joint_name_.c_str());
+      ROS_ERROR("Could not find joint: %s",link->parent_joint->name.c_str());
       exit(1);
     }
-    if(joint->type_ != mechanism::JOINT_NONE && joint->type_ != mechanism::JOINT_FIXED)
+    if(joint->type != urdf::Joint::UNKNOWN && joint->type != urdf::Joint::FIXED)
     {
-      link_offset.push_back(link->getOffset());
-      angle_multipliers.push_back(joint->axis_[0]*fabs(joint->axis_[0]) +  joint->axis_[1]*fabs(joint->axis_[1]) +  joint->axis_[2]*fabs(joint->axis_[2]));
-      ROS_DEBUG("Joint axis: %d, %f, %f, %f",6-num_joints,joint->axis_[0],joint->axis_[1],joint->axis_[2]);
-      if(joint->type_ != mechanism::JOINT_CONTINUOUS)
+      link_offset.push_back(link->parent_joint->parent_to_joint_origin_transform);
+      angle_multipliers.push_back(joint->axis.x*fabs(joint->axis.x) +  joint->axis.y*fabs(joint->axis.y) +  joint->axis.z*fabs(joint->axis.z));
+      ROS_DEBUG("Joint axis: %d, %f, %f, %f",6-num_joints,joint->axis.x,joint->axis.y,joint->axis.z);
+      if(joint->type != urdf::Joint::CONTINUOUS)
       {
-        min_angles.push_back(joint->joint_limit_min_-joint->safety_length_min_);
-        max_angles.push_back(joint->joint_limit_max_+joint->safety_length_max_);
+        min_angles.push_back(joint->safety->soft_lower_limit);
+        max_angles.push_back(joint->safety->soft_upper_limit);
       }
       else
       {
@@ -133,7 +133,7 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
       }
       num_joints++;
     }
-    link = robot_model_.getLink(link->parent_name_);
+    link = robot_model_.getLink(link->parent_link->name);
   } 
   std::reverse(angle_multipliers.begin(),angle_multipliers.end());
   std::reverse(min_angles.begin(),min_angles.end());
@@ -146,9 +146,9 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
     exit(1);
   }
     
-  torso_shoulder_offset_x = link_offset[0].getOrigin().x();
-  torso_shoulder_offset_y = link_offset[0].getOrigin().y();
-  torso_shoulder_offset_z = link_offset[0].getOrigin().z();
+  torso_shoulder_offset_x = link_offset[0].position.x;
+  torso_shoulder_offset_y = link_offset[0].position.y;
+  torso_shoulder_offset_z = link_offset[0].position.z;
 
   shoulder_upperarm_offset = distance(link_offset[1]);
   upperarm_elbow_offset = distance(link_offset[3]);
@@ -177,7 +177,10 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
   ros::Node::instance()->param<double>("~search_discretization_angle",search_discretization_angle_,0.001);
 
   // create robot chain from root to tip
-  if (!chain_.init(&robot_model_, root_name, tip_name))
+  KDL::Tree tree;
+  if (!KDL::treeFromRobotModel(robot_model_, tree))
+    ROS_ERROR("Could not initialize tree object");
+  if (!tree.getChain(root_name, tip_name, chain_))
     ROS_ERROR("Could not initialize chain object");
 
   active_ = true;
@@ -189,9 +192,9 @@ PR2IKSolver::~PR2IKSolver()
   delete pr2_ik_;
 }
 
-double PR2IKSolver::distance(const tf::Transform &transform)
+double PR2IKSolver::distance(const urdf::Pose &transform)
 {
-  return sqrt(transform.getOrigin().x()*transform.getOrigin().x()+transform.getOrigin().y()*transform.getOrigin().y()+transform.getOrigin().z()*transform.getOrigin().z());
+  return sqrt(transform.position.x*transform.position.x+transform.position.y*transform.position.y+transform.position.z*transform.position.z);
 }
 
 Eigen::Matrix4f PR2IKSolver::KDLToEigenMatrix(const KDL::Frame &p)

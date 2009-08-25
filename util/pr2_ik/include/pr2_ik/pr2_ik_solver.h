@@ -32,11 +32,8 @@
 //ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //POSSIBILITY OF SUCH DAMAGE.
 
-#include <mechanism_model/robot.h>
-#include <mechanism_model/chain.h>
-#include <mechanism_model/link.h>
+#include <urdf/model.h>
 
-#include <urdf/parser.h>
 #include <pr2_ik/pr2_ik.h>
 
 #include <kdl/chainiksolver.hpp>
@@ -76,7 +73,7 @@ namespace pr2_ik
     /**
      * @brief A mechanism::Chain object (automatically created when the solver is constructed.
      */
-    mechanism::Chain chain_;
+    KDL::Chain chain_;
 
     /**
      * @brief The KDL solver interface that is required to be implemented. NOTE: This method only returns a solution
@@ -121,9 +118,9 @@ namespace pr2_ik
 
     private:
 
-    mechanism::Robot robot_model_;
+    urdf::Model robot_model_;
 
-    double distance(const tf::Transform &transform);
+    double distance(const urdf::Pose &transform);
 
     Eigen::Matrix4f KDLToEigenMatrix(const KDL::Frame &p);
 
