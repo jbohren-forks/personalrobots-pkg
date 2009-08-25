@@ -10,7 +10,7 @@
 
   <depend stack="geometry"/> <!-- tf, kdl, angles, eigen, eigen, tf, angles, angles --> 
   <depend stack="mechanism"/> <!-- mechanism_model, mechanism_model, kdl_parser, mechanism_model, mechanism_control, hardware_interface, mechanism_control, mechanism_model, mechanism_msgs --> 
-  <depend stack="util"/> <!-- realtime_tools, realtime_tools, realtime_tools, realtime_tools, trajectory --> 
+  <!--depend stack="util"/CAUSING CIRCULAR DEPENDENCY--> <!-- realtime_tools, realtime_tools, realtime_tools, realtime_tools, trajectory --> 
   <depend stack="common"/> <!-- tinyxml, manipulation_msgs, filters, tinyxml, robot_actions, filters, manipulation_msgs --> 
   <depend stack="ros"/> <!-- rospy, rospy, rospy, roscpp, std_msgs, rosconsole, roscpp, roscpp, roscpp, rospy, std_msgs, rosconsole --> 
   <depend stack="visualization_common"/> <!-- visualization_msgs, visualization_msgs --> 

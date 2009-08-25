@@ -17,7 +17,7 @@
 
   <depend stack="mechanism"/> <!-- mechanism_control, hardware_interface, mechanism_control, mechanism_model, convex_decomposition, ivcon, robot_state_publisher, mechanism_bringup, convex_decomposition, ivcon --> 
   <depend stack="controllers"/> <!-- robot_mechanism_controllers, pr2_mechanism_controllers, joint_qualification_controllers, dynamic_verification_controllers, pr2_mechanism_controllers --> 
-  <depend stack="calibration"/> <!-- joint_calibration_monitor --> 
+  <!--depend stack="calibration"/--> <!--Causing circular dependencies--> 
   
   <depend stack="pr2_common"/>
   <depend stack="sound_drivers"/> <!-- sound_play --> 

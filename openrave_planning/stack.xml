@@ -12,7 +12,7 @@
   <depend stack="geometry"/> <!-- bullet, tf --> 
   <depend stack="mechanism"/> <!-- mechanism_msgs --> 
   <depend stack="util"/> <!-- or_robot_self_filter --> 
-  <depend stack="simulators"/> <!-- opende --> 
+  <depend stack="simulator_gazebo"/> <!-- opende --> 
   <depend stack="common"/> <!-- manipulation_msgs, laser_scan --> 
   <depend stack="ros"/> <!-- std_msgs, roscpp, roscpp, roscpp, roscpp_sessions, std_msgs, rosoct, roscpp, roslaunch --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs, mapping_msgs --> 
