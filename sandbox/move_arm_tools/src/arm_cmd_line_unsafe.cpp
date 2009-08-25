@@ -47,7 +47,7 @@
 #include <motion_planning_msgs/KinematicPath.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_srvs/IKService.h>
-#include <pr2_mechanism_controllers/TrajectoryStart.h>
+#include <experimental_controllers/TrajectoryStart.h>
 #include <motion_planning_msgs/GetMotionPlan.h>
 
 #include <boost/thread/thread.hpp>
@@ -295,7 +295,7 @@ void getIK(bool r, ros::NodeHandle &nh, planning_environment::KinematicModelStat
 void goToIK(ros::NodeHandle &nh,  planning_environment::KinematicModelStateMonitor &km, const std::vector<std::string> &names, double x, double y, double z)
 {
 	ros::ServiceClient client = nh.serviceClient<manipulation_srvs::IKService>("arm_ik");
-	ros::ServiceClient arm_ctrl = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
+	ros::ServiceClient arm_ctrl = nh.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
 	manipulation_srvs::IKService::Request request;
 	manipulation_srvs::IKService::Response response;
 	request.data.pose_stamped.header.stamp = ros::Time::now();
@@ -309,8 +309,8 @@ void goToIK(ros::NodeHandle &nh,  planning_environment::KinematicModelStateMonit
 	request.data.pose_stamped.pose.orientation.w = 1;
 	request.data.joint_names = names;
 	manipulation_msgs::JointTraj traj;
-	pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-	pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+	experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+	experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 	
 	planning_models::StateParams robot_state(*km.getRobotState());
 	for(unsigned int i = 0; i < names.size() ; ++i)
@@ -358,15 +358,15 @@ void goToIK(ros::NodeHandle &nh,  planning_environment::KinematicModelStateMonit
 int goToPlan(ros::NodeHandle &nh, planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal, const std::vector<std::string> &names)
 {
 // 	ros::ServiceClient clientIK = nh.serviceClient<manipulation_srvs::IKService>("arm_ik");
-	ros::ServiceClient arm_ctrl = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
+	ros::ServiceClient arm_ctrl = nh.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
 	ros::ServiceClient clientPlan = nh.serviceClient<motion_planning_msgs::GetMotionPlan>(planner_service, true);
 	
 	motion_planning_msgs::GetMotionPlan::Request request;
 	motion_planning_msgs::GetMotionPlan::Response response;
 	
 	manipulation_msgs::JointTraj traj;
-	pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-	pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+	experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+	experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 	
 	planning_models::StateParams robot_state(*km.getRobotState());
 	
@@ -671,10 +671,10 @@ int main(int argc, char **argv)
 				sp.copyParamsJoints(traj.points[1].positions, names);
 
 				std::cout << "Executing forward path for " << fwd << "m" << std::endl;
-				ros::ServiceClient clientStart = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
+				ros::ServiceClient clientStart = nh.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
 		
-				pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-				pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+				experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+				experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 				send_traj_start_req.traj = traj;
 				send_traj_start_req.hastiming = 0;
 				send_traj_start_req.requesttiming = 0;
@@ -885,10 +885,10 @@ int main(int argc, char **argv)
 				in.close();
 		
 				std::cout << "Executing path " << fnm << " with " << traj.points.size() << " points at " << time << " seconds apart  ..." << std::endl;
-				ros::ServiceClient clientStart = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
+				ros::ServiceClient clientStart = nh.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
 		
-				pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-				pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+				experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+				experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 				send_traj_start_req.traj = traj;
 				send_traj_start_req.hastiming = 0;
 				send_traj_start_req.requesttiming = 0;

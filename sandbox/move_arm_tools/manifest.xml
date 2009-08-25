@@ -21,6 +21,7 @@
 		<depend package="rospy"/>
 		<depend package="nav_msgs" />
 		<depend package="pr2_mechanism_controllers"/> 
+		<depend package="experimental_controllers"/> 
     <depend package="robot_mechanism_controllers"/>
 		<depend package="move_arm" />
   <url></url>

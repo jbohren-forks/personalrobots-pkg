@@ -82,7 +82,7 @@ bool MoveArmTools::init(std::string arm)
 	move_arm_ = new actionlib::SimpleActionClient<move_arm::MoveArmAction> ("move_" + group_);
 	gripper_ = new	actionlib::SimpleActionClient<move_arm::ActuateGripperAction> ("actuate_gripper_" + group_);
 	
-	arm_ctrl_ = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
+	arm_ctrl_ = nh_.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
 	clientPlan_ = nh_.serviceClient<motion_planning_msgs::GetMotionPlan>(planner_service_, true);
 	
 	return true;
@@ -322,7 +322,7 @@ void MoveArmTools::getIK(bool r, ros::NodeHandle &nh, planning_environment::Kine
 void MoveArmTools::goToIK(ros::NodeHandle &nh,  planning_environment::KinematicModelStateMonitor &km, const std::vector<std::string> &names, double x, double y, double z)
 {
 	ros::ServiceClient client = nh.serviceClient<manipulation_srvs::IKService>("arm_ik");
-	ros::ServiceClient arm_ctrl = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
+	ros::ServiceClient arm_ctrl = nh.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
 	manipulation_srvs::IKService::Request request;
 	manipulation_srvs::IKService::Response response;
 	request.data.pose_stamped.header.stamp = ros::Time::now();
@@ -336,8 +336,8 @@ void MoveArmTools::goToIK(ros::NodeHandle &nh,  planning_environment::KinematicM
 	request.data.pose_stamped.pose.orientation.w = 1;
 	request.data.joint_names = names;
 	manipulation_msgs::JointTraj traj;
-	pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-	pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+	experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+	experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 	
 	planning_models::StateParams robot_state(*km.getRobotState());
 	for(unsigned int i = 0; i < names.size() ; ++i)
@@ -443,8 +443,8 @@ int MoveArmTools::goToPlan(ros::NodeHandle &nh, planning_environment::KinematicM
 	motion_planning_msgs::GetMotionPlan::Response response;
 	
 	manipulation_msgs::JointTraj traj;
-	pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-	pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+	experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+	experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 	
 	planning_models::StateParams robot_state(*(km.getRobotState()));
 	
@@ -653,10 +653,10 @@ bool MoveArmTools::callback(move_arm_tools::ArmCtrlCmd::Request &req, move_arm_t
 				sp.copyParamsJoints(traj.points[1].positions, names_);
 	
 				std::cout << "Executing forward path for " << fwd << "m" << std::endl;
-				ros::ServiceClient clientStart = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
+				ros::ServiceClient clientStart = nh_.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
 			
-				pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-				pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+				experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+				experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 				send_traj_start_req.traj = traj;
 				send_traj_start_req.hastiming = 0;
 				send_traj_start_req.requesttiming = 0;
@@ -868,10 +868,10 @@ bool MoveArmTools::callback(move_arm_tools::ArmCtrlCmd::Request &req, move_arm_t
 				in.close();
 			
 				std::cout << "Executing path " << fnm << " with " << traj.points.size() << " points at " << time << " seconds apart  ..." << std::endl;
-				ros::ServiceClient clientStart = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
+				ros::ServiceClient clientStart = nh_.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
 			
-				pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-				pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+				experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+				experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 				send_traj_start_req.traj = traj;
 				send_traj_start_req.hastiming = 0;
 				send_traj_start_req.requesttiming = 0;

@@ -11,7 +11,7 @@
 #include <motion_planning_msgs/KinematicPath.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_srvs/IKService.h>
-#include <pr2_mechanism_controllers/TrajectoryStart.h>
+#include <experimental_controllers/TrajectoryStart.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
