@@ -27,9 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <mechanism_model/robot.h>
 
-ROS_REGISTER_TRANSMISSION(NonlinearTransmission)
+#include <mechanism_model/robot.h>
+#include <pluginlib/class_list_macros.h>
+
+PLUGINLIB_REGISTER_CLASS(NonlinearTransmission, 
+                         mechanism::NonlinearTransmission, 
+                         mechanism::Transmission)
+
 
 void NonlinearTransmission::initXml(TiXmlElement *elt, Robot *robot)
 {

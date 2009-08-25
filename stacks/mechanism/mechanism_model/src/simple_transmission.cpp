@@ -35,12 +35,16 @@
  * Author: Stuart Glaser
  */
 #include <math.h>
+#include <pluginlib/class_list_macros.h>
 #include "mechanism_model/robot.h"
 #include "mechanism_model/simple_transmission.h"
 
 using namespace mechanism;
 
-ROS_REGISTER_TRANSMISSION(SimpleTransmission)
+PLUGINLIB_REGISTER_CLASS(SimpleTransmission, 
+                         mechanism::SimpleTransmission, 
+                         mechanism::Transmission)
+
 
 bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
 {

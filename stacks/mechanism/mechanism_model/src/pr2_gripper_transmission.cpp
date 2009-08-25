@@ -32,6 +32,7 @@
  */
 
 #include "mechanism_model/pr2_gripper_transmission.h"
+#include <pluginlib/class_list_macros.h>
 #include <algorithm>
 #include <numeric>
 #include <angles/angles.h>
@@ -39,7 +40,9 @@
 
 namespace mechanism {
 
-ROS_REGISTER_TRANSMISSION(PR2GripperTransmission)
+PLUGINLIB_REGISTER_CLASS(PR2GripperTransmission, 
+                         mechanism::PR2GripperTransmission, 
+                         mechanism::Transmission)
 
 bool PR2GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
 {

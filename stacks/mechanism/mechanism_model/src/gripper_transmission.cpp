@@ -32,12 +32,15 @@
  */
 
 #include "mechanism_model/gripper_transmission.h"
+#include <pluginlib/class_list_macros.h>
 #include <algorithm>
 #include <numeric>
 
 namespace mechanism {
 
-ROS_REGISTER_TRANSMISSION(GripperTransmission)
+PLUGINLIB_REGISTER_CLASS(GripperTransmission, 
+                         mechanism::GripperTransmission, 
+                         mechanism::Transmission)
 
 bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
 {

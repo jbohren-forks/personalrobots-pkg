@@ -32,9 +32,11 @@
  */
 
 #include "mechanism_model/robot.h"
-#include "tinyxml/tinyxml.h"
+#include "mechanism_model/transmission.h"
+#include <tinyxml/tinyxml.h>
 #include <kdl_parser/dom_parser.hpp>
 #include <urdf/model.h>
+#include <pluginlib/class_loader.h>
 
 
 namespace mechanism {
@@ -74,12 +76,20 @@ bool Robot::initXml(TiXmlElement *root)
   }
 
   // Constructs the transmissions by parsing custom xml.
+  pluginlib::ClassLoader<mechanism::Transmission> transmission_loader("mechanism_model", "mechanism::Transmission");
   TiXmlElement *xit = NULL;
   for (xit = root->FirstChildElement("transmission"); xit;
        xit = xit->NextSiblingElement("transmission"))
   {
     const char *type = xit->Attribute("type");
-    Transmission *t = type ? TransmissionFactory::Instance().CreateObject(type) : NULL;
+    Transmission *t;
+    try{
+      t = type ? transmission_loader.createClassInstance(type) : NULL;
+    }
+    catch(...){
+      ROS_ERROR("Could not construct transmission of type %s", type);
+      return false;
+    }
     if (!t)
       ROS_ERROR("Unknown transmission type: %s", type);
     else if (!t->initXml(xit, this)){

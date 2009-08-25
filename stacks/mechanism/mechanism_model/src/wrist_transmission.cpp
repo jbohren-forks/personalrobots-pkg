@@ -35,12 +35,16 @@
  * Author: Melonee Wise
  */
 #include <math.h>
+#include <pluginlib/class_list_macros.h>
 #include "mechanism_model/robot.h"
 #include "mechanism_model/wrist_transmission.h"
 
 using namespace mechanism;
 
-ROS_REGISTER_TRANSMISSION(WristTransmission)
+PLUGINLIB_REGISTER_CLASS(WristTransmission, 
+                         mechanism::WristTransmission, 
+                         mechanism::Transmission)
+
 
 bool WristTransmission::initXml(TiXmlElement *elt, Robot *robot)
 {

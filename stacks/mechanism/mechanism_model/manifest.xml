@@ -10,10 +10,11 @@
 <depend package="urdf" />
 <depend package="kdl_parser" />
 <depend package="std_srvs" />
-<depend package="loki" />
+<depend package="pluginlib" />
 <depend package="angles" />
 <url>http://pr.willowgarage.com</url>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmechanism_model -Wl,-rpath,${prefix}/lib -lloki"/>
+  <mechanism_model plugin="${prefix}/transmission_plugins.xml" />
 </export>
 </package>
