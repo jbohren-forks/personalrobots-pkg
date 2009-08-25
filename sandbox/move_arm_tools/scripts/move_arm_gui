@@ -43,19 +43,19 @@ progress = None
 pub_position_arm = rospy.Publisher('/move_right_arm/goal', MoveArmActionGoal)
 pub_gripper_force = rospy.Publisher('/r_gripper_effort_controller/command', Float64)
 
-print "waiting for command line service"
+
+print "waiting for the arm command line service"
 rospy.wait_for_service('/auto_arm_cmd_server')
 print "success"
 arm_cmd_svc = rospy.ServiceProxy('/auto_arm_cmd_server', ArmCtrlCmd)
+print "--------"
 
 class MoveArmWindow(gtk.Window):
 	
   planning_frame = String()
   allowed_time = Float64()
 	
-
   def callback(self, widget, selfclone, data):
-    #print data, "was pressed."
     if(data == "Position Arm"):
       goal = MoveArmActionGoal();    
       goal.goal.goal_constraints.pose_constraint = [PoseConstraint()];
@@ -85,7 +85,6 @@ class MoveArmWindow(gtk.Window):
       goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.2;
       goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.2;
       goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.2;    
-      
       goal.goal.goal_constraints.pose_constraint[0].orientation_importance = 0.01;
 
       pub_position_arm.publish(goal);
@@ -101,10 +100,10 @@ class MoveArmWindow(gtk.Window):
       pub_gripper_force.publish(gripper_goal)
       print "closing gripper";
     elif(data == "use_base"):
-      planning_frame = "/base_link"
+      self.planning_frame = "/base_link"
       print "goal is in base_link"
     elif(data == "use_torso"):
-      planning_frame = "/torso_lift_link"
+      self.planning_frame = "/torso_lift_link"
       print "goal is in torso_lift_link";
     elif(data == "do cmd"):
       cmd = String()
@@ -114,10 +113,25 @@ class MoveArmWindow(gtk.Window):
       print "command: " + cmd
       arm_cmd_res = arm_cmd_svc(cmd, cmd_time)
       print "response: " + str(arm_cmd_res)
-    elif(data == "IK deltaX"):
+    elif(data == "IK delta"):
       cmd = String()
       allowed_time = Float64()
-      cmd = "move " + str(float(self.bottle_x.get_text()) + float(self.delta_x.get_text())) + " " + self.bottle_y.get_text() + " " + self.bottle_z.get_text()
+      new_x = String()
+      new_y = String()
+      new_z = String()
+      if(len(self.delta_x.get_text()) == 0):
+        new_x = self.bottle_x.get_text()
+      else:
+        new_x = str(float(self.bottle_x.get_text()) + float(self.delta_x.get_text()))
+      if(len(self.delta_y.get_text()) == 0):
+        new_y = self.bottle_y.get_text()
+      else:
+        new_y = str(float(self.bottle_y.get_text()) + float(self.delta_y.get_text()))
+      if(len(self.delta_z.get_text()) == 0):
+ 	new_z = self.bottle_z.get_text()
+      else:
+        new_z = str(float(self.bottle_z.get_text()) + float(self.delta_z.get_text()))
+      cmd = "move " + new_x + " " + new_y + " " + new_z
       cmd_time = self.allowed_time
       print "command: " + cmd
       arm_cmd_res = arm_cmd_svc(cmd, cmd_time)
@@ -125,7 +139,7 @@ class MoveArmWindow(gtk.Window):
     elif(data == "plan cmd"):
       cmd = String()
       allowed_time = Float64()
-      cmd = " " + self.posePlan_x.get_text() + " " + self.posePlan_y.get_text() + " " + self.posePlan_z.get_text()
+      cmd = "plan " + self.posePlan_x.get_text() + " " + self.posePlan_y.get_text() + " " + self.posePlan_z.get_text()
       cmd_time = self.allowed_time
       print "command: " + cmd
       arm_cmd_res = arm_cmd_svc(cmd, cmd_time)
@@ -143,7 +157,7 @@ class MoveArmWindow(gtk.Window):
     vbox = gtk.VBox(False, 8)
 
 		# set defaults
-    self.planning_frame = "/torso_lift_link"
+    self.planning_frame = "/base_link"
     self.allowed_time = 40
 
     ################################################
@@ -190,19 +204,26 @@ class MoveArmWindow(gtk.Window):
     row = row+1
     #######################
 				
-    dXlabel = gtk.Label("MoveIK deltaX: ")
+    delta_label = gtk.Label("MoveIK deltaXYZ: ")
     self.delta_x = gtk.Entry()
+    self.delta_y = gtk.Entry()
+    self.delta_z = gtk.Entry()
+		
     self.delta_x.set_size_request(height=-1,width=55)
+    self.delta_y.set_size_request(height=-1,width=55)
+    self.delta_z.set_size_request(height=-1,width=55)
 
-    self.send_deltaX = gtk.Button("Go")
-    self.send_deltaX.connect("clicked", self.callback, self, "IK deltaX")
+    self.send_deltaPose = gtk.Button("Go")
+    self.send_deltaPose.connect("clicked", self.callback, self, "IK delta")
 
-    halign = gtk.Alignment(1,0.5,0,0.5)
-    halign.add(dXlabel)
+    delta_align = gtk.Alignment(1,0.5,0,0.5)
+    delta_align.add(delta_label)
 
-    table.attach(halign, 0,1,row,row+1, gtk.FILL, gtk.FILL,0,0)
+    table.attach(delta_align, 0,1,row,row+1, gtk.FILL, gtk.FILL,0,0)
     table.attach(self.delta_x, 1,2,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
-    table.attach(self.send_deltaX, 2,3,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.delta_y, 2,3,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.delta_z, 3,4,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+    table.attach(self.send_deltaPose, 4,5,row,row+1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
 
     row = row+1
     #######################
