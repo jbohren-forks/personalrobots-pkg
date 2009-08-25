@@ -1,0 +1,32 @@
+<library path="lib/libmechanism_model">
+  <class name="NonlinearTransmission" type="mechanism::NonlinearTransmission" base_class_type="mechanism::Transmission">
+  <description>
+  This is a rectangle plugin
+  </description>
+  </class>
+
+  <class name="PR2GripperTransmission" type="mechanism::PR2GripperTransmission" base_class_type="mechanism::Transmission">
+  <description>
+  This is a rectangle plugin
+  </description>
+  </class>
+
+  <class name="SimpleTransmission" type="mechanism::SimpleTransmission" base_class_type="mechanism::Transmission">
+  <description>
+  This is a rectangle plugin
+  </description>
+  </class>
+
+  <class name="GripperTransmission" type="mechanism::GripperTransmission" base_class_type="mechanism::Transmission">
+  <description>
+  This is a rectangle plugin
+  </description>
+  </class>
+
+  <class name="WristTransmission" type="mechanism::WristTransmission" base_class_type="mechanism::Transmission">
+  <description>
+  This is a rectangle plugin
+  </description>
+  </class>
+
+</library>
