@@ -181,7 +181,9 @@ function ros_handleOnLoad(prefix)
 {
   gPump = new MessagePump("http://" + window.location.hostname + ":8080" + prefix);
   gPump.setupWidgets();
-  gPump.pump();
+
+  setTimeout("gPump.pump();", 1000);
+   // gPump.pump();
 }
 
 // *******************************************
@@ -193,9 +195,13 @@ var OnOffButtonWidget = Class.create({
   initialize: function(domobj) {
     this.pump = null;
     this.domobj = domobj;
-    this.taskid = domobj.getAttribute("taskid");
     this.state = false;
     this.topics = [domobj.getAttribute("topic")];
+
+    this.key = domobj.getAttribute("key");
+    this.selector = domobj.getAttribute("selector");
+    this.selectorValue = domobj.getAttribute("selectorValue");
+    this.onValue = domobj.getAttribute("onValue");
   },
 
   init: function() {
@@ -207,16 +213,17 @@ var OnOffButtonWidget = Class.create({
     } else {
       this.domobj.setAttribute("class", "buttonOff");
     }
-
-    //this.pump.service_call("status_update", []);
   },
 
   receive: function(msg) {
-    if(msg.taskid != this.taskid) return;
+    if(this.selector && this.selectorValue) {
+      if(msg[this.selector] != this.selectorValue) return;
+    }
+    if(msg[this.key] == null) return;
   
-    var state = msg.status;
-    if(state == "running") this.state = true;
-    if(state == "stopped") this.state = false;
+    var state = msg[this.key];
+    if(state == this.onValue) this.state = true;
+    else this.state = false;
 
     var button = this.domobj;
     if(button != null) {
@@ -230,12 +237,6 @@ var OnOffButtonWidget = Class.create({
 
   onmousedown: function(evt) {
     var newstate = !this.state;
-
-    if(newstate) {
-      this.pump.service_call("start_task", {'taskid':this.taskid, 'username':'anonymous'});
-    } else {
-      this.pump.service_call("stop_task", {'taskid':this.taskid, 'username':'anonymous'});
-    }
     clearSelection();
   }
 });
@@ -502,33 +503,6 @@ var RosOut_Widget = Class.create({
 
 gRosClasses["RosOut_Widget"] = function(dom){
   return new RosOut_Widget(dom);
-}
-
-
-
-
-var ActiveTasks = Class.create({
-  initialize: function(domobj) {
-    this.pump = null;
-    this.domobj = domobj;
-    this.topics = [domobj.getAttribute("topic")];
-  },
-
-  init: function() {
-    this.domobj.innerHTML = "";
-  },
-
-  receive: function(msg) {
-      var s = "";
-      for(var i=0; i<msg.active.length; i++) {
-        s = s + "|" + msg.active[i];
-      }
-      this.domobj.innerHTML = s;
-    }
-});
-
-gRosClasses["ActiveTasks"] = function(dom){
-  return new ActiveTasks(dom);
 }
 
 
