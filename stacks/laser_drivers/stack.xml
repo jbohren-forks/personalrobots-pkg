@@ -9,5 +9,6 @@
   <depend stack="diagnostics"/> <!-- self_test, diagnostic_updater --> 
   <depend stack="ros"/> <!-- roscpp, roscpp --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs, sensor_msgs --> 
-
+  <depend stack="geometry"/>
+  <depend stack="driver_common"/>
 </stack>
