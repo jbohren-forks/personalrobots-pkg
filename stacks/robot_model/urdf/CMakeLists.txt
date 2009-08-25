@@ -27,8 +27,8 @@ rosbuild_add_library(${PROJECT_NAME} src/link.cpp src/joint.cpp src/model.cpp)
 rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 
-rosbuild_add_executable(example test/example.cpp)
-target_link_libraries(example ${PROJECT_NAME})
+rosbuild_add_executable(parse_test test/parse_test.cpp)
+target_link_libraries(parse_test ${PROJECT_NAME})
 
 rosbuild_add_executable(test_parser test/test_robot_model_parser.cpp)
 rosbuild_add_gtest_build_flags(test_parser)
