@@ -378,7 +378,8 @@ private:
    
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "clear_known_objects", ros::init_options::AnonymousName);
+  // Took out anonymous - bmm
+    ros::init(argc, argv, "clear_known_objects");
 
     ClearKnownObjects cko;
     cko.run();
