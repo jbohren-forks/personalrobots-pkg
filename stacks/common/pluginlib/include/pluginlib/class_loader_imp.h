@@ -148,7 +148,7 @@ namespace pluginlib {
   }
 
   template <class T>
-  bool ClassLoader<T>::loadClass(const std::string & lookup_name)
+  bool ClassLoader<T>::loadLibraryForClass(const std::string & lookup_name)
   {
     std::string library_path;
     ClassMapIterator it = classes_available_.find(lookup_name);
@@ -235,12 +235,9 @@ namespace pluginlib {
   }
 
   template <class T>
-  std::string ClassLoader<T>::getBaseClassType(const std::string& lookup_name)
+  std::string ClassLoader<T>::getBaseClassType() const
   {
-    ClassMapIterator it = classes_available_.find(lookup_name);
-    if (it != classes_available_.end())
-      return it->second.base_class_;
-    return "";
+    return base_class_;
   }
 
   template <class T>
@@ -265,7 +262,7 @@ namespace pluginlib {
   T* ClassLoader<T>::createClassInstance(const std::string& lookup_name, bool auto_load)
   {
     if ( auto_load && !isClassLoaded(lookup_name))
-      if(!loadClass(lookup_name))
+      if(!loadLibraryForClass(lookup_name))
       {
         ROS_ERROR("Failed to auto load library");
         throw std::runtime_error("Failed to auto load library for class " + lookup_name + ".");

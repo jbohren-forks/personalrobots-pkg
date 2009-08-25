@@ -48,7 +48,7 @@ int main() {
   }
 
 
-  if (cl.loadClass("square"))
+  if (cl.loadLibraryForClass("square"))
   {
     ROS_INFO("Loaded library with plugin square inside");
   }
@@ -79,12 +79,12 @@ int main() {
   else ROS_INFO("Triangle Class not loaded");
   
   
-  if (!cl.loadClass("line"))
+  if (!cl.loadLibraryForClass("line"))
     ROS_ERROR("Correctly failed to load line in polygon loader");
 
   pluginlib::ClassLoader<shape> ph("pluginlib_tutorial_interfaces", "shape");
 
-  if (!ph.loadClass("line"))
+  if (!ph.loadLibraryForClass("line"))
     ROS_ERROR("Failed to load line");
 
   if (ph.isClassLoaded("line"))

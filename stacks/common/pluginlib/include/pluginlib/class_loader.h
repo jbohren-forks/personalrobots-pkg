@@ -97,10 +97,9 @@ namespace pluginlib
 
         /**
          * @brief  Given the lookup name of a class, returns the type of the associated base class
-         * @param lookup_name The lookup name of the class 
          * @return The type of the associated base class
          */
-        std::string getBaseClassType(const std::string& lookup_name);
+        std::string getBaseClassType() const;
 
         /**
          * @brief  Given the name of a class, returns name of the containing package
@@ -130,7 +129,7 @@ namespace pluginlib
          * @param lookup_name The lookup name of the class to load
          * @return True if the class and its associated library were successfully loaded, false otherwise
          */
-        bool loadClass(const std::string & lookup_name);
+        bool loadLibraryForClass(const std::string & lookup_name);
 
       private:
         /**
