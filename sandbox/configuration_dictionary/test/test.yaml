@@ -1,7 +1,0 @@
-double_val: 1.23
-int_val: 123
-string_val: "123"
-namespace:
-  bool_val: false
-  int_val: 123
-

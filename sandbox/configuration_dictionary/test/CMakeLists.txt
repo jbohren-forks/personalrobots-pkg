@@ -1,2 +1,0 @@
-rospack_add_gtest(test/test_direct test_direct.cpp)
-target_link_libraries(test/test_direct configuration_dictionary)
