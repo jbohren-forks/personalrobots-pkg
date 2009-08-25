@@ -1,0 +1,10 @@
+# arm command line form of command
+string cmd
+
+# The maximum amount of time the motion planner is allowed to plan for
+float64 allowed_time
+
+---
+
+# set to 1 if move_arm succeeded and 0 if it didn't succeed or move_arm wasn't used
+byte success
