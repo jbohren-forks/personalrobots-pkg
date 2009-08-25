@@ -97,7 +97,6 @@ private:
   bool use_bag_file_;                                   /**< Should I load data from a bag file or listen to mechanism_state? */
 
   HardwareInterface hardware_interface_;                /**< Hardware interface, for creating the mechanism_chain_ */
-  mechanism::Robot robot_;                              /**< Robot description */
   mechanism::Chain mechanism_chain_;                    /**< Mechanism chain */
   KDL::Chain kdl_chain_;                                /**< KDL chain */
   int num_joints_;                                      /**< Number of actuated joints */

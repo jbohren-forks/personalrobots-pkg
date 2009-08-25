@@ -42,6 +42,7 @@
 #include <rosrecord/Player.h>
 #include <kdl/chainfksolverposfull_recursive.hpp>
 #include <kdl/chainfksolvervelfull_recursive.hpp>
+#include <kdl_parser/xml_parser.hpp>
 
 #define DYNAMICS_DEBUG 1
 
@@ -88,25 +89,18 @@ bool DynamicsEstimationNode::init()
     return false;
   }
 
-  // parse robot information
-  TiXmlDocument doc;
-  doc.Parse(robot_desc.c_str());
-  TiXmlElement *root = doc.FirstChildElement("robot");
-  if (!root)
+  // parse robot information into a kdl tree
+  KDL::Tree tree;
+  if (!KDL::treeFromString(robot_desc, tree))
   {
-    ROS_ERROR("Error finding 'robot' tag in xml\n");
+    ROS_ERROR("Error parsing robot description into kdl tree");
     return false;
   }
-  robot_.hw_ = &hardware_interface_;
-  robot_.initXml(root);
-
-  // create the mechanism_chain_ and kdl_chain_
-  if (!mechanism_chain_.init(&robot_, chain_root_, chain_tip_))
-  {
-    ROS_ERROR("Error creating mechanism chain");
+  // get kdl chain from kdl tree
+  if (!tree.getChain(chain_root_, chain_tip_, kdl_chain_)){
+    ROS_ERROR("Error extracting kdl chain form kdl tree");
     return false;
   }
-  mechanism_chain_.toKDL(kdl_chain_);
   num_joints_ = kdl_chain_.getNrOfJoints();
 
   // initialize the joint_name_to_index_ mapping:
