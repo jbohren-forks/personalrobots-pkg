@@ -53,11 +53,12 @@ class App:
     try:
       self.taskid = taskid
       self.app_file = app_file
-      self.name = doc['name']
-      self.package = doc['package']
-      self.provides = doc['provides']
-      self.launch_file = doc['launch_file']
-      self.depends = doc['depends']
+      self.name = doc['name'].strip()
+      self.package = doc['package'].strip()
+      self.launch_file = doc['launch_file'].strip()
+
+      self.provides = doc.get('provides', None)
+      self.depends = doc.get('depends', None)
     except KeyError:
       print "Invalid YAML file"
 

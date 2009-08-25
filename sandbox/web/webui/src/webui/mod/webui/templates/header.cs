@@ -2,7 +2,10 @@
 <tr>
 <td width=1%><nobr>Robot: <?cs var:CGI.ServerName?></td>
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
-<td width=90%>Core Status: <font color=green>Running</td>
+<td width=90%><nobr>Core Status: <font color=green>Running</font> 
+<span objtype=ActiveTasks topic="/app_status"/>
+</nobr>
+</td>
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
 <td width=1%><nobr><div objtype=CircuitMonitor topic="/power_board_state"/></td>
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>

@@ -38,6 +38,8 @@ NAME = 'launchman'
 
 import roslib; roslib.load_manifest(PKG) 
 
+import time
+
 from launchman.srv import *
 from launchman.msg import *
 import rospy 
@@ -52,8 +54,14 @@ from roslaunch.xmlloader import *
 
 from launchman import app
 
-class TaskGroup:
-  def __init__(self, manager):
+class AppGroup:
+  def __init__(self, manager, apprunner):
+    self.apprunner = None
+    self.manager = manager
+
+class AppRunner:
+  def __init__(self, taskid, manager):
+    self.taskid = taskid
     self.task = AppUpdate(None, None, None, None, None)
     self.app = None
     self.runner = None
@@ -98,7 +106,7 @@ class TaskGroup:
       
 
   def __repr__(self):
-    return "<TaskGroup %s %s %s>" % (self.app.provides, self.app.taskid, len(self.childGroups))
+    return "<AppRunner %s: %s %s %s>" % (self.taskid, self.app.provides, self.app.taskid, len(self.childGroups))
 
 
 
@@ -116,96 +124,94 @@ class TaskManager:
   def start_task(self, req):
     a = app.App(req.taskid)
     pgroup = None
-    group = self._taskGroups.get(a.provides, None)
-    if group:
-      if group.task.taskid == req.taskid:
+    runner = self._taskGroups.get(a.provides, None)
+    if runner:
+      if runner.task.taskid == req.taskid:
         print "already running"
         return StartTaskResponse("already running")
 
-      self._stopTask(group)
+      self._stopTask(runner)
 
-    if a.depends and a.depends.strip():
-      print "depends", a.depends
+    if a.depends:
       pgroup = self._taskGroups.get(a.depends, None)
       if not pgroup:
         print "no parent task group %s running." % str(a.depends)
         return StartTaskResponse("no parent task group %s running." % str(a.depends))
 
-    self._apps[req.taskid] = a
-    group = TaskGroup(self)
-    group.app = a
+    runner = AppRunner(req.taskid, self)
+    runner.app = a
+    self._apps[req.taskid] = runner
+
     if a.provides:
-      self._taskGroups[a.provides] = group
+      self._taskGroups[a.provides] = runner
 
     if pgroup:
-      pgroup.childGroups.append(group)
+      pgroup.childGroups.append(runner)
 
-    print "startTask [%s, %s, %s]" % (req.taskid, a.name, req.username)
-    group.task.taskid = req.taskid
-    group.task.username = req.username
-    group.task.started = rospy.get_rostime()
-    group.task.status = "starting"
+    #print "startTask [%s, %s, %s]" % (req.taskid, a.name, req.username)
+    runner.task.taskid = req.taskid
+    runner.task.username = req.username
+    runner.task.started = rospy.get_rostime()
+    runner.task.status = "starting"
 
-    self.app_update.publish(group.task)
+    self.app_update.publish(runner.task)
 
-    group.launch()
+    runner.launch()
 
-    group.task.status = "running"
-    self.app_update.publish(group.task)
+    time.sleep(1)
+    runner.task.status = "running"
+    self.app_update.publish(runner.task)
     self._send_status()
 
     return StartTaskResponse("done")
 
   def showstate(self):
     print "_" * 40
-    for provides, group in self._taskGroups.items():
-      print provides, group.childGroups
+    for provides, runner in self._taskGroups.items():
+      print provides, runner.childGroups
 
-  def _stopTask(self, group):
-    print "_stopTask", group.app.provides
+  def _stopTask(self, runner):
+    runner.task.status = "stopping"
+    self.app_update.publish(runner.task)
 
-    group.task.status = "stopping"
-    self.app_update.publish(group.task)
-
-    print "childGroups", group, group.childGroups
-    for cgroup in group.childGroups[:]:
+    for cgroup in runner.childGroups[:]:
       self._stopTask(cgroup)
 
-    group.stop()
+    runner.stop()
+    time.sleep(1)
 
-    group.task.status = "stopped"
-    self.app_update.publish(group.task)
+    runner.task.status = "stopped"
+    self.app_update.publish(runner.task)
 
-    if group.app.depends:
-      pgroup = self._taskGroups.get(group.app.depends.strip(), None)
+    if runner.app.depends:
+      pgroup = self._taskGroups.get(runner.app.depends, None)
       if pgroup:
-        pgroup.childGroups.remove(group)
+        pgroup.childGroups.remove(runner)
 
-    if group.app.provides:
-      print "removing", group.app.provides
-      del self._taskGroups[group.app.provides]
+    if runner.app.provides:
+      print "removing", runner.app.provides
+      del self._taskGroups[runner.app.provides]
+
+    if runner.taskid in self._apps:
+      del self._apps[runner.taskid]
+      print "removing", runner.taskid
 
 
   def stop_task(self, req):
-    app = self._apps[req.taskid]
+    if req.taskid not in self._apps:
+      return StopTaskResponse("no such task: %s" % req.taskid)
+      
+    runner = self._apps[req.taskid]
 
-    group = self._taskGroups.get(app.provides, None)
-    if not group: 
-      msg = "no such group: " + str(app.provides)
-      return StopTaskResponse(msg)
-
-    self._stopTask(group)
-
-    del self._apps[req.taskid]
+    self._stopTask(runner)
 
     self._send_status()
 
     return StopTaskResponse("done")
 
   def status_update(self, req):
-    self._send_status()
-    for provides, group in self._taskGroups.items():
-      self.app_update.publish(group.task)
+    for provides, runner in self._taskGroups.items():
+      self.app_update.publish(runner.task)
     return StatusUpdateResponse("done")
 
 

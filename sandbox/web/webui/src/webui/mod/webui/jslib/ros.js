@@ -62,13 +62,17 @@ var MessagePump = Class.create({
    }
   },
 
+ receive_service: function(json_result) {
+      // implement this to return the result to the calling service call.
+ },
+
  receive: function(json_result) {
    try {
+     this.lastTime = json_result.since;
      this.evalMessages(json_result);
    } catch (e) {
      ros_debug("Error with evalMessages.");
    }
-   this.lastTime = json_result.since;
    this.pump(); 
  },
       
@@ -498,3 +502,32 @@ var RosOut_Widget = Class.create({
 gRosClasses["RosOut_Widget"] = function(dom){
   return new RosOut_Widget(dom);
 }
+
+
+
+
+var ActiveTasks = Class.create({
+  initialize: function(domobj) {
+    this.pump = null;
+    this.domobj = domobj;
+    this.topics = [domobj.getAttribute("topic")];
+  },
+
+  init: function() {
+    this.domobj.innerHTML = "";
+  },
+
+  receive: function(msg) {
+      var s = "";
+      for(var i=0; i<msg.active.length; i++) {
+        s = s + "|" + msg.active[i];
+      }
+      this.domobj.innerHTML = s;
+    }
+});
+
+gRosClasses["ActiveTasks"] = function(dom){
+  return new ActiveTasks(dom);
+}
+
+
