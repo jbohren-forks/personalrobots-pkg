@@ -28,7 +28,9 @@ set(TREX_FILES src/adapters.cpp
 create_trex_lib(trex_ros TREX_FILES)
 
 rosbuild_add_gtest_build_flags(trex_ros_o)
-rosbuild_add_gtest_build_flags(trex_ros_g)
+if($ENV{ROS_TREX_DEBUG} MATCHES 1)
+   rosbuild_add_gtest_build_flags(trex_ros_g)
+endif($ENV{ROS_TREX_DEBUG} MATCHES 1)
 
 # Implementation of actions 
 rosbuild_add_executable(bin/actions src/actions.cpp)
