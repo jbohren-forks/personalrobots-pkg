@@ -30,7 +30,7 @@
 /** \Author: Benjamin Cohen /bcohen@willowgarage.com **/
 
 #include <boost/thread/mutex.hpp>
-#include <kdl_parser/tree_parser.hpp>
+#include <kdl_parser/xml_parser.hpp>
 #include <kdl/jntarray.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <voxel3d/voxel3d.h>
