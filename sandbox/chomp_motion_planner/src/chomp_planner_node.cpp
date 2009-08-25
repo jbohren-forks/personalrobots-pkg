@@ -39,7 +39,7 @@
 #include <chomp_motion_planner/chomp_utils.h>
 #include <chomp_motion_planner/chomp_parameters.h>
 #include <chomp_motion_planner/chomp_optimizer.h>
-#include <kdl_parser/tree_parser.hpp>
+#include <kdl_parser/xml_parser.hpp>
 #include <kdl/jntarray.hpp>
 #include <angles/angles.h>
 #include <visualization_msgs/MarkerArray.h>

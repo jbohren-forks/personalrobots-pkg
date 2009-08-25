@@ -35,7 +35,7 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <chomp_motion_planner/chomp_robot_model.h>
-#include <kdl_parser/tree_parser.hpp>
+#include <kdl_parser/xml_parser.hpp>
 #include <ros/ros.h>
 #include <cstdio>
 
