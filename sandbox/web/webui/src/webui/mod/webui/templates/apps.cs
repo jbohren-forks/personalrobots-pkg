@@ -12,7 +12,7 @@
 <table align=center cellspacing=5>
 <tr>
 <?cs each:_app=CGI.cur.apps ?>
-  <td class=buttonOff height=100 bgcolor=white objtype="LaunchButtonWidget" topic="/app_update" taskid="<?cs var:_app.taskid ?>"><div valign=top style="height: 70%;"><font color=black><nobr><?cs var:_app.name ?></div><div style="position: relative; bottom: 0px; font-size: 10pt;" objtype=TextWidget topic="/app_update" key=status selector="taskid" selectorValue="<?cs var:_app.taskid?>">&nbsp;</div></td>
+  <td class=buttonOff objtype="LaunchButtonWidget" topic="/app_update" taskid="<?cs var:_app.taskid ?>"><div class=buttonTitle valign=top><?cs var:_app.name ?></div><div class=buttonStatus objtype=TextWidget topic="/app_update" key=status selector="taskid" selectorValue="<?cs var:_app.taskid?>">&nbsp;</div></td>
 <?cs /each ?>
 </tr>
 </table>
@@ -26,7 +26,7 @@
 <td class=rosoutHeading style="width: 80%;">Message</td>
 <td class=rosoutHeading style="width: 15%;">Node</td>
 </table>
-<div style="border: 2px solid white; height: 30em; width: 80%;" objtype=RosOut_Widget></div><br>
+<div class=rosoutWidget objtype=RosOut_Widget></div><br>
 </td>
 </tr>
 </table>

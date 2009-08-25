@@ -164,6 +164,7 @@ td.buttonOff {
   border-color: #222222;
   width: 6em;
   cursor: pointer;
+  height: 100;
 }
 td.buttonOff:hover {
   border-color: #555555;
@@ -183,7 +184,15 @@ td.buttonOn {
   width: 6em;
 }
 
-buttonStatus {
+.buttonTitle {
+  height: 70%;
+  color: black;
+  white-space: nowrap;
+}
+
+.buttonStatus {
+  position: relative; 
+  bottom: 0px; 
   font-size: 10pt;
 }
 
@@ -236,13 +245,16 @@ input.pbbutton {
   font-family: arial,tahoma,helvetica,sans-serif;
 }
 
+.rosoutWidget { 
+  border: 2px solid white; 
+  height: 30em; 
+  width: 80%;
+}
+
 table.rosout {
   table-layout: fixed;
   width: 100%;
   background-color: #e0e0e0;
-}
-
-tr.rosout {
 }
 
 td.rosoutHeading {
