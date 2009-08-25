@@ -83,7 +83,7 @@ TEST(PR2IK, inverseKinematics)
 srand ( time(NULL) ); // initialize random seed: 
 
 
-  ik.chain_.toKDL(kdl_chain);
+ kdl_chain = ik.chain_;
 
   jnt_to_pose_solver = new KDL::ChainFkSolverPos_recursive(kdl_chain);
   jnt_pos_in.resize(7);
@@ -143,7 +143,7 @@ TEST(PR2IK, inverseKinematicsSearch)
 /* initialize random seed: */
   srand ( time(NULL) );
 
-  ik.chain_.toKDL(kdl_chain);
+  kdl_chain = ik.chain_;
 
   jnt_to_pose_solver = new KDL::ChainFkSolverPos_recursive(kdl_chain);
   jnt_pos_in.resize(7);
