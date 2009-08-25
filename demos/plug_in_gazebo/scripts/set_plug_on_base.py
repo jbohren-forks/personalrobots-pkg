@@ -164,12 +164,9 @@ def main():
         h.stamp = rospy.get_rostime();
         h.frame_id = "/map"
         # publish pose
-        #p = Point(xyz[0]+magnet_p[0],xyz[1]+magnet_p[1],xyz[2]+magnet_p[2])
-        #p = Point(xyz[0],xyz[1],xyz[2])
-        p = Point(0,0,0)
+        p = Point(xyz[0]+magnet_p[0],xyz[1]+magnet_p[1],xyz[2]+magnet_p[2])
         tmpq = tft.quaternion_multiply(tft.quaternion_from_euler(rpy[0],rpy[1],rpy[2],'rxyz'),magnet_q)
-        #q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
-        q = Quaternion(1,0,0,0)
+        q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
         pose = PoseWithCovariance(Pose(p,q),COV)
         poseWithRatesStamped = Odometry(h,"/map",pose,TwistWithCovariance());
         pub_pose.publish(poseWithRatesStamped)
