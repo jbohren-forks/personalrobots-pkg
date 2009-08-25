@@ -14,4 +14,5 @@
   <depend stack="ros"/> <!-- gtest, roscpp, rospy, std_srvs, rosconsole, std_msgs --> 
   <depend stack="common_msgs"/> <!-- diagnostic_msgs, robot_srvs --> 
   <depend stack="diagnostics"/> <!-- diagnostic_updater --> 
+  <depend stack="robot_model"/> <!-- urdf --> 
 </stack>
