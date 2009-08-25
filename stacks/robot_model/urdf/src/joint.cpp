@@ -180,7 +180,7 @@ bool JointMimic::initXml(TiXmlElement* config)
   const char* joint_name_str = config->Attribute("joint");
   if (joint_name_str == NULL)
   {
-    ROS_ERROR("joint mimic: no mimic joint specified");
+    ROS_WARN("joint mimic: no mimic joint specified");
     return false;
   }
   else
@@ -362,7 +362,7 @@ bool Joint::initXml(TiXmlElement* config)
     mimic.reset(new JointMimic);
     if (!mimic->initXml(mimic_xml))
     {
-      ROS_ERROR("Could not parse mimic element for joint  '%s'", this->name.c_str());
+      ROS_WARN("Could not parse mimic element for joint  '%s'", this->name.c_str());
       mimic.reset();
     }
   }
