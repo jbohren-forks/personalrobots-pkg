@@ -94,21 +94,21 @@ def main():
             goal_msg = goal
             action_goal_msg = """
 Header header
-actionlib/GoalID goal_id
+actionlib_msgs/GoalID goal_id
 %sGoal goal
 """ % name
 
             result_msg = result
             action_result_msg = """
 Header header
-actionlib/GoalStatus status
+actionlib_msgs/GoalStatus status
 %sResult result
 """ % name
 
             feedback_msg = feedback
             action_feedback_msg = """
 Header header
-actionlib/GoalStatus status
+actionlib_msgs/GoalStatus status
 %sFeedback feedback
 """ % name
 

@@ -94,21 +94,21 @@ TerminalState ClientGoalHandle<ActionSpec>::getTerminalState()
   if (comm_state_ != CommState::DONE)
     ROS_WARN("Asking for the terminal state when we're in [%s]", comm_state_.toString().c_str());
 
-  GoalStatus goal_status = list_handle_.getElem()->getGoalStatus();
+  actionlib_msgs::GoalStatus goal_status = list_handle_.getElem()->getGoalStatus();
 
   switch (goal_status.status)
   {
-    case GoalStatus::PENDING:
-    case GoalStatus::ACTIVE:
-    case GoalStatus::PREEMPTING:
-    case GoalStatus::RECALLING:
+    case actionlib_msgs::GoalStatus::PENDING:
+    case actionlib_msgs::GoalStatus::ACTIVE:
+    case actionlib_msgs::GoalStatus::PREEMPTING:
+    case actionlib_msgs::GoalStatus::RECALLING:
       ROS_ERROR("Asking for terminal state, but latest goal status is %u", goal_status.status); return TerminalState::LOST;
-    case GoalStatus::PREEMPTED: return TerminalState::PREEMPTED;
-    case GoalStatus::SUCCEEDED: return TerminalState::SUCCEEDED;
-    case GoalStatus::ABORTED:   return TerminalState::ABORTED;
-    case GoalStatus::REJECTED:  return TerminalState::REJECTED;
-    case GoalStatus::RECALLED:  return TerminalState::RECALLED;
-    case GoalStatus::LOST:      return TerminalState::LOST;
+    case actionlib_msgs::GoalStatus::PREEMPTED: return TerminalState::PREEMPTED;
+    case actionlib_msgs::GoalStatus::SUCCEEDED: return TerminalState::SUCCEEDED;
+    case actionlib_msgs::GoalStatus::ABORTED:   return TerminalState::ABORTED;
+    case actionlib_msgs::GoalStatus::REJECTED:  return TerminalState::REJECTED;
+    case actionlib_msgs::GoalStatus::RECALLED:  return TerminalState::RECALLED;
+    case actionlib_msgs::GoalStatus::LOST:      return TerminalState::LOST;
     default:
       ROS_ERROR("Unknown goal status: %u", goal_status.status); break;
   }
@@ -154,7 +154,7 @@ void ClientGoalHandle<ActionSpec>::cancel()
 
   ActionGoalConstPtr action_goal = list_handle_.getElem()->getActionGoal();
 
-  GoalID cancel_msg;
+  actionlib_msgs::GoalID cancel_msg;
   cancel_msg.stamp = ros::Time(0,0);
   cancel_msg.id = list_handle_.getElem()->getActionGoal()->goal_id.id;
 

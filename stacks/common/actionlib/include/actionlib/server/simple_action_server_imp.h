@@ -115,7 +115,7 @@ namespace actionlib {
     if(!current_goal_.getGoal())
       return false;
     unsigned int status = current_goal_.getGoalStatus().status;
-    return status == GoalStatus::ACTIVE || status == GoalStatus::PREEMPTING;
+    return status == actionlib_msgs::GoalStatus::ACTIVE || status == actionlib_msgs::GoalStatus::PREEMPTING;
   }
 
   template <class ActionSpec>

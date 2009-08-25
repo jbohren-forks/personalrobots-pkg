@@ -42,18 +42,18 @@ namespace actionlib {
 
   template <class ActionSpec>
   void ServerGoalHandle<ActionSpec>::setAccepted(){
-    ROS_DEBUG("Accepting goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+    ROS_DEBUG("Accepting goal, id: %s, stamp: %.2f", getGoalID().id.c_str(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
 
       //if we were pending before, then we'll go active
-      if(status == GoalStatus::PENDING){
-        (*status_it_).status_.status = GoalStatus::ACTIVE;
+      if(status == actionlib_msgs::GoalStatus::PENDING){
+        (*status_it_).status_.status = actionlib_msgs::GoalStatus::ACTIVE;
         as_->publishStatus();
       }
       //if we were recalling before, now we'll go to preempting
-      else if(status == GoalStatus::RECALLING){
-        (*status_it_).status_.status = GoalStatus::PREEMPTING;
+      else if(status == actionlib_msgs::GoalStatus::RECALLING){
+        (*status_it_).status_.status = actionlib_msgs::GoalStatus::PREEMPTING;
         as_->publishStatus();
       }
       else
@@ -66,15 +66,15 @@ namespace actionlib {
 
   template <class ActionSpec>
   void ServerGoalHandle<ActionSpec>::setCanceled(const Result& result){
-    ROS_DEBUG("Setting status to canceled on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+    ROS_DEBUG("Setting status to canceled on goal, id: %s, stamp: %.2f", getGoalID().id.c_str(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
-      if(status == GoalStatus::PENDING || status == GoalStatus::RECALLING){
-        (*status_it_).status_.status = GoalStatus::RECALLED;
+      if(status == actionlib_msgs::GoalStatus::PENDING || status == actionlib_msgs::GoalStatus::RECALLING){
+        (*status_it_).status_.status = actionlib_msgs::GoalStatus::RECALLED;
         as_->publishResult((*status_it_).status_, result);
       }
-      else if(status == GoalStatus::ACTIVE || status == GoalStatus::PREEMPTING){
-        (*status_it_).status_.status = GoalStatus::PREEMPTED;
+      else if(status == actionlib_msgs::GoalStatus::ACTIVE || status == actionlib_msgs::GoalStatus::PREEMPTING){
+        (*status_it_).status_.status = actionlib_msgs::GoalStatus::PREEMPTED;
         as_->publishResult((*status_it_).status_, result);
       }
       else
@@ -87,11 +87,11 @@ namespace actionlib {
 
   template <class ActionSpec>
   void ServerGoalHandle<ActionSpec>::setRejected(const Result& result){
-    ROS_DEBUG("Setting status to rejected on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+    ROS_DEBUG("Setting status to rejected on goal, id: %s, stamp: %.2f", getGoalID().id.c_str(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
-      if(status == GoalStatus::PENDING || status == GoalStatus::RECALLING){
-        (*status_it_).status_.status = GoalStatus::REJECTED;
+      if(status == actionlib_msgs::GoalStatus::PENDING || status == actionlib_msgs::GoalStatus::RECALLING){
+        (*status_it_).status_.status = actionlib_msgs::GoalStatus::REJECTED;
         as_->publishResult((*status_it_).status_, result);
       }
       else
@@ -104,11 +104,11 @@ namespace actionlib {
 
   template <class ActionSpec>
   void ServerGoalHandle<ActionSpec>::setAborted(const Result& result){
-    ROS_DEBUG("Setting status to aborted on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+    ROS_DEBUG("Setting status to aborted on goal, id: %s, stamp: %.2f", getGoalID().id.c_str(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
-      if(status == GoalStatus::PREEMPTING || status == GoalStatus::ACTIVE){
-        (*status_it_).status_.status = GoalStatus::ABORTED;
+      if(status == actionlib_msgs::GoalStatus::PREEMPTING || status == actionlib_msgs::GoalStatus::ACTIVE){
+        (*status_it_).status_.status = actionlib_msgs::GoalStatus::ABORTED;
         as_->publishResult((*status_it_).status_, result);
       }
       else
@@ -121,11 +121,11 @@ namespace actionlib {
 
   template <class ActionSpec>
   void ServerGoalHandle<ActionSpec>::setSucceeded(const Result& result){
-    ROS_DEBUG("Setting status to succeeded on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+    ROS_DEBUG("Setting status to succeeded on goal, id: %s, stamp: %.2f", getGoalID().id.c_str(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
-      if(status == GoalStatus::PREEMPTING || status == GoalStatus::ACTIVE){
-        (*status_it_).status_.status = GoalStatus::SUCCEEDED;
+      if(status == actionlib_msgs::GoalStatus::PREEMPTING || status == actionlib_msgs::GoalStatus::ACTIVE){
+        (*status_it_).status_.status = actionlib_msgs::GoalStatus::SUCCEEDED;
         as_->publishResult((*status_it_).status_, result);
       }
       else
@@ -138,7 +138,7 @@ namespace actionlib {
 
   template <class ActionSpec>
   void ServerGoalHandle<ActionSpec>::publishFeedback(const Feedback& feedback){
-    ROS_DEBUG("Publishing feedback for goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+    ROS_DEBUG("Publishing feedback for goal, id: %s, stamp: %.2f", getGoalID().id.c_str(), getGoalID().stamp.toSec());
     if(goal_) {
       as_->publishFeedback((*status_it_).status_, feedback);
     }
@@ -158,22 +158,22 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  GoalID ServerGoalHandle<ActionSpec>::getGoalID() const{
+  actionlib_msgs::GoalID ServerGoalHandle<ActionSpec>::getGoalID() const{
     if(goal_)
       return (*status_it_).status_.goal_id;
     else{
       ROS_ERROR("Attempt to get a goal id on an uninitialized ServerGoalHandle");
-      return GoalID();
+      return actionlib_msgs::GoalID();
     }
   }
 
   template <class ActionSpec>
-  GoalStatus ServerGoalHandle<ActionSpec>::getGoalStatus() const{
+  actionlib_msgs::GoalStatus ServerGoalHandle<ActionSpec>::getGoalStatus() const{
     if(goal_)
       return (*status_it_).status_;
     else{
       ROS_ERROR("Attempt to get goal status on an uninitialized ServerGoalHandle");
-      return GoalStatus();
+      return actionlib_msgs::GoalStatus();
     }
   }
 
@@ -181,8 +181,8 @@ namespace actionlib {
   bool ServerGoalHandle<ActionSpec>::operator==(const ServerGoalHandle& other){
     if(!goal_ || !other.goal_)
       return false;
-    GoalID my_id = getGoalID();
-    GoalID their_id = other.getGoalID();
+    actionlib_msgs::GoalID my_id = getGoalID();
+    actionlib_msgs::GoalID their_id = other.getGoalID();
     return my_id.id == their_id.id;
   }
 
@@ -190,8 +190,8 @@ namespace actionlib {
   bool ServerGoalHandle<ActionSpec>::operator!=(const ServerGoalHandle& other){
     if(!goal_ || !other.goal_)
       return true;
-    GoalID my_id = getGoalID();
-    GoalID their_id = other.getGoalID();
+    actionlib_msgs::GoalID my_id = getGoalID();
+    actionlib_msgs::GoalID their_id = other.getGoalID();
     return my_id.id != their_id.id;
   }
 
@@ -203,17 +203,17 @@ namespace actionlib {
 
   template <class ActionSpec>
   bool ServerGoalHandle<ActionSpec>::setCancelRequested(){
-    ROS_DEBUG("Transisitoning to a cancel requested state on goal id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+    ROS_DEBUG("Transisitoning to a cancel requested state on goal id: %s, stamp: %.2f", getGoalID().id.c_str(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
-      if(status == GoalStatus::PENDING){
-        (*status_it_).status_.status = GoalStatus::RECALLING;
+      if(status == actionlib_msgs::GoalStatus::PENDING){
+        (*status_it_).status_.status = actionlib_msgs::GoalStatus::RECALLING;
         as_->publishStatus();
         return true;
       }
 
-      if(status == GoalStatus::ACTIVE){
-        (*status_it_).status_.status = GoalStatus::PREEMPTING;
+      if(status == actionlib_msgs::GoalStatus::ACTIVE){
+        (*status_it_).status_.status = actionlib_msgs::GoalStatus::PREEMPTING;
         as_->publishStatus();
         return true;
       }

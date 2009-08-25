@@ -85,7 +85,7 @@ void GoalManager<ActionSpec>::listElemDeleter(typename ManagedListT::iterator it
 }
 
 template<class ActionSpec>
-void GoalManager<ActionSpec>::updateStatuses(const GoalStatusArrayConstPtr& status_array)
+void GoalManager<ActionSpec>::updateStatuses(const actionlib_msgs::GoalStatusArrayConstPtr& status_array)
 {
   boost::recursive_mutex::scoped_lock lock(list_mutex_);
   typename ManagedListT::iterator it = list_.begin();

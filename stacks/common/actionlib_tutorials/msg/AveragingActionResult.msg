@@ -1,4 +1,4 @@
 
 Header header
-actionlib/GoalStatus status
+actionlib_msgs/GoalStatus status
 AveragingResult result

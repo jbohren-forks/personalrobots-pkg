@@ -9,9 +9,9 @@ The actionlib package is meant to assist ROS users in writing nodes that accompl
   <review status="api cleared" notes=""/>
   <url>http://ros.org/wiki/actionlib</url>
 
-  <depend package="geometry_msgs" />
   <depend package="roscpp" />
-  
+  <depend package="actionlib_msgs" />
+
   <export>
     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" />
   </export>

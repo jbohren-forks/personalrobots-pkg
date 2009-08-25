@@ -1,2 +1,2 @@
 time stamp
-time id
+string id

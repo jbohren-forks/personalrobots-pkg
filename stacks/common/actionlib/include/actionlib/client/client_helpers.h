@@ -51,9 +51,8 @@
 #include "actionlib/client/terminal_state.h"
 
 // msgs
-#include "actionlib/GoalID.h"
-#include "actionlib/GoalStatusArray.h"
-#include "actionlib/RequestType.h"
+#include "actionlib_msgs/GoalID.h"
+#include "actionlib_msgs/GoalStatusArray.h"
 
 namespace actionlib
 {
@@ -74,7 +73,7 @@ public:
   typedef boost::function<void (GoalHandleT) > TransitionCallback;
   typedef boost::function<void (GoalHandleT, const FeedbackConstPtr&) > FeedbackCallback;
   typedef boost::function<void (const ActionGoalConstPtr)> SendGoalFunc;
-  typedef boost::function<void (const GoalID&)> CancelFunc;
+  typedef boost::function<void (const actionlib_msgs::GoalID&)> CancelFunc;
 
   GoalManager() { }
 
@@ -85,7 +84,7 @@ public:
                         TransitionCallback transition_cb = TransitionCallback(),
                         FeedbackCallback feedback_cb = FeedbackCallback() );
 
-  void updateStatuses(const GoalStatusArrayConstPtr& status_array);
+  void updateStatuses(const actionlib_msgs::GoalStatusArrayConstPtr& status_array);
   void updateFeedbacks(const ActionFeedbackConstPtr& action_feedback);
   void updateResults(const ActionResultConstPtr& action_result);
 
@@ -224,11 +223,11 @@ class CommStateMachine
 
     ActionGoalConstPtr getActionGoal() const;
     CommState getCommState() const;
-    GoalStatus getGoalStatus() const;
+    actionlib_msgs::GoalStatus getGoalStatus() const;
     ResultConstPtr getResult() const;
 
     // Transitions caused by messages
-    void updateStatus(GoalHandleT& gh, const GoalStatusArrayConstPtr& status_array);
+    void updateStatus(GoalHandleT& gh, const actionlib_msgs::GoalStatusArrayConstPtr& status_array);
     void updateFeedback(GoalHandleT& gh, const ActionFeedbackConstPtr& feedback);
     void updateResult(GoalHandleT& gh, const ActionResultConstPtr& result);
 
@@ -242,7 +241,7 @@ class CommStateMachine
     // State
     CommState state_;
     ActionGoalConstPtr action_goal_;
-    GoalStatus latest_goal_status_;
+    actionlib_msgs::GoalStatus latest_goal_status_;
     ActionResultConstPtr latest_result_;
 
     // Callbacks
@@ -253,7 +252,7 @@ class CommStateMachine
     //! Change the state, as well as print out ROS_DEBUG info
     void setCommState(const CommState& state);
     void setCommState(const CommState::StateEnum& state);
-    const GoalStatus* findGoalStatus(const std::vector<GoalStatus>& status_vec) const;
+    const actionlib_msgs::GoalStatus* findGoalStatus(const std::vector<actionlib_msgs::GoalStatus>& status_vec) const;
 };
 
 }

@@ -40,11 +40,11 @@
 #include <ros/ros.h>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
-#include <actionlib/GoalID.h>
-#include <actionlib/GoalStatusArray.h>
-#include <actionlib/GoalStatus.h>
-#include <actionlib/RequestType.h>
+#include <actionlib_msgs/GoalID.h>
+#include <actionlib_msgs/GoalStatusArray.h>
+#include <actionlib_msgs/GoalStatus.h>
 #include <actionlib/enclosure_deleter.h>
+#include <actionlib/goal_id_generator.h>
 #include <actionlib/action_definition.h>
 #include <actionlib/server/status_tracker.h>
 #include <actionlib/server/handle_tracker_deleter.h>
@@ -103,19 +103,19 @@ namespace actionlib {
        * @param status The status of the goal with which the result is associated
        * @param result The result to publish
        */
-      void publishResult(const GoalStatus& status, const Result& result);
+      void publishResult(const actionlib_msgs::GoalStatus& status, const Result& result);
 
       /**
        * @brief  Publishes feedback for a given goal
        * @param status The status of the goal with which the feedback is associated
        * @param feedback The feedback to publish
        */
-      void publishFeedback(const GoalStatus& status, const Feedback& feedback);
+      void publishFeedback(const actionlib_msgs::GoalStatus& status, const Feedback& feedback);
 
       /**
        * @brief  The ROS callback for cancel requests coming into the ActionServer
        */
-      void cancelCallback(const boost::shared_ptr<const GoalID>& goal_id);
+      void cancelCallback(const boost::shared_ptr<const actionlib_msgs::GoalID>& goal_id);
 
       /**
        * @brief  The ROS callback for goals coming into the ActionServer
@@ -153,6 +153,7 @@ namespace actionlib {
       friend class ServerGoalHandle<ActionSpec>;
       friend class HandleTrackerDeleter<ActionSpec>;
 
+      GoalIDGenerator id_generator_;
   };
 };
 

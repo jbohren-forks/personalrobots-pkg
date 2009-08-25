@@ -117,7 +117,7 @@ public:
    */
   void cancelAllGoals()
   {
-    GoalID cancel_msg;
+    actionlib_msgs::GoalID cancel_msg;
     // CancelAll policy encoded by stamp=0, id=0
     cancel_msg.stamp = ros::Time(0,0);
     cancel_msg.id = ros::Time(0,0);
@@ -196,7 +196,7 @@ private:
     goal_pub_.publish(action_goal);
   }
 
-  void sendCancelFunc(const GoalID& cancel_msg)
+  void sendCancelFunc(const actionlib_msgs::GoalID& cancel_msg)
   {
     cancel_pub_.publish(cancel_msg);
   }
@@ -206,7 +206,7 @@ private:
     // Start publishers and subscribers
     server_connected_ = false;
     goal_pub_ = queue_advertise<ActionGoal>("goal", 1, boost::bind(&ActionClient::serverConnectionCb, this, _1), queue);
-    cancel_pub_ = n_.advertise<GoalID>("cancel", 1, true);
+    cancel_pub_ = n_.advertise<actionlib_msgs::GoalID>("cancel", 1, true);
     manager_.registerSendGoalFunc(boost::bind(&ActionClientT::sendGoalFunc, this, _1));
     manager_.registerCancelFunc(boost::bind(&ActionClientT::sendCancelFunc, this, _1));
 
@@ -238,7 +238,7 @@ private:
     return n_.subscribe(ops);
   }
 
-  void statusCb(const GoalStatusArrayConstPtr& status_array)
+  void statusCb(const actionlib_msgs::GoalStatusArrayConstPtr& status_array)
   {
     manager_.updateStatuses(status_array);
   }

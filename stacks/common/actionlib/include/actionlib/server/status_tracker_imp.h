@@ -38,7 +38,7 @@
 #define ACTIONLIB_STATUS_TRACKER_IMP_H_
 namespace actionlib {
   template <class ActionSpec>
-  StatusTracker<ActionSpec>::StatusTracker(const GoalID& goal_id, unsigned int status){
+  StatusTracker<ActionSpec>::StatusTracker(const actionlib_msgs::GoalID& goal_id, unsigned int status){
     //set the goal id and status appropriately
     status_.goal_id = goal_id;
     status_.status = status;
@@ -51,11 +51,11 @@ namespace actionlib {
       status_.goal_id = goal_->goal_id;
 
       //initialize the status of the goal to pending
-      status_.status = GoalStatus::PENDING;
+      status_.status = actionlib_msgs::GoalStatus::PENDING;
 
       //if the goal id is zero, then we need to make up an id for the goal
-      if(status_.goal_id.id == ros::Time()){
-        status_.goal_id.id = ros::Time::now();
+      if(status_.goal_id.id == ""){
+        status_.goal_id = id_generator_.generateID();
       }
 
       //if the timestamp of the goal is zero, then we'll set it to now()

@@ -37,9 +37,11 @@
 #ifndef ACTIONLIB_STATUS_TRACKER_H_
 #define ACTIONLIB_STATUS_TRACKER_H_
 
-#include <actionlib/GoalID.h>
-#include <actionlib/GoalStatus.h>
+#include <actionlib_msgs/GoalID.h>
+#include <actionlib_msgs/GoalStatus.h>
 #include <actionlib/action_definition.h>
+
+#include <actionlib/goal_id_generator.h>
 
 namespace actionlib {
 
@@ -55,14 +57,17 @@ namespace actionlib {
         ACTION_DEFINITION(ActionSpec);
 
       public:
-        StatusTracker(const GoalID& goal_id, unsigned int status);
+        StatusTracker(const actionlib_msgs::GoalID& goal_id, unsigned int status);
 
         StatusTracker(const boost::shared_ptr<const ActionGoal>& goal);
 
         boost::shared_ptr<const ActionGoal> goal_;
         boost::weak_ptr<void> handle_tracker_;
-        GoalStatus status_;
+        actionlib_msgs::GoalStatus status_;
         ros::Time handle_destruction_time_;
+
+      private:
+        GoalIDGenerator id_generator_;
     };
 };
 

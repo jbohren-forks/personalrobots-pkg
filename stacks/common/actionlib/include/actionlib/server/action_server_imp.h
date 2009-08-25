@@ -42,14 +42,14 @@ namespace actionlib {
       boost::function<void (GoalHandle)> goal_cb,
       boost::function<void (GoalHandle)> cancel_cb)
     : node_(n, name), goal_callback_(goal_cb), cancel_callback_(cancel_cb) {
-      status_pub_ = node_.advertise<actionlib::GoalStatusArray>("status", 1);
+      status_pub_ = node_.advertise<actionlib_msgs::GoalStatusArray>("status", 1);
       result_pub_ = node_.advertise<ActionResult>("result", 1);
       feedback_pub_ = node_.advertise<ActionFeedback>("feedback", 1);
 
       goal_sub_ = node_.subscribe<ActionGoal>("goal", 1,
           boost::bind(&ActionServer::goalCallback, this, _1));
 
-      cancel_sub_ = node_.subscribe<GoalID>("cancel", 1,
+      cancel_sub_ = node_.subscribe<actionlib_msgs::GoalID>("cancel", 1,
           boost::bind(&ActionServer::cancelCallback, this, _1));
 
       //read the frequency with which to publish status from the parameter server
@@ -75,7 +75,7 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  void ActionServer<ActionSpec>::publishResult(const GoalStatus& status, const Result& result){
+  void ActionServer<ActionSpec>::publishResult(const actionlib_msgs::GoalStatus& status, const Result& result){
     boost::recursive_mutex::scoped_lock lock(lock_);
     //we'll create a shared_ptr to pass to ROS to limit copying
     boost::shared_ptr<ActionResult> ar(new ActionResult);
@@ -85,7 +85,7 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  void ActionServer<ActionSpec>::publishFeedback(const GoalStatus& status, const Feedback& feedback){
+  void ActionServer<ActionSpec>::publishFeedback(const actionlib_msgs::GoalStatus& status, const Feedback& feedback){
     boost::recursive_mutex::scoped_lock lock(lock_);
     //we'll create a shared_ptr to pass to ROS to limit copying
     boost::shared_ptr<ActionFeedback> af(new ActionFeedback);
@@ -95,7 +95,7 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  void ActionServer<ActionSpec>::cancelCallback(const boost::shared_ptr<const GoalID>& goal_id){
+  void ActionServer<ActionSpec>::cancelCallback(const boost::shared_ptr<const actionlib_msgs::GoalID>& goal_id){
     boost::recursive_mutex::scoped_lock lock(lock_);
     //we need to handle a cancel for the user
     ROS_DEBUG("The action server has received a new cancel request");
@@ -104,7 +104,7 @@ namespace actionlib {
       //check if the goal id is zero or if it is equal to the goal id of
       //the iterator or if the time of the iterator warrants a cancel
       if(
-          (goal_id->id == ros::Time() && goal_id->stamp == ros::Time()) //id and stamp 0 --> cancel everything
+          (goal_id->id == "" && goal_id->stamp == ros::Time()) //id and stamp 0 --> cancel everything
           || goal_id->id == (*it).status_.goal_id.id //ids match... cancel that goal
           || (goal_id->stamp != ros::Time() && (*it).status_.goal_id.stamp <= goal_id->stamp) //stamp != 0 --> cancel everything before stamp
         ){
@@ -137,9 +137,9 @@ namespace actionlib {
     }
 
     //if the requested goal_id was not found, and it is non-zero, then we need to store the cancel request
-    if(goal_id->id != ros::Time() && !goal_id_found){
+    if(goal_id->id != "" && !goal_id_found){
       typename std::list<StatusTracker<ActionSpec> >::iterator it = status_list_.insert(status_list_.end(),
-          StatusTracker<ActionSpec> (*goal_id, GoalStatus::RECALLING));
+          StatusTracker<ActionSpec> (*goal_id, actionlib_msgs::GoalStatus::RECALLING));
       //start the timer for how long the status will live in the list without a goal handle to it
       (*it).handle_destruction_time_ = ros::Time::now();
     }
@@ -200,7 +200,7 @@ namespace actionlib {
   void ActionServer<ActionSpec>::publishStatus(){
     boost::recursive_mutex::scoped_lock lock(lock_);
     //build a status array
-    GoalStatusArray status_array;
+    actionlib_msgs::GoalStatusArray status_array;
 
     status_array.set_status_list_size(status_list_.size());
 

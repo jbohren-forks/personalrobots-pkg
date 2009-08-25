@@ -1,4 +1,4 @@
 
 Header header
-actionlib/GoalID goal_id
+actionlib_msgs/GoalID goal_id
 AveragingGoal goal

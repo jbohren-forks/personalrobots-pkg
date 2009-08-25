@@ -34,11 +34,11 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ACTIONLIB_SERVER_GOAL_HANDLE_H_ 
-#define ACTIONLIB_SERVER_GOAL_HANDLE_H_ 
+#ifndef ACTIONLIB_SERVER_GOAL_HANDLE_H_
+#define ACTIONLIB_SERVER_GOAL_HANDLE_H_
 
-#include <actionlib/GoalID.h>
-#include <actionlib/GoalStatus.h>
+#include <actionlib_msgs/GoalID.h>
+#include <actionlib_msgs/GoalStatus.h>
 #include <actionlib/action_definition.h>
 #include <actionlib/server/status_tracker.h>
 #include <boost/shared_ptr.hpp>
@@ -113,13 +113,13 @@ namespace actionlib {
        * @brief  Accessor for the goal id associated with the ServerGoalHandle
        * @return The goal id
        */
-      GoalID getGoalID() const;
+      actionlib_msgs::GoalID getGoalID() const;
 
       /**
        * @brief  Accessor for the status associated with the ServerGoalHandle
        * @return The goal status
        */
-      GoalStatus getGoalStatus() const;
+      actionlib_msgs::GoalStatus getGoalStatus() const;
 
       /**
        * @brief  Equals operator for ServerGoalHandles

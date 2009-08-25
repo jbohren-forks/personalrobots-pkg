@@ -35,9 +35,10 @@
 #ifndef ACTION_LIB_GOAL_ID_GENERATOR_H_
 #define ACTION_LIB_GOAL_ID_GENERATOR_H_
 
+#include <sstream>
 #include <string>
 #include "ros/time.h"
-#include "actionlib/GoalID.h"
+#include "actionlib_msgs/GoalID.h"
 
 namespace actionlib
 {
@@ -57,14 +58,16 @@ public:
    * \brief Generates a unique ID
    * \return A unique GoalID for this action
    */
-  GoalID generateID()
+  actionlib_msgs::GoalID generateID()
   {
-    GoalID id;
-    id.id = ros::Time::now();
-    id.stamp = id.id;
+    actionlib_msgs::GoalID id;
+    ros::Time cur_time = ros::Time::now();
+    std::stringstream ss;
+    ss << cur_time.sec << "." << cur_time.nsec;
+    id.id = ss.str();
+    id.stamp = cur_time;
     return id;
   }
-
 
 private:
   std::string name_ ;
