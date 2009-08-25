@@ -11,6 +11,7 @@
   <depend package="roscpp"/>
   <depend package="actionlib"/>
   <depend package="mechanism_msgs"/>
+  <depend package="settlerlib"/>
 
 </package>
 

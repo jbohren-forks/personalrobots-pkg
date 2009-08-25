@@ -32,65 +32,21 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "calibration_message_filters/joint_states_deflater.h"
+#ifndef JOINT_STATES_SETTLER_DEFLATED_JOINT_STATES_H_
+#define JOINT_STATES_SETTLER_DEFLATED_JOINT_STATES_H_
 
-using namespace std;
-using namespace calibration_message_filters;
-using namespace mechanism_msgs;
+#include <mechanism_msgs/JointStates.h>
+#include <settlerlib/deflated.h>
 
-JointStatesDeflater::JointStatesDeflater()
+namespace joint_states_settler
 {
-  mapping_.clear();
+
+class DeflatedJointStates : public settlerlib::Deflated
+{
+public:
+  mechanism_msgs::JointStatesConstPtr msg_;
+};
+
 }
 
-void JointStatesDeflater::setDeflationJointNames(std::vector<std::string> joint_names)
-{
-  joint_names_ = joint_names;
-  mapping_.resize(joint_names_.size());
-}
-
-void JointStatesDeflater::deflate(const JointStatesConstPtr& joint_states, DeflatedJointStates& deflated_elem)
-{
-  if (mapping_.size() != joint_names_.size())
-    updateMapping(*joint_states);
-
-  const unsigned int N = joint_names_.size();
-
-  deflated_elem.deflated_.resize(N);
-
-  for (unsigned int i=0; i<N; i++)
-  {
-    if ( mapping_[i] >= joint_states->joints.size() )
-      updateMapping(*joint_states);
-
-    if ( joint_states->joints[mapping_[i]].name != joint_names_[i])
-      updateMapping(*joint_states);
-
-    deflated_elem.header = joint_states->header;
-    deflated_elem.deflated_[i] = joint_states->joints[mapping_[i]].position;
-    deflated_elem.msg = joint_states;
-  }
-}
-
-void JointStatesDeflater::updateMapping(const JointStates& joint_states)
-{
-  ROS_DEBUG("Updating the JointStates mapping");
-
-  const unsigned int N = joint_names_.size();
-
-  mapping_.resize(N);
-
-  for (unsigned int i=0; i<N; i++)
-  {
-    bool mapping_found = false;
-    for (unsigned int j=0; j<joint_states.joints.size(); j++)
-    {
-      if ( joint_names_[i] == joint_states.joints[j].name)
-      {
-        mapping_[i] = j;
-        mapping_found = true;
-      }
-    }
-    ROS_ERROR_COND(!mapping_found, "Couldn't find mapping for [%s]", joint_names_[i].c_str());
-  }
-}
+#endif

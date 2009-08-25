@@ -32,15 +32,12 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-
 #include <gtest/gtest.h>
-
-#include "calibration_message_filters/joint_states_deflater.h"
+#include "joint_states_settler/joint_states_deflater.h"
 
 using namespace std;
-using namespace calibration_message_filters;
+using namespace joint_states_settler;
 using namespace mechanism_msgs;
-
 
 static const double eps = 1e-10;
 
@@ -55,7 +52,7 @@ TEST(JointStatesDeflator, easy1)
   deflater.setDeflationJointNames(joint_names);
 
   JointStatesPtr joint_states;
-  DeflatedMsg<JointStates> deflated_msg;
+  DeflatedJointStates deflated_msg;
 
   // ***********************************************
 
@@ -70,9 +67,9 @@ TEST(JointStatesDeflator, easy1)
 
   deflater.deflate(joint_states, deflated_msg);
 
-  EXPECT_EQ(deflated_msg.deflated_.size(), (unsigned int) 2);
-  EXPECT_NEAR(deflated_msg.deflated_[0], 1.0, eps);
-  EXPECT_NEAR(deflated_msg.deflated_[1], 3.0, eps);
+  EXPECT_EQ(deflated_msg.channels_.size(), (unsigned int) 2);
+  EXPECT_NEAR(deflated_msg.channels_[0], 1.0, eps);
+  EXPECT_NEAR(deflated_msg.channels_[1], 3.0, eps);
 
   // ***********************************************
 
@@ -87,9 +84,9 @@ TEST(JointStatesDeflator, easy1)
 
   deflater.deflate(joint_states, deflated_msg);
 
-  EXPECT_EQ(deflated_msg.deflated_.size(), (unsigned int) 2);
-  EXPECT_NEAR(deflated_msg.deflated_[0], 5.0, eps);
-  EXPECT_NEAR(deflated_msg.deflated_[1], 4.0, eps);
+  EXPECT_EQ(deflated_msg.channels_.size(), (unsigned int) 2);
+  EXPECT_NEAR(deflated_msg.channels_[0], 5.0, eps);
+  EXPECT_NEAR(deflated_msg.channels_[1], 4.0, eps);
 
   // ***********************************************
 
@@ -106,10 +103,9 @@ TEST(JointStatesDeflator, easy1)
 
   deflater.deflate(joint_states, deflated_msg);
 
-  EXPECT_EQ(deflated_msg.deflated_.size(), (unsigned int) 2);
-  EXPECT_NEAR(deflated_msg.deflated_[0], 10.0, eps);
-  EXPECT_NEAR(deflated_msg.deflated_[1], 8.0, eps);
-
+  EXPECT_EQ(deflated_msg.channels_.size(), (unsigned int) 2);
+  EXPECT_NEAR(deflated_msg.channels_[0], 10.0, eps);
+  EXPECT_NEAR(deflated_msg.channels_[1], 8.0, eps);
 }
 
 

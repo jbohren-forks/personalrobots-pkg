@@ -32,25 +32,56 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef SETTLERLIB_DEFLATED_H_
-#define SETTLERLIB_DEFLATED_H_
+#ifndef JOINT_STATES_SETTLER_JOINT_STATES_DEFLATER_H_
+#define JOINT_STATES_SETTLER_JOINT_STATES_DEFLATER_H_
 
-#include <boost/shared_ptr.hpp>
-#include "roslib/Header.h"
+#include <mechanism_msgs/JointStates.h>
+#include <settlerlib/deflated.h>
+#include "deflated_joint_states.h"
 
-namespace settlerlib
+namespace joint_states_settler
 {
 
-class Deflated
+/**
+ * \brief Given a set a joint names, efficiently extracts a subset of joint positions
+ *
+ * This class is generally more efficient than other methods, because it caches the the mapping
+ * from the incoming joint_states message to the deflated vector.  It also updates the mapping
+ * whenever the ordering in joint_states changes
+ **/
+class JointStatesDeflater
 {
 public:
-  roslib::Header header; // Need header to put in cache
-  std::vector<double> channels_;
+
+  JointStatesDeflater();
+
+  /**
+   * \brief Specify which joints to extract
+   * \param joint_names Ordered list of joint names to extract
+   */
+  void setDeflationJointNames(std::vector<std::string> joint_names);
+
+  /**
+   * \brief Perform the deflation on a joint_states message
+   * \param joint_states Incoming JointStates message
+   * \param Ouput datatype. Stores the deflated data, along with the original joint states message
+   */
+  void deflate(const mechanism_msgs::JointStatesConstPtr& joint_states, DeflatedJointStates& deflated_elem);
+
+private:
+  std::vector<unsigned int> mapping_;
+  std::vector<std::string> joint_names_;
+
+  /**
+   * \brief Given a stereotypical JointStates message, computes the mapping
+   * from JointStates to the deflated data
+   */
+  void updateMapping(const mechanism_msgs::JointStates& joint_states);
+
 };
 
 }
 
+
+
 #endif
-
-
-

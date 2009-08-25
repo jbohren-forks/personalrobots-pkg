@@ -32,36 +32,64 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef CALIBRATION_MESSAGE_FILTERS_JOINT_STATES_DEFLATER_H_
-#define CALIBRATION_MESSAGE_FILTERS_JOINT_STATES_DEFLATER_H_
+#include "joint_states_settler/joint_states_deflater.h"
 
-#include "calibration_message_filters/deflated.h"
-#include "mechanism_msgs/JointStates.h"
+using namespace std;
+using namespace joint_states_settler;
 
-namespace calibration_message_filters
+JointStatesDeflater::JointStatesDeflater()
 {
-
-
-class JointStatesDeflater
-{
-public:
-  typedef DeflatedMsg<mechanism_msgs::JointStates> DeflatedJointStates;
-
-  JointStatesDeflater();
-
-  void setDeflationJointNames(std::vector<std::string> joint_names);
-  void deflate(const mechanism_msgs::JointStatesConstPtr& joint_states, DeflatedJointStates& deflated_elem);
-
-private:
-  std::vector<unsigned int> mapping_;
-  std::vector<std::string> joint_names_;
-
-  void updateMapping(const mechanism_msgs::JointStates& joint_states);
-
-};
-
+  mapping_.clear();
 }
 
+void JointStatesDeflater::setDeflationJointNames(std::vector<std::string> joint_names)
+{
+  joint_names_ = joint_names;
+  mapping_.resize(joint_names_.size());
+}
 
+void JointStatesDeflater::deflate(const mechanism_msgs::JointStatesConstPtr& joint_states, DeflatedJointStates& deflated_elem)
+{
+  if (mapping_.size() != joint_names_.size())
+    updateMapping(*joint_states);
 
-#endif
+  const unsigned int N = joint_names_.size();
+
+  deflated_elem.channels_.resize(N);
+
+  for (unsigned int i=0; i<N; i++)
+  {
+    if ( mapping_[i] >= joint_states->joints.size() )
+      updateMapping(*joint_states);
+
+    if ( joint_states->joints[mapping_[i]].name != joint_names_[i])
+      updateMapping(*joint_states);
+
+    deflated_elem.header = joint_states->header;
+    deflated_elem.channels_[i] = joint_states->joints[mapping_[i]].position;
+    deflated_elem.msg_ = joint_states;
+  }
+}
+
+void JointStatesDeflater::updateMapping(const mechanism_msgs::JointStates& joint_states)
+{
+  ROS_DEBUG("Updating the JointStates mapping");
+
+  const unsigned int N = joint_names_.size();
+
+  mapping_.resize(N);
+
+  for (unsigned int i=0; i<N; i++)
+  {
+    bool mapping_found = false;
+    for (unsigned int j=0; j<joint_states.joints.size(); j++)
+    {
+      if ( joint_names_[i] == joint_states.joints[j].name)
+      {
+        mapping_[i] = j;
+        mapping_found = true;
+      }
+    }
+    ROS_ERROR_COND(!mapping_found, "Couldn't find mapping for [%s]", joint_names_[i].c_str());
+  }
+}
