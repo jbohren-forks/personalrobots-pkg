@@ -21,10 +21,8 @@
 <tr>
 <td width=100%>
 <table class=rosout><tr>
-<td class=rosoutHeading style="width: 50%;">Message</td>
-<td class=rosoutHeading style="width: 5%;">Severity</td>
-<td class=rosoutHeading style="width: 10%;">Node</td> 
-<td class=rosoutHeading style="width: 10%;">Topics</td>
+<td class=rosoutHeading style="width: 1%;">Severity</td>
+<td class=rosoutHeading style="width: 90%;">Message</td>
 </table>
 <div style="border: 2px solid white; height: 30em; width: 80%;" objtype=RosOut_Widget></div><br>
 </td>

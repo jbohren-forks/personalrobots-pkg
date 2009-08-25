@@ -232,13 +232,14 @@ input.pbbutton {
 }
 
 .rosout { 
-  font-size: 10px; 
+  font-size: 12px; 
   font-family: arial,tahoma,helvetica,sans-serif;
 }
 
 table.rosout {
   table-layout: fixed;
   width: 100%;
+  background-color: #e0e0e0;
 }
 
 tr.rosout {
@@ -255,8 +256,6 @@ td.rosoutHeading {
 td.rosout {
   overflow: hidden;
   white-space: nowrap;
-  border-bottom: 1px solid gray;
-  border-right: 1px solid gray;
   padding-right: 5px;
   padding-left: 5px;
 }

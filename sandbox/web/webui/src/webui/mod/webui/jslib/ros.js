@@ -454,13 +454,7 @@ var RosOut_Widget = Class.create({
       var c, tn;
       c = row.insertCell(0);
       c.className = "rosout";
-      c.style.width = "50%";
-      tn = document.createTextNode(msg.msg);
-      c.appendChild(tn);
-
-      c = row.insertCell(1);
-      c.className = "rosout";
-      c.style.width = "5%";
+      c.style.width = "2%";
       var level = "";
       if(msg.level == "16") level="Info";
       if(msg.level == "8") level="Debug";
@@ -470,11 +464,18 @@ var RosOut_Widget = Class.create({
       tn = document.createTextNode(level);
       c.appendChild(tn);
 
-      c = row.insertCell(2);
-      c.style.width = "10%";
+      c = row.insertCell(1);
       c.className = "rosout";
-      tn = document.createTextNode(msg.name);
+      c.style.width = "90%";
+      tn = document.createTextNode(msg.msg);
       c.appendChild(tn);
+
+
+      //      c = row.insertCell(2);
+      //      c.style.width = "10%";
+      //      c.className = "rosout";
+      //      tn = document.createTextNode(msg.name);
+      //      c.appendChild(tn);
 
       //      c = row.insertCell(3);
       //      c.style.width = "5%";
@@ -482,11 +483,11 @@ var RosOut_Widget = Class.create({
       //      tn = document.createTextNode(msg.file + ":" + msg.line);
       //      c.appendChild(tn);
 
-      c = row.insertCell(3);
-      c.style.width = "10%";
-      c.className = "rosout";
-      tn = document.createTextNode(Object.toJSON(msg.topics));
-      c.appendChild(tn);
+      //c = row.insertCell(3);
+      //c.style.width = "10%";
+      //c.className = "rosout";
+      //tn = document.createTextNode(Object.toJSON(msg.topics));
+      //c.appendChild(tn);
   },
 
   receive: function(msg) {
