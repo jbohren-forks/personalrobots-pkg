@@ -94,6 +94,11 @@ public:
    */
    void getCommand(double & cmd);
 
+  virtual bool starting() {
+    command_ = joint_state_->position_;
+    return true;
+  }
+
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
    */
