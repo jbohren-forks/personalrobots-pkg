@@ -456,11 +456,11 @@ var RosOut_Widget = Class.create({
       c.className = "rosout";
       c.style.width = "2%";
       var level = "";
-      if(msg.level == "16") level="Info";
-      if(msg.level == "8") level="Debug";
+      if(msg.level == "16") level="Fatal";
+      if(msg.level == "8") level="Error";
       if(msg.level == "4") level="Warn";
-      if(msg.level == "2") level="Error";
-      if(msg.level == "1") level="Fatal";
+      if(msg.level == "2") level="Info";
+      if(msg.level == "1") level="Debug";
       tn = document.createTextNode(level);
       c.appendChild(tn);
 
