@@ -14,7 +14,6 @@
 <depend package="angles"/>
 <depend package="tf_conversions"/>
 <depend package="mechanism_model"/>
-<depend package="wg_robot_description_parser"/>
 <depend package="manipulation_srvs"/>
 <depend package="manipulation_msgs"/>
 <depend package="chomp_motion_planner"/>
