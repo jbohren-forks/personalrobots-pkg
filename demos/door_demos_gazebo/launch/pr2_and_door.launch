@@ -4,7 +4,7 @@
   <include file="$(find gazebo)/launch/empty_world.launch"/>
 
   <!-- load pr2 -->
-  <include file="$(find pr2_defs)/launch/upload_pr2.launch" />
+  <include file="$(find pr2_defs)/launch/upload_prf.launch" />
   <node pkg="gazebo_tools" type="urdf2factory" args="robot_description_new" respawn="false"  />
 
   <!-- Robot state publisher -->
