@@ -3,7 +3,6 @@
 
 #include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
-#include <urdf/parser.h>
 #include <ocl/ComponentLoader.hpp>
 
 #include <sys/stat.h>
@@ -65,7 +64,6 @@ public:
             log(Error)<<"Could not parse the xml from "<< xml_file<<endlog();
             return false;
         }
-        urdf::normalizeXml(root_element);
 
         // Create mechanism control
         mc = new controller::MechanismControl(ec.hw_);
