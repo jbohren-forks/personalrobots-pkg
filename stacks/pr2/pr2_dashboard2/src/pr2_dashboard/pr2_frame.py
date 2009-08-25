@@ -44,9 +44,8 @@ try:
 except ImportError:
     pass
 
-import runtime_monitor
-import hardware_panel
-from runtime_monitor.monitor_panel import MonitorPanel
+import robot_monitor
+from robot_monitor.robot_monitor_panel import RobotMonitorPanel
 from pr2_msgs.msg import PowerState
 from pr2_power_board.srv import PowerBoardCommand, PowerBoardCommandRequest 
 
@@ -61,7 +60,7 @@ class DiagnosticsFrame(wx.Frame):
     
     self.Bind(wx.EVT_CLOSE, self.on_close)
     
-    self._diagnostics_panel = MonitorPanel(self)
+    self._diagnostics_panel = RobotMonitorPanel(self)
     
   def on_close(self, evt):
     self.Hide()
@@ -81,9 +80,8 @@ class BatteryStateControl(wx.Window):
   def __init__(self, parent, id, icons_path):
     wx.Window.__init__(self, parent, id, wx.DefaultPosition, wx.Size(60, -1))
     
-    self.Bind(wx.EVT_PAINT, self.on_paint)
-    
     self._power_consumption = 0.0
+    self._pct = 0
     self._time_remaining = 0
     self._ac_present = 0
     
@@ -92,6 +90,8 @@ class BatteryStateControl(wx.Window):
     self._start_x = self._left_bitmap.GetWidth()
     self._end_x = self.GetSize().x - self._right_bitmap.GetWidth()
     self._width = self._end_x - self._start_x
+    
+    self.Bind(wx.EVT_PAINT, self.on_paint)
 
   def on_paint(self, evt):
     dc = wx.BufferedPaintDC(self)
@@ -106,9 +106,9 @@ class BatteryStateControl(wx.Window):
     green = [0.0, 255, 0.0]
     
     color = None
-    if (self._time_remaing > 10):
+    if (self._pct > 50):
       color = wx.Colour(green[0], green[1], green[2])
-    elif (self._time_remaing > 5):
+    elif (self._pct > 30):
       color = wx.Colour(yellow[0], yellow[1], yellow[2])
     else:
       color = wx.Colour(red[0], red[1], red[2])
@@ -119,35 +119,66 @@ class BatteryStateControl(wx.Window):
     
     dc.SetBrush(wx.Brush(color))
     dc.SetPen(wx.Pen(color))
-    if (self._time_remaining > 60): # lets start counting down below 60 minutes predicted time left
-      dc.DrawRectangle(self._start_x, 0, self._width, h)
-    else:
-      dc.DrawRectangle(self._start_x, 0, self._width * (self._time_remaining/60.0), h)
+    dc.DrawRectangle(self._start_x, 0, self._width * (self._pct), h)
     dc.DrawBitmap(self._left_bitmap, 0, 0, True)
     dc.DrawBitmap(self._right_bitmap, self._end_x, 0, True)
       
   def set_battery_state(self, msg):
     self._power_consumption = msg.power_consumption
     self._time_remaining = msg.time_remaining
-    self._ac_present = msg.AC_present
+    print msg.relative_capacity
+    self._pct = msg.relative_capacity / 100.0
+    self._msg = msg
     
-    self.SetToolTip(wx.ToolTip("Battery: %d minutes Remaining"%(self._time_remaining)))
+    self.SetToolTip(wx.ToolTip("Battery: %.2f%% (%d minutes remaining)"%(self._pct, self._time_remaining)))
     
     self.Refresh()
     
-class BreakerControl(wx.Window):
-  def __init__(self, parent, id, icons_path):
-    wx.Window.__init__(self, parent, id, wx.DefaultPosition, wx.Size(32, 32))
+class StatusControl(wx.Window):
+  def __init__(self, parent, id, bitmap, icons_path):
+    wx.Window.__init__(self, parent, id)
+    self.SetSize(wx.Size(32, 32))
     
-    self._base_spine_bitmaps = (wx.Bitmap(path.join(icons_path, "base_spine_green.png"), wx.BITMAP_TYPE_PNG),
-                                wx.Bitmap(path.join(icons_path, "base_spine_yellow.png"), wx.BITMAP_TYPE_PNG),
-                                wx.Bitmap(path.join(icons_path, "base_spine_red.png"), wx.BITMAP_TYPE_PNG))
-    self._left_arm_bitmaps =   (wx.Bitmap(path.join(icons_path, "left_arm_green.png"), wx.BITMAP_TYPE_PNG),
-                                wx.Bitmap(path.join(icons_path, "left_arm_yellow.png"), wx.BITMAP_TYPE_PNG),
-                                wx.Bitmap(path.join(icons_path, "left_arm_red.png"), wx.BITMAP_TYPE_PNG))
-    self._right_arm_bitmaps =  (wx.Bitmap(path.join(icons_path, "right_arm_green.png"), wx.BITMAP_TYPE_PNG),
-                                wx.Bitmap(path.join(icons_path, "right_arm_yellow.png"), wx.BITMAP_TYPE_PNG),
-                                wx.Bitmap(path.join(icons_path, "right_arm_red.png"), wx.BITMAP_TYPE_PNG))
+    self._bitmap = bitmap
+    
+    self._green = wx.Bitmap(path.join(icons_path, "green_light.png"), wx.BITMAP_TYPE_PNG)
+    self._yellow = wx.Bitmap(path.join(icons_path, "yellow_light.png"), wx.BITMAP_TYPE_PNG)
+    self._red = wx.Bitmap(path.join(icons_path, "red_light.png"), wx.BITMAP_TYPE_PNG)
+    
+    self.set_ok()
+    
+    self.Bind(wx.EVT_PAINT, self.on_paint)
+    self.Bind(wx.EVT_LEFT_UP, self.on_left_up)
+
+  def on_left_up(self, evt):
+    x = evt.GetX()
+    y = evt.GetY()
+    if (x >= 0 and y >= 0 and x < self.GetSize().GetWidth() and y < self.GetSize().GetHeight()):
+      event = wx.CommandEvent(wx.EVT_BUTTON._getEvtType(), self.GetId())
+      wx.PostEvent(self, event)
+
+  def on_paint(self, evt):
+    dc = wx.BufferedPaintDC(self)
+    dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
+    dc.Clear()
+    dc.DrawBitmap(self._color, 0, 0, True)
+    dc.DrawBitmap(self._bitmap, 0, 0, True)
+
+  def set_ok(self):
+    self._color = self._green
+    self.Refresh()
+    
+  def set_warn(self):
+    self._color = self._yellow
+    self.Refresh()
+    
+  def set_error(self):
+    self._color = self._red
+    self.Refresh()
+    
+class BreakerControl(StatusControl):
+  def __init__(self, parent, id, icons_path):
+    StatusControl.__init__(self, parent, id, wx.Bitmap(path.join(icons_path, "electricity.png"), wx.BITMAP_TYPE_PNG), icons_path)
     
     self.Bind(wx.EVT_PAINT, self.on_paint)
     self.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
@@ -157,20 +188,12 @@ class BreakerControl(wx.Window):
     try:
       param = rospy.search_param("power_board_serial")
       
-      if (len(param) > 0):
+      if (param and len(param) > 0):
         self._serial = int(rospy.get_param(param))
     except rospy.ROSException, e:
       pass
     except KeyError, e:
       pass
-
-  def on_paint(self, evt):
-    dc = wx.BufferedPaintDC(self)
-    dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
-    dc.Clear()
-    dc.DrawBitmap(self._left_arm_bitmaps[0], 0, 0, True)
-    dc.DrawBitmap(self._right_arm_bitmaps[0], 0, 0, True)
-    dc.DrawBitmap(self._base_spine_bitmaps[0], 0, 0, True)
     
   def on_left_down(self, evt):
     menu = wx.Menu()
@@ -219,48 +242,6 @@ class BreakerControl(wx.Window):
   def on_disable_all(self, evt):
     self.control3("disable")
     
-class StatusControl(wx.Window):
-  def __init__(self, parent, id, bitmap, icons_path):
-    wx.Window.__init__(self, parent, id)
-    self.SetSize(wx.Size(32, 32))
-    
-    self._bitmap = bitmap
-    
-    self._green = wx.Bitmap(path.join(icons_path, "green_light.png"), wx.BITMAP_TYPE_PNG)
-    self._yellow = wx.Bitmap(path.join(icons_path, "yellow_light.png"), wx.BITMAP_TYPE_PNG)
-    self._red = wx.Bitmap(path.join(icons_path, "red_light.png"), wx.BITMAP_TYPE_PNG)
-    
-    self.set_ok()
-    
-    self.Bind(wx.EVT_PAINT, self.on_paint)
-    self.Bind(wx.EVT_LEFT_UP, self.on_left_up)
-
-  def on_left_up(self, evt):
-    x = evt.GetX()
-    y = evt.GetY()
-    if (x >= 0 and y >= 0 and x < self.GetSize().GetWidth() and y < self.GetSize().GetHeight()):
-      event = wx.CommandEvent(wx.EVT_BUTTON._getEvtType(), self.GetId())
-      wx.PostEvent(self, event)
-
-  def on_paint(self, evt):
-    dc = wx.BufferedPaintDC(self)
-    dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
-    dc.Clear()
-    dc.DrawBitmap(self._color, 0, 0, True)
-    dc.DrawBitmap(self._bitmap, 0, 0, True)
-
-  def set_ok(self):
-    self._color = self._green
-    self.Refresh()
-    
-  def set_warn(self):
-    self._color = self._yellow
-    self.Refresh()
-    
-  def set_error(self):
-    self._color = self._red
-    self.Refresh()
-    
 
 class PR2Frame(wx.Frame):
     _CONFIG_WINDOW_X="/Window/X"
@@ -296,7 +277,7 @@ class PR2Frame(wx.Frame):
         sizer.Add(self._rosout_button, 0)
         
         # Separator
-        sizer.Add(wx.StaticLine(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL), 0, wx.EXPAND)
+        #sizer.Add(wx.StaticLine(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL), 0, wx.EXPAND)
         
         # Breakers
         self._breakers_ctrl = BreakerControl(self, wx.ID_ANY, icons_path)
@@ -333,12 +314,13 @@ class PR2Frame(wx.Frame):
         self._timer.Start(100)
         
         self._mutex = threading.Lock()
-        rospy.Subscriber("power_state", PowerState, self.battery_callback)
+        rospy.Subscriber("power_state", PowerState, self.power_callback)
         
     def on_timer(self, evt):
-      if (self._diagnostics_frame._diagnostics_panel.get_num_errors() > 0):
+      level = self._diagnostics_frame._diagnostics_panel.get_top_level_state()
+      if (level >= 2):
         self._diagnostics_button.set_error()
-      elif (self._diagnostics_frame._diagnostics_panel.get_num_warnings() > 0):
+      elif (level == 1):
         self._diagnostics_button.set_warn()
       else:
         self._diagnostics_button.set_ok()
@@ -354,17 +336,17 @@ class PR2Frame(wx.Frame):
       self._rosout_frame.Show()
       self._rosout_frame.Raise()
       
-    def battery_callback(self, msg):
+    def power_callback(self, msg):
       self._mutex.acquire()
-      self._battery_message = msg
+      self._power_message = msg
       self._mutex.release()
       
       wx.CallAfter(self.new_battery_message) 
       
     def new_battery_message(self):
       self._mutex.acquire()
-      msg = self._battery_message
-      self._battery_message = None
+      msg = self._power_message
+      self._power_message = None
       self._mutex.release()
       
       if (msg is not None):
