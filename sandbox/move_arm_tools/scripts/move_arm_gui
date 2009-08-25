@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # ROS Stuff
-PKG = 'movearm_tools' # this package name
-NAME = 'movearm_gui'
+PKG = 'move_arm_tools' # this package name
+NAME = 'move_arm_gui'
 
 
 import roslib; roslib.load_manifest(PKG)
@@ -10,7 +10,7 @@ import rospy
 from std_msgs.msg import *
 from nav_msgs.msg import *
 from move_arm.msg import MoveArmActionGoal
-from movearm_tools.srv import ArmCtrlCmd
+from move_arm_tools.srv import ArmCtrlCmd
 from motion_planning_msgs.msg import PoseConstraint
 
 import sys
@@ -41,11 +41,12 @@ progress = None
 
 #pub_move_torso = rospy.Publisher('/torso_lift_position_controller/set_command', Float64)
 pub_position_arm = rospy.Publisher('/move_right_arm/goal', MoveArmActionGoal)
-#pub_arm_cmd = rospy.wait_for_service('/arm_cmd_line_server', ArmCtrlCmd)
 pub_gripper_force = rospy.Publisher('/r_gripper_effort_controller/command', Float64)
 
-rospy.wait_for_service('arm_cmd_line_server')
-arm_cmd_svc = rospy.ServiceProxy('arm_cmd_line_server', ArmCtrlCmd)
+print "waiting for command line service"
+rospy.wait_for_service('/auto_arm_cmd_server')
+print "success"
+arm_cmd_svc = rospy.ServiceProxy('/auto_arm_cmd_server', ArmCtrlCmd)
 
 class MoveArmWindow(gtk.Window):
 	
