@@ -58,6 +58,8 @@ public:
 
   const Eigen::MatrixXd& getQuadraticCostInverse() const;
 
+  const Eigen::MatrixXd& getQuadraticCost() const;
+
   double getCost(Eigen::MatrixXd::ColXpr joint_trajectory) const;
 
   double getMaxQuadCostInvValue() const;
@@ -83,6 +85,11 @@ void ChompCost::getDerivative(Eigen::MatrixXd::ColXpr joint_trajectory, Eigen::M
 inline const Eigen::MatrixXd& ChompCost::getQuadraticCostInverse() const
 {
   return quad_cost_inv_;
+}
+
+inline const Eigen::MatrixXd& ChompCost::getQuadraticCost() const
+{
+  return quad_cost_;
 }
 
 inline double ChompCost::getCost(Eigen::MatrixXd::ColXpr joint_trajectory) const

@@ -1,23 +1,18 @@
-collision_clearance: 0.08
+collision_clearance: 0.15
 
 collision_links:
   r_gripper_l_finger_link:
-    link_radius: 0.03
-    link_clearance: 0.10
+    link_radius: 0.04
     link_extension: 0.05
   r_gripper_r_finger_link:
-    link_radius: 0.03
-    link_clearance: 0.10
+    link_radius: 0.04
     link_extension: 0.05
   r_gripper_palm_link:
     link_radius: 0.05
-    link_clearance: 0.10
   r_forearm_link:
     link_radius: 0.065
-    link_clearance: 0.08
   r_upper_arm_link:
     link_radius: 0.07
-    link_clearance: 0.08
 
 joint_costs:
   r_shoulder_pan_joint: 1.0
@@ -48,7 +43,7 @@ collision_space:
   origin_y: -1.5
   origin_z: -0.3
   resolution: 0.01
-  field_bias_x: 0.3
+  field_bias_x: 0.0
   field_bias_y: 0.0
   field_bias_z: 0.0
   cuboids:

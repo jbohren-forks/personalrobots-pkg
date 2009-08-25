@@ -365,13 +365,21 @@ void ChompRobotModel::generateCollisionPoints()
   {
     // clear out collision points for this group:
     group_it->second.collision_points_.clear();
+    ROS_INFO("Group %s has collision points from:", group_it->second.name_.c_str());
 
-    for (std::map<std::string, std::vector<ChompCollisionPoint> >::iterator link_it=link_collision_points_.begin(); link_it!=link_collision_points_.end(); ++link_it)
+    for (vector<string>::const_iterator link_name_it=robot_models_->getCollisionCheckLinks().begin();
+        link_name_it!=robot_models_->getCollisionCheckLinks().end(); ++link_name_it)
     {
-      for (std::vector<ChompCollisionPoint>::iterator point_it=link_it->second.begin(); point_it!=link_it->second.end(); ++point_it)
+      std::map<std::string, std::vector<ChompCollisionPoint> >::iterator link_it = link_collision_points_.find(*link_name_it);
+      if (link_it != link_collision_points_.end())
       {
-        group_it->second.addCollisionPoint(*point_it, *this);
+        ROS_INFO("\t%s", link_it->first.c_str());
+        for (std::vector<ChompCollisionPoint>::iterator point_it=link_it->second.begin(); point_it!=link_it->second.end(); ++point_it)
+        {
+          group_it->second.addCollisionPoint(*point_it, *this);
+        }
       }
+
     }
     ROS_INFO("Group %s has %d collision points", group_it->second.name_.c_str(), group_it->second.collision_points_.size());
   }

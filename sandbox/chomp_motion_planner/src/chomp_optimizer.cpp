@@ -602,7 +602,11 @@ void ChompOptimizer::updateMomentum()
 {
   double alpha = 1.0 - parameters_->getHmcStochasticity();
   double eps = parameters_->getHmcDiscretization();
-  momentum_ = alpha * (momentum_ + eps*final_increments_) + sqrt(1.0-alpha*alpha)*random_momentum_;
+  if (iteration_ > 0)
+    momentum_ = (momentum_ + eps*final_increments_);
+  else
+    momentum_ = random_momentum_;
+  //momentum_ = alpha * (momentum_ + eps*final_increments_) + sqrt(1.0-alpha*alpha)*random_momentum_;
 }
 
 void ChompOptimizer::updatePositionFromMomentum()
