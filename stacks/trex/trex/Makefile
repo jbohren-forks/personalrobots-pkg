@@ -13,13 +13,13 @@ ifeq ($(strip $(SVN_CMDLINE)),)
 SVN_CMDLINE = svn
 endif
 
-#all: trex plasma planworks includes
+#all: trex plasma includes
 all: installed
 
 installed: Makefile
-	make trex planworks plasma includes
+	make trex plasma includes
 
-includes: trex plasma planworks
+includes: trex plasma 
 	@if [ ! -d include ]; then echo "Try to make" ; fi
 
 # GET plasma
@@ -35,12 +35,6 @@ plasma:
 #	$(MAKE) PLASMA 
 #	patch -f -p0 < PLASMA_PATCH.diff
 #	touch patch-PLASMA 
-
-# GET PlanWorks
-PLANWORKS_REVISION=5117
-planworks:
-	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r $(PLANWORKS_REVISION) http://europa-pso.googlecode.com/svn/PlanWorks/trunk PlanWorks; ./copyIncludes.sh ; fi ;
-	@if [ ! -n "`svn info PlanWorks | grep 'Revision: $(PLANWORKS_REVISION)'`" ]; then cd PlanWorks && $(SVN_CMDLINE) up -r $(PLANWORKS_REVISION) ; cd ../ && ./copyIncludes.sh ; fi;
 
 # Get TREX
 TREX_REVISION=230
@@ -68,6 +62,6 @@ test: trex
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex test; fi
 
 clean:
-	rm -rf PLASMA plasma TREX trex EUROPA logs PlanWorks planworks include installed
+	rm -rf PLASMA plasma TREX trex EUROPA logs include installed
 
 wipe: clean
