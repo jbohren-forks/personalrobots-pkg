@@ -446,9 +446,11 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         self.log_request()
 
-        if path.startswith("/ros"):
-          self.handle_ROS(path, qdict)
-          return
+        global handlers
+        for handler in handlers:
+          if path.startswith(handler['url']):
+            handler['handler'](self, path, qdict)
+            return
 
         netloc = "localhost:80"
         scm = "http"
@@ -574,12 +576,35 @@ def signal_handler(signal, frame):
   global running
   running = False
 
+handlers = [{'url': '/ros', 'handler': ROSWebHandler.handle_ROS}]
+def load_plugins():
+  global handlers
+  plugins = roslib.scriptutil.rospack_plugins(PKG_NAME)
+  for plugin in plugins:
+    try:
+      mods = plugin.split('.')
+      package = mods[0]
+      roslib.load_manifest(package)
+      mod = __import__(plugin)
+      for sub_mod in mods[1:]:
+        mod = getattr(mod, sub_mod)
+
+      h = mod.config_plugin()
+      logging.info("Added handlers %s" % (h))
+      handlers.extend(h)
+      
+    except Exception, reason:
+      logging.error("got exception %s" % reason)
+      sys.exit(-1)
+
 def main():
   global running, error_log
   running = True
   logging.basicConfig(filename="error_log", level=logging.DEBUG)
 
   signal.signal(signal.SIGINT, signal_handler)
+
+  load_plugins()
 
   while running:
     logging.info("starting")
