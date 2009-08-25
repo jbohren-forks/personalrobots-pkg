@@ -1,14 +1,22 @@
 
 body { 
   margin: 0px;
-  background-color: #000;
-  color: #fff;
+  background-color: white;
+  color: #000;
 }
 
 A:hover { text-decoration: underline; color: red;}
 A:active { text-decoration: none}
-A:visited { text-decoration: none; color: #aaf;}
-A:link { text-decoration: none; color: #aaf;} 
+A:visited { text-decoration: none; color: #00f;}
+A:link { text-decoration: none; color: #00f;} 
+
+.toolbar { 
+  font-size: 11px; 
+  font-family: arial,tahoma,helvetica,sans-serif;
+  background-image: url('images/toolbar/tb-bg.gif');
+}
+
+
 
 td.field { 
   font-weight: bold;
@@ -33,7 +41,6 @@ td.failvalue {
   vertical-align: top;
   white-space: nowrap;
   font-weight: bold;
-  color: #ffffff;
   text-decoration: blink;
   background-color: #aa0000;
 }
@@ -47,8 +54,14 @@ td.actions {
 }
 
 
-div.title { 
-  font-size: medium;
+.pagetitle { 
+  font-size: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.title { 
+  font-size: 24px;
   font-weight: bold;
 }
 
@@ -63,19 +76,19 @@ div.title {
 }
 
 table.head_buttons { 
-  border-spacing: 7px;
+  border-spacing: 12px;
 }
 
 td.head_buttons { 
   font-family: Arial, Helvetica, Verdana, sans-serif; 
   text-align: center; 
-  background-color: #aaaaaa;
+  color: #fff;
+  background-color: #333;
   border-style: solid;
   border-width: 2px;
-  border-color: #dddddd;
-  color: #000;
+  border-color: #ddd;
   width: 6em;
-  height: 1em;
+  height: 2em;
 }
 
 td.head_buttons:hover {
@@ -94,7 +107,6 @@ table.sortable {
 
 th { 
   background-color: #ddffdd;
-  color: black;
 }
 
 td.money { 
@@ -132,12 +144,9 @@ tr.grey {
 
 body {
   margin: 0px;
-  color: white;
-  font-size: 12px;
 }
 
 a.tablink {
-  color: white;
 }
 
 td.buttonOff:hover {
@@ -152,8 +161,8 @@ td.buttonOff {
   font-size: 16px;
   border-style: solid;
   border-width: 2px;
-  border-color: #dddddd;
-  width: 4em;
+  border-color: #222222;
+  width: 6em;
   cursor: pointer;
 }
 td.buttonOff:hover {
@@ -170,8 +179,8 @@ td.buttonOn {
   font-size: 16px;
   border-style: solid;
   border-width: 2px;
-  border-color: #aaaaaa;
-  width: 4em;
+  border-color: #222222;
+  width: 6em;
 }
 
 buttonStatus {
@@ -180,27 +189,26 @@ buttonStatus {
 
 
 table.powerboard { 
-  border: 1px solid #fff;
+  border: 1px solid #000;
   background-color: #555;
-  font-size: 10px;
 }
 
 td.powerboard { 
-  width: 7em;
+  width: 10em;
   text-align: center;
 }
 
 .powerboard_breaker_On { 
   background: green; 
-  border: 1px solid #fff;
+  border: 1px solid #000;
 }
 .powerboard_breaker_Standby { 
   background: orange; 
-  border: 1px solid #fff;
+  border: 1px solid #000;
 }
 .powerboard_breaker_Disabled { 
   background: red; 
-  border: 1px solid #fff;
+  border: 1px solid #000;
 }
 
 .powerboard_runstop_stop { 
@@ -220,5 +228,36 @@ td.powerboard {
 }
 
 input.pbbutton { 
-  width: 6em;
+  width: 8em;
 }
+
+.rosout { 
+  font-size: 10px; 
+  font-family: arial,tahoma,helvetica,sans-serif;
+}
+
+table.rosout {
+  table-layout: fixed;
+  width: 100%;
+}
+
+tr.rosout {
+}
+
+td.rosoutHeading {
+  overflow: hidden;
+  white-space: nowrap;
+  padding-right: 5px;
+  padding-left: 5px;
+  background-image: url('images/toolbar/tb-bg.gif');
+}
+
+td.rosout {
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 1px solid gray;
+  border-right: 1px solid gray;
+  padding-right: 5px;
+  padding-left: 5px;
+}
+

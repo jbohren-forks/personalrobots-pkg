@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 """
-usage: %(progname)s username
+usage: %(progname)s
 """
 
 
@@ -26,9 +26,6 @@ def main(argv, stdout, environ):
   optlist, args = getopt.getopt(argv[1:], "", ["help", "test", "debug"])
 
   testflag = 0
-  if len(args) != 1:
-    usage(progname)
-    return
 
   for (field, val) in optlist:
     if field == "--help":
