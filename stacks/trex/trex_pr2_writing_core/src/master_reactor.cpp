@@ -37,7 +37,7 @@ bool MasterReactor::executeGoals(ExecuteGoals::Request &req, ExecuteGoals::Respo
 
   for(std::vector<int32_t>::const_iterator it = req.outlet_ids.begin(); it != req.outlet_ids.end(); ++it){
     // Allocate a token - it should be inactive but not rejectable - cannot deny the truth
-    TokenId token = client->createToken("M2Goals.Active", true);
+    TokenId token = client->createToken("M2Goals.Active", NULL, true);
     ConstrainedVariableId outlet_id_param = token->getVariable("outlet_id", false);
     int32_t outlet_id = *it;
     outlet_id_param->restrictBaseDomain(IntervalIntDomain(outlet_id, outlet_id));
