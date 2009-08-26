@@ -72,39 +72,9 @@ TEST(TestClampedCubicSplineSmoother, TestZeroPositionsSmall)
   }
 }
 
-TEST(TestClampedCubicSplineSmoother, TestZeroPositionsLarge)
+TEST(TestClampedCubicSplineSmoother, TestStraightLineSmall)
 {
-  int length = ClampedCubicSplineSmoother::MAX_TRIDIAGONAL_SOLVER_ELEMENTS*10;
-
-  manipulation_msgs::WaypointTrajWithLimits wpt;
-  manipulation_msgs::WaypointTrajWithLimits wpt_out;
-  wpt.points.resize(length);
-  wpt.names.resize(1);
-  wpt.names[0] = std::string("test");
-  for (int i=0; i<length; i++)
-  {
-    wpt.points[i].positions.resize(1);
-    wpt.points[i].accelerations.resize(1);
-    wpt.points[i].velocities.resize(1);
-    wpt.points[i].positions[0] = 0.0;
-    wpt.points[i].velocities[0] = 0.0;
-    wpt.points[i].accelerations[0] = 0.0;
-    wpt.points[i].time = i;
-  }
-
-  ClampedCubicSplineSmoother ccss;
-  ccss.smooth(wpt, wpt_out);
-
-  // verify that velocities are 0:
-  for (int i=0; i<length; i++)
-  {
-    EXPECT_NEAR(wpt_out.points[i].velocities[0], 0.0, 1e-8);
-  }
-}
-
-TEST(TestClampedCubicSplineSmoother, TestStraightLineLarge)
-{
-  int length = ClampedCubicSplineSmoother::MAX_TRIDIAGONAL_SOLVER_ELEMENTS*10;
+  int length = ClampedCubicSplineSmoother::MAX_TRIDIAGONAL_SOLVER_ELEMENTS-2;
 
   manipulation_msgs::WaypointTrajWithLimits wpt;
   manipulation_msgs::WaypointTrajWithLimits wpt_out;

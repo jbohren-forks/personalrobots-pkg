@@ -40,6 +40,7 @@
 #include <vector>
 #include <manipulation_msgs/WaypointTrajWithLimits.h>
 #include <filters/filter_base.h>
+#include <pluginlib/class_list_macros.h>
 
 namespace spline_smoother
 {
@@ -47,32 +48,52 @@ namespace spline_smoother
 /**
  * \brief Abstract base class for spline smoothing.
  *
+ * A spline smoother is a class that takes in a "WaypointTrajWithLimits" message, potentially
+ * containing no velocities / accelerations, and fills them in using some rules. Example
+ * implementations are in "ClampedCubicSplineSmoother", "FritschButlandSplineSmoother" and
+ * "NumericalDifferentiationSplineSmoother", each of which uses a different set of rules
+ * to fill in the velocities and accelerations for spline creation.
+ *
  * To implement a smoother, just override the virtual "smooth" method, and call the
  * REGISTER_SPLINE_SMOOTHER macro with the class name (anywhere in the cpp file)
  */
 class SplineSmoother: public filters::FilterBase<manipulation_msgs::WaypointTrajWithLimits>
 {
 public:
-  SplineSmoother();
-  virtual ~SplineSmoother();
+  SplineSmoother(){};
+  virtual ~SplineSmoother(){};
 
   virtual bool configure();
 
-  virtual bool update(const std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_in, std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_out);
+  /**
+   * \brief Implementation of the update() function for the filter
+   */
+  virtual bool update(const manipulation_msgs::WaypointTrajWithLimits& data_in, manipulation_msgs::WaypointTrajWithLimits& data_out);
 
   /**
    * \brief Smooths the input position trajectory by generating velocities and accelerations at the waypoints.
    *
+   * This virtual method needs to implemented by the derived class.
    * \return true if successful, false if not
    */
   virtual bool smooth(const manipulation_msgs::WaypointTrajWithLimits& trajectory_in, manipulation_msgs::WaypointTrajWithLimits& trajectory_out) const = 0;
 };
 
+/////////////////////////// inline functions follow //////////////////////////
+
+inline bool SplineSmoother::configure()
+{
+  return true;
 }
 
-typedef manipulation_msgs::WaypointTrajWithLimits manipulation_msgs__WaypointTrajWithLimits;
+inline bool SplineSmoother::update(const manipulation_msgs::WaypointTrajWithLimits& data_in, manipulation_msgs::WaypointTrajWithLimits& data_out)
+{
+  return smooth(data_in, data_out);
+}
 
-#define REGISTER_SPLINE_SMOOTHER(c) \
-  FILTERS_REGISTER_FILTER_NONTEMPLATE(c, manipulation_msgs__WaypointTrajWithLimits)
+}
+
+#define REGISTER_SPLINE_SMOOTHER(class_name, class_type) \
+  PLUGINLIB_REGISTER_CLASS(class_name, class_type, filters::FilterBase<manipulation_msgs::WaypointTrajWithLimits>)
 
 #endif /* SPLINE_SMOOTHER_H_ */

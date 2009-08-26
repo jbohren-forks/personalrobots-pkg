@@ -77,6 +77,6 @@ bool FixWraparoundJoints::smooth(const manipulation_msgs::WaypointTrajWithLimits
   return true;
 }
 
-REGISTER_SPLINE_SMOOTHER(FixWraparoundJoints)
-
 }
+
+REGISTER_SPLINE_SMOOTHER(FixWraparoundJoints, joint_waypoint_controller::FixWraparoundJoints)

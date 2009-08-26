@@ -43,9 +43,8 @@ using namespace filters;
 TEST(TestSmoothersAsFilters, TestSmoothersAsFilters1)
 {
   // make the filter chain:
-  FilterChain<manipulation_msgs::WaypointTrajWithLimits> chain;
-  std::string xml = "<filters><filter type=\"NumericalDifferentiationSplineSmoother\" name=\"ndss1\"/></filters>";
-  ASSERT_TRUE(chain.configureFromXMLString(1, xml));
+  FilterChain<manipulation_msgs::WaypointTrajWithLimits> chain("manipulation_msgs::WaypointTrajWithLimits");
+  ASSERT_TRUE(chain.configure("TestSmoothersAsFilters"));
 
   // create the input:
   int length = 5;
@@ -73,4 +72,11 @@ TEST(TestSmoothersAsFilters, TestSmoothersAsFilters1)
     EXPECT_NEAR(wpt_out.points[i].velocities[0], 0.0, 1e-8);
   }
 
+}
+
+int main(int argc, char** argv)
+{
+ testing::InitGoogleTest(&argc, argv);
+ ros::init(argc, argv, "test_smoothers_as_filters");
+ return RUN_ALL_TESTS();
 }

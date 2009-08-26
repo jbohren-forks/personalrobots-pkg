@@ -47,7 +47,8 @@
 namespace joint_waypoint_controller
 {
 
-JointWaypointController::JointWaypointController()
+JointWaypointController::JointWaypointController():
+  filter_chain_("manipulation_msgs::WaypointTrajWithLimits")
 {
 
 }
@@ -60,9 +61,7 @@ JointWaypointController::~JointWaypointController()
 bool JointWaypointController::init()
 {
   // get some params:
-  std::string filters_xml;
   std::string trajectory_type_str;
-  node_handle_.param("~filters", filters_xml, std::string("<filters/>"));
   node_handle_.param("~spline_controller_prefix", spline_controller_prefix_, std::string(""));
   node_handle_.param("~trajectory_type", trajectory_type_str, std::string("cubic"));
 
@@ -83,7 +82,13 @@ bool JointWaypointController::init()
   }
 
   // initialize the filter chain:
-  if (!filter_chain_.configureFromXMLString(1, filters_xml))
+  XmlRpc::XmlRpcValue filter_config;
+  if(!node_handle_.getParam("~filter_chain", filter_config))
+  {
+    ROS_ERROR("Could not load the filter configuration, are you sure it was pushed to the parameter server?");
+    return false;
+  }
+  if (!filter_chain_.configure(filter_config))
     return false;
 
   // create service clients:

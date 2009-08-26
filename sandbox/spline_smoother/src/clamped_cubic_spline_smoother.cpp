@@ -36,6 +36,7 @@
 
 #include <spline_smoother/clamped_cubic_spline_smoother.h>
 #include <spline_smoother/spline_smoother_utils.h>
+#include <ros/ros.h>
 
 namespace spline_smoother
 {
@@ -65,25 +66,8 @@ bool ClampedCubicSplineSmoother::smooth(const manipulation_msgs::WaypointTrajWit
   }
   else
   {
-    if (!num_diff_spline_smoother_.smooth(trajectory_in, trajectory_out))
-      return false;
-
-    std::vector<manipulation_msgs::Waypoint> waypoints(MAX_TRIDIAGONAL_SOLVER_ELEMENTS);
-
-    // smooth smaller segments of it:
-    for (int start=0; start<=length - MAX_TRIDIAGONAL_SOLVER_ELEMENTS; start++)
-    {
-      // fill the vectors up using the main vectors:
-      for (int i=0; i<MAX_TRIDIAGONAL_SOLVER_ELEMENTS; i++)
-      {
-        waypoints[i] = trajectory_out.points[start+i];
-      }
-      // solve it:
-      if (!smoothSegment(waypoints))
-        return false;
-      // copy the first filled in waypoint back
-      trajectory_out.points[start+1] = waypoints[1];
-    }
+    ROS_ERROR("ClampedCubicSplineSmoother: does not support trajectory lengths > %d due to numerical instability.", MAX_TRIDIAGONAL_SOLVER_ELEMENTS);
+    return false;
   }
 
   return true;
@@ -134,5 +118,5 @@ bool ClampedCubicSplineSmoother::smoothSegment(std::vector<manipulation_msgs::Wa
   return true;
 }
 
-REGISTER_SPLINE_SMOOTHER(ClampedCubicSplineSmoother)
 }
+

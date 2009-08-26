@@ -87,5 +87,4 @@ bool FritschButlandSplineSmoother::smooth(const manipulation_msgs::WaypointTrajW
   return success;
 }
 
-REGISTER_SPLINE_SMOOTHER(FritschButlandSplineSmoother)
 }

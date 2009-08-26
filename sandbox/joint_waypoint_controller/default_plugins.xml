@@ -1,0 +1,10 @@
+<class_libraries>
+  <library path="lib/libjoint_waypoint_controller_filters">
+    <class name="FixWraparoundJoints" type="joint_waypoint_controller::FixWraparoundJoints" 
+	    base_class_type="filters::FilterBase<manipulation_msgs::WaypointTrajWithLimits>">
+      <description>
+	Fixes the input values for wrap-around joints so they they have no wrap-arounds (to form the input to spline creation)
+      </description>
+    </class>
+  </library>
+</class_libraries>

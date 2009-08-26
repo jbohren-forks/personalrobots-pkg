@@ -1,0 +1,22 @@
+<class_libraries>
+  <library path="lib/libspline_smoother">
+    <class name="NumericalDifferentiationSplineSmoother" type="spline_smoother::NumericalDifferentiationSplineSmoother" 
+	    base_class_type="filters::FilterBase<manipulation_msgs::WaypointTrajWithLimits>">
+      <description>
+	Generates velocities and accelerations from numerical differentiation
+      </description>
+    </class>
+    <class name="ClampedCubicSplineSmoother" type="spline_smoother::ClampedCubicSplineSmoother" 
+	    base_class_type="filters::FilterBase<manipulation_msgs::WaypointTrajWithLimits>">
+      <description>
+	Generates velocities using clamped cubic splines
+      </description>
+    </class>
+    <class name="FritschButlandSplineSmoother" type="spline_smoother::FritschButlandSplineSmoother" 
+	    base_class_type="filters::FilterBase<manipulation_msgs::WaypointTrajWithLimits>">
+      <description>
+	Generates velocities using monotonic cubic spline interpolation by Fritsch, Butland
+      </description>
+    </class>
+  </library>
+</class_libraries>

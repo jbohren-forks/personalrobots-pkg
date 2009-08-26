@@ -33,37 +33,11 @@
 *********************************************************************/
 
 /** \author Mrinal Kalakrishnan */
-
 #include <spline_smoother/spline_smoother.h>
+#include <spline_smoother/clamped_cubic_spline_smoother.h>
+#include <spline_smoother/fritsch_butland_spline_smoother.h>
+#include <spline_smoother/numerical_differentiation_spline_smoother.h>
 
-namespace spline_smoother
-{
-
-SplineSmoother::SplineSmoother()
-{
-
-}
-
-SplineSmoother::~SplineSmoother()
-{
-
-}
-
-bool SplineSmoother::configure()
-{
-  return true;
-}
-
-bool SplineSmoother::update(const std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_in, std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_out)
-{
-  int length = data_in.size();
-  data_out.resize(length);
-  for (int i=0; i<length; i++)
-  {
-    if (!smooth(data_in[i], data_out[i]))
-      return false;
-  }
-  return true;
-}
-
-} // namespace spline_smoother
+REGISTER_SPLINE_SMOOTHER(ClampedCubicSplineSmoother, spline_smoother::ClampedCubicSplineSmoother)
+REGISTER_SPLINE_SMOOTHER(FritschButlandSplineSmoother, spline_smoother::FritschButlandSplineSmoother)
+REGISTER_SPLINE_SMOOTHER(NumericalDifferentiationSplineSmoother, spline_smoother::NumericalDifferentiationSplineSmoother)

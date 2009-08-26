@@ -33,13 +33,20 @@ rospack_add_library(spline_smoother
 	src/clamped_cubic_spline_smoother.cpp
 	src/fritsch_butland_spline_smoother.cpp
 	src/numerical_differentiation_spline_smoother.cpp
-	src/spline_smoother.cpp
+	src/spline_smoothers.cpp
 )
 
 rospack_add_gtest(test/test_spline_smoother
 	test/test_clamped_cubic_spline_smoother.cpp
-	test/test_smoothers_as_filters.cpp
 	test/test_splines.cpp
 	test/test_utils.cpp
 )
 target_link_libraries(test/test_spline_smoother spline_smoother)
+
+rosbuild_add_executable(test/test_smoothers_as_filters
+	test/test_smoothers_as_filters.cpp
+)
+rosbuild_declare_test(test/test_smoothers_as_filters)
+rosbuild_add_gtest_build_flags(test/test_smoothers_as_filters)
+rosbuild_add_rostest(test/test_smoothers_as_filters.launch)
+target_link_libraries(test/test_smoothers_as_filters spline_smoother)

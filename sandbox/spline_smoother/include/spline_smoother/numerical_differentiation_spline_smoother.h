@@ -43,7 +43,7 @@ namespace spline_smoother
 {
 
 /**
- * \brief Generates velocities at waypoints by finite differencing.
+ * \brief Generates velocities at waypoints by finite differencing. Accelerations are set to zero.
  */
 class NumericalDifferentiationSplineSmoother: public SplineSmoother
 {

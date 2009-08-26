@@ -1,0 +1,7 @@
+filter_chain:
+  -
+    type: FixWraparoundJoints
+    name: fix_wraparound_joints
+  -
+    type: FritschButlandSplineSmoother
+    name: fritsch_butland_spline_smoother

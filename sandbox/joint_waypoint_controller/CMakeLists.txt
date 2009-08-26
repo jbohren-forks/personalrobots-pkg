@@ -12,9 +12,9 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(joint_waypoint_controller)
 
 #set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+#set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
 #genmsg()
@@ -29,7 +29,11 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rospack_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rospack_add_executable(joint_waypoint_controller
+rospack_add_library(joint_waypoint_controller_filters
 	src/fix_wraparound_joints.cpp
+)
+
+rospack_add_executable(bin/joint_waypoint_controller
 	src/joint_waypoint_controller.cpp
 )
+target_link_libraries(bin/joint_waypoint_controller joint_waypoint_controller_filters)

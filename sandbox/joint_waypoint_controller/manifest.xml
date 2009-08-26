@@ -20,5 +20,9 @@ spline trajectories to the real controller.
 	<depend package="manipulation_srvs" />
 	<depend package="angles" />
 
+  <export>
+    <filters plugin="${prefix}/default_plugins.xml"/>
+  </export>
+
 </package>
 

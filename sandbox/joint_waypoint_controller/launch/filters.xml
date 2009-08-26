@@ -1,5 +1,0 @@
-<filters>
-	<filter type="FixWraparoundJoints" name="fix_wraparound_joints"/>
-	<filter type="FritschButlandSplineSmoother" name="fritsch_butland_spline_smoother"/>
-</filters>
-

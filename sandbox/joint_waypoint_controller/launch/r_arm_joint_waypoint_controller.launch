@@ -1,7 +1,7 @@
 <launch> 
 	<node pkg="joint_waypoint_controller" name="r_arm_joint_waypoint_controller" type="joint_waypoint_controller" output="screen" clear_params="true">
 		<rosparam command="load" file="$(find joint_waypoint_controller)/config/joint_limits.yaml"/>
-		<param name="filters" textfile="$(find joint_waypoint_controller)/launch/filters.xml"/>
+		<rosparam command="load" file="$(find joint_waypoint_controller)/config/filters.yaml"/>
 		<param name="trajectory_type" value="cubic"/>
 		<param name="spline_controller_prefix" value="/r_arm_trajectory_controller/"/>
 	</node>
