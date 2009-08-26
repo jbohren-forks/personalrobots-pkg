@@ -3,8 +3,8 @@
 
 This package contains a recent version of the Kinematics and Dynamics
 Library (KLD), distributed by the Orocos Project.  For stability
-reasons, this package is currently locked in to version 30401 (Aug 
-8, 2009), but this revision will be updated on a regular basis to
+reasons, this package is currently locked in to version 30453 (Aug 
+26, 2009), but this revision will be updated on a regular basis to
 the latest available KDL trunk.  This ROS package does not intend to
 modify KDL in any way, it simply provides a convenient way to download 
 and compile the library, because KDL is not available from an OS package
