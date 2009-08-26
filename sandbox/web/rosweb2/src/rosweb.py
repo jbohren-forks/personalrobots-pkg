@@ -356,16 +356,23 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return 1
 
     def _send_responsepage(self, retcode=200, buf = "{}", callback = None):
-      self.send_response(retcode)
-      if callback:
-        buf = callback + "(" + buf + ");"
-        self.send_header('Content-Type', 'text/javascript')
-      else:
-        self.send_header('Content-Type', 'application/json')
-      self.send_header('Content-Length', str(len(buf)))
-      self.end_headers()
-      
-      self.wfile.write(buf)
+      try:
+        self.send_response(retcode)
+        if callback:
+          buf = callback + "(" + buf + ");"
+          self.send_header('Content-Type', 'text/javascript')
+        else:
+          self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(buf)))
+        self.end_headers()
+
+        self.wfile.write(buf)
+      except socket.error, (ecode, reason):
+        if ecode == 32:
+          print ecode, reason
+        else:
+          raise
+                        
 
     def send_success(self, buf = "{}", callback=None):
       self._send_responsepage(200, buf, callback)

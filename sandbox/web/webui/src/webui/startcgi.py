@@ -19,6 +19,7 @@ if 0:
 
   os.environ['HOME'] = '/tmp'
 
+os.environ['ROS_CACHE_TIMEOUT'] = '3600'
 PKG = 'webui' # this package name
 import roslib; roslib.load_manifest(PKG) 
 ros_root = os.environ['ROS_ROOT']
