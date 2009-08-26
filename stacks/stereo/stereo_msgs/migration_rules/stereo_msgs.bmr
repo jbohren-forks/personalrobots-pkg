@@ -1501,4 +1501,11 @@ byte  unique_check
 		new_msg.has_disparity = old_msg.has_disparity
 		self.migrate(old_msg.disparity_info, new_msg.disparity_info)
 		self.migrate(old_msg.disparity_image, new_msg.disparity_image)
+                # Correlated with this change, is a bug-fix for the image encoding
+                # Previous messages made the incorrect assumption that all IMAGE_RAWs
+                # Were bayer encoded.
+                if new_msg.left_type == new_msg.IMAGE_RAW:
+                        new_msg.left_image.encoding = "bayer_grbg8"
+                if new_msg.right_type == new_msg.IMAGE_RAW:
+                        new_msg.right_image.encoding = "bayer_grbg8"
 
