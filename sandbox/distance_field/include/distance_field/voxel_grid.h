@@ -268,7 +268,7 @@ inline void VoxelGrid<T>::setCell(int x, int y, int z, T& obj)
 template<typename T>
 inline int VoxelGrid<T>::getCellFromLocation(Dimension dim, double loc) const
 {
-  return (0.5+loc-origin_[dim])/resolution_[dim];
+  return int(0.5 + (loc-origin_[dim])/resolution_[dim]);
 }
 
 template<typename T>
