@@ -61,8 +61,8 @@
 #include <theora/theoraenc.h>
 #include <theora/theoradec.h>
 
-#include <ogg/ogg.h>
-#include <shout/shout.h>
+//#include <ogg/ogg.h>
+//#include <shout/shout.h>
 
 using std::vector;
 
