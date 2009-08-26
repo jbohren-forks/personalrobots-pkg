@@ -3,7 +3,7 @@
   <!-- start gazebo -->
   <include file="$(find gazebo)/launch/empty_world.launch"/>
 
-  <!-- load pr2 -->
+  <!-- load prf -->
   <include file="$(find pr2_defs)/launch/upload_prf.launch" />
   <node pkg="gazebo_tools" type="urdf2factory" args="robot_description_new" respawn="false"  />
 

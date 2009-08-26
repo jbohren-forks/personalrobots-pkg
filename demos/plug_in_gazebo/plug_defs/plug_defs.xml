@@ -15,17 +15,17 @@
 
   <property name="M_PI" value="3.1415926535897931" />
 
-  <property name="plug_x_loc" value="0.25" />
+  <property name="plug_x_loc" value="0.1968" />
   <property name="plug_y_loc" value="0.0" />
-  <property name="plug_z_loc" value="0.282" />
-  <property name="plug_x_size" value="0.07" />
-  <property name="plug_y_size" value="0.025" />
+  <property name="plug_z_loc" value="0.341" />
+  <property name="plug_x_size" value="0.025" />
+  <property name="plug_y_size" value="0.06" />
   <property name="plug_z_size" value="0.03" />
 
   <!-- joint blocks -->
   <joint name="plug_joint" type="planar" >
     <parent link="world" />
-    <origin xyz="${plug_x_loc} ${plug_y_loc} ${plug_z_loc}" rpy="0 0 ${-M_PI/2}" />
+    <origin xyz="${plug_x_loc} ${plug_y_loc} ${plug_z_loc}" rpy="0 0 0" />
     <child link="plug_link" />
   </joint>
 
@@ -33,7 +33,7 @@
   <link name="plug_link">
     <inertial>
       <mass value="0.1" />
-      <com xyz="0 0 0.0" />
+      <origin xyz="0 0 0.0" />
       <inertia ixx="1.0" ixy="0"  ixz="0"
                iyy="1.0" iyz="0"
                izz="1.0" />
@@ -58,7 +58,7 @@
     <mu2>500.0</mu2>
     <kp>100000000.0</kp>
     <kd>1.0</kd>
-    <turnGravityOff>true</turnGravityOff>
+    <turnGravityOff>false</turnGravityOff>
     <selfCollide>true</selfCollide>
     <dampingFactor>0.5</dampingFactor>
   </gazebo>
