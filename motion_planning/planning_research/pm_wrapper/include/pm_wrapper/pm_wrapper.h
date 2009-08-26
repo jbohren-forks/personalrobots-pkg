@@ -76,22 +76,37 @@ class pm_wrapper
 		/** \brief Check if a set of links and their joint angles are a valid configuration in the environment */
 		bool areLinksValid(const double * angles);
 
-		/** \brief Update the current configuration of the robot model in the planning monitor and lock it */
-		void updatePM(const motion_planning_msgs::GetMotionPlan::Request &req);
-
 		/** \brief Unlock the lock around the planning monitor (call after planning completes) */
 		void unlockPM();
+		
+		/** \brief update the state of the robot */
+		void updateRobotState(const std::vector <motion_planning_msgs::KinematicJoint> &robot_state);
+		
+		/** \brief Remove a shape object from the collision map at the specified pose */
+		void removeObject(shapes::Shape *object, const btTransform &pose);
+
+		/** \brief Add a shape object to the collision map at the specified pose */
+		void addObject(const std::string &ns, shapes::Shape *object, const btTransform &pose);
+
+		/** \brief Publish the internal collision map */
+		void publishInternalCollisionMap();
 
 		/** \brief Set the size of the object to be removed from the collision map and it's pose in the planning frame */
 		void setObject(shapes::Shape *object, btTransform pose);
 
+		/** \brief Take in a trajectory and run Ioan's short circuit trajectory smoother on it */
 		std::vector<std::vector<double> >  smoothPath(std::vector<std::vector<double> > &path, std::vector<std::string> joint_names);
 
+		/** \brief Update the current configuration of the robot model in the planning monitor and lock it  <-- OLD VERSION*/
+		void updatePM(const motion_planning_msgs::GetMotionPlan::Request &req);
+		
 	private:
 
 		ros::NodeHandle node_;
 
 		ros::Subscriber col_map_subscriber_;
+		
+		bool visualize_map_;
 		
 		ros::Publisher col_map_publisher_;
 		
@@ -110,23 +125,23 @@ class pm_wrapper
 		shapes::Shape *object_;
 		
 		btTransform object_pose_;
-		
-		bool remove_objects_from_collision_map_;
 
 		std::vector<std::string> collision_check_links_;
 
 		planning_environment::CollisionModels *collision_model_;
 
 		planning_environment::PlanningMonitor *planning_monitor_;
-			
-		void publishMapWithoutObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
-
-		/** \brief Fill the start state of the planning monitor with the current state of the robot in the request message */
-		planning_models::StateParams* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given);
 		
 		ompl_ros::ModelKinematic *model_kinematic_;
 		
 		ompl::kinematic::PathSmootherKinematic *path_smoother_;
+		
+		void publishMapWithoutObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
+
+		/** \brief Fill the start state of the planning monitor with the current state of the robot in the request message */
+		planning_models::StateParams* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given);
+
+		void setRobotJointStates(const std::vector<std::string> &joint_names, const std::vector<double> &params);
 };
 
 
