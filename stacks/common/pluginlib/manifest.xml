@@ -3,9 +3,10 @@
 
 The pluginlib package provides tools for writing and dynamically loading plugins using the ROS build infrastructure. To work, these tools require plugin providers to register their plugins in the manifest.xml of their package. 
 
+Pluginlib includes parts of Poco from pocoproject.org
   </description>
   <author>Tully Foote and Eitan Marder-Eppstein</author>
-  <license>BSD</license>
+  <license>BSD, Boost Software License (Poco)</license>
   <review status="experimental" notes=""/>
   <url>http://ros.org/wiki/pluginlib</url>
 
