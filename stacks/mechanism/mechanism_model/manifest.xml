@@ -9,7 +9,6 @@
 <depend package="tinyxml" />
 <depend package="urdf" />
 <depend package="kdl_parser" />
-<depend package="std_srvs" />
 <depend package="pluginlib" />
 <depend package="angles" />
 <url>http://pr.willowgarage.com</url>
