@@ -295,6 +295,7 @@ int
   // go to the last location
   double X = 27.3095662355 + 3 - 25.7, Y = 25.8414441058 - 25.7;
   ROS_INFO("Moving to %f %f", X, Y);
+  goal_msg.header.frame_id = "/odom_combined";
   goal_msg.pose.position.x = X;
   goal_msg.pose.position.y = Y;
   goal_msg.pose.position.z = 0;
