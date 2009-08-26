@@ -1,5 +1,5 @@
 <package>
-  <description brief="Robotic Arm Planning Research">
+  <description brief="Motion Planning Research for a Robotic Manipulator">
 
   </description>
   <author>Benjamin Cohen/bencohen2@gmail.com, Maxim Likhachev/maximl@seas.upenn.edu</author>
@@ -8,9 +8,9 @@
   <depend package="angles" />
   <depend package="kdl_parser" />
 	<depend package="kdl" />
-<!--   <depend package="yaml-cpp" /> -->
   <depend package="voxel3d" />
   <depend package="pm_wrapper"/>
+	<!--   <depend package="yaml-cpp" /> -->	
   <export>
       <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_arm_planner"/>
   </export>

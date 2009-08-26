@@ -341,6 +341,8 @@ void EnvironmentROBARM3D::ComputeHeuristicValues()
 
     Search3DwithQueue(statespace3D, EnvROBARM.Heur, EnvROBARMCfg.EndEffGoals);
 
+		starttime = clock();
+				
     Delete3DStateSpace(&statespace3D);
 #if DEBUG
     printf("completed in %.3f seconds.\n", double(clock()-currenttime) / CLOCKS_PER_SEC);
@@ -2624,6 +2626,8 @@ bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double>
   EnvROBARMCfg.bGoalIsSet = true;
 
 	expanded_states.clear();
+	
+	near_goal = false;
 // 	expanded_states.reserve(5000);
 
 //   for(unsigned int i = 0; i < EnvROBARMCfg.EndEffGoals.size(); i++)
@@ -2710,7 +2714,7 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
   short unsigned  int i, k, coord[NUMOFLINKS], elbow[3] = {0}, wrist[3] = {0}, endeff[3] = {0};
   EnvROBARMCfg.PlanInJointSpace = true;
 
-	printf("about to copy environment\n");
+// 	printf("about to copy environment\n");
 	EnvROBARMCfg.mCopyingGrid.lock();
 	UpdateEnvironment();
 	EnvROBARMCfg.mCopyingGrid.unlock();
@@ -2718,13 +2722,13 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
   //resize goal list
   EnvROBARMCfg.JointSpaceGoals.resize(goals.size());
 
-	printf("about to copy goals\n");
+// 	printf("about to copy goals\n");
   for(i = 0; i < EnvROBARMCfg.JointSpaceGoals.size(); i++)
   {
     EnvROBARMCfg.JointSpaceGoals[i].pos.resize(goals[i].size());
     EnvROBARMCfg.JointSpaceGoals[i].pos = goals[i];
 
-		printf("about to copy angles\n");
+// 		printf("about to copy angles\n");
     for(k = 0; k < EnvROBARMCfg.num_joints; k++)
     {
       EnvROBARMCfg.JointSpaceGoals[i].pos[k] = goals[i][k];
@@ -2734,7 +2738,7 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
         angles[k] = 2*PI_CONST + EnvROBARMCfg.JointSpaceGoals[i].pos[k];
     }
 
-		printf("about to run fk\n");
+// 		printf("about to run fk\n");
     //get joint positions of starting configuration
     if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
     {
@@ -2803,9 +2807,6 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
       }
     }
     //set goal tolerances
-		
-		printf("tolerance_above.size(): %i    tolerance_below.size(): %i\n",tolerance_above.size(),tolerance_below.size());
-		printf("tolerance_above[0].size(): %i    tolerance_below[0].size(): %i\n",tolerance_above[0].size(),tolerance_below[0].size());
     SetGoalConfigurationTolerance(tolerance_above, tolerance_below);
 
     #if DEBUG
@@ -2816,6 +2817,7 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
     #endif
   }
 
+	near_goal = false;
   //if one of the joints starts out within the goal tolerance then remove any successors that change that joint angle
 /*  if(EnvROBARMCfg.use_selective_actions)
   {
