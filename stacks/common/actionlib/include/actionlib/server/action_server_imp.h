@@ -50,8 +50,10 @@ namespace actionlib {
     : node_(n, name), goal_callback_(goal_cb), cancel_callback_(cancel_cb), started_(auto_start) {
 
       //if we're to autostart... then we'll initialize things
-      if(started_)
+      if(started_){ 
         initialize();
+        publishStatus();
+      }
   }
 
   template <class ActionSpec>
@@ -216,6 +218,7 @@ namespace actionlib {
   void ActionServer<ActionSpec>::start(){
     initialize();
     started_ = true;
+    publishStatus();
   }
 
   template <class ActionSpec>
