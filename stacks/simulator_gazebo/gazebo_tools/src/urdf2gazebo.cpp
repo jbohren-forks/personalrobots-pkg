@@ -291,10 +291,6 @@ void URDF2Gazebo::insertGazeboExtensionGeom(TiXmlElement *elem,std::string link_
               addKeyValue(elem, "kp", values2str(1, &gazebo_it->second->kp) );
           if (gazebo_it->second->is_kd)
               addKeyValue(elem, "kd", values2str(1, &gazebo_it->second->kd) );
-          if (gazebo_it->second->selfCollide)
-              addKeyValue(elem, "selfCollide", "true");
-          else
-              addKeyValue(elem, "selfCollide", "false");
           if (gazebo_it->second->is_laserRetro)
               addKeyValue(elem, "laserRetro", values2str(1, &gazebo_it->second->laserRetro) );
       }
@@ -330,6 +326,11 @@ void URDF2Gazebo::insertGazeboExtensionBody(TiXmlElement *elem,std::string link_
           // damping factor
           if (gazebo_it->second->is_dampingFactor)
               addKeyValue(elem, "dampingFactor", values2str(1, &gazebo_it->second->dampingFactor) );
+          // selfCollide tag
+          if (gazebo_it->second->selfCollide)
+              addKeyValue(elem, "selfCollide", "true");
+          else
+              addKeyValue(elem, "selfCollide", "false");
           // insert copy block into body
           for (std::vector<TiXmlElement*>::iterator block_it = gazebo_it->second->copy_block.begin();
                block_it != gazebo_it->second->copy_block.end(); block_it++)

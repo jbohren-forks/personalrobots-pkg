@@ -64,11 +64,11 @@ namespace urdf2gazebo
       bool turnGravityOff;
       bool is_dampingFactor;
       double dampingFactor;
+      bool selfCollide;
 
       // geom, contact dynamics
       bool is_mu1, is_mu2, is_kp, is_kd;
       double mu1, mu2, kp, kd;
-      bool selfCollide;
       bool is_laserRetro;
       double laserRetro;
 
