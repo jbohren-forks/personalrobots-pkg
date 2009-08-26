@@ -47,7 +47,7 @@ namespace kdl_parser{
 
 bool treeFromFile(const string& file, KDL::Tree& tree);
 bool treeFromString(const string& xml, KDL::Tree& tree);
-bool treeFromXml(TiXmlElement *root, KDL::Tree& tree);
+bool treeFromXml(TiXmlDocument *xml_doc, KDL::Tree& tree);
 bool treeFromRobotModel(urdf::Model& robot_model, KDL::Tree& tree);
 }
 

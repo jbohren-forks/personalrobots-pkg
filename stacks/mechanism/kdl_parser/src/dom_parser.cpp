@@ -132,12 +132,7 @@ bool treeFromFile(const string& file, Tree& tree)
 {
   TiXmlDocument urdf_xml;
   urdf_xml.LoadFile(file);
-  TiXmlElement *root = urdf_xml.FirstChildElement("robot");
-  if (!root){
-    cerr << "Could not parse the xml" << endl;
-    return false;
-  }
-  return treeFromXml(root, tree);
+  return treeFromXml(&urdf_xml, tree);
 }
 
 
@@ -145,18 +140,13 @@ bool treeFromString(const string& xml, Tree& tree)
 {
   TiXmlDocument urdf_xml;
   urdf_xml.Parse(xml.c_str());
-  TiXmlElement *root = urdf_xml.FirstChildElement("robot");
-  if (!root){
-    cerr << "Could not parse the xml" << endl;
-    return false;
-  }
-  return treeFromXml(root, tree);
+  return treeFromXml(&urdf_xml, tree);
 }
 
-bool treeFromXml(TiXmlElement *root, Tree& tree)
+bool treeFromXml(TiXmlDocument *xml_doc, Tree& tree)
 {
   urdf::Model robot_model;
-  if (!robot_model.initFile("pr2.urdf")){
+  if (!robot_model.initXml(xml_doc)){
     cerr << "Could not generate robot model" << endl; 
     return false;
   }

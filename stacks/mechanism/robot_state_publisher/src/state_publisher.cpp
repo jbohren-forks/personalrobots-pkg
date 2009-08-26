@@ -63,21 +63,13 @@ int main(int argc, char** argv)
   node.searchParam(param_name,full_param_name);
   string robot_desc;
 
-  // constructs a robot model from the xml string
-  urdf::Model robot_model;
-  node.param(full_param_name, robot_desc, string());
-  if (!robot_model.initString(robot_desc)){
-    ROS_ERROR("Failed to construct robot model from xml string");
-    return -1;
-  }
-
   // constructs a kdl tree from the robot model
+  node.param(full_param_name, robot_desc, string());
   Tree tree;
-  if (!kdl_parser::treeFromRobotModel(robot_model, tree)){
+  if (!kdl_parser::treeFromString(robot_desc, tree)){
     ROS_ERROR("Failed to extract kdl tree from robot model");
     return -1;
   }
-
 
   JointStateListener state_publisher(tree);
 
