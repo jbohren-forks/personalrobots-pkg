@@ -115,6 +115,7 @@ bool RobotVoxelizer::init()
 	return true;
 }
 
+// an old function - don't use this one
 void RobotVoxelizer::updateSelfCollisionBodies()
 {
 	monitor_->getKinematicModel()->lock();
@@ -128,6 +129,21 @@ void RobotVoxelizer::updateSelfCollisionBodies()
 							bodies_[i]->getPose().getOrigin().z(), bodies_[i]->getPose().getOrigin().w(), bodies_[i]->getPadding(), bodies_[i]->getScale());
 	}
 
+	monitor_->getKinematicModel()->unlock();
+}
+
+void RobotVoxelizer::updateBodies(std::vector<std::string> &link_names)
+{
+	monitor_->getKinematicModel()->lock();
+	monitor_->getKinematicModel()->computeTransforms(monitor_->getRobotState()->getParams());
+
+	for(unsigned int i = 0; i < link_names_.size(); ++i)
+	{
+		bodies_[i]->setPose(monitor_->getKinematicModel()->getLink(link_names_[i])->globalTrans);
+	
+		ROS_DEBUG("%s: pose: %.3f %.3f %.3f %.3f  padding: %.3f scale: %.2f", link_names_[i].c_str(), bodies_[i]->getPose().getOrigin().x(), bodies_[i]->getPose().getOrigin().y(), 
+							bodies_[i]->getPose().getOrigin().z(), bodies_[i]->getPose().getOrigin().w(), bodies_[i]->getPadding(), bodies_[i]->getScale());
+	}
 	monitor_->getKinematicModel()->unlock();
 }
 
@@ -263,41 +279,6 @@ void RobotVoxelizer::getVoxelsInBody(const bodies::Body &body, std::vector<btVec
 	
 // 	ROS_INFO("number of occupied voxels in bounding sphere: %i", voxels.size());
 }
-
-/*
-void RobotVoxelizer::updateVisualizations(const std::vector<std::vector<double> > &voxels)
-{
-	std::string frame_id = "base_link";
-	visualization_msgs::Marker obs_marker;
-	obs_marker.header.frame_id = frame_id;
-	obs_marker.header.stamp = ros::Time::now();
-	obs_marker.ns = "mesh_voxelizer";
-	obs_marker.id = 0;
-	obs_marker.type = visualization_msgs::Marker::CUBE_LIST;
-	obs_marker.action = 0;
-	obs_marker.scale.x = resolution_;
-	obs_marker.scale.y = resolution_;
-	obs_marker.scale.z = resolution_;
-	obs_marker.color.r = 0.0;
-	obs_marker.color.g = 0.25;
-	obs_marker.color.b = 0.75;
-	obs_marker.color.a = 0.3;
-	obs_marker.lifetime = ros::Duration(30.0);
-
-	obs_marker.points.resize(voxels.size());
-	for (unsigned int k = 0; k < voxels.size(); ++k) 
-	{
-		int last = obs_marker.points.size();
-		obs_marker.points.resize(last + 1);
-		obs_marker.points[last].x = voxels[k][0];
-		obs_marker.points[last].y = voxels[k][1];
-		obs_marker.points[last].z = voxels[k][2];
-	}
-	
-	ROS_DEBUG("publishing markers: %d obstacles", obs_marker.points.size());
-	marker_publisher_.publish(obs_marker);
-}
-*/
 
 void RobotVoxelizer::updateVisualizations(const std::vector<btVector3> &voxels)
 {

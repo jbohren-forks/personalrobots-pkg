@@ -68,6 +68,7 @@ class RobotVoxelizer
 		/** \brief Returns a list of voxels occupied by a body. The list is a vector of btVector3. */
 		void getVoxelsInBody(const bodies::Body &body, std::vector<btVector3> &voxels);
 		
+		// old function
 		void updateSelfCollisionBodies();
 		
 		void getVoxelsInSelfCollisionBodies(std::vector<btVector3> &voxels);
@@ -82,6 +83,8 @@ class RobotVoxelizer
 		
 		void getVoxelsInSCG(int group, int subgroup, std::vector<btVector3> &voxels);
 				
+		void updateBodies(std::vector<std::string> &link_names);
+		
 	private:
 	
 		ros::NodeHandle node_;
