@@ -35,17 +35,18 @@
 #include <experimental_controllers/cartesian_twist_controller_ik.h>
 #include <algorithm>
 #include <mechanism_control/mechanism_control.h>
+#include "pluginlib/class_list_macros.h"
 
 #include <kdl/chainfksolvervel_recursive.hpp>
 #include <kdl/chainiksolvervel_wdls.hpp>
 #include <kdl/kinfam_io.hpp>
 
+PLUGINLIB_REGISTER_CLASS(CartesianTwistControllerIk, controller::CartesianTwistControllerIk, controller::Controller)
+
 using namespace KDL;
 using namespace ros;
 
 namespace controller {
-
-  ROS_REGISTER_CONTROLLER(CartesianTwistControllerIk)
 
   CartesianTwistControllerIk::CartesianTwistControllerIk()
   : robot_state_(NULL),

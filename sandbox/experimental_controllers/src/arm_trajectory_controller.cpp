@@ -37,6 +37,9 @@
 #include "experimental_controllers/arm_trajectory_controller.h"
 #include "angles/angles.h"
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(ArmTrajectoryControllerNode, controller::ArmTrajectoryControllerNode, controller::Controller)
 
 using namespace controller;
 using namespace std;

@@ -43,12 +43,14 @@
 #include "control_toolbox/pid.h"
 #include "visualization_msgs/Marker.h"
 #include "angles/angles.h"
+#include "pluginlib/class_list_macros.h"
 
 #include "std_msgs/Float64MultiArray.h"
 
-namespace controller {
+PLUGINLIB_REGISTER_CLASS(CartesianHybridController, controller::CartesianHybridController, controller::Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianHybridControllerNode, controller::CartesianHybridControllerNode, controller::Controller)
 
-ROS_REGISTER_CONTROLLER(CartesianHybridController)
+namespace controller {
 
 void TransformKDLToMsg(const KDL::Frame &k, geometry_msgs::Pose &m)
 {
@@ -466,8 +468,6 @@ bool CartesianHybridController::starting()
 
   return true;
 }
-
-ROS_REGISTER_CONTROLLER(CartesianHybridControllerNode)
 
 CartesianHybridControllerNode::CartesianHybridControllerNode()
 //: TF(*ros::Node::instance(), false, ros::Duration(10.0)), loop_count_(0)

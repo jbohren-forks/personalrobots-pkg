@@ -35,11 +35,12 @@
 // Original version: Sachin Chitta <sachinc@willowgarage.com>, Mrinal Kalakrishnan (kalakris@willowgarage.com)
 
 #include "experimental_controllers/trajectory_controller.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(TrajectoryController, controller::TrajectoryController, controller::Controller)
 
 using namespace controller;
 using namespace std;
-
-ROS_REGISTER_CONTROLLER(TrajectoryController);
 
 TrajectoryController::TrajectoryController():num_joints_(0),num_controllers_(0)
 {

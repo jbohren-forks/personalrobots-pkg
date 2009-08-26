@@ -35,6 +35,9 @@
 #include <algorithm>
 #include <mechanism_control/mechanism_control.h>
 #include <kdl/chainfksolvervel_recursive.hpp>
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(CartesianTFFController, controller::CartesianTFFController, controller::Controller)
 
 
 using namespace KDL;
@@ -44,8 +47,6 @@ static const bool use_constraint_controller = false;
 
 
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(CartesianTFFController)
 
 CartesianTFFController::CartesianTFFController()
 : robot_state_(NULL),

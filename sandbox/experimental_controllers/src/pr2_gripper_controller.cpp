@@ -37,10 +37,12 @@
 
 #include <experimental_controllers/pr2_gripper_controller.h>
 #include <fstream> //TODO:now that I have something better, should I delete this?
-#define pi 3.1415926
+#include <cmath>
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(Pr2GripperController, controller::Pr2GripperController, controller::Controller)
 
 using namespace controller;
-ROS_REGISTER_CONTROLLER(Pr2GripperController)
 
 Pr2GripperController::Pr2GripperController()
 {
@@ -187,7 +189,7 @@ void Pr2GripperController::update()
       }
       if(break_stiction_type_.compare("sine") == 0 && fabs(joint_->velocity_) < break_stiction_velocity_ && last_commanded_command != 0.0)
       {
-        joint_controller_.command_ = last_commanded_command + direction*(sin(2.0*pi*(current_time - cmd_received_timestamp_)/break_stiction_period_)*break_stiction_amplitude_ + break_stiction_amplitude_);
+        joint_controller_.command_ = last_commanded_command + direction*(sin(2.0*M_PI*(current_time - cmd_received_timestamp_)/break_stiction_period_)*break_stiction_amplitude_ + break_stiction_amplitude_);
       }
       else if(break_stiction_type_.compare("ramp") == 0 && fabs(joint_->velocity_) < break_stiction_velocity_ && last_commanded_command != 0.0)
       {

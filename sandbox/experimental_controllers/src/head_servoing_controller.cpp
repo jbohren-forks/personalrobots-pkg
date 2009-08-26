@@ -38,13 +38,14 @@
 #include <mechanism_control/mechanism_control.h>
 #include <cmath>
 #include <angles/angles.h>
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(HeadServoingController, controller::HeadServoingController, controller::Controller)
 
 using namespace tf;
 using namespace std;
 
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(HeadServoingController);
 
 HeadServoingController::HeadServoingController()
   : robot_(NULL),

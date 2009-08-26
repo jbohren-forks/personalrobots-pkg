@@ -33,18 +33,20 @@
  *********************************************************************/
 
 #include <experimental_controllers/pid_position_velocity_controller.h>
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(PIDPositionVelocityController, controller::PIDPositionVelocityController, controller::Controller)
 
 using namespace std;
 
-namespace controller 
+namespace controller
 {
-  ROS_REGISTER_CONTROLLER(PIDPositionVelocityController)
 
   PIDPositionVelocityController::PIDPositionVelocityController():
-    joint_state_(NULL), 
-    robot_(NULL), 
-    last_time_(0), 
-    loop_count_(0), 
+    joint_state_(NULL),
+    robot_(NULL),
+    last_time_(0),
+    loop_count_(0),
     command_(0),
     command_dot_(0)
   {
@@ -55,7 +57,7 @@ namespace controller
     if ((void*)sub_command_)
       sub_command_.shutdown();
   }
- 
+
   bool PIDPositionVelocityController::init(mechanism::RobotState *robot, const std::string &joint_name,
 				   const control_toolbox::Pid &pid)
   {

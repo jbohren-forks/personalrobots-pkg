@@ -36,11 +36,13 @@
 
 #include "experimental_controllers/joint_trajectory_controller.h"
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
+#include "pluginlib/class_list_macros.h"
+
+
+PLUGINLIB_REGISTER_CLASS(JointTrajectoryController, controller::JointTrajectoryController, controller::Controller)
 
 using namespace controller;
 using namespace std;
-
-ROS_REGISTER_CONTROLLER(JointTrajectoryController);
 
 JointTrajectoryController::JointTrajectoryController() : Controller(), node_(ros::Node::instance())
 {

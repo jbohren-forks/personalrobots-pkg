@@ -37,6 +37,9 @@
 #include <kdl/kinfam_io.hpp>
 #include <filters/transfer_function.h>
 #include <filters/filter_chain.h>
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(JointInverseDynamicsController, controller::JointInverseDynamicsController, controller::Controller);
 
 using namespace KDL;
 using namespace ros;
