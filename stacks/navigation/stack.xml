@@ -1,11 +1,11 @@
-<stack name="navigation" version="0.1">
+<stack name="navigation" version="0.1.0">
   <description brief="planar navigation stack">
     The 2D navigation stack
   </description>
   <author>Eitan eitan@willowgarage.com</author>
-  <license>BSD</license>
+  <license>BSD, LGPL (amcl)</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/navigation</url>
+  <url>http://ros.org/wiki/navigation</url>
   
 
   <depend stack="geometry"/> 
