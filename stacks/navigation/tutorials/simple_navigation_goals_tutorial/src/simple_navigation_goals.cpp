@@ -76,7 +76,7 @@ int main(int argc, char** argv){
   ac.waitForGoalToFinish();
 
   if(ac.getTerminalState() == actionlib::TerminalState::SUCCEEDED)
-    ROS_INFO("Horray, the base moved 2 meters forward");
+    ROS_INFO("Hooray, the base moved 2 meters forward");
   else
     ROS_INFO("The base failed to move forward 2 meters for some reason");
 
