@@ -494,7 +494,7 @@ namespace costmap_2d {
     //update the global current status
     current_ = current;
 
-    lock_.lock();
+    boost::recursive_mutex::scoped_lock lock(lock_);
     //if we're using a rolling buffer costmap... we need to update the origin using the robot's position
     if(rolling_window_){
       double origin_x = wx - costmap_->getSizeInMetersX() / 2;
@@ -502,6 +502,9 @@ namespace costmap_2d {
       costmap_->updateOrigin(origin_x, origin_y);
     }
     costmap_->updateWorld(wx, wy, observations, clearing_observations);
+
+    //make sure to clear the robot footprint of obstacles at the end
+    clearRobotFootprint();
 
     //if we have an active publisher... we'll update its costmap data
     if(costmap_publisher_->active())
@@ -514,8 +517,6 @@ namespace costmap_2d {
       voxel_grid.header.stamp = ros::Time::now();
       voxel_pub_.publish(voxel_grid);
     }
-
-    lock_.unlock();
 
   }
 
@@ -553,30 +554,23 @@ namespace costmap_2d {
   }
 
   void Costmap2DROS::getCostmapCopy(Costmap2D& costmap){
-    lock_.lock();
+    boost::recursive_mutex::scoped_lock lock(lock_);
     costmap = *costmap_;
-    lock_.unlock();
   }
 
   unsigned int Costmap2DROS::getSizeInCellsX() {
-    lock_.lock();
-    unsigned int size_x = costmap_->getSizeInCellsX();
-    lock_.unlock();
-    return size_x;
+    boost::recursive_mutex::scoped_lock lock(lock_);
+    return costmap_->getSizeInCellsX();
   }
 
   unsigned int Costmap2DROS::getSizeInCellsY() {
-    lock_.lock();
-    unsigned int size_y = costmap_->getSizeInCellsY();
-    lock_.unlock();
-    return size_y;
+    boost::recursive_mutex::scoped_lock lock(lock_);
+    return costmap_->getSizeInCellsY();
   }
 
   double Costmap2DROS::getResolution() {
-    lock_.lock();
-    double resolution = costmap_->getResolution();
-    lock_.unlock();
-    return resolution;
+    boost::recursive_mutex::scoped_lock lock(lock_);
+    return costmap_->getResolution();
   }
 
   bool Costmap2DROS::getRobotPose(tf::Stamped<tf::Pose>& global_pose){
@@ -657,24 +651,18 @@ namespace costmap_2d {
   }
 
   double Costmap2DROS::getInscribedRadius(){
-    lock_.lock();
-    double rad = costmap_->getInscribedRadius();
-    lock_.unlock();
-    return rad;
+    boost::recursive_mutex::scoped_lock lock(lock_);
+    return costmap_->getInscribedRadius();
   }
 
   double Costmap2DROS::getCircumscribedRadius(){
-    lock_.lock();
-    double rad = costmap_->getCircumscribedRadius();
-    lock_.unlock();
-    return rad;
+    boost::recursive_mutex::scoped_lock lock(lock_);
+    return costmap_->getCircumscribedRadius();
   }
 
   double Costmap2DROS::getInflationRadius(){
-    lock_.lock();
-    double rad = costmap_->getInflationRadius();
-    lock_.unlock();
-    return rad;
+    boost::recursive_mutex::scoped_lock lock(lock_);
+    return costmap_->getInflationRadius();
   }
 
   void Costmap2DROS::clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose){
@@ -694,7 +682,9 @@ namespace costmap_2d {
     std::vector<geometry_msgs::Point> oriented_footprint;
     getOrientedFootprint(x, y, theta, oriented_footprint);
 
-    lock_.lock();
+    //lock the map if necessary
+    boost::recursive_mutex::scoped_lock lock(lock_);
+
     //set the associated costs in the cost map to be free
     if(!costmap_->setConvexPolygonCost(oriented_footprint, costmap_2d::FREE_SPACE))
       return;
@@ -707,8 +697,6 @@ namespace costmap_2d {
     //make sure to re-inflate obstacles in the affected region... plus those obstalces that could inflate to have costs in the footprint
     costmap_->reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), 
         max_inflation_dist + costmap_->getInflationRadius(), max_inflation_dist + costmap_->getInflationRadius(), false);
-    lock_.unlock();
-
   }
 
 };
