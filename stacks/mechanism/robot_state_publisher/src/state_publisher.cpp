@@ -67,7 +67,7 @@ int main(int argc, char** argv)
   node.param(full_param_name, robot_desc, string());
   Tree tree;
   if (!kdl_parser::treeFromString(robot_desc, tree)){
-    ROS_ERROR("Failed to extract kdl tree from robot model");
+    ROS_ERROR("Failed to extract kdl tree from xml robot description");
     return -1;
   }
 
