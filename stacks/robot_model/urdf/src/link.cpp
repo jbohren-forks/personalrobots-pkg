@@ -76,7 +76,7 @@ boost::shared_ptr<Geometry> parseGeometry(TiXmlElement *g)
 bool Material::initXml(TiXmlElement *config)
 {
   bool has_rgb = false;
-  bool has_filename = true;
+  bool has_filename = false;
 
   this->clear();
 
@@ -219,12 +219,25 @@ bool Visual::initXml(TiXmlElement *config)
   }
   else
   {
+    // get material name
     if (!mat->Attribute("name"))
     {
       ROS_ERROR("Visual material must contain a name attribute");
       return false;
     }
     this->material_name = mat->Attribute("name");
+
+    // try to parse material element in place
+    this->material.reset(new Material);
+    if (!this->material->initXml(mat))
+    {
+      ROS_WARN("Could not parse material element in Visual block, maybe defined outside.");
+      this->material.reset();
+    }
+    else
+    {
+      ROS_DEBUG("Parsed material element in Visual block.");
+    }
   }
 
   return true;
@@ -334,7 +347,7 @@ bool Mesh::initXml(TiXmlElement *c)
     }
   }
   else
-    ROS_WARN("Mesh scale was not specified, default to (1,1,1)");
+    ROS_DEBUG("Mesh scale was not specified, default to (1,1,1)");
 
   return true;
 }

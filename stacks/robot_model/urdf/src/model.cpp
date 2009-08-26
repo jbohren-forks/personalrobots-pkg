@@ -164,9 +164,17 @@ bool Model::initXml(TiXmlElement *robot_xml)
             }
             else
             {
-              ROS_ERROR("link '%s' material '%s' undefined.", link->name.c_str(),link->visual->material_name.c_str());
-              link.reset();
-              return false;
+              if (link->visual->material)
+              {
+                ROS_DEBUG("link '%s' material '%s' defined in Visual.", link->name.c_str(),link->visual->material_name.c_str());
+                this->materials_.insert(make_pair(link->visual->material->name,link->visual->material));
+              }
+              else
+              {
+                ROS_ERROR("link '%s' material '%s' undefined.", link->name.c_str(),link->visual->material_name.c_str());
+                link.reset();
+                return false;
+              }
             }
           }
         }
