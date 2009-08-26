@@ -37,16 +37,17 @@
 ///\todo Rename to CounterbalanceTestController
 
 #include <joint_qualification_controllers/hold_set_controller.h>
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(HoldSetController, controller::HoldSetController, controller::Controller)
 
 using namespace std;
 using namespace controller;
 
-ROS_REGISTER_CONTROLLER(HoldSetController)
-
 HoldSetController::HoldSetController()
-: robot_(NULL), 
-  initial_time_(0.0), 
-  start_time_(0.0), 
+: robot_(NULL),
+  initial_time_(0.0),
+  start_time_(0.0),
   lift_min_(0.0),
   lift_max_(0.0),
   flex_min_(0.0),
@@ -87,7 +88,7 @@ bool HoldSetController::init(mechanism::RobotState *robot, const ros::NodeHandle
 {
   assert(robot);
   robot_ = robot;
- 
+
   // Lift joint
   std::string lift_name;
   if (!n.getParam("lift_name", lift_name)){
@@ -147,7 +148,7 @@ bool HoldSetController::init(mechanism::RobotState *robot, const ros::NodeHandle
               n.getNamespace().c_str());
     return false;
   }
-  
+
   // Flex range
   if (!n.getParam("flex/min", flex_max_)){
     ROS_ERROR("CounterbalanceTestController: No min flex position found on parameter namespace: %s)",
@@ -199,10 +200,10 @@ void HoldSetController::update()
   // wait until the joints are calibrated to start
   if (!flex_state_->calibrated_ || !lift_state_->calibrated_)
     return;
-      
+
   double time = robot_->getTime();
-  
-  if (time - initial_time_ > timeout_ && state_ != DONE) 
+
+  if (time - initial_time_ > timeout_ && state_ != DONE)
   {
     ROS_ERROR("CounterbalanceTestController timed out during test. Timeout: %f.", timeout_);
     state_ = DONE;
@@ -210,7 +211,7 @@ void HoldSetController::update()
 
   lift_controller_->update();
   flex_controller_->update();
-  
+
   switch (state_)
   {
   case STARTING:
@@ -218,7 +219,7 @@ void HoldSetController::update()
       ROS_INFO("Starting");
 
       // Set the flex and lift commands
-      // If 
+      // If
       flex_cmd_ += flex_delta_;
       flex_index_++;
       // Move to next lift position, reset flex
@@ -234,7 +235,7 @@ void HoldSetController::update()
           state_ = DONE;
           break;
         }
-        hold_set_data_.lift_data.resize(lift_index_ + 1);   
+        hold_set_data_.lift_data.resize(lift_index_ + 1);
         hold_set_data_.lift_data[lift_index_].lift_position = lift_cmd_;
       }
       else
@@ -242,7 +243,7 @@ void HoldSetController::update()
         hold_set_data_.lift_data[lift_index_].flex_data.resize(flex_index_ + 1);
         hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_position = flex_cmd_;
       }
-      
+
       // Set controllers
       lift_controller_->setCommand(lift_cmd_);
       flex_controller_->setCommand(flex_cmd_);
@@ -259,7 +260,7 @@ void HoldSetController::update()
         start_time_ = time;
         ROS_INFO("Dithering!");
       }
-      
+
       break;
     }
   case DITHERING:
@@ -267,21 +268,21 @@ void HoldSetController::update()
       // Add dither
       lift_state_->commanded_effort_ += lift_dither_->update();
       flex_state_->commanded_effort_ += flex_dither_->update();
-      
+
       // Lift
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.time.push_back(time - start_time_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.position.push_back(lift_state_->position_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.velocity.push_back(lift_state_->velocity_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.cmd.push_back(lift_state_->commanded_effort_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.effort.push_back(lift_state_->applied_effort_);
-      
+
       // Flex
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.time.push_back(time - start_time_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.position.push_back(flex_state_->position_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.velocity.push_back(flex_state_->velocity_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.cmd.push_back(flex_state_->commanded_effort_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.effort.push_back(flex_state_->applied_effort_);
-        
+
       if (time - start_time_ > dither_time_)
       {
         state_ = STARTING;
@@ -292,10 +293,10 @@ void HoldSetController::update()
     {
       if (!data_sent_)
         data_sent_ = sendData();
-            
+
       break;
     }
-    
+
   }
 }
 
@@ -304,10 +305,10 @@ bool HoldSetController::sendData()
   if (call_service_->trylock())
   {
     ROS_INFO("Calling results service!");
-    
+
     // Copy data and send
     joint_qualification_controllers::HoldSetData::Request *out = &call_service_->srv_req_;
-    
+
     out->lift_name = hold_set_data_.lift_name;
     out->flex_name = hold_set_data_.flex_name;
     out->lift_amplitude = hold_set_data_.lift_amplitude;

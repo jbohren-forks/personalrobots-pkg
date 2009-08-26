@@ -4,7 +4,6 @@ rospack(joint_qualification_controllers)
 genmsg()
 gensrv()
 rospack_add_library(joint_qualification_controllers 
-src/controller_manifest.cpp
 src/hysteresis_controller.cpp
 src/sine_sweep_controller.cpp
 src/checkout_controller.cpp

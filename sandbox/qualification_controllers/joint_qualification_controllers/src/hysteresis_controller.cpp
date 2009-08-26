@@ -31,19 +31,20 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <joint_qualification_controllers/hysteresis_controller.h>
+#include "joint_qualification_controllers/hysteresis_controller.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(HysteresisController, controller::HysteresisController, controller::Controller)
 
 #define MAX_DATA_POINTS 120000
 
 using namespace std;
 using namespace controller;
 
-ROS_REGISTER_CONTROLLER(HysteresisController)
-
 HysteresisController::HysteresisController()
-: joint_(NULL), 
+: joint_(NULL),
   robot_(NULL),
-  data_sent_(false), 
+  data_sent_(false),
   call_service_(NULL)
 {
   test_data_.test_name ="hysteresis";
@@ -77,7 +78,7 @@ HysteresisController::HysteresisController()
   start          = true;
   loop_count_    = 0;
   count_         = 0;
-  
+
   // Assume 1KHz update rate
   timeout_ = MAX_DATA_POINTS / 1000;
 }
@@ -116,7 +117,7 @@ bool HysteresisController::init( mechanism::RobotState *robot, const ros::NodeHa
   }
 
   double min_expected, max_expected, max_pos, min_pos;
-  
+
     if (!n.getParam("min_expected", min_expected)){
     ROS_ERROR("Hysteresis Controller: No min expected effort found on parameter namespace: %s)",
               n.getNamespace().c_str());
@@ -160,7 +161,7 @@ bool HysteresisController::init( mechanism::RobotState *robot, const ros::NodeHa
   test_data_.arg_value[5] = timeout_;
   test_data_.arg_value[6] = max_effort_;
 
-  
+
   velocity_controller_ = new JointVelocityController();
   if (!velocity_controller_->init(robot, ros::NodeHandle(n, "velocity_controller"))) return false;
 
@@ -181,7 +182,7 @@ bool HysteresisController::init( mechanism::RobotState *robot, const ros::NodeHa
 bool HysteresisController::starting()
 {
   velocity_controller_->starting();
-  
+
   initial_time_ = robot_->getTime();
   initial_position_ = joint_->position_;
 
@@ -199,14 +200,14 @@ void HysteresisController::update()
 
   double time = robot_->getTime();
   velocity_controller_->update();
-  
+
   if (state_ == STOPPED || state_ == STARTING || state_ == MOVING)
   {
     if(state_!=DONE && count_ < MAX_DATA_POINTS && loop_count_ > 1)
     {
       double cmd;
       velocity_controller_->getCommand(cmd);
-      
+
       test_data_.time[count_] = time;
       test_data_.cmd[count_] = cmd;
       test_data_.effort[count_] = joint_->applied_effort_;
@@ -217,7 +218,7 @@ void HysteresisController::update()
   }
 
   // Timeout check.
-  if (time - initial_time_ > timeout_ && state_ != ANALYZING && state_ != DONE) 
+  if (time - initial_time_ > timeout_ && state_ != ANALYZING && state_ != DONE)
   {
     state_ = ANALYZING;
     test_data_.arg_value[5] = 0;
@@ -233,7 +234,7 @@ void HysteresisController::update()
     state_ = STARTING;
     break;
   case STARTING:
-    
+
     ++starting_count;
     if (starting_count > 100)
       state_ = MOVING;
@@ -247,9 +248,9 @@ void HysteresisController::update()
       else
         state_ = ANALYZING;
     }
-    else if(fabs(joint_->position_-initial_position_)>6.28 && joint_->joint_->type_==mechanism::JOINT_CONTINUOUS) 
+    else if(fabs(joint_->position_-initial_position_)>6.28 && joint_->joint_->type_==mechanism::JOINT_CONTINUOUS)
     {
-   
+
       velocity_controller_->setCommand(0.0);
       initial_position_=joint_->position_;
       if (loop_count_ < 3)
@@ -283,8 +284,8 @@ void HysteresisController::analysis()
   test_data_.effort.resize(count_);
   test_data_.position.resize(count_);
   test_data_.velocity.resize(count_);
-  
-  return; 
+
+  return;
 }
 
 bool HysteresisController::sendData()
@@ -294,13 +295,13 @@ bool HysteresisController::sendData()
     joint_qualification_controllers::TestData::Request *out = &call_service_->srv_req_;
     out->test_name = test_data_.test_name;
     out->joint_name = test_data_.joint_name;
-    
+
     out->time = test_data_.time;
     out->cmd = test_data_.cmd;
     out->effort = test_data_.effort;
     out->position = test_data_.position;
     out->velocity = test_data_.velocity;
-    
+
     out->arg_name = test_data_.arg_name;
     out->arg_value = test_data_.arg_value;
     call_service_->unlockAndCall();

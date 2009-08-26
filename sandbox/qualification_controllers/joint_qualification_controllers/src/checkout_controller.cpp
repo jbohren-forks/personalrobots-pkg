@@ -32,15 +32,16 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <joint_qualification_controllers/checkout_controller.h>
+#include "joint_qualification_controllers/checkout_controller.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(CheckoutController, controller::CheckoutController, controller::Controller)
 
 using namespace std;
 using namespace controller;
 
-ROS_REGISTER_CONTROLLER(CheckoutController)
-
 CheckoutController::CheckoutController()
-: robot_(NULL), 
+: robot_(NULL),
   data_sent_(false),
   call_service_(NULL)
 {
@@ -51,8 +52,8 @@ CheckoutController::CheckoutController()
   state_          = STARTING;
   joint_count_    = 0;
   actuator_count_ = 0;
-  
-  timeout_        = 30.0; 
+
+  timeout_        = 30.0;
 }
 
 CheckoutController::~CheckoutController()
@@ -63,7 +64,7 @@ bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandl
 {
   assert(robot);
   robot_ = robot;
-  
+
   joint_count_ = robot_->joint_states_.size();
   robot_data_.num_joints = joint_count_;
 
@@ -112,11 +113,11 @@ bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandl
   actuator_count_ = robot_->model_->actuators_.size();
   robot_data_.num_actuators = actuator_count_;
   robot_data_.actuator_data.resize(actuator_count_);
-  
+
   for (int i = 0; i < actuator_count_; i++)
   {
     Actuator *actuator = robot_->model_->actuators_[i];
-   
+
     robot_data_.actuator_data[i].index = i;
     robot_data_.actuator_data[i].name = actuator->name_;
     robot_data_.actuator_data[i].id = actuator->state_.device_id_;
@@ -148,12 +149,12 @@ void CheckoutController::update()
   bool enabled = false;
 
   // Timeout check.
-  if (time - initial_time_ > timeout_ && state_ != ANALYZING && state_ != DONE) 
+  if (time - initial_time_ > timeout_ && state_ != ANALYZING && state_ != DONE)
   {
     analysis(0);
     state_ = DONE;
   }
-  
+
   switch (state_)
   {
   case STARTING:
@@ -173,14 +174,14 @@ void CheckoutController::update()
 
       if (cal && (robot_->joint_states_[i].joint_->name_.find("finger") != string::npos))
         continue;
-      
+
 
       // Base joint is a dummy joint used to set up visualization
       if (cal && robot_->joint_states_[i].joint_->name_ == "base_joint")
         continue;
-      
+
       if (!robot_->joint_states_[i].calibrated_)
-      {     
+      {
         cal = false;
         break;
       }
@@ -208,7 +209,7 @@ void CheckoutController::update()
   case DONE:
     if (!data_sent_)
       data_sent_ = sendData();
-    
+
 
     break;
   }
@@ -223,10 +224,10 @@ bool CheckoutController::sendData()
     out->test_time     = robot_data_.test_time;
     out->num_joints    = robot_data_.num_joints;
     out->num_actuators = robot_data_.num_actuators;
-    
+
     out->joint_data.resize(robot_data_.num_joints);
     out->actuator_data.resize(robot_data_.num_actuators);
-    
+
     for (int i = 0; i < joint_count_; i++)
     {
       out->joint_data[i].index      = robot_data_.joint_data[i].index;
@@ -235,7 +236,7 @@ bool CheckoutController::sendData()
       out->joint_data[i].has_safety = robot_data_.joint_data[i].has_safety;
       out->joint_data[i].type       = robot_data_.joint_data[i].type;
     }
-    
+
     for (int i = 0; i < actuator_count_; i++)
     {
       out->actuator_data[i].index   = robot_data_.actuator_data[i].index;
@@ -243,9 +244,9 @@ bool CheckoutController::sendData()
       out->actuator_data[i].id      = robot_data_.actuator_data[i].id;
       out->actuator_data[i].enabled = robot_data_.actuator_data[i].enabled;
     }
-    
+
     call_service_->unlockAndCall();
-    
+
     return true;
   }
   return false;
@@ -260,8 +261,8 @@ void CheckoutController::analysis(double time)
 
   for (int i = 0; i < actuator_count_; i++)
     robot_data_.actuator_data[i].enabled = robot_->model_->actuators_[i]->state_.is_enabled_;
-    
-  return; 
+
+  return;
 }
 
 

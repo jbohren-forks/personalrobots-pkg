@@ -32,7 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <joint_qualification_controllers/sine_sweep_controller.h>
+#include "joint_qualification_controllers/sine_sweep_controller.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(SineSweepController, controller::SineSweepController, controller::Controller)
 
 #define MAX_DATA_POINTS 120000
 
@@ -40,8 +43,6 @@ using namespace std;
 using namespace control_toolbox;
 
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(SineSweepController)
 
 SineSweepController::SineSweepController():
 joint_state_(NULL), robot_(NULL), sweep_(NULL), data_sent_(false)
@@ -62,7 +63,7 @@ joint_state_(NULL), robot_(NULL), sweep_(NULL), data_sent_(false)
   test_data_.arg_name[4] = "End Freq";
   test_data_.arg_name[5] = "Amplitude";
   test_data_.arg_name[6] = "Duration";
-  
+
   duration_     = 0.0;
   initial_time_ = 0;
   count_        = 0;
@@ -118,7 +119,7 @@ bool SineSweepController::init(mechanism::RobotState *robot, const ros::NodeHand
               n.getNamespace().c_str());
     return false;
   }
-  
+
   if (!n.getParam("end_freq", end_freq)){
     ROS_ERROR("SineSweepController: No end frequency found on parameter namespace: %s)",
               n.getNamespace().c_str());
@@ -173,13 +174,13 @@ void SineSweepController::update()
     initial_time_ = time;
     return;
   }
-  
+
   if((time - initial_time_) <= duration_)
   {
     joint_state_->commanded_effort_ = sweep_->update(time - initial_time_);
 
     if (count_ < MAX_DATA_POINTS && !done_)
-    { 
+    {
       test_data_.time[count_] = time;
       test_data_.cmd[count_] = joint_state_->commanded_effort_;
       test_data_.effort[count_] = joint_state_->applied_effort_;
@@ -212,7 +213,7 @@ void SineSweepController::analysis()
   test_data_.effort.resize(count_);
   test_data_.position.resize(count_);
   test_data_.velocity.resize(count_);
-  
+
 }
 
 bool SineSweepController::sendData()
