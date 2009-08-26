@@ -33,17 +33,17 @@
  *********************************************************************/
 
 
-#include <pr2_mechanism_controllers/head_position_controller.h>
-#include <mechanism_control/mechanism_control.h>
-#include<cmath>
+#include "pr2_mechanism_controllers/head_position_controller.h"
+#include <cmath>
+#include "mechanism_control/mechanism_control.h"
+#include "pluginlib/class_list_macros.h"
 
 using namespace tf;
 using namespace std;
 
+PLUGINLIB_REGISTER_CLASS(HeadPositionController, controller::HeadPositionController, controller::Controller)
+
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(HeadPositionController)
-
 
 HeadPositionController::HeadPositionController()
   : robot_state_(NULL),
@@ -60,7 +60,7 @@ HeadPositionController::~HeadPositionController()
 bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
 {
   node_ = n;
- 
+
 // get name link names from the param server
   if (!node_.getParam("pan_link_name", pan_link_name_)){
     ROS_ERROR("HeadPositionController: No pan link name found on parameter server (namespace: %s)",
@@ -72,7 +72,7 @@ bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros:
               node_.getNamespace().c_str());
     return false;
   }
- 
+
   // test if we got robot pointer
   assert(robot_state);
   robot_state_ = robot_state;
@@ -117,18 +117,18 @@ void HeadPositionController::update()
 void HeadPositionController::command(const mechanism_msgs::JointStatesConstPtr& command_msg)
 {
 
-  assert(command_msg->joints.size() == 2); 
+  assert(command_msg->joints.size() == 2);
   if(command_msg->joints[0].name == head_pan_controller_.joint_state_->joint_->name_)
   {
     pan_out_ = command_msg->joints[0].position;
     tilt_out_ = command_msg->joints[1].position;
   }
-  else 
+  else
   {
     pan_out_ = command_msg->joints[1].position;
     tilt_out_ = command_msg->joints[0].position;
   }
-  
+
 }
 
 void HeadPositionController::pointHead(const tf::MessageNotifier<geometry_msgs::PointStamped>::MessagePtr& point_msg)
@@ -141,7 +141,7 @@ void HeadPositionController::pointHead(const tf::MessageNotifier<geometry_msgs::
 
   // convert to reference frame of pan link parent
   tf_.transformPoint(pan_parent, pan_point, pan_point);
-  //calculate the pan angle 
+  //calculate the pan angle
   pan_out_ = atan2(pan_point.y(), pan_point.x());
 
   Stamped<Point> tilt_point;
@@ -150,7 +150,7 @@ void HeadPositionController::pointHead(const tf::MessageNotifier<geometry_msgs::
   tf_.transformPoint(pan_link_name_, tilt_point, tilt_point);
   //calculate the tilt angle
   tilt_out_ = atan2(-tilt_point.z(), sqrt(tilt_point.x()*tilt_point.x() + tilt_point.y()*tilt_point.y()));
- 
+
 
 }
 
@@ -182,7 +182,7 @@ void HeadPositionController::pointFrameOnHead(const tf::MessageNotifier<geometry
   Stamped<Point> tilt_point;
   pointStampedMsgToTF(*point_msg, tilt_point);
   tf_.transformPoint(pan_link_name_, tilt_point, tilt_point);
-  
+
   radius = pow(tilt_point.x(),2)+pow(tilt_point.y(),2);
   x_intercept = sqrt(fabs(radius-pow(frame.getOrigin().z(),2)));
   delta_theta = atan2(-tilt_point.z(), sqrt(tilt_point.x()*tilt_point.x() + tilt_point.y()*tilt_point.y()))-atan2(frame.getOrigin().z(),x_intercept);

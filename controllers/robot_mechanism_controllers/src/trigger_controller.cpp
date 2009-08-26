@@ -35,35 +35,37 @@
 
 /** Example .xml configuration file
 <controllers>
-<controller name="cam_controller" type="TriggerControllerNode"> 
+<controller name="cam_controller" type="TriggerControllerNode">
   <actuator name="fl_caster_l_wheel_motor" />
   <waveform rep_rate="10" active_low="0" phase="0" duty_cycle=".5" running="1" pulsed="1" />
-</controller>    
+</controller>
 <controller name="led_controller" type="TriggerControllerNode">
   <actuator name="bl_caster_l_wheel_motor" />
   <waveform rep_rate="10" active_low="0" phase="0" duty_cycle=".5" running="1" pulsed="1" />
-</controller>    
-</controllers>    
+</controller>
+</controllers>
 
 There are three operating modes:
 Constant: (running = 0)
   active_low sets the constant output value
 Pulsed: (running = 1, pulsed = 1)
   active_low sets resting output value
-  With rate rep_rate (Hz), the output is inverted for one cycle. The pulse is delayed using 
+  With rate rep_rate (Hz), the output is inverted for one cycle. The pulse is delayed using
   phase varying from 0 to 1.
 Rectangular: (running = 1, pulsed = 0)
   Rectangular wave with duty cycle set by duty_cycle (0 to 1), rate rep_rate (Hz), goes to
   !active_low at instant determined by phase.
 */
 
-#include <ros/console.h>
-#include <robot_mechanism_controllers/trigger_controller.h>
+#include "robot_mechanism_controllers/trigger_controller.h"
+#include "ros/console.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(TriggerController, controller::TriggerController, controller::Controller)
+PLUGINLIB_REGISTER_CLASS(TriggerControllerNode, controller::TriggerControllerNode, controller::Controller)
 
 using std::string;
 using namespace controller;
-
-ROS_REGISTER_CONTROLLER(TriggerController);
 
 TriggerController::TriggerController()
 {
@@ -83,7 +85,7 @@ void TriggerController::update()
 {
   double tick = getTick();
   bool active = false;
-  
+
   if (config_.running)
   {
     if (config_.pulsed)
@@ -99,26 +101,26 @@ void TriggerController::update()
       //  ROS_INFO("Changed to: %i (%s)", active, actuator_name_.c_str()); // KILLME
     }
   }
-  
+
   //if (actuator_command_->digital_out_ && !(active ^ config_.active_low))
   //    ROS_DEBUG("digital out falling at time %f", robot_->getTime());
 
   actuator_command_->digital_out_ = active ^ config_.active_low;
 
   // ROS_INFO("digital out: %i (%s)", actuator_command_->digital_out_, actuator_name_.c_str());
-  
-  prev_tick_ = tick;  
+
+  prev_tick_ = tick;
 }
 
 bool TriggerController::init(mechanism::RobotState *robot, const ros::NodeHandle& n)
 {
   assert(robot);
   robot_=robot;
-  
+
   ROS_DEBUG("TriggerController::init starting");
-  
+
   // Get the actuator name.
- 
+
   if (!n.getParam("actuator", actuator_name_)){
     ROS_ERROR("TriggerController was not given an actuator.");
     return false;
@@ -127,13 +129,13 @@ bool TriggerController::init(mechanism::RobotState *robot, const ros::NodeHandle
   Actuator *actuator = robot_->model_->getActuator(actuator_name_);
   if (!actuator)
   {
-    ROS_ERROR("TriggerController could not find actuator named \"%s\".", 
+    ROS_ERROR("TriggerController could not find actuator named \"%s\".",
         actuator_name_.c_str());
     return false;
   }
 
   actuator_command_ = &actuator->command_;
-  
+
   // Get the startup configuration (pulsed or constant)
 
   config_.rep_rate =  1;
@@ -151,7 +153,7 @@ bool TriggerController::init(mechanism::RobotState *robot, const ros::NodeHandle
   n.getParam("pulsed", config_.pulsed);
 
   prev_tick_ = getTick();
-  
+
   ROS_DEBUG("TriggerController::init completed successfully"
       " rr=%f ph=%f al=%i r=%i p=%i dc=%f.",
       config_.rep_rate, config_.phase, config_.active_low, config_.running, config_.pulsed, config_.duty_cycle);
@@ -193,9 +195,9 @@ bool TriggerControllerNode::setWaveformSrv(
   c_->config_.active_low = !!req.active_low;
   c_->config_.pulsed = !!req.pulsed;
   c_->config_.running = !!req.running;
-  
+
   ROS_DEBUG("TriggerController::setWaveformSrv completed successfully"
-      " rr=%f ph=%f al=%i r=%i p=%i dc=%f.", c_->config_.rep_rate, c_->config_.phase, 
+      " rr=%f ph=%f al=%i r=%i p=%i dc=%f.", c_->config_.rep_rate, c_->config_.phase,
       c_->config_.active_low, c_->config_.running, c_->config_.pulsed, c_->config_.duty_cycle);
 
   return true;
@@ -205,7 +207,7 @@ bool TriggerControllerNode::init(mechanism::RobotState *robot, const ros::NodeHa
 {
   node_handle_ = n;
   //Init the model.
-  
+
   ROS_DEBUG("LOADING TRIGGER CONTROLLER NODE");
   //string prefix = config->Attribute("name");
   //ROS_DEBUG_STREAM("the prefix is "<<prefix);

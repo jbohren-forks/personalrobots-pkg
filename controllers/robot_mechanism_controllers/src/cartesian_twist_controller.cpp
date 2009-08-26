@@ -31,17 +31,17 @@
  * Author: Wim Meeussen
  */
 
-#include <algorithm>
-#include <mechanism_control/mechanism_control.h>
-#include "kdl/chainfksolvervel_recursive.hpp"
 #include "robot_mechanism_controllers/cartesian_twist_controller.h"
+#include <algorithm>
+#include "mechanism_control/mechanism_control.h"
+#include "kdl/chainfksolvervel_recursive.hpp"
+#include "pluginlib/class_list_macros.h"
 
 using namespace KDL;
 
+PLUGINLIB_REGISTER_CLASS(CartesianTwistController, controller::CartesianTwistController, controller::Controller)
 
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(CartesianTwistController)
 
 
 CartesianTwistController::CartesianTwistController()

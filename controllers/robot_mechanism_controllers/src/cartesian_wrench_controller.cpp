@@ -31,16 +31,16 @@
  * Author: Wim Meeussen
  */
 
+#include "robot_mechanism_controllers/cartesian_wrench_controller.h"
 #include <algorithm>
-#include <robot_mechanism_controllers/cartesian_wrench_controller.h>
+#include "pluginlib/class_list_macros.h"
 
 
 using namespace KDL;
 
+PLUGINLIB_REGISTER_CLASS(CartesianWrenchController, controller::CartesianWrenchController, controller::Controller)
+
 namespace controller {
-
-
-ROS_REGISTER_CONTROLLER(CartesianWrenchController)
 
 CartesianWrenchController::CartesianWrenchController()
 : robot_state_(NULL),

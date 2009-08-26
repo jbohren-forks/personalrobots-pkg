@@ -32,13 +32,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <robot_mechanism_controllers/joint_velocity_controller.h>
+#include "robot_mechanism_controllers/joint_velocity_controller.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(JointVelocityController, controller::JointVelocityController, controller::Controller)
 
 using namespace std;
 
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(JointVelocityController)
 
 JointVelocityController::JointVelocityController()
 : joint_state_(NULL), command_(0), robot_(NULL), last_time_(0), loop_count_(0)
@@ -122,7 +123,7 @@ bool JointVelocityController::init(mechanism::RobotState *robot, const ros::Node
     new realtime_tools::RealtimePublisher<robot_mechanism_controllers::JointControllerState>
     (node_, "state", 1));
 
-  sub_command_ = node_.subscribe<std_msgs::Float64>("set_command", 1, &JointVelocityController::setCommandCB, this);
+  sub_command_ = node_.subscribe<std_msgs::Float64>("command", 1, &JointVelocityController::setCommandCB, this);
 
   return true;
 }

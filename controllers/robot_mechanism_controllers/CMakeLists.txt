@@ -6,7 +6,6 @@ rospack(robot_mechanism_controllers)
 genmsg()
 gensrv()
 set(_srcs
-    src/controller_manifest.cpp
     src/cartesian_pose_controller.cpp
     src/cartesian_twist_controller.cpp
     src/cartesian_wrench_controller.cpp

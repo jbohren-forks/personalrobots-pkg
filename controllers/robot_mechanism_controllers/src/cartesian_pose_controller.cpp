@@ -33,20 +33,20 @@
 
 
 
-#include <algorithm>
-#include <mechanism_control/mechanism_control.h>
-#include "kdl/chainfksolverpos_recursive.hpp"
 #include "robot_mechanism_controllers/cartesian_pose_controller.h"
+#include <algorithm>
+#include "kdl/chainfksolverpos_recursive.hpp"
+#include "mechanism_control/mechanism_control.h"
+#include "pluginlib/class_list_macros.h"
 
 
 using namespace KDL;
 using namespace tf;
 using namespace std;
 
+PLUGINLIB_REGISTER_CLASS(CartesianPoseController, controller::CartesianPoseController, controller::Controller)
 
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(CartesianPoseController)
 
 CartesianPoseController::CartesianPoseController()
 : robot_state_(NULL),
@@ -108,7 +108,7 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros
   }
 
   // subscribe to pose commands
-  command_notifier_.reset(new MessageNotifier<geometry_msgs::PoseStamped>(tf_, 
+  command_notifier_.reset(new MessageNotifier<geometry_msgs::PoseStamped>(tf_,
                                                                        boost::bind(&CartesianPoseController::command, this, _1),
                                                                        node_.getNamespace() + "/command", root_name_, 10));
   // realtime publisher for control state

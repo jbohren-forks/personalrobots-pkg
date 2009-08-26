@@ -33,14 +33,16 @@
  *********************************************************************/
 
 #include "pr2_mechanism_controllers/gripper_calibration_controller.h"
-#include <ros/time.h>
+#include "ros/time.h"
+#include "pluginlib/class_list_macros.h"
 
 using namespace std;
 using namespace controller;
 
+PLUGINLIB_REGISTER_CLASS(GripperCalibrationController, controller::GripperCalibrationController, controller::Controller)
+
 namespace controller
 {
-
 
 GripperCalibrationController::GripperCalibrationController()
 : state_(INITIALIZED), last_publish_time_(0), joint_(NULL)

@@ -66,4 +66,3 @@ def start_stop_controller(name, st):
         else:
             print "Error when stopping ", name
 
-

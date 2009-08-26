@@ -32,14 +32,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <robot_mechanism_controllers/joint_ud_calibration_controller.h>
-#include <ros/time.h>
+#include "robot_mechanism_controllers/joint_ud_calibration_controller.h"
+#include "ros/time.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(JointUDCalibrationController, controller::JointUDCalibrationController, controller::Controller)
 
 using namespace std;
 
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(JointUDCalibrationController)
 
 JointUDCalibrationController::JointUDCalibrationController()
 : robot_(NULL), last_publish_time_(0), state_(INITIALIZED),

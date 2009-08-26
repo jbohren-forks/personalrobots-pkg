@@ -35,10 +35,12 @@
  * Author: Sachin Chitta and Matthew Piccoli
  */
 
-#include <pr2_mechanism_controllers/pr2_odometry.h>
+#include "pr2_mechanism_controllers/pr2_odometry.h"
+#include "pluginlib/class_list_macros.h"
 
-using namespace controller;
-ROS_REGISTER_CONTROLLER(Pr2Odometry)
+PLUGINLIB_REGISTER_CLASS(Pr2Odometry, controller::Pr2Odometry, controller::Controller)
+
+namespace controller {
 
 Pr2Odometry::Pr2Odometry()
 {
@@ -88,7 +90,7 @@ bool Pr2Odometry::init(mechanism::RobotState *robot_state, const ros::NodeHandle
 
   fit_residual_ = Eigen::MatrixXf::Zero(16, 1);
   odometry_residual_ = Eigen::MatrixXf::Zero(16, 1);
-  
+
   weight_matrix_ = Eigen::MatrixXf::Identity(16, 16);
 
   odometry_publisher_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(node_,odom_frame_, 1));
@@ -175,11 +177,11 @@ void Pr2Odometry::populateCovariance(double residual, nav_msgs::Odometry &msg)
   double odom_multiplier;
   if (residual < 0.05)
   {
-    odom_multiplier = ((residual-0.00001)*(0.99999/0.04999))+0.00001;  
+    odom_multiplier = ((residual-0.00001)*(0.99999/0.04999))+0.00001;
   }
   else
   {
-    odom_multiplier = ((residual-0.05)*(19.0/0.15))+1.0; 
+    odom_multiplier = ((residual-0.05)*(19.0/0.15))+1.0;
   }
   odom_multiplier = fmax(0.00001, fmin(100.0, odom_multiplier));
   odom_multiplier *= 2.0;
@@ -291,7 +293,6 @@ Eigen::MatrixXf Pr2Odometry::iterativeLeastSquares(Eigen::MatrixXf lhs, Eigen::M
   }
   return fit_soln_;
 }
-;
 
 Eigen::MatrixXf Pr2Odometry::findWeightMatrix(Eigen::MatrixXf residual, std::string weight_type)
 {
@@ -337,7 +338,6 @@ Eigen::MatrixXf Pr2Odometry::findWeightMatrix(Eigen::MatrixXf residual, std::str
   }
   return w_fit;
 }
-;
 
 void Pr2Odometry::publish()
 {
@@ -352,7 +352,7 @@ void Pr2Odometry::publish()
 
   if(transform_publisher_->trylock())
   {
-    
+
     double x(0.), y(0.0), yaw(0.0), vx(0.0), vy(0.0), vyaw(0.0);
     this->getOdometry(x, y, yaw, vx, vy, vyaw);
 
@@ -387,7 +387,8 @@ void Pr2Odometry::publish()
 
     transform_publisher_->unlockAndPublish();
   }
-  
+
   last_publish_time_ = current_time_;
 
-};
+}
+} // namespace

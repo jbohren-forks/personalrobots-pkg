@@ -44,8 +44,8 @@ using namespace ros;
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
   model_(hw),
-  state_(NULL), hw_(hw), 
-  controller_loader_("controller_interface", "Controller"),
+  state_(NULL), hw_(hw),
+  controller_loader_("controller_interface", "controller::Controller"),
   start_request_(0),
   stop_request_(0),
   please_switch_(false),

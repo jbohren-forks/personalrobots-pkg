@@ -35,10 +35,12 @@
  * Author: Sachin Chitta and Matthew Piccoli
  */
 
-#include <pr2_mechanism_controllers/pr2_base_controller.h>
+#include "pr2_mechanism_controllers/pr2_base_controller.h"
+#include "pluginlib/class_list_macros.h"
 
-using namespace controller;
-ROS_REGISTER_CONTROLLER(Pr2BaseController)
+PLUGINLIB_REGISTER_CLASS(Pr2BaseController, controller::Pr2BaseController, controller::Controller)
+
+namespace controller {
 
 Pr2BaseController::Pr2BaseController()
 {
@@ -135,7 +137,7 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
     control_toolbox::Pid p_i_d;
     state_publisher_->msg_.joint_name[j + base_kin_.num_casters_] = base_kin_.wheel_[j].joint_name_;
     if(!p_i_d.init(ros::NodeHandle(node_,base_kin_.wheel_[j].joint_name_)))
-    {       
+    {
       ROS_ERROR("Could not initialize pid for %s",base_kin_.wheel_[j].joint_name_.c_str());
       return false;
     }
@@ -483,3 +485,4 @@ void Pr2BaseController::CmdBaseVelReceived(const geometry_msgs::TwistConstPtr& m
   this->setCommand(base_vel_msg_);
   pthread_mutex_unlock(&pr2_base_controller_lock_);
 }
+} // namespace

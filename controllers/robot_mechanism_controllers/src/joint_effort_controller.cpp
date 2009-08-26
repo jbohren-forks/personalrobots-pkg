@@ -31,12 +31,13 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <robot_mechanism_controllers/joint_effort_controller.h>
 
+#include "robot_mechanism_controllers/joint_effort_controller.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(JointEffortController, controller::JointEffortController, controller::Controller)
 
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(JointEffortController)
 
 JointEffortController::JointEffortController()
 : joint_state_(NULL), command_(0), robot_(NULL)

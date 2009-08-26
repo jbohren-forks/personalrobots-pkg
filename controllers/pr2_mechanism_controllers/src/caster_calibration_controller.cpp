@@ -32,10 +32,11 @@
  */
 
 #include "pr2_mechanism_controllers/caster_calibration_controller.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(CasterCalibrationController, controller::CasterCalibrationController, controller::Controller)
 
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(CasterCalibrationController)
 
 CasterCalibrationController::CasterCalibrationController()
 : robot_(NULL), state_(INITIALIZED),

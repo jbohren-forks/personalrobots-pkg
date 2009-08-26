@@ -32,13 +32,14 @@
  */
 
 #include "pr2_mechanism_controllers/caster_controller.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(CasterController, controller::CasterController, controller::Controller)
 
 namespace controller {
 
 const double CasterController::WHEEL_RADIUS = 0.079;
 const double CasterController::WHEEL_OFFSET = 0.049;
-
-ROS_REGISTER_CONTROLLER(CasterController);
 
 CasterController::CasterController()
   : steer_velocity_(0), drive_velocity_(0)

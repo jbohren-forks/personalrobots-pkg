@@ -1,37 +1,37 @@
 <library path="lib/libexperimental_controllers">
 
-  <class name="JointTrajectoryController2" type="JointTrajectoryController2" base_class_type="Controller" />
-  <class name="PIDPositionVelocityController" type="PIDPositionVelocityController" base_class_type="Controller" />
-  <class name="TrajectoryController" type="TrajectoryController" base_class_type="Controller" />
-  <class name="CartesianTFFController" type="CartesianTFFController" base_class_type="Controller" />
-  <class name="CartesianHybridController" type="CartesianHybridController" base_class_type="Controller" />
-  <class name="CartesianHybridControllerNode" type="CartesianHybridControllerNode" base_class_type="Controller" />
+  <class name="JointTrajectoryController2" type="controller::JointTrajectoryController2" base_class_type="controller::Controller" />
+  <class name="PIDPositionVelocityController" type="controller::PIDPositionVelocityController" base_class_type="controller::Controller" />
+  <class name="TrajectoryController" type="controller::TrajectoryController" base_class_type="controller::Controller" />
+  <class name="CartesianTFFController" type="controller::CartesianTFFController" base_class_type="controller::Controller" />
+  <class name="CartesianHybridController" type="controller::CartesianHybridController" base_class_type="controller::Controller" />
+  <class name="CartesianHybridControllerNode" type="controller::CartesianHybridControllerNode" base_class_type="controller::Controller" />
 
-  <class name="DynamicLoaderController" type="DynamicLoaderController" base_class_type="Controller" />
+  <class name="DynamicLoaderController" type="controller::DynamicLoaderController" base_class_type="controller::Controller" />
 
-  <class name="Probe" type="Probe" base_class_type="Controller" />
-  <class name="CartesianTwistControllerIk" type="CartesianTwistControllerIk" base_class_type="Controller" />
-  <class name="EndeffectorConstraintController" type="EndeffectorConstraintController" base_class_type="Controller" />
-  <class name="EndeffectorConstraintControllerNode" type="EndeffectorConstraintControllerNode" base_class_type="Controller" />
-  <class name="JointChainConstraintControllerNode" type="JointChainConstraintControllerNode" base_class_type="Controller" />
-  <class name="JointInverseDynamicsController" type="JointInverseDynamicsController" base_class_type="Controller" />
-  <class name="JointPositionSmoothController" type="JointPositionSmoothController" base_class_type="Controller" />
-  <class name="JointPositionSmoothControllerNode" type="JointPositionSmoothControllerNode" base_class_type="Controller" />
+  <class name="Probe" type="controller::Probe" base_class_type="controller::Controller" />
+  <class name="CartesianTwistControllerIk" type="controller::CartesianTwistControllerIk" base_class_type="controller::Controller" />
+  <class name="EndeffectorConstraintController" type="controller::EndeffectorConstraintController" base_class_type="controller::Controller" />
+  <class name="EndeffectorConstraintControllerNode" type="controller::EndeffectorConstraintControllerNode" base_class_type="controller::Controller" />
+  <class name="JointChainConstraintControllerNode" type="controller::JointChainConstraintControllerNode" base_class_type="controller::Controller" />
+  <class name="JointInverseDynamicsController" type="controller::JointInverseDynamicsController" base_class_type="controller::Controller" />
+  <class name="JointPositionSmoothController" type="controller::JointPositionSmoothController" base_class_type="controller::Controller" />
+  <class name="JointPositionSmoothControllerNode" type="controller::JointPositionSmoothControllerNode" base_class_type="controller::Controller" />
 
-  <class name="JointAutotuner" type="JointAutotuner" base_class_type="Controller" />
-  <class name="JointAutotunerNode" type="JointAutotunerNode" base_class_type="Controller" />
-  <class name="JointBlindCalibrationController" type="JointBlindCalibrationController" base_class_type="Controller" />
-  <class name="JointBlindCalibrationControllerNode" type="JointBlindCalibrationControllerNode" base_class_type="Controller" />
-  <class name="JointCalibrationControllerNode" type="JointCalibrationControllerNode" base_class_type="Controller" />
-  <class name="JointChainSineController" type="JointChainSineController" base_class_type="Controller" />
-  <class name="JointLimitCalibrationControllerNode" type="JointLimitCalibrationControllerNode" base_class_type="Controller" />
-  <class name="JointPDController" type="JointPDController" base_class_type="Controller" />
-  <class name="JointPDControllerNode" type="JointPDControllerNode" base_class_type="Controller" />
-  <class name="CartesianTrajectoryController" type="CartesianTrajectoryController" base_class_type="Controller" />
+  <class name="JointAutotuner" type="controller::JointAutotuner" base_class_type="controller::Controller" />
+  <class name="JointAutotunerNode" type="controller::JointAutotunerNode" base_class_type="controller::Controller" />
+  <class name="JointBlindCalibrationController" type="controller::JointBlindCalibrationController" base_class_type="controller::Controller" />
+  <class name="JointBlindCalibrationControllerNode" type="controller::JointBlindCalibrationControllerNode" base_class_type="controller::Controller" />
+  <class name="JointCalibrationControllerNode" type="controller::JointCalibrationControllerNode" base_class_type="controller::Controller" />
+  <class name="JointChainSineController" type="controller::JointChainSineController" base_class_type="controller::Controller" />
+  <class name="JointLimitCalibrationControllerNode" type="controller::JointLimitCalibrationControllerNode" base_class_type="controller::Controller" />
+  <class name="JointPDController" type="controller::JointPDController" base_class_type="controller::Controller" />
+  <class name="JointPDControllerNode" type="controller::JointPDControllerNode" base_class_type="controller::Controller" />
+  <class name="CartesianTrajectoryController" type="controller::CartesianTrajectoryController" base_class_type="controller::Controller" />
 
-  <class name="HeadServoingController" type="HeadServoingController" base_class_type="Controller" />
-  <class name="JointTrajectoryController" type="JointTrajectoryController" base_class_type="Controller" />
-  <class name="ArmTrajectoryControllerNode" type="ArmTrajectoryControllerNode" base_class_type="Controller" />
-  <class name="Pr2GripperController" type="Pr2GripperController" base_class_type="Controller" />
+  <class name="HeadServoingController" type="controller::HeadServoingController" base_class_type="controller::Controller" />
+  <class name="JointTrajectoryController" type="controller::JointTrajectoryController" base_class_type="controller::Controller" />
+  <class name="ArmTrajectoryControllerNode" type="controller::ArmTrajectoryControllerNode" base_class_type="controller::Controller" />
+  <class name="Pr2GripperController" type="controller::Pr2GripperController" base_class_type="controller::Controller" />
 
 </library>

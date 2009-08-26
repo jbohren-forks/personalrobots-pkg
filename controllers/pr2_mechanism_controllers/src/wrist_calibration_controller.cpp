@@ -32,6 +32,9 @@
  */
 
 #include "pr2_mechanism_controllers/wrist_calibration_controller.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(WristCalibrationController, controller::WristCalibrationController, controller::Controller)
 
 namespace controller {
 

@@ -31,17 +31,19 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <algorithm>
-#include <pr2_mechanism_controllers/laser_scanner_traj_controller.h>
-#include <angles/angles.h>
 
-#include <math.h>
+#include "pr2_mechanism_controllers/laser_scanner_traj_controller.h"
+#include <algorithm>
+#include <cmath>
+#include "angles/angles.h"
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(LaserScannerTrajController, controller::LaserScannerTrajController, controller::Controller)
+PLUGINLIB_REGISTER_CLASS(LaserScannerTrajControllerNode, controller::LaserScannerTrajControllerNode, controller::Controller)
 
 using namespace std ;
 using namespace controller ;
 using namespace filters ;
-
-ROS_REGISTER_CONTROLLER(LaserScannerTrajController)
 
 LaserScannerTrajController::LaserScannerTrajController() : traj_(1)
 {
@@ -239,14 +241,14 @@ void LaserScannerTrajController::update()
                                                 joint_state_->joint_->joint_limit_min_,
                                                 joint_state_->joint_->joint_limit_max_,
                                                 error) ;
-  
+
 
   double dt = time - last_time_ ;
   double d_error = (error-last_error_)/dt ;
   std::vector<double> vin;
   vin.push_back(d_error);
   std::vector<double> vout = vin;
-  
+
   d_error_filter.update(vin, vout) ;
 
   double filtered_d_error  = vout[0];
@@ -450,7 +452,6 @@ bool LaserScannerTrajController::setTrajCmd(const pr2_msgs::LaserTrajCmd& traj_c
   }*/
 
 
-ROS_REGISTER_CONTROLLER(LaserScannerTrajControllerNode)
 LaserScannerTrajControllerNode::LaserScannerTrajControllerNode(): node_(ros::Node::instance()), c_()
 {
   prev_profile_segment_ = -1 ;

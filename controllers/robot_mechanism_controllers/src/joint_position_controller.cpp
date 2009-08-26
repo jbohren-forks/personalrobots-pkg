@@ -32,15 +32,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <robot_mechanism_controllers/joint_position_controller.h>
-#include <angles/angles.h>
+#include "robot_mechanism_controllers/joint_position_controller.h"
+#include "angles/angles.h"
+#include "pluginlib/class_list_macros.h"
 
+PLUGINLIB_REGISTER_CLASS(JointPositionController, controller::JointPositionController, controller::Controller)
 
 using namespace std;
 
 namespace controller {
-
-ROS_REGISTER_CONTROLLER(JointPositionController)
 
 JointPositionController::JointPositionController()
 : joint_state_(NULL), command_(0),
