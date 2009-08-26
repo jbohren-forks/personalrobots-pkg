@@ -41,7 +41,6 @@ using namespace controller;
 namespace controller
 {
 
-ROS_REGISTER_CONTROLLER(GripperCalibrationController)
 
 GripperCalibrationController::GripperCalibrationController()
 : state_(INITIALIZED), last_publish_time_(0), joint_(NULL)
@@ -206,53 +205,5 @@ void GripperCalibrationController::update()
     vc_.update();
 }
 
-
-ROS_REGISTER_CONTROLLER(GripperCalibrationControllerNode)
-
-GripperCalibrationControllerNode::GripperCalibrationControllerNode()
-: robot_(NULL), last_publish_time_(0)
-{
-}
-
-GripperCalibrationControllerNode::~GripperCalibrationControllerNode()
-{
-}
-
-void GripperCalibrationControllerNode::update()
-{
-  c_.update();
-
-  if (c_.calibrated())
-  {
-    if (last_publish_time_ + 0.5 < robot_->getTime())
-    {
-      assert(pub_calibrated_);
-      if (pub_calibrated_->trylock())
-      {
-        last_publish_time_ = robot_->getTime();
-        pub_calibrated_->unlockAndPublish();
-      }
-    }
-  }
-}
-
-bool GripperCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  robot_ = robot;
-
-  std::string topic = config->Attribute("name") ? config->Attribute("name") : "";
-  if (topic == "")
-  {
-    fprintf(stderr, "No name given to GripperCalibrationController\n");
-    return false;
-  }
-
-  if (!c_.initXml(robot, config))
-    return false;
-
-  pub_calibrated_ = new realtime_tools::RealtimePublisher<std_msgs::Empty>(topic + "/calibrated", 1);
-
-  return true;
-}
 
 }

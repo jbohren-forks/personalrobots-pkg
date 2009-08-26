@@ -40,12 +40,6 @@ using namespace std;
 using namespace controller;
 
 
-PLUGINLIB_REGISTER_CLASS(JointPDController, JointPDController, Controller)
-PLUGINLIB_REGISTER_CLASS(JointPDControllerNode, JointPDControllerNode, Controller)
-
-
-ROS_REGISTER_CONTROLLER(JointPDController)
-
 JointPDController::JointPDController()
 : joint_state_(NULL), robot_(NULL), last_time_(0), command_(0), command_dot_(0)
 {
@@ -180,7 +174,6 @@ void JointPDController::update()
 
 
 //------ Joint PD controller node --------
-ROS_REGISTER_CONTROLLER(JointPDControllerNode)
 
 JointPDControllerNode::JointPDControllerNode(): node_(ros::Node::instance())
 {

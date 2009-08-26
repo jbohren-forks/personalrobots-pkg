@@ -296,7 +296,7 @@ bool JointChainConstraintController::addConstraint(experimental_controllers::Cha
 
 
 
-ROS_REGISTER_CONTROLLER(JointChainConstraintControllerNode)
+/*
 
 JointChainConstraintControllerNode::JointChainConstraintControllerNode()
 : node_(ros::Node::instance())
@@ -353,6 +353,6 @@ void JointChainConstraintControllerNode::command()
   controller_.wrench_desired_(5) = wrench_msg_.torque.z;
 }
 
-
+*/
 }; // namespace
 

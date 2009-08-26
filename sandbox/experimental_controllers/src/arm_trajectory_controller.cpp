@@ -41,7 +41,6 @@
 using namespace controller;
 using namespace std;
 
-ROS_REGISTER_CONTROLLER(ArmTrajectoryController);
 
 
 static const std::string JointTrajectoryStatusString[7] = {"0 - ACTIVE","1 - DONE","2 - QUEUED","3 - DELETED","4 - FAILED","5 - CANCELED","6 - NUM_STATUS"};

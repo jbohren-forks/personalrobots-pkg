@@ -304,6 +304,8 @@ void JointAutotuner::writeGainValues(double period, double amplitude, double rel
 
 }
 
+/*
+
 ROS_REGISTER_CONTROLLER(JointAutotunerNode)
 JointAutotunerNode::JointAutotunerNode()
 {
@@ -361,3 +363,4 @@ ros::Node *node = ros::Node::instance();
 
  }
 
+*/

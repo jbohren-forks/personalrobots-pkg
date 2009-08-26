@@ -122,6 +122,7 @@ private:
 */
 /***************************************************/
 
+
 class JointPositionSmoothControllerNode : public Controller
 {
 public:
@@ -148,5 +149,6 @@ private:
   JointPositionSmoothController *c_;                 /**< The controller. */
 
 };
+
 }
 

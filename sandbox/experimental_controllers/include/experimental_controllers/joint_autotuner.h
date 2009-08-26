@@ -162,19 +162,11 @@ private:
 
 */
 /***************************************************/
-
 class JointAutotunerNode : public Controller
 {
 public:
-  /*!
-   * \brief Default Constructor
-   *
-   */
   JointAutotunerNode();
 
-  /*!
-   * \brief Destructor
-   */
   ~JointAutotunerNode();
 
   void update();
@@ -191,5 +183,6 @@ public:
 private:
   JointAutotuner *c_;
 };
+
 }
 

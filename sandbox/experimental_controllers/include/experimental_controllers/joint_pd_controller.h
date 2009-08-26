@@ -53,10 +53,10 @@
 
 #include <ros/node.h>
 
-#include <controller_interface/controller.h>
 #include <control_toolbox/pid.h>
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"
+#include <mechanism_model/robot.h>
 
 // Services
 #include <experimental_controllers/SetPDCommand.h>
@@ -66,7 +66,7 @@
 namespace controller
 {
 
-  class JointPDController : public Controller
+  class JointPDController 
   {
     public:
 
@@ -138,7 +138,7 @@ namespace controller
 */
 /***************************************************/
 
-  class JointPDControllerNode : public Controller
+  class JointPDControllerNode 
   {
     public:
 

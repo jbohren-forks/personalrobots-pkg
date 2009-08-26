@@ -38,17 +38,16 @@
 
 #include "experimental_controllers/cartesian_hybrid_controller.h"
 #include "experimental_controllers/cartesian_twist_controller_ik.h"
-#include "experimental_controllers/dynamic_loader_controller.h"
 //#include "experimental_controllers/endeffector_constraint_controller.h"
-#include "experimental_controllers/joint_autotuner.h"
-#include "experimental_controllers/joint_blind_calibration_controller.h"
-#include "experimental_controllers/joint_calibration_controller.h"
+//#include "experimental_controllers/joint_autotuner.h"
+//#include "experimental_controllers/joint_blind_calibration_controller.h"
+//#include "experimental_controllers/joint_calibration_controller.h"
 #include "experimental_controllers/joint_chain_constraint_controller.h"
-#include "experimental_controllers/joint_chain_sine_controller.h"
+//#include "experimental_controllers/joint_chain_sine_controller.h"
 #include "experimental_controllers/joint_inverse_dynamics_controller.h"
-#include "experimental_controllers/joint_limit_calibration_controller.h"
-#include "experimental_controllers/joint_position_smoothing_controller.h"
-#include "experimental_controllers/probe.h"
+//#include "experimental_controllers/joint_limit_calibration_controller.h"
+//#include "experimental_controllers/joint_position_smoothing_controller.h"
+//#include "experimental_controllers/probe.h"
 
 #include "experimental_controllers/head_servoing_controller.h"
 #include "experimental_controllers/joint_trajectory_controller.h"
@@ -64,26 +63,25 @@ PLUGINLIB_REGISTER_CLASS(PIDPositionVelocityController, PIDPositionVelocityContr
 //PLUGINLIB_REGISTER_CLASS(PlugControllerNode, PlugControllerNode, Controller)
 PLUGINLIB_REGISTER_CLASS(TrajectoryController, TrajectoryController, Controller)
 
-PLUGINLIB_REGISTER_CLASS(DynamicLoaderController, DynamicLoaderController, Controller)
+//PLUGINLIB_REGISTER_CLASS(DynamicLoaderController, DynamicLoaderController, Controller)
 
-PLUGINLIB_REGISTER_CLASS(Probe, Probe, Controller)
+//PLUGINLIB_REGISTER_CLASS(Probe, Probe, Controller)
 PLUGINLIB_REGISTER_CLASS(CartesianTFFController, CartesianTFFController, Controller)
 PLUGINLIB_REGISTER_CLASS(CartesianHybridController, CartesianHybridController, Controller)
 PLUGINLIB_REGISTER_CLASS(CartesianHybridControllerNode, CartesianHybridControllerNode, Controller)
 //PLUGINLIB_REGISTER_CLASS(EndeffectorConstraintController, EndeffectorConstraintController, Controller)
 //PLUGINLIB_REGISTER_CLASS(EndeffectorConstraintControllerNode, EndeffectorConstraintControllerNode, Controller)
-PLUGINLIB_REGISTER_CLASS(JointChainConstraintControllerNode, JointChainConstraintControllerNode, Controller)
+//PLUGINLIB_REGISTER_CLASS(JointChainConstraintControllerNode, JointChainConstraintControllerNode, Controller)
 PLUGINLIB_REGISTER_CLASS(JointInverseDynamicsController, JointInverseDynamicsController, Controller);
-PLUGINLIB_REGISTER_CLASS(JointPositionSmoothController, JointPositionSmoothController, Controller)
-PLUGINLIB_REGISTER_CLASS(JointPositionSmoothControllerNode, JointPositionSmoothControllerNode, Controller)
+//PLUGINLIB_REGISTER_CLASS(JointPositionSmoothController, JointPositionSmoothController, Controller)
+//PLUGINLIB_REGISTER_CLASS(JointPositionSmoothControllerNode, JointPositionSmoothControllerNode, Controller)
 
-PLUGINLIB_REGISTER_CLASS(JointAutotuner, JointAutotuner, Controller)
-PLUGINLIB_REGISTER_CLASS(JointAutotunerNode, JointAutotunerNode, Controller)
-PLUGINLIB_REGISTER_CLASS(JointBlindCalibrationController, JointBlindCalibrationController, Controller)
-PLUGINLIB_REGISTER_CLASS(JointBlindCalibrationControllerNode,JointBlindCalibrationControllerNode, Controller)
-PLUGINLIB_REGISTER_CLASS(JointCalibrationControllerNode,JointCalibrationControllerNode, Controller)
-PLUGINLIB_REGISTER_CLASS(JointChainSineController,JointChainSineController, Controller)
-PLUGINLIB_REGISTER_CLASS(JointLimitCalibrationControllerNode,JointLimitCalibrationControllerNode, Controller)
+//PLUGINLIB_REGISTER_CLASS(JointAutotuner, JointAutotuner, Controller)
+//PLUGINLIB_REGISTER_CLASS(JointBlindCalibrationController, JointBlindCalibrationController, Controller)
+//PLUGINLIB_REGISTER_CLASS(JointBlindCalibrationControllerNode,JointBlindCalibrationControllerNode, Controller)
+//PLUGINLIB_REGISTER_CLASS(JointCalibrationControllerNode,JointCalibrationControllerNode, Controller)
+//PLUGINLIB_REGISTER_CLASS(JointChainSineController,JointChainSineController, Controller)
+//PLUGINLIB_REGISTER_CLASS(JointLimitCalibrationControllerNode,JointLimitCalibrationControllerNode, Controller)
 PLUGINLIB_REGISTER_CLASS(CartesianTwistControllerIk,CartesianTwistControllerIk, Controller)
 
 PLUGINLIB_REGISTER_CLASS(HeadServoingController, HeadServoingController, Controller)

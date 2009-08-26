@@ -35,7 +35,6 @@
 
 namespace controller {
 
-ROS_REGISTER_CONTROLLER(WristCalibrationController)
 
 WristCalibrationController::WristCalibrationController()
 : state_(INITIALIZED), robot_(NULL), last_publish_time_(0)
@@ -383,56 +382,5 @@ void WristCalibrationController::update()
   prev_actuator_r_position_ = actuator_r_->state_.position_;
 }
 
-
-ROS_REGISTER_CONTROLLER(WristCalibrationControllerNode)
-
-WristCalibrationControllerNode::WristCalibrationControllerNode()
-: last_publish_time_(0), pub_calibrated_(NULL)
-{
-}
-
-WristCalibrationControllerNode::~WristCalibrationControllerNode()
-{
-  if (pub_calibrated_)
-    delete pub_calibrated_;
-}
-
-void WristCalibrationControllerNode::update()
-{
-  c_.update();
-
-  if (c_.calibrated())
-  {
-    if (last_publish_time_ + 0.5 < robot_->getTime())
-    {
-      assert(pub_calibrated_);
-      if (pub_calibrated_->trylock())
-      {
-        last_publish_time_ = robot_->getTime();
-        pub_calibrated_->unlockAndPublish();
-      }
-    }
-  }
-}
-
-bool WristCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  assert(robot);
-  robot_ = robot;
-
-  std::string name = config->Attribute("name") ? config->Attribute("name") : "";
-  if (name == "")
-  {
-    fprintf(stderr, "No name given to WristCalibrationController\n");
-    return false;
-  }
-
-  if (!c_.initXml(robot, config))
-    return false;
-
-  pub_calibrated_ = new realtime_tools::RealtimePublisher<std_msgs::Empty>(name + "/calibrated", 1);
-
-  return true;
-}
 
 }

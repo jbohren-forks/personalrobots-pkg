@@ -75,7 +75,7 @@ namespace controller
 // The maximum number of joints expected in an arm.
   static const int MAX_ARM_JOINTS = 7;
 
-  class ArmTrajectoryController : public Controller
+  class ArmTrajectoryController 
   {
     public:
 

@@ -47,7 +47,6 @@ using namespace controller;
 PLUGINLIB_REGISTER_CLASS(CasterCalibrationController, CasterCalibrationController, Controller)
 PLUGINLIB_REGISTER_CLASS(CasterController, CasterController, Controller)
 PLUGINLIB_REGISTER_CLASS(GripperCalibrationController, GripperCalibrationController, Controller)
-PLUGINLIB_REGISTER_CLASS(GripperCalibrationControllerNode, GripperCalibrationControllerNode, Controller)
 PLUGINLIB_REGISTER_CLASS(HeadPositionController, HeadPositionController, Controller)
 PLUGINLIB_REGISTER_CLASS(LaserScannerTrajController, LaserScannerTrajController, Controller)
 PLUGINLIB_REGISTER_CLASS(LaserScannerTrajControllerNode, LaserScannerTrajControllerNode, Controller)
@@ -55,6 +54,5 @@ PLUGINLIB_REGISTER_CLASS(Pr2BaseController, Pr2BaseController, Controller)
 //PLUGINLIB_REGISTER_CLASS(Pr2GripperController, Pr2GripperController, Controller)
 PLUGINLIB_REGISTER_CLASS(Pr2Odometry, Pr2Odometry, Controller)
 PLUGINLIB_REGISTER_CLASS(WristCalibrationController, WristCalibrationController, Controller)
-PLUGINLIB_REGISTER_CLASS(WristCalibrationControllerNode, WristCalibrationControllerNode, Controller)
 
 

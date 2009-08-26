@@ -98,24 +98,6 @@ protected:
 };
 
 
-class WristCalibrationControllerNode : public Controller
-{
-public:
-  WristCalibrationControllerNode();
-  ~WristCalibrationControllerNode();
-
-  void update();
-
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
-private:
-  mechanism::RobotState *robot_;
-  WristCalibrationController c_;
-
-  double last_publish_time_;
-  realtime_tools::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
-};
-
 }
 
 #endif

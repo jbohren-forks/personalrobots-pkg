@@ -39,7 +39,6 @@ using namespace std;
 using namespace controller;
 
 
-ROS_REGISTER_CONTROLLER(JointPositionSmoothController)
 
 JointPositionSmoothController::JointPositionSmoothController()
 : joint_state_(NULL), robot_(NULL), last_time_(0), command_(0),smoothed_error_(0), smoothing_factor_(1)
@@ -162,6 +161,7 @@ void JointPositionSmoothController::update()
   last_time_ = time;
 }
 
+/*
 //------ Joint Position controller node --------
 ROS_REGISTER_CONTROLLER(JointPositionSmoothControllerNode)
 
@@ -202,3 +202,4 @@ void JointPositionSmoothControllerNode::setCommand()
 
 
 
+*/

@@ -34,17 +34,6 @@
 
 #pragma once
 
-/*
- Example XML:
- <controller type="GripperCalibrationController">
-   <calibrate joint="upperarm_roll_right_joint"
-              actuator="upperarm_roll_right_act"
-              transmission="upperarm_roll_right_trans"
-              velocity="0.3" />
-   <pid p="15" i="0" d="0" iClamp="0" />
- </controller>
-
-*/
 
 
 #include "mechanism_model/robot.h"
@@ -92,42 +81,6 @@ protected:
   controller::JointVelocityController vc_; /** The joint velocity controller used to sweep the joint.*/
 };
 
-
-/***************************************************/
-/*! \class controller::GripperCalibrationControllerNode
-    \brief Joint Limit Controller ROS Node
-
-    This class starts and stops the initialization sequence
-
-*/
-/***************************************************/
-
-class GripperCalibrationControllerNode : public Controller
-{
-public:
-  /*!
-   * \brief Default Constructor
-   *
-   */
-  GripperCalibrationControllerNode();
-
-  /*!
-   * \brief Destructor
-   */
-  ~GripperCalibrationControllerNode();
-
-  void update();
-
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
-
-private:
-  mechanism::RobotState* robot_;
-  GripperCalibrationController c_;
-
-  double last_publish_time_;
-  realtime_tools::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
-};
 
 }
 

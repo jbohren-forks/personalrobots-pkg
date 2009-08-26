@@ -155,6 +155,7 @@ private:
 
 
 
+/*
 class JointChainConstraintControllerNode : public Controller
 {
  public:
@@ -177,7 +178,7 @@ class JointChainConstraintControllerNode : public Controller
 
 
 };
-
+*/
 } // namespace
 
 
