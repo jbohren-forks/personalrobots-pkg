@@ -711,6 +711,8 @@ void Dorylus::train(int num_candidates, int max_secs, int max_wcs, double min_ut
   
 
   int wcs=0;
+  double checkpoint_interval = 1800; // Seconds.
+  int checkpoint_num = 1;
   while(true) {
     learnWC(num_candidates);
     wcs++;
@@ -739,6 +741,14 @@ void Dorylus::train(int num_candidates, int max_secs, int max_wcs, double min_ut
     if(pwcs_.back()->utility < min_util) {
       cout << "Ending training because of min utility criterion: " << pwcs_.back()->utility << " < min util of " << min_util << endl;
       break;
+    }
+
+    // -- Autosave every half hour.
+    if(floor((double)difftime(end,start) / checkpoint_interval) == checkpoint_num) {
+      checkpoint_num++;
+      string savename = "dorylus-autosave.d";
+      cout << "Autosaving classifier to " << savename << endl;
+      save(savename);
     }
   }
 
