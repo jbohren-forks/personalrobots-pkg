@@ -38,6 +38,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <opencv_latest/CvBridge.h>
+#include <std_msgs/String.h>
 
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
@@ -122,7 +123,8 @@ class ThumbnailHandDetector
 private:
   ros::NodeHandle node_handle_;
   ros::V_Subscriber subs_;
-  
+  ros::Publisher pub_;
+
   sensor_msgs::ImageConstPtr last_msg_;
   sensor_msgs::CvBridge img_bridge_;
   boost::mutex image_mutex_;
@@ -150,7 +152,7 @@ public:
     filename_format_.parse(format_string);
 
     if(visualize_) {    
-      cout << "Starting visualization." << endl;
+      ROS_INFO_STREAM("Starting visualization.");
       cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
       cvNamedWindow("small", CV_WINDOW_AUTOSIZE);
       cvNamedWindow("Classification", CV_WINDOW_AUTOSIZE);
@@ -158,6 +160,7 @@ public:
     }
 
     subs_.push_back( node_handle_.subscribe("image", 1, &ThumbnailHandDetector::image_cb, this) );
+    pub_ = node_handle_.advertise<std_msgs::String>("hands", 100);
 
     classifier_.load(classifier_filename);
     descriptors_ = setupImageDescriptors();
@@ -240,9 +243,14 @@ public:
 	}
       }
 
-      
       if(total_response > 0) {
-	cout << "Found hand.  Response: " << total_response;
+	std::stringstream ss;
+	ss << "Found hand." << endl;
+	std_msgs::String msg;
+	msg.data = ss.str();
+	pub_.publish(msg);
+
+	ROS_INFO_STREAM("Found hand.  Response: " << total_response);
 	if(save_) {
 	  char buf[100];
 	  sprintf(buf, "hands/hand%05d.jpg", count_);
@@ -332,7 +340,8 @@ public:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "image_view", ros::init_options::AnonymousName);
+  //  ros::init(argc, argv, "thumbnail_hand_detector", ros::init_options::AnonymousName);
+  ros::init(argc, argv, "thumbnail_hand_detector");
   ros::NodeHandle n;
   if (n.resolveName("image") == "/image") {
     ROS_WARN("image_view: image has not been remapped! Example command-line usage:\n"
