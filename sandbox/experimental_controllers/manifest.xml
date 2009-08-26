@@ -19,6 +19,7 @@
   <depend package="realtime_tools" />
   <depend package="roscpp" />
   <depend package="std_msgs" />
+  <depend package="std_srvs" />
   <depend package="manipulation_msgs" />
   <depend package="visualization_msgs" />
   <depend package="tf" />
