@@ -6,7 +6,7 @@ Change the camera_url to match your camera.
 
 <launch>
   <node name="forearm_cam_demo" pkg="forearm_cam" type="forearm_node" output="screen">
-    <param name="camera_url" type="str" value="serial://13"/>
+    <param name="camera_url" type="str" value="any://"/>
     <param name="video_mode" type="str" value="640x480x30" />
     
     <param name="auto_exposure" type="bool" value="True" />
