@@ -7,7 +7,6 @@ import sys
 
 import rospy
 from mechanism_msgs.srv import *
-import std_srvs.srv
 
 def list_controller_types():
     s = rospy.ServiceProxy('list_controller_types', ListControllerTypes)
@@ -67,5 +66,4 @@ def start_stop_controller(name, st):
         else:
             print "Error when stopping ", name
 
-shutdown = rospy.ServiceProxy('shutdown', std_srvs.srv.Empty)
 
