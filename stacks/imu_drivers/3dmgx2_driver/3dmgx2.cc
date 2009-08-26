@@ -32,7 +32,7 @@
 
 #include <sys/time.h>
 
-#include <ros/console.h>
+//#include <ros/console.h>
 
 #include "3dmgx2_driver/3dmgx2.h"
 
@@ -412,6 +412,90 @@ bool ms_3dmgx2_driver::IMU::getDeviceIdentifierString(id_string type, char id[17
   memcpy(id, rep+2, 16);
 
   return true;
+}
+
+/* ideally it would be nice to feed these functions back into willowimu */
+#define CMD_ACCEL_ANGRATE_MAG_ORIENT_REP_LEN 79
+#define CMD_RAW_ACCEL_ANGRATE_LEN 31
+////////////////////////////////////////////////////////////////////////////////
+// Receive ACCEL_ANGRATE_MAG_ORIENT message
+void 
+ms_3dmgx2_driver::IMU::receiveAccelAngrateMagOrientation (uint64_t *time, double accel[3], double angrate[3], double mag[3], double orientation[9]) 
+{
+	uint8_t	 rep[CMD_ACCEL_ANGRATE_MAG_ORIENT_REP_LEN];
+
+	int k, i;
+	uint64_t sys_time;
+	uint64_t imu_time;
+
+	receive( CMD_ACCEL_ANGRATE_MAG_ORIENT, rep, sizeof(rep), 0, &sys_time); 
+
+  // Read the acceleration:
+  k = 1;
+  for (i = 0; i < 3; i++)
+  {
+    accel[i] = extract_float(rep + k) * G;
+    k += 4;
+  }
+
+  // Read the angular rates
+  k = 13;
+  for (i = 0; i < 3; i++)
+  {
+    angrate[i] = extract_float(rep + k);
+    k += 4;
+  }
+
+  // Read the magnetic field matrix
+  k = 25;
+  for (i = 0; i < 3; i++) {
+    mag[i] = extract_float(rep + k);
+    k += 4;
+  }
+
+ // Read the orientation matrix
+  k = 37;
+  for (i = 0; i < 9; i++) {
+    orientation[i] = extract_float(rep + k);
+    k += 4;
+  }
+	imu_time  = extractTime(rep + 73);
+
+	*time = filterTime(imu_time, sys_time);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Receive RAW message
+// (copy of receive accel angrate but with raw cmd)
+void
+ms_3dmgx2_driver::IMU::receiveRawAccelAngrate(uint64_t *time, double accel[3], double angrate[3])
+{
+  int i, k;
+  uint8_t rep[CMD_RAW_ACCEL_ANGRATE_LEN];
+
+  uint64_t sys_time;
+  uint64_t imu_time;
+
+  receive(ms_3dmgx2_driver::IMU::CMD_RAW, rep, sizeof(rep), 0, &sys_time);
+
+  // Read the accelerator AD register values 0 - 65535 given as float
+  k = 1;
+  for (i = 0; i < 3; i++)
+  {
+    accel[i] = extract_float(rep + k);
+    k += 4;
+  }
+
+  // Read the angular rates AD registor values 0 - 65535 (given as float
+  k = 13;
+  for (i = 0; i < 3; i++)
+  {
+    angrate[i] = extract_float(rep + k);
+    k += 4;
+  }
+
+  imu_time = extractTime(rep+25);
+  *time = filterTime(imu_time, sys_time);
 }
 
 

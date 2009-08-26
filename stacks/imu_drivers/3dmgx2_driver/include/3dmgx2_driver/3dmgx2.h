@@ -231,6 +231,24 @@ namespace ms_3dmgx2_driver
      */
     void receiveAccelAngrateOrientation(uint64_t *time, double accel[3], double angrate[3], double orientation[9]);
 
+	//! Read a message of type "ACCEL_ANGRATE_MAG_ORIENT"
+	/*! 
+	 * \param time    Pointer to uint64_t which will receive time
+	 * \param accel   array of accelerations which will be filled
+	 * \param angrate array of angular rates which will be filled
+	 * \param mag     array of magnetometer orientations which will be filled
+	 * \param orientation orientation matrix which will be filled
+	 */
+	void receiveAccelAngrateMagOrientation (uint64_t *time, double accel[3], double angrate[3], double mag[3], double orientation[9]);
+
+	//! Read a message of type "CMD_RAW"
+	/*! 
+	 * \param time    Pointer to uint64_t which will receive time
+	 * \param accel   array of accelerations which will be filled
+	 * \param angrate array of angular rates which will be filled
+	 */
+	void receiveRawAccelAngrate(uint64_t *time, double accel[3], double angrate[3]);
+
     //! Set the fixed time offset
     /*! 
      * \param fix_off  Fixed time offset in seconds
