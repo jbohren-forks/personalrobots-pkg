@@ -111,11 +111,8 @@ class Page:
       return outputFile(self.context, fn)
 
     ## manage the Python module Path
-#    sys.path.insert(0, os.path.join(cwd, "pysrc"))
-#    sys.path.insert(0, os.path.join(cwd, "pysrc", "base"))
-
+    sys.path.insert(0, os.path.abspath(cwd))
     sys.path.insert(0, os.path.abspath(moduleRootPath))
-    #sys.path.insert(0, os.path.abspath(handlerRoot))
 
     debug("sys.path", sys.path)
 
@@ -146,7 +143,7 @@ class Page:
       modulePath, moduleFilename = os.path.split(handlerPath)
 
     debug(handlerPath, pathinfo)
-    #warn(handlerPath, pathinfo, modulePath, moduleFilename)
+    #warn("PATH", handlerPath, pathinfo, modulePath, moduleFilename)
     #warn("PATH", self.path)
 
     if not os.path.isfile(handlerPath):

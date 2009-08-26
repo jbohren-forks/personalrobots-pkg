@@ -182,8 +182,8 @@ function ros_handleOnLoad(prefix)
   gPump = new MessagePump("http://" + window.location.hostname + ":8080" + prefix);
   gPump.setupWidgets();
 
-  setTimeout("gPump.pump();", 1000);
-   // gPump.pump();
+  //setTimeout("gPump.pump();", 10);
+  gPump.pump();
 }
 
 // *******************************************
