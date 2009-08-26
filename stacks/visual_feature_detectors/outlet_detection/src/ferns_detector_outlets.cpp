@@ -200,7 +200,7 @@ int ferns_l_detect_outlets(Mat& _image, Mat& object, const char* outlet_config_p
 		}
 	}
 
-	//#if defined(_VERBOSE)
+#if defined(_VERBOSE)
 	if (output_path)
 	{
 		if( found )
@@ -264,7 +264,7 @@ int ferns_l_detect_outlets(Mat& _image, Mat& object, const char* outlet_config_p
 		imwrite(path,resImg );
 		//resImg.release();
 	}
-	//#endif //_VERBOSE
+#endif //_VERBOSE
 
 	return (int)(holes.size());	
 
@@ -464,7 +464,7 @@ int ferns_detect_outlets(Mat& _image, Mat& object, const char* outlet_config_pat
 			holes.push_back(outlet);
 		}
 	}
-
+#if defined(_VERBOSE)
 	if (output_path)
 	{
 		if( found )
@@ -523,6 +523,7 @@ int ferns_detect_outlets(Mat& _image, Mat& object, const char* outlet_config_pat
 
 		imwrite(path,resImg );
 	}
+#endif //_VERBOSE
 
 	return (int)(holes.size());	
 }
