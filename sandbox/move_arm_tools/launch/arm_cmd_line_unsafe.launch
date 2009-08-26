@@ -2,6 +2,7 @@
   <node pkg="move_arm_tools" type="arm_cmd_unsafe" output="screen" args="right">    
     <remap from="robot_description" to="robot_description" />
     <remap from="arm_ik" to="pr2_ik_right_arm/ik_service" />
+    <param name="~planner_service" to="sbpl_planning/plan_kinematic_path" />
   </node>
   
 	<include file="$(find pr2_ik)/launch/pr2_ik_rarm_node.launch"/>

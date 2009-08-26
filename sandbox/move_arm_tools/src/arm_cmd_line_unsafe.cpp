@@ -58,8 +58,8 @@
 #include <string>
 #include <map>
 
-std::string goal_pose_frame = "/torso_lift_link";
-std::string planner_service= "/sbpl_planning/plan_kinematic_path";
+std::string goal_pose_frame = "/base_link";
+// std::string planner_service= "/sbpl_planning/plan_kinematic_path";
 
 void printHelp(void)
 {
@@ -355,9 +355,8 @@ void goToIK(ros::NodeHandle &nh,  planning_environment::KinematicModelStateMonit
 		std::cerr << "IK Failed" << std::endl;
 }
 
-int goToPlan(ros::NodeHandle &nh, planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal, const std::vector<std::string> &names)
+int goToPlan(ros::NodeHandle &nh, planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal, const std::vector<std::string> &names, std::string &planner_service)
 {
-// 	ros::ServiceClient clientIK = nh.serviceClient<manipulation_srvs::IKService>("arm_ik");
 	ros::ServiceClient arm_ctrl = nh.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
 	ros::ServiceClient clientPlan = nh.serviceClient<motion_planning_msgs::GetMotionPlan>(planner_service, true);
 	
@@ -371,7 +370,6 @@ int goToPlan(ros::NodeHandle &nh, planning_environment::KinematicModelStateMonit
 	planning_models::StateParams robot_state(*km.getRobotState());
 	
 	// fill start state
-// 	request.params = robot_state;
 	request.set_start_state_size(names.size());
 	request.start_state[0].header.seq = 5;
 	request.start_state[0].header.stamp = ros::Time::now();
@@ -404,7 +402,7 @@ int goToPlan(ros::NodeHandle &nh, planning_environment::KinematicModelStateMonit
 		}
 			
 		send_traj_start_req.traj = traj; 
-		send_traj_start_req.hastiming = 0;
+		send_traj_start_req.hastiming = 1;
 		send_traj_start_req.requesttiming = 0;
 
 		if (arm_ctrl.call(send_traj_start_req, send_traj_start_res))
@@ -494,13 +492,14 @@ int main(int argc, char **argv)
 			arm = "l";
     
 	ros::NodeHandle nh;
-    
+	std::string planner_service;
+	
 	std::string group = arm == "r" ? "right_arm" : "left_arm";
 	actionlib::SimpleActionClient<move_arm::MoveArmAction> move_arm(nh, "move_" + group);
 	actionlib::SimpleActionClient<move_arm::ActuateGripperAction> gripper(nh, "actuate_gripper_" + group);
 	ros::Publisher view = nh.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 1);
 	ros::Publisher pubAttach = nh.advertise<mapping_msgs::AttachedObject>("attach_object", 1);
-
+	nh.param<std::string>("~planner_service",planner_service,"sbpl_planning/plan_kinematic_path");
     
 	std::map<std::string, move_arm::MoveArmGoal> goals;
     
@@ -933,7 +932,7 @@ int main(int argc, char **argv)
 					move_arm::MoveArmGoal g;
 					setupGoalEEf(link, nrs, g);
 		    
-					if(!goToPlan(nh, km, g, names))
+					if(!goToPlan(nh, km, g, names, planner_service))
 					{
 						err = true;
 						std::cout << "Configuration '" << config << "' not found" << std::endl;
@@ -943,7 +942,7 @@ int main(int argc, char **argv)
 			else
 			{
 				std::cout << "Moving to " << config << "..." << std::endl;
-				if(!goToPlan(nh, km, goals[config], names))
+				if(!goToPlan(nh, km, goals[config], names, planner_service))
 					std::cout << "No path returned" << std::endl;
 				else
 					std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
