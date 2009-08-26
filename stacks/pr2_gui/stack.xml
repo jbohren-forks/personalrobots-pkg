@@ -1,0 +1,14 @@
+<stack name="pr2_gui" version="0.1.0">
+  <description brief="pr2_gui">
+
+     GUIs for the pr2
+
+  </description>
+  <author>Eric Berger</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/pr2</url>
+  <depend stack="ros"/> <!-- std_msgs, roscpp, std_msgs, rxtools, rospy, roslib, std_srvs --> 
+  <depend stack="diagnostics"/> <!-- runtime_monitor --> 
+  <depend stack="pr2_power_drivers"/>
+</stack>
