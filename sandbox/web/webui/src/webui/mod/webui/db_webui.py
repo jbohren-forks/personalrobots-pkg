@@ -84,8 +84,13 @@ class ApplicationTable(odb.Table):
 class Application(hdfhelp.HdfRow):
   def fetchApp(self, prefix, hdf):
     _app = app.App(str(self.taskid))
-    
-    hdf.setValue(prefix + ".name", _app.name)
+    doc = _app.load_yaml()
+
+    for key, val in doc.items():
+      if val is not None:
+        hdf.setValue(prefix + "." + key, val)
+      else:
+        hdf.setValue(prefix + "." + key, '')
   
     
 def fullDBPath(path_to_store):

@@ -44,21 +44,33 @@ def getPackagePath(pkg):
   return pkgpath
 
 class App:
+  app_keys = ('name', 'package', 'launch_file', 'description', 
+              'icon', 'provides', 'depends')
   def __init__(self, taskid):
-    # TODO catch file system exception
-    package, app_file = taskid.split('/', 1)
-    sys.stderr.write(package + "\n")
-    path = getPackagePath(package)
-    doc = yaml.load(open(os.path.join(path, app_file)))
-    try:
-      self.taskid = taskid
-      self.app_file = app_file
-      self.name = doc['name'].strip()
-      self.package = doc['package'].strip()
-      self.launch_file = doc['launch_file'].strip()
+    self.taskid = taskid
+    self.package, self.app_file = self.taskid.split('/', 1)
+    self.path = None
 
-      self.provides = doc.get('provides', None)
-      self.depends = doc.get('depends', None)
+  def fn(self):
+    if self.path: return self.path
+    self.path = getPackagePath(self.package)
+    fn = os.path.join(self.path, self.app_file)
+    return fn
+
+  def load_yaml(self):
+    fn = self.fn()
+    # TODO catch file system exception
+    doc = yaml.load(open(fn))
+    return doc
+
+  def load(self):
+    doc = self.load_yaml()
+    try:
+      for key in self.app_keys:
+        if doc.has_key(key):
+          val = doc[key]
+          if val is not None: val = val.strip()
+          setattr(self, key, val)
     except KeyError:
       print "Invalid YAML file"
 
