@@ -186,7 +186,7 @@ void setupGoalEEf(const std::string &link, const std::vector<double> &pz, move_a
 			+ motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y;
 	goal.goal_constraints.pose_constraint[0].link_name = link;
 	goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
-	goal.goal_constraints.pose_constraint[0].pose.header.frame_id = goal_pose_frame;
+	goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "/base_link";
 	goal.goal_constraints.pose_constraint[0].pose.pose.position.x = pz[0];
 	goal.goal_constraints.pose_constraint[0].pose.pose.position.y = pz[1];
 	goal.goal_constraints.pose_constraint[0].pose.pose.position.z = pz[2];

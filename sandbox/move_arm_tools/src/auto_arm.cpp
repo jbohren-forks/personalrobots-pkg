@@ -48,12 +48,13 @@ MoveArmTools::~MoveArmTools()
 
 bool MoveArmTools::init(std::string arm)
 {
+	std::string planner_service;
+	
 	group_ = arm == "r" ? "right_arm" : "left_arm";
 	view_ = nh_.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 1);
 	pubAttach_ = nh_.advertise<mapping_msgs::AttachedObject>("attach_object", 1);
-
-	planner_service_ = "/sbpl_planning/plan_kinematic_path";
-
+	nh_.param<std::string>("~planning_service", planner_service, "sbpl_planning/plan_kinematic_path");
+	
 	names_.resize(7);
 	names_[0] = arm + "_shoulder_pan_joint";
 	names_[1] = arm + "_shoulder_lift_joint";
@@ -69,13 +70,12 @@ bool MoveArmTools::init(std::string arm)
 		return false;
     
 	km_ = new planning_environment::KinematicModelStateMonitor(rm_, &tf_);
-	
 	km_->waitForState();
 	
 	std::cout << std::endl << std::endl << "Using joints:" << std::endl;
 	printJoints(*km_, names_);
 	std::cout << std::endl;
-	allowed_time_ = 50.0;
+	allowed_time_ = 25.0;
 		
 	arm_ctrl_service_ = nh_.advertiseService("/auto_arm_cmd_server", &MoveArmTools::callback,this);
 	
@@ -83,7 +83,7 @@ bool MoveArmTools::init(std::string arm)
 	gripper_ = new	actionlib::SimpleActionClient<move_arm::ActuateGripperAction> ("actuate_gripper_" + group_);
 	
 	arm_ctrl_ = nh_.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
-	clientPlan_ = nh_.serviceClient<motion_planning_msgs::GetMotionPlan>(planner_service_, true);
+	clientPlan_ = nh_.serviceClient<motion_planning_msgs::GetMotionPlan>(planner_service, true);
 	
 	return true;
 }
@@ -230,15 +230,15 @@ void MoveArmTools::setupGoalEEf(const std::string &link, const std::vector<doubl
 	goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.04;
 	goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.04;
     
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.25;
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.25;
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.25;
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.25;
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.25;
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.25;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.3;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.3;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.3;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.3;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.3;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.3;
     
 	goal.goal_constraints.pose_constraint[0].orientation_importance = 0.2;
-/*    
+
 	goal.contacts.resize(2);
 	goal.contacts[0].links.push_back("r_gripper_l_finger_link");
 	goal.contacts[0].links.push_back("r_gripper_r_finger_link");
@@ -254,7 +254,7 @@ void MoveArmTools::setupGoalEEf(const std::string &link, const std::vector<doubl
 	goal.contacts[1].depth = 0.01;
 	goal.contacts[1].bound.type = mapping_msgs::Object::SPHERE;
 	goal.contacts[1].bound.dimensions.push_back(0.2);
-	goal.contacts[1].pose = goal.goal_constraints.pose_constraint[0].pose;*/
+	goal.contacts[1].pose = goal.goal_constraints.pose_constraint[0].pose;
 }
 
 void MoveArmTools::setConfig(const planning_models::StateParams *_sp, const std::vector<std::string> &names, move_arm::MoveArmGoal &goal)
@@ -276,7 +276,7 @@ void MoveArmTools::getIK(bool r, ros::NodeHandle &nh, planning_environment::Kine
 	manipulation_srvs::IKService::Request request;
 	manipulation_srvs::IKService::Response response;
 	request.data.pose_stamped.header.stamp = ros::Time::now();
-	request.data.pose_stamped.header.frame_id = "torso_lift_link"; //km.getFrameId();
+	request.data.pose_stamped.header.frame_id = km.getFrameId();
 	request.data.pose_stamped.pose.position.x = x;
 	request.data.pose_stamped.pose.position.y = y;
 	request.data.pose_stamped.pose.position.z = z;
@@ -326,7 +326,7 @@ void MoveArmTools::goToIK(ros::NodeHandle &nh,  planning_environment::KinematicM
 	manipulation_srvs::IKService::Request request;
 	manipulation_srvs::IKService::Response response;
 	request.data.pose_stamped.header.stamp = ros::Time::now();
-	request.data.pose_stamped.header.frame_id = "torso_lift_link"; //km.getFrameId();
+	request.data.pose_stamped.header.frame_id = km.getFrameId();
 	request.data.pose_stamped.pose.position.x = x;
 	request.data.pose_stamped.pose.position.y = y;
 	request.data.pose_stamped.pose.position.z = z;
@@ -466,23 +466,30 @@ int MoveArmTools::goToPlan(ros::NodeHandle &nh, planning_environment::KinematicM
 	// fill goal & path constraints
 	request.goal_constraints = goal.goal_constraints;
 	request.path_constraints = goal.path_constraints;
-
+	
+	ROS_INFO("Requesting a plan...");
 	if (clientPlan_.call(request, response))
 	{
-		ROS_DEBUG("Received a plan with %i waypoints", response.path.states.size());
+		ROS_INFO("Received a plan with %i waypoints", response.path.states.size());
 		traj.names = names;
 		traj.points.resize(response.path.states.size());
 				
-		for(unsigned  k = 0; k < traj.points.size(); ++k)
+		for(unsigned i = 0; i < traj.points.size(); ++i)
 		{
-			traj.points[k].time = response.path.times[k];
-			traj.points[k].positions.push_back(response.path.states[k].vals[0]);
+			traj.points[i].time = response.path.times[i];
+			traj.points[i].set_positions_size(names.size());
+			for(unsigned  k = 0; k < names.size(); ++k)
+			{
+				traj.points[i].positions[k] = response.path.states[i].vals[k];
+			}
 		}
-			
+		
 		send_traj_start_req.traj = traj; 
-		send_traj_start_req.hastiming = 0;
+		send_traj_start_req.hastiming = 1;
 		send_traj_start_req.requesttiming = 0;
 
+		std::cout << "Planning was a success" << std::endl;
+		
 		if (arm_ctrl_.call(send_traj_start_req, send_traj_start_res))
 		{
 			ROS_INFO("Sent Trajectory");
@@ -493,9 +500,7 @@ int MoveArmTools::goToPlan(ros::NodeHandle &nh, planning_environment::KinematicM
 				ROS_INFO("Sent trajectory %d to controller", trajectoryId);
 		}
 		else
-			ROS_ERROR("Unable to start trajectory controller");
-		
-		std::cout << "Success!" << std::endl;
+			ROS_ERROR("Unable to start trajectory controller");		
 	}
 	else
 	{
@@ -919,6 +924,7 @@ bool MoveArmTools::callback(move_arm_tools::ArmCtrlCmd::Request &req, move_arm_t
 					if(!goToPlan(nh_, *km_, g, names_))
 					{
 						err = true;
+						res.success = 0;
 						std::cout << "Configuration '" << config << "' not found" << std::endl;
 					}
 					else

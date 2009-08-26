@@ -39,8 +39,6 @@ class MoveArmTools
 		
 		std::string group_;
 		
-		std::string planner_service_;
-
 		ros::Publisher view_;
 		
 		ros::Publisher pubAttach_;
