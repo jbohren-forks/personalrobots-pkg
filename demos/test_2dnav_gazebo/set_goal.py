@@ -183,7 +183,7 @@ class NavStackTest(unittest.TestCase):
         self.bumped = True
     
     def stateInput(self, state):
-        if self.publish_goal:
+        if self.publish_goal and state.status.value == state.status.ACTIVE:
           state_eul = tft.euler_from_quaternion([state.goal.pose.orientation.x,state.goal.pose.orientation.y,state.goal.pose.orientation.z,state.goal.pose.orientation.w])
           print "target: ", self.target_x, ",", self.target_y, ",", self.target_t
           print "state.goal: (", state.goal.pose.position.x, ",", state.goal.pose.position.y, ",", state.goal.pose.position.z \
@@ -219,13 +219,13 @@ class NavStackTest(unittest.TestCase):
         print "LNK\n"
 
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
-        pub_goal = rospy.Publisher("/move_base/activate", PoseStamped)
+        pub_goal = rospy.Publisher("/move_base_old/activate", PoseStamped)
         pub_pose = rospy.Publisher("initialpose" , PoseWithCovarianceStamped)
         rospy.Subscriber("base_pose_ground_truth", Odometry                   , self.p3dInput)
         rospy.Subscriber("pr2_odometry/odom"     , Odometry                   , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String                     , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String                     , self.bumpedInput)
-        rospy.Subscriber("/move_base/feedback"   , MoveBaseState              , self.stateInput)
+        rospy.Subscriber("/move_base_old/feedback"   , MoveBaseState              , self.stateInput)
         rospy.Subscriber("/amcl_pose"            , PoseWithCovarianceStamped  , self.amclInput)
 
         # below only for debugging build 303, base not moving
@@ -419,5 +419,6 @@ if __name__ == '__main__':
       print_usage()
     else:
       rostest.run(PKG, sys.argv[0], NavStackTest, sys.argv) #, text_mode=True)
+
 
 

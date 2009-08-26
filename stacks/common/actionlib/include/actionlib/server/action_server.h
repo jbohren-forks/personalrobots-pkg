@@ -80,10 +80,21 @@ namespace actionlib {
        * @param  name The name of the action
        * @param  goal_cb A goal callback to be called when the ActionServer receives a new goal over the wire
        * @param  cancel_cb A cancel callback to be called when the ActionServer receives a new cancel request over the wire
+       * @param  auto_start A boolean value that tells the ActionServer wheteher or not to start publishing as soon as it comes up
        */
       ActionServer(ros::NodeHandle n, std::string name,
           boost::function<void (GoalHandle)> goal_cb = boost::function<void (GoalHandle)>(),
-          boost::function<void (GoalHandle)> cancel_cb = boost::function<void (GoalHandle)>());
+          boost::function<void (GoalHandle)> cancel_cb = boost::function<void (GoalHandle)>(),
+          bool auto_start = true);
+
+      /**
+       * @brief  Constructor for an ActionServer
+       * @param  n A NodeHandle to create a namespace under
+       * @param  name The name of the action
+       * @param  auto_start A boolean value that tells the ActionServer wheteher or not to start publishing as soon as it comes up
+       */
+      ActionServer(ros::NodeHandle n, std::string name,
+          bool auto_start = true);
 
       /**
        * @brief  Register a callback to be invoked when a new goal is received, this will replace any  previously registered callback
@@ -97,7 +108,17 @@ namespace actionlib {
        */
       void registerCancelCallback(boost::function<void (GoalHandle)> cb);
 
+      /**
+       * @brief  Explicitly start the action server, used it auto_start is set to false
+       */
+      void start();
+
     private:
+      /**
+       * @brief  Initialize all ROS connections and setup timers
+       */
+      void initialize();
+
       /**
        * @brief  Publishes a result for a given goal
        * @param status The status of the goal with which the result is associated
@@ -154,6 +175,7 @@ namespace actionlib {
       friend class HandleTrackerDeleter<ActionSpec>;
 
       GoalIDGenerator id_generator_;
+      bool started_;
   };
 };
 

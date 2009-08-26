@@ -26,6 +26,12 @@
       <param name="laser_max_range" value="30.0" />
     </node>
 
+    <!-- Run the move base translator -->
+    <node pkg="move_base_client" type="move_base_translator" name="move_base_translator">
+    <param name="action_name" value="move_base" />
+    </node>
+
+
     <!-- for moving -->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
       <param name="controller_frequency" value="10.0" />

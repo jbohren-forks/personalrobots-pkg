@@ -37,13 +37,14 @@
 
 namespace actionlib {
   template <class ActionSpec>
-  SimpleActionServer<ActionSpec>::SimpleActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_callback)
+  SimpleActionServer<ActionSpec>::SimpleActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_callback, bool auto_start)
     : n_(n), new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false), execute_callback_(execute_callback), need_to_terminate_(false) {
 
     //create the action server
     as_ = boost::shared_ptr<ActionServer<ActionSpec> >(new ActionServer<ActionSpec>(n, name,
           boost::bind(&SimpleActionServer::goalCallback, this, _1),
-          boost::bind(&SimpleActionServer::preemptCallback, this, _1)));
+          boost::bind(&SimpleActionServer::preemptCallback, this, _1),
+          auto_start));
 
     if (execute_callback_ != NULL)
     {
@@ -261,6 +262,11 @@ namespace actionlib {
       else
         execute_condition_.timed_wait(lock, boost::posix_time::milliseconds(loop_duration.toSec() * 1000.0f));
     }
+  }
+
+  template <class ActionSpec>
+  void SimpleActionServer<ActionSpec>::start(){
+    as_->start();
   }
 
 };

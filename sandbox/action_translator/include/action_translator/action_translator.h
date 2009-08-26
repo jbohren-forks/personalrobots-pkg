@@ -102,6 +102,9 @@ public:
     // Convert from the old goal type to the new goal type
     Goal new_goal = from_old_goal_func_(old_goal);
 
+    //wait for the action server to start before passing the goal on
+    ac_.waitForActionServerToStart(ros::Duration(5.0));
+
     // Send the goal to the action server
     ac_.sendGoal(new_goal,
                  boost::bind(&ActionTranslatorT::handleDone, this, _1, _2),

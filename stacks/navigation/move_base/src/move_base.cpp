@@ -42,7 +42,7 @@ namespace move_base {
 
   MoveBase::MoveBase(std::string name, tf::TransformListener& tf) :
     tf_(tf),
-    as_(ros::NodeHandle(), name, boost::bind(&MoveBase::executeCb, this, _1)),
+    as_(ros::NodeHandle(), name, boost::bind(&MoveBase::executeCb, this, _1), false),
     tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL),
     planner_(NULL), bgp_loader_("nav_core", "nav_core::BaseGlobalPlanner"),
     blp_loader_("nav_core", "nav_core::BaseLocalPlanner"){
@@ -126,6 +126,8 @@ namespace move_base {
     //the initial clearing state will be to conservatively clear the costmaps
     clearing_state_ = CONSERVATIVE_RESET;
 
+    //we're all set up now so we can start the action server
+    as_.start();
   }
 
   void MoveBase::goalCB(const geometry_msgs::PoseStamped::ConstPtr& goal){

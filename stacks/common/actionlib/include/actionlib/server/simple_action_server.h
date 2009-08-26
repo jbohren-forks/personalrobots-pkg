@@ -69,8 +69,9 @@ namespace actionlib {
        * @param execute_cb Optional callback that gets called in a separate thread whenever
        *                   a new goal is received, allowing users to have blocking callbacks.
        *                   Adding an execute callback also deactivates the goalCallback.
+       * @param  auto_start A boolean value that tells the ActionServer wheteher or not to start publishing as soon as it comes up
        */
-      SimpleActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_cb = NULL);
+      SimpleActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_cb = NULL, bool auto_start = true);
 
       ~SimpleActionServer();
 
@@ -148,6 +149,11 @@ namespace actionlib {
        * @param cb The callback to be invoked
        */
       void registerPreemptCallback(boost::function<void ()> cb);
+
+      /**
+       * @brief  Explicitly start the action server, used it auto_start is set to false
+       */
+      void start();
 
     private:
       /**

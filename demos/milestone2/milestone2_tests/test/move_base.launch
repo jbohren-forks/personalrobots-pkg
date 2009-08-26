@@ -2,6 +2,12 @@
   <master auto="start"/>
   <group name="wg">
   <param name="/use_sim_time" value="true"/>
+
+      <!-- Run the move base translator -->
+      <node pkg="move_base_client" type="move_base_translator" name="move_base_translator">
+        <param name="action_name" value="move_base" />
+      </node>
+
       <node pkg="move_base" type="move_base" respawn="false" name="move_base" >
 
       <param name="global_frame" value="map" />

@@ -67,9 +67,11 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "move_base_action_translator");
 
   ros::NodeHandle n;
+  std::string action_name;
+  n.param("~action_name", action_name, std::string("move_base"));
 
   action_translator::ActionTranslator<move_base_msgs::MoveBaseAction, PoseStamped, PoseStamped>
-                              translator("move_base", &fromOldGoal, NULL, NULL);
+                              translator(action_name, &fromOldGoal, NULL, NULL);
 
   robot_actions::ActionRunner runner(10.0);
   runner.connect<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped>(translator);

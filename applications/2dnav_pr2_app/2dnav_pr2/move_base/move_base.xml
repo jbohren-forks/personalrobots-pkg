@@ -2,7 +2,13 @@
 <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
 <node pkg="mux" type="throttle" args="3.0 /move_base/local_costmap/voxel_grid /move_base/local_costmap/voxel_grid_throttled" />
-<node pkg="move_base" type="move_base" respawn="true" name="move_base" output="screen" machine="four">
+
+<!-- Run the move base translator -->
+<node pkg="move_base_client" type="move_base_translator" name="move_base_translator" machine="four">
+  <param name="action_name" value="move_base" />
+</node>
+
+<node pkg="move_base" type="move_base" name="move_base" output="screen" machine="four">
   <remap from="odom" to="pr2_odometry/odom" />
 
   <param name="controller_frequency" value="10.0" />

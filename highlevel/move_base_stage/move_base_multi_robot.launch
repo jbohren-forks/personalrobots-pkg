@@ -12,6 +12,12 @@
   <!-- BEGIN ROBOT 0 -->
   <group ns="robot_0">
     <param name="~tf_prefix" value="robot_0" />
+
+    <!-- Run the move base translator -->
+    <node pkg="move_base_client" type="move_base_translator" name="move_base_translator">
+      <param name="action_name" value="move_base" />
+    </node>
+
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
       <param name="controller_frequency" value="10.0" />
       <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
@@ -39,6 +45,12 @@
   <!-- BEGIN ROBOT 1 -->
   <group ns="robot_1">
     <param name="~tf_prefix" value="robot_1" />
+
+    <!-- Run the move base translator -->
+    <node pkg="move_base_client" type="move_base_translator" name="move_base_translator">
+      <param name="action_name" value="move_base" />
+    </node>
+
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
       <param name="controller_frequency" value="10.0" />
       <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />

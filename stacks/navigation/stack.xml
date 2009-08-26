@@ -13,6 +13,6 @@
   <depend stack="visualization_common"/> 
   <depend stack="common"/> 
   <depend stack="common_msgs"/> 
-  <depend stack="laser_drivers"/> 
+  <depend stack="laser_pipeline"/> 
 
 </stack>

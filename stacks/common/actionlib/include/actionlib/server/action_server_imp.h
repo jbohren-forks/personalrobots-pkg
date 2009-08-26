@@ -39,9 +39,23 @@
 namespace actionlib {
   template <class ActionSpec>
   ActionServer<ActionSpec>::ActionServer(ros::NodeHandle n, std::string name,
+      bool auto_start)
+    : ActionServer<ActionSpec>::ActionServer(n, name, boost::function<void (GoalHandle)>(), boost::function<void (GoalHandle)>(), auto_start) {}
+
+  template <class ActionSpec>
+  ActionServer<ActionSpec>::ActionServer(ros::NodeHandle n, std::string name,
       boost::function<void (GoalHandle)> goal_cb,
-      boost::function<void (GoalHandle)> cancel_cb)
-    : node_(n, name), goal_callback_(goal_cb), cancel_callback_(cancel_cb) {
+      boost::function<void (GoalHandle)> cancel_cb,
+      bool auto_start)
+    : node_(n, name), goal_callback_(goal_cb), cancel_callback_(cancel_cb), started_(auto_start) {
+
+      //if we're to autostart... then we'll initialize things
+      if(started_)
+        initialize();
+  }
+
+  template <class ActionSpec>
+  void ActionServer<ActionSpec>::initialize(){
       status_pub_ = node_.advertise<actionlib_msgs::GoalStatusArray>("status", 1);
       result_pub_ = node_.advertise<ActionResult>("result", 1);
       feedback_pub_ = node_.advertise<ActionFeedback>("feedback", 1);
@@ -61,8 +75,7 @@ namespace actionlib {
 
       status_timer_ = node_.createTimer(ros::Duration(1.0 / status_frequency),
           boost::bind(&ActionServer::publishStatus, this, _1));
-
-    }
+  }
 
   template <class ActionSpec>
   void ActionServer<ActionSpec>::registerGoalCallback(boost::function<void (GoalHandle)> cb){
@@ -97,6 +110,11 @@ namespace actionlib {
   template <class ActionSpec>
   void ActionServer<ActionSpec>::cancelCallback(const boost::shared_ptr<const actionlib_msgs::GoalID>& goal_id){
     boost::recursive_mutex::scoped_lock lock(lock_);
+
+    //if we're not started... then we're not actually going to do anything
+    if(!started_)
+      return;
+
     //we need to handle a cancel for the user
     ROS_DEBUG("The action server has received a new cancel request");
     bool goal_id_found = false;
@@ -153,6 +171,10 @@ namespace actionlib {
   void ActionServer<ActionSpec>::goalCallback(const boost::shared_ptr<const ActionGoal>& goal){
     boost::recursive_mutex::scoped_lock lock(lock_);
 
+    //if we're not started... then we're not actually going to do anything
+    if(!started_)
+      return;
+
     ROS_DEBUG("The action server has received a new goal request");
 
     //we need to check if this goal already lives in the status list
@@ -191,8 +213,19 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
+  void ActionServer<ActionSpec>::start(){
+    initialize();
+    started_ = true;
+  }
+
+  template <class ActionSpec>
   void ActionServer<ActionSpec>::publishStatus(const ros::TimerEvent& e){
     boost::recursive_mutex::scoped_lock lock(lock_);
+
+    //we won't publish status unless we've been started
+    if(!started_)
+      return;
+
     publishStatus();
   }
 

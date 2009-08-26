@@ -84,7 +84,7 @@ int
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty>
     switch_controllers("switch_controllers");
   robot_actions::ActionClient<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped>
-    move_base_local("move_base_local");
+    move_base_local("move_base_local_old");
 
   Duration(1.0).sleep();
 

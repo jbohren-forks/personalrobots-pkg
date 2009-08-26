@@ -1,5 +1,11 @@
 <launch>
-  <node pkg="move_base" type="move_base_new" respawn="false" name="move_base" output="screen">
+
+  <!-- Run the move base translator -->
+  <node pkg="move_base_client" type="move_base_translator" name="move_base_translator">
+    <param name="action_name" value="move_base" />
+  </node>
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <param name="footprint_padding" value="0.01" />
     <param name="controller_frequency" value="10.0" />
 

@@ -8,6 +8,12 @@
     <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
 
     <node pkg="mux" type="throttle" args="3.0 /move_base/base_local_planner/costmap/voxel_grid /move_base/base_local_planner/costmap/voxel_grid_throttled" />
+
+    <!-- Run the move base translator -->
+    <node pkg="move_base_client" type="move_base_translator" name="move_base_translator" machine="four">
+      <param name="action_name" value="move_base" />
+    </node>
+
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" machine="three">
       
       <param name="footprint_padding" value="0.01" />
