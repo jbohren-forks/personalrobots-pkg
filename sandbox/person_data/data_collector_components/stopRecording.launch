@@ -1,0 +1,11 @@
+<launch>
+<include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+<node output="screen" pkg="topic_tools" type="switch_mux" args="/wide_stereo/raw_stereo_muxed __none" machine="four"/>
+<node output="screen" pkg="topic_tools" type="switch_mux" args="/narrow_stereo/raw_stereo_muxed __none" machine="three"/>
+<node output="screen" pkg="topic_tools" type="switch_mux" args="/tf_message_muxed __none" machine="two"/>
+<node output="screen" pkg="topic_tools" type="switch_mux" machine="two" args="/mechanism_state_muxed __none"/>
+<node output="screen" pkg="topic_tools" type="switch_mux" machine="two" args="/base_scan_muxed  __none"/>
+<node output="screen" pkg="topic_tools" type="switch_mux" machine="two" args="/tilt_scan_muxed __none"/>
+<node output="screen" pkg="topic_tools" type="switch_mux" machine="two" args="/laser_tilt_controller/laser_scanner_signal_muxed __none"/> 
+<node output="screen" pkg="topic_tools" type="switch_mux" machine="two" args="/odom_muxed __none"/>
+</launch>

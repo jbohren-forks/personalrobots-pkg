@@ -29,13 +29,13 @@ void IA3N_INFO(const char * msg)
 
 void startRecording()
 {
-	system("bash `rospack find person_data`/startRecording.sh >1 /dev/null 2>&1");
+	system("bash `rospack find person_data`/data_collector_components/startRecording.sh >1 /dev/null 2>&1");
 	recording = true;
 }
 
 void stopRecording()
 {
-	system("bash `rospack find person_data`/stopRecording.sh >1 /dev/null 2>&1");
+	system("bash `rospack find person_data`/data_collector_components/stopRecording.sh >1 /dev/null 2>&1");
 	recording = false;
 }
 

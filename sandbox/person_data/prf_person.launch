@@ -1,4 +1,5 @@
 <launch>
+  <!-- This is a branch of prf.launch that was modified to put the narrow stereo on auto exposure. The main prf.launch gave it a very low exposure value for use with the terminator light. -->
 
   <include file="$(find pr2_alpha)/prf.machine" />
   <include file="$(find pr2_alpha)/prf_ethercat_reset.launch" />

@@ -2,7 +2,7 @@
   <description brief="person_data">
    Tools for collecting and managing data for the indoor person detection and tracking dataset
    These include:
-       scripts/launch.sh: runs data collection system on the robot
+       scripts/collect_data.sh: runs data collection system on the robot
        scripts/chop_bag.py: converts a collection of bags into a series of contiguous scenes, cutting wherever recording was paused
        scripts/plot_bags.py: plots when each topic was present in a collection of bags (this is helpful for checking that no sensors died)
        stereo_playback.launch: A launch file that uses environment variables to play video from a bag file
@@ -17,7 +17,11 @@
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="joy" />
-
+  <depend package="opencv_latest"/>
+  <depend package="sensor_msgs"/>
+  <depend package="topic_synchronizer"/>
+  <depend package="color_calib"/>
+  <depend package="stereo_utils"/>
 </package>
 
 

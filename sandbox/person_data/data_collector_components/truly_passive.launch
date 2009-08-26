@@ -10,7 +10,7 @@
   
 <!-- Safety -->
   <node machine="four" pkg="safety_core" type="run_detect_plug_on_base" output="screen" respawn="false" />
-  <node machine="four" pkg="safety_core" type="run_tuck_arms" output="screen" respawn="true" />
+  <!-- node machine="four" pkg="safety_core" type="run_tuck_arms" output="screen" respawn="true" -->
 
 
 
@@ -24,7 +24,7 @@
     <param name="vo_used" value="false"/>
   </node>
 
-  <node pkg="tf" machine="two" type="change_notifier"/>
+  <!-- node pkg="tf" machine="two" type="change_notifier"-->
 
 
 

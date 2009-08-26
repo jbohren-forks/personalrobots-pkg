@@ -1,0 +1,14 @@
+<launch>
+  <!-- This is a fork of 2dnav_pr2/move_base/2dnav_pr2.launch. It has been changed to include my own base_odom_teleop.xml. This is just so that it doesn't override my custom teleop -->
+  <group name="wg">
+    <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+    <include file="$(find 2dnav_pr2)/config/new_amcl_node.xml" />
+    <include file="$(find person_data)/data_collector_components/base_odom.xml" />
+    <include file="$(find 2dnav_pr2)/config/lasers_and_filters.xml" />
+    <include file="$(find 2dnav_pr2)/config/map_server.xml" />
+    <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
+
+    <!-- The naviagtion stack and associated parameters -->
+    <include file="$(find 2dnav_pr2)/move_base/move_base.xml" />
+  </group>
+</launch>

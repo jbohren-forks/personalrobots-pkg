@@ -17,7 +17,7 @@ int main(int argc, char ** argv)
 
 	std::string command = "export PERSON_DATA=`rospack find person_data`; ";
 	command += "export POINT_HEAD=`rospack find pr2_mechanism_controllers`/scripts/pointhead.py; ";
-	command += "$POINT_HEAD `cat ${PERSON_DATA}/headpan.txt` `cat ${PERSON_DATA}/headtilt.txt`";
+	command += "$POINT_HEAD `cat ${PERSON_DATA}/config/headpan.txt` `cat ${PERSON_DATA}/config/headtilt.txt`";
 
 	while (n.ok())
 	{
