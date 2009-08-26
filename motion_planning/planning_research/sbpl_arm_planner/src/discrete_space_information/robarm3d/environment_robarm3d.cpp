@@ -624,7 +624,7 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     EnvROBARMCfg.object_grasped = 0;
     EnvROBARMCfg.enforce_upright_gripper = 0;
     EnvROBARMCfg.num_joints = 7;
-    EnvROBARMCfg.gripper_m[0] = .21;
+    EnvROBARMCfg.gripper_m[0] = .22;
     EnvROBARMCfg.gripper_m[1] = 0;
     EnvROBARMCfg.gripper_m[2] = 0;
 
@@ -687,17 +687,17 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     EnvROBARMCfg.arm_length = 1.3;
     EnvROBARMCfg.link_radius.push_back(.09);
     EnvROBARMCfg.link_radius.push_back(.09);
-    EnvROBARMCfg.link_radius.push_back(.09);
+    EnvROBARMCfg.link_radius.push_back(.08);
 
     EnvROBARMCfg.exact_gripper_collision_checking = false;
     EnvROBARMCfg.use_voxel3d_occupancy_grid = false;
 
-		EnvROBARMCfg.use_jacobian_motion_prim = true;
-		save_expanded_states = false;
-		
-		EnvROBARMCfg.enable_direct_primitive = true;
-		
-		EnvROBARMCfg.RPYHeuristicDistance_m = 1;
+   EnvROBARMCfg.use_jacobian_motion_prim = true;
+   save_expanded_states = false;
+
+   EnvROBARMCfg.enable_direct_primitive = true;
+
+   EnvROBARMCfg.RPYHeuristicDistance_m = 1;
 }
 
 void EnvironmentROBARM3D::InitializeEnvConfig()
@@ -1503,11 +1503,11 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
 	EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
 	short unsigned int FromEndEff[3] = {FromHashEntry->endeff[0], FromHashEntry->endeff[1], FromHashEntry->endeff[2]};
 
-	
+
 #if DEBUG_HEURISTIC
 	fprintf(fHeur,"%i:\n",FromStateID);
 #endif
-	
+
 	//distance to closest goal in meters
 	Cell2ContXYZ(FromHashEntry->endeff[0],FromHashEntry->endeff[1],FromHashEntry->endeff[2],&(FromEndEff_m[0]),&(FromEndEff_m[1]),&(FromEndEff_m[2]));
 	edist_to_goal_m = GetDistToClosestGoal(FromEndEff_m, &closest_goal);
@@ -1524,34 +1524,33 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
 #if DEBUG_HEURISTIC
 	fprintf(fHeur,"heur_xyz: %i   euclidean_distance: %.3f\n",heur, edist_to_goal_m);
 #endif
-	
+
 	//get orientation heuristic
 	if(EnvROBARMCfg.checkEndEffGoalOrientation)
 	{
 		if(heur == INFINITECOST)
 			return heur;
-	
 		if(FromHashEntry->axis_angle > EnvROBARMCfg.EndEffGoals[closest_goal].rpy_tolerance)
 			heur_axis_angle = (FromHashEntry->axis_angle - EnvROBARMCfg.EndEffGoals[0].rpy_tolerance) * EnvROBARMCfg.cost_per_rad;
 		else
 			heur_axis_angle = FromHashEntry->axis_angle * EnvROBARMCfg.cost_per_rad;
 
 		rpy_weight = double(EnvROBARMCfg.RPYHeuristicDistance_c - heur) / (double)EnvROBARMCfg.RPYHeuristicDistance_c;
-		
+
 		fprintf(fHeur,"rpy_weight: %f\n" ,rpy_weight);
 		if(rpy_weight < 0)
 			rpy_weight = 0;
 
-// 		heur += int(heur_axis_angle*rpy_weight);
-		
-				heur += heur_axis_angle;
+ 		heur += int(heur_axis_angle*rpy_weight);
+
+//		heur += heur_axis_angle;
 
 #if DEBUG_HEURISTIC
 		fprintf(fHeur,"heur_rpy: %.3f  axis_angle: %.3f  weight: %.5f (rpy_heur_distance: %i)\n",heur_axis_angle, FromHashEntry->axis_angle, rpy_weight, EnvROBARMCfg.RPYHeuristicDistance_c);
 		fprintf(fHeur,"heur: %i\n",heur);
 #endif
 	}
-	
+
 	return heur;
 }
 
@@ -1901,9 +1900,9 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 	int i, a, closest_goal;
 	unsigned char dist;
 	short unsigned int k, succcoord[EnvROBARMCfg.num_joints], wrist[3], elbow[3], endeff[3];
-	double axis_angle, orientation [3][3], angles[EnvROBARMCfg.num_joints], s_angles[EnvROBARMCfg.num_joints];
-	double jnt_vel[EnvROBARMCfg.num_joints];
-	
+	double orientation [3][3], angles[EnvROBARMCfg.num_joints], s_angles[EnvROBARMCfg.num_joints];
+//	double jnt_vel[EnvROBARMCfg.num_joints];
+
 	//to support two sets of succesor actions
 	int actions_i_min = 0, actions_i_max = EnvROBARMCfg.nLowResActions;
 
@@ -2011,6 +2010,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 				continue;
 		}
 
+		double axis_angle;
 		GetAxisAngle(orientation, EnvROBARM.goalHashEntry->orientation, &axis_angle);
 
 		for(k = 0; k < EnvROBARMCfg.EndEffGoals.size(); k++)
@@ -2304,7 +2304,7 @@ bool EnvironmentROBARM3D::isGoalPosition(const short unsigned int endeff[3], con
   {
     if(sqrt((endeff[0] - goal.xyz[0]) * (endeff[0] - goal.xyz[0]) + (endeff[1] - goal.xyz[1]) * (endeff[1] - goal.xyz[1]) + (endeff[2] - goal.xyz[2]) * (endeff[2] - goal.xyz[2])) <= goal.xyz_tolerance)
       bIsGoal = true;
-	}
+  }
   // only x,y of position is considered
   else if((goal.type & 0x00000007) == 3)
   {
@@ -2358,30 +2358,29 @@ bool EnvironmentROBARM3D::isGoalPosition(const short unsigned int endeff[3], con
       near_goal = true;
       printf("Search is within %d cells of the goal after %.4f sec. error in orientation: %.4f\n", goal.xyz_tolerance, time_to_goal_region, axis_angle);
     }
-    
+
 		// roll, pitch, yaw of orientation is considered
-		if((goal.type & 0xFFFFFFF8) == 56)
+    if((goal.type & 0xFFFFFFF8) == 56)
     {
       if(fabs(axis_angle) <= goal.rpy_tolerance)
       {
         return true;
       }
 		}
-		
+
     // orientation does not matter
     else if((goal.type & 0xFFFFFFF8) == 0)
     {
       return true;
     }
     else
-		{
-			printf("Invalid goal orientation type. (type = %hx).\n", goal.type);
-			printf("goal.type & 0xFFFFFFF0 = %hx\n",goal.type & 0xFFFFFFF8);
+    {
+	printf("Invalid goal orientation type. (type = %hx).\n", goal.type);
+	printf("goal.type & 0xFFFFFFF0 = %hx\n",goal.type & 0xFFFFFFF8);
       return false;
-		}
+    }
   }
-	
-	return false;
+  return false;
 }
 
 /** \brief check if a joint configuration is within the goal tolerance */
@@ -2482,7 +2481,7 @@ bool EnvironmentROBARM3D::SetStartJointConfig(const double angles[], bool bRad)
 
 			// compute arm position in environment
 			ComputeCoord(startangles, EnvROBARM.startHashEntry->coord);
-	
+
 			//get joint positions of starting configuration
 			if(!ComputeEndEffectorPos(startangles, EnvROBARM.startHashEntry->endeff, wrist, elbow, EnvROBARM.startHashEntry->orientation))
 	  		printf("[ComputeEndEffectorPos] Start position is invalid.\n");
@@ -2493,7 +2492,7 @@ bool EnvironmentROBARM3D::SetStartJointConfig(const double angles[], bool bRad)
 			printf("The starting configuration is invalid.\n");
 
 		double wshoulder[3],welbow[3],wwrist[3];
-		
+
 		short unsigned int shoulder[3];
 		ContXYZ2Cell(0,-0.188,0,&(shoulder[0]),&(shoulder[1]),&(shoulder[2]));
 		Cell2ContXYZ(EnvROBARM.startHashEntry->endeff[0],EnvROBARM.startHashEntry->endeff[1],EnvROBARM.startHashEntry->endeff[2],&(wwrist[0]),&(wwrist[1]),&(wwrist[2]),0.01);
@@ -2625,9 +2624,10 @@ bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double>
 
   EnvROBARMCfg.bGoalIsSet = true;
 
-	expanded_states.clear();
-	
-	near_goal = false;
+  expanded_states.clear();
+
+  near_goal = false;
+
 // 	expanded_states.reserve(5000);
 
 //   for(unsigned int i = 0; i < EnvROBARMCfg.EndEffGoals.size(); i++)
@@ -2646,7 +2646,7 @@ bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double>
 //     }
 //     printf("\n");
 //   }
-//   
+//
 //   printf("\n\nHEURISTIC: \n");
 //   z = 37;
 //   for(int x=0; x < EnvROBARMCfg.EnvHeight_c; x++)
