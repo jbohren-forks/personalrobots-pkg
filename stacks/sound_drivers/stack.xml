@@ -4,7 +4,8 @@
   This stack contains sound-related drivers.
   
   </description>
-  <author>Maintained by Blaise Gassend</author>
+  <author>Blaise Gassend</author>
+  <license>BSD</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/sound_drivers</url>
   <depend stack="ros"/> <!-- rospy, roscpp, roslib --> 
