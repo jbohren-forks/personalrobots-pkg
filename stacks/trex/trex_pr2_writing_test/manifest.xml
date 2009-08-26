@@ -14,6 +14,7 @@
   <depend package="geometry_msgs"/>
   <depend package="roscpp"/>
   <depend package="move_base"/>
+  <depend package="move_base_client"/>
   <depend package="safety_core"/>
   <depend package="nav_robot_actions"/>
   <depend package="point_cloud_assembler"/>

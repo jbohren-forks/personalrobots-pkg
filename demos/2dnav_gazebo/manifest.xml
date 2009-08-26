@@ -7,6 +7,7 @@
   <depend package="std_msgs"/>
   <depend package="nav_view"/>
   <depend package="move_base"/>
+  <depend package="move_base_client"/>
   <depend package="gazebo_plugin"/>
   <depend package="map_server"/>
   <depend package="amcl"/>
