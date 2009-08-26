@@ -47,4 +47,8 @@
   <depend package="move_arm" />
   <depend package="chomp_motion_planner" />
   
+
+  <!-- rviz plugins -->
+  <depend package="motion_planning_rviz_plugin" />
+  <depend package="mapping_rviz_plugin" />
 </package>
