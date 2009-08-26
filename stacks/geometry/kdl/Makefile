@@ -1,6 +1,6 @@
 all: installed
  
-SVN_REVISION=-r 30453
+SVN_REVISION=-r 30401
 SVN_DIR = kdl-svn-trunk
 OLD_SVN_DIR = kdl-svn
 SVN_URL = http://svn.mech.kuleuven.be/repos/orocos/trunk/kdl
@@ -12,7 +12,6 @@ EIGEN2_INCLUDE_DIR=`rospack find eigen`/build/eigen2/
 TINYXML_INCLUDE_DIR=`rospack find tinyxml`/include/
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=`rospack find kdl`/$(INSTALL_DIR)/ \
 		-DPYTHON_BINDINGS=ON \
-		-DPYTHON_SITE_PACKAGES_DIR=`rospack find kdl`/$(INSTALL_DIR)/lib/ \
 		-DBUILD_MODELS=OFF \
 		-DENABLE_TESTS=ON \
 		-DBOOST:STRING=$(BOOST_INCLUDE)\
