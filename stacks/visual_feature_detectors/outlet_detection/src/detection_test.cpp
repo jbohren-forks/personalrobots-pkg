@@ -783,11 +783,9 @@ int run_one_way_detector(int argc,char** argv, TestResult* result = 0)
 int run(int argc,char** argv, TestResult* result = 0)
 {
 	char detector[1024];
-
 	strcpy(detector,argv[1]);
 	if (strcmp(detector,"one_way_detector")==0)
 		return run_one_way_detector(argc,argv,result);
-
 	if (strcmp(detector,"ferns_l_detector")==0)
 		return run_ferns_l_detector(argc,argv,result);
 	if (strcmp(detector,"l_detector")==0)
@@ -876,34 +874,34 @@ int main(int argc,char** argv)
 					printf("======Working on dataset %s======\n",image_dir);
 					sprintf(pathname, "mkdir %s/results/%s", test_set_path,image_dir);
 					system(pathname);
-					sprintf(images_path,"%s/data/%s",test_set_path,image_dir);
+					sprintf(images_path,"%s/data/%s",test_set_path,image_dir);				
 					sprintf(test_config_filename,"%s/data/%s/list.txt",test_set_path,image_dir);
 					sprintf(camera_config,"%s/configs/%s/camera.yml",test_set_path,image_dir);
-					sprintf(train_config,"%s/configs/%s",test_set_path,image_dir);
-					sprintf(output_path,"%s/results/%s",test_set_path,image_dir);
-					
+					sprintf(train_config,"%s/configs/%s",test_set_path,image_dir);				
+					sprintf(output_path,"%s/results/%s",test_set_path,image_dir);				
 					command_line = new char*[9];
-					
 					if (argc == 4)
 					{
-						//sprintf(command_line,"%s %s %s %s %s %s %s %s",argv[0],mode,images_path,test_config_filename,camera_config,train_config,test_set_path,test_config_filename);
-						command_line[0] = new char[strlen(argv[0])];
+						//sprintf(command_line,"%s %s %s %s %s %s %s %s",argv[0],mode,images_path,test_config_filename,camera_config,train_config,test_set_path,test_config_filename);						
+						command_line[0] = new char[strlen(argv[0])+1];
+						
 						strcpy(command_line[0],argv[0]);
-						command_line[1] = new char[strlen(detector)];
+						command_line[1] = new char[strlen(detector)+1];
+
 						strcpy(command_line[1],detector);
-						command_line[2] = new char[strlen(mode)];
+						command_line[2] = new char[strlen(mode)+1];
 						strcpy(command_line[2],mode);
-						command_line[3] = new char[strlen(images_path)];
+						command_line[3] = new char[strlen(images_path)+1];
 						strcpy(command_line[3],images_path);
-						command_line[4] = new char[strlen(test_config_filename)];
+						command_line[4] = new char[strlen(test_config_filename)+1];
 						strcpy(command_line[4],test_config_filename);
-						command_line[5] = new char[strlen(camera_config)];
+						command_line[5] = new char[strlen(camera_config)+1];
 						strcpy(command_line[5],camera_config);
-						command_line[6] = new char[strlen(train_config)];
+						command_line[6] = new char[strlen(train_config)+1];
 						strcpy(command_line[6],train_config);
-						command_line[7] = new char[strlen(output_path)];
+						command_line[7] = new char[strlen(output_path)+1];
 						strcpy(command_line[7],output_path);
-						command_line[8] = new char[strlen(test_config_filename)];
+						command_line[8] = new char[strlen(test_config_filename)+1];
 						strcpy(command_line[8],test_config_filename);
 
 
@@ -912,23 +910,23 @@ int main(int argc,char** argv)
 					else
 					{
 						//sprintf(command_line,"%s %s %s %s %s %s %s %d",argv[0],mode,images_path,test_config_filename,camera_config,train_config,test_set_path,accuracy);
-						command_line[0] = new char[strlen(argv[1])];
-						strcpy(command_line[0],argv[1]);
-						command_line[1] = new char[strlen(detector)];
+						command_line[0] = new char[strlen(argv[0])+1];
+						strcpy(command_line[0],argv[0]);
+						command_line[1] = new char[strlen(detector)+1];
 						strcpy(command_line[1],detector);
-						command_line[2] = new char[strlen(mode)];
+						command_line[2] = new char[strlen(mode)+1];
 						strcpy(command_line[2],mode);
-						command_line[3] = new char[strlen(images_path)];
+						command_line[3] = new char[strlen(images_path)+1];
 						strcpy(command_line[3],images_path);
-						command_line[4] = new char[strlen(test_config_filename)];
+						command_line[4] = new char[strlen(test_config_filename)+1];
 						strcpy(command_line[4],test_config_filename);
-						command_line[5] = new char[strlen(camera_config)];
+						command_line[5] = new char[strlen(camera_config)+1];
 						strcpy(command_line[5],camera_config);				
-						command_line[6] = new char[strlen(train_config)];			
+						command_line[6] = new char[strlen(train_config)+1];			
 						strcpy(command_line[6],train_config);	
-						command_line[7] = new char[strlen(output_path)];
+						command_line[7] = new char[strlen(output_path)+1];
 						strcpy(command_line[7],output_path);												
-						command_line[8] = new char[strlen(argv[4])]; //argc[4] == accuracy
+						command_line[8] = new char[strlen(argv[4])+1]; //argc[4] == accuracy
 						strcpy(command_line[8],argv[4]);
 
 						TestResult* res = new TestResult();
