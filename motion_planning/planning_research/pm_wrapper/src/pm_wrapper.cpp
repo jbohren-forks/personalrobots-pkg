@@ -79,7 +79,7 @@ bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::
 	if (collision_model_->loadedModels())
 	{
 		col_map_publisher_ = node_.advertise<mapping_msgs::CollisionMap>("collision_map_with_removed_object", 1);
-		planning_monitor_->setOnAfterMapUpdateCallback(boost::bind(&pm_wrapper::publishMapWithoutObject, this, _1, _2));
+		//planning_monitor_->setOnAfterMapUpdateCallback(boost::bind(&pm_wrapper::publishMapWithoutObject, this, _1, _2));
 	}
 	else
 		ROS_DEBUG("collision_model_ didn't properly load the robot model");
