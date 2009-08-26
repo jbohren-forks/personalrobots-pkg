@@ -132,6 +132,7 @@ int wgEthGetLocalMac(const char *ifName, struct sockaddr *macAddr) {
 	// Use socket ioctl to retrieve the HW (MAC) address of this interface
 	if( ioctl(s, SIOCGIFHWADDR, &ifr) == -1 ) {
 		perror("wgEthGetLocalMac ioctl failed");
+    close(s);
 		return -1;
 	}
 
@@ -169,7 +170,8 @@ int wgIpGetLocalBcast(const char *ifName, struct in_addr *bcast) {
 	// Use socket ioctl to get broadcast address for this interface
 	if( ioctl(s,SIOCGIFBRDADDR , &ifr) == -1 ) {
 		//perror("wgIpGetLocalBcast ioctl failed");
-		return -1;
+		close(s);
+    return -1;
 	}
 
 	// Requires some fancy casting because the IP portion of a sockaddr_in is stored
@@ -206,7 +208,8 @@ int wgIpGetLocalAddr(const char *ifName, struct in_addr *addr) {
 	// Use socket ioctl to get the IP address for this interface
 	if( ioctl(s,SIOCGIFADDR , &ifr) == -1 ) {
 		//perror("wgIpGetLocalAddr ioctl failed");
-		return -1;
+		close(s);
+    return -1;
 	}
 
 	// Requires some fancy casting because the IP portion of a sockaddr_in after the port (which we don't need) in the struct
@@ -233,7 +236,7 @@ int wgIpGetLocalNetmask(const char *ifName, struct in_addr *addr) {
 	// Create a dummy socket
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
 		perror("wgIpGetLocalAddr can't create socket");
-		return -1;
+    return -1;
 	}
 
 	// Initialize the ifreq structure
@@ -243,7 +246,8 @@ int wgIpGetLocalNetmask(const char *ifName, struct in_addr *addr) {
 	// Use socket ioctl to get the netmask for this interface
 	if( ioctl(s,SIOCGIFNETMASK , &ifr) == -1 ) {
 		//perror("wgIpGetLocalNetmask ioctl failed");
-		return -1;
+		close(s);
+    return -1;
 	}
 
 	// Requires some fancy casting because the IP portion of a sockaddr_in after the port (which we don't need) in the struct
@@ -282,7 +286,8 @@ int wgSocketCreate(const struct in_addr *addr, uint16_t port) {
 	// Bind the socket to the requested port
 	if( bind(s, (struct sockaddr *)&si_host, sizeof(si_host)) == -1 ) {
 		//perror("wgSocketCreate unable to bind");
-		return -1;
+		close(s);
+    return -1;
 	}
 
 	// Setting the broadcast flag allows us to transmit to the broadcast address
@@ -291,7 +296,8 @@ int wgSocketCreate(const struct in_addr *addr, uint16_t port) {
 	int flags = 1;
 	if( setsockopt(s, SOL_SOCKET,SO_BROADCAST, &flags, sizeof(flags)) == -1) {
 		perror("wgSocketCreate unable to set broadcast socket option");
-		return -1;
+		close(s);
+    return -1;
 	}
 
 	return s;
@@ -325,7 +331,8 @@ int wgSocketConnect(int s, const IPAddress *ip) {
 
 	if( connect(s, (struct sockaddr *)&camIP, sizeof(camIP)) == -1 ) {
 		perror("Could not connect datagram socket");
-		return -1;
+		close(s);
+    return -1;
 	}
 
 	return 0;
@@ -358,11 +365,13 @@ int wgCmdSocketCreate(const char *ifName, NetHost *localHost) {
 		socklen_t socketAddrSize = sizeof(socketAddr);
 		if( getsockname(s, (struct sockaddr *)&socketAddr, &socketAddrSize) == -1) {
 			perror("wgSocketToNetHost Could not get socket name");
+      close(s);
 			return -1;
 		}
 
 		struct sockaddr macAddr;
 		if( wgEthGetLocalMac(ifName, &macAddr) == -1) {
+      close(s);
 			return -1;
 		}
 
