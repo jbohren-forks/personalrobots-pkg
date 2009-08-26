@@ -37,7 +37,7 @@ plasma:
 #	touch patch-PLASMA 
 
 # Get TREX
-TREX_REVISION=231
+TREX_REVISION=233
 trex: plasma
 # If ROS_TREX_GOOGLE_CODE_USERNAME is defined in the environment, check
 # out with that username. This will allow commits to be made directly back
@@ -53,7 +53,7 @@ trex: plasma
 	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r $(TREX_REVISION) http://trex-autonomy.googlecode.com/svn/trunk TREX; ./copyIncludes.sh ; fi ;
 # If ROS_TREX_GOOGLE_CODE_USERNAME is not defined, then always update the
 # checkout to the target revision during a make.
-	@if [ ! -n "${ROS_TREX_GOOGLE_CODE_USERNAME}" -a ! -n "`svn info TREX | grep 'Revision: $(TREX_REVISION)'`" ]; then cd TREX && $(SVN_CMDLINE) up -r $(TREX_REVISION); cd ../ && ./copyIncludes.sh ; fi;
+	@if [ ! -n "`svn info TREX | grep 'Revision: $(TREX_REVISION)'`" ] ; then cd TREX && $(SVN_CMDLINE) up -r $(TREX_REVISION); cd ../ && ./copyIncludes.sh ; fi;
 	@if [ ! -d logs ]; then mkdir logs; fi
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
 
