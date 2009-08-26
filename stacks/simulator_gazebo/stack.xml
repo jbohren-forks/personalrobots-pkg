@@ -2,10 +2,10 @@
   <description brief="Gazebo Simulators">
     Simulator for using ROS with Gazebo
   </description>
-  <author>John Hsu johnhsu@willowgarage.com</author>
+  <author>Maintained by John Hsu johnhsu@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/simulators</url>
+  <url>http://ros.org/wiki/simulator_gazebo</url>
   
 
   <depend stack="geometry"/> <!-- bullet, tf --> 

@@ -7,7 +7,7 @@
   <author>Maintained by Brian Gerkey</author>
   <license>GPL</license>  
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/simulator_stage</url>
+  <url>http://ros.org/wiki/simulator_stage</url>
   <depend stack="geometry"/> <!-- tf --> 
   <depend stack="ros"/> <!-- std_msgs, roscpp --> 
   <depend stack="common_msgs"/> <!-- nav_msgs, geometry_msgs, sensor_msgs --> 
