@@ -2,13 +2,13 @@ collision_clearance: 0.15
 
 collision_links:
   r_gripper_l_finger_link:
-    link_radius: 0.04
-    link_extension: 0.05
+    link_radius: 0.06
+    link_extension: 0.07
   r_gripper_r_finger_link:
-    link_radius: 0.04
-    link_extension: 0.05
+    link_radius: 0.06
+    link_extension: 0.07
   r_gripper_palm_link:
-    link_radius: 0.05
+    link_radius: 0.06
   r_forearm_link:
     link_radius: 0.065
   r_upper_arm_link:
@@ -17,9 +17,9 @@ collision_links:
 joint_costs:
   r_shoulder_pan_joint: 1.0
   r_shoulder_lift_joint: 1.0
-  r_upper_arm_roll_joint: 0.7
-  r_elbow_flex_joint: 0.5
-  r_forearm_roll_joint: 0.5
+  r_upper_arm_roll_joint: 0.4
+  r_elbow_flex_joint: 0.4
+  r_forearm_roll_joint: 0.2
   r_wrist_flex_joint: 0.2
   r_wrist_roll_joint: 0.2
 

@@ -66,6 +66,7 @@ public:
   double getHmcDiscretization() const;
   double getHmcStochasticity() const;
   double getHmcAnnealingFactor() const;
+  double getRidgeFactor() const;
 
 private:
   double planning_time_limit_;
@@ -83,6 +84,7 @@ private:
   double hmc_stochasticity_;
   double hmc_discretization_;
   double hmc_annealing_factor_;
+  double ridge_factor_;
 
 };
 
@@ -166,6 +168,11 @@ inline double ChompParameters::getHmcAnnealingFactor() const
 inline bool ChompParameters::getUseHamiltonianMonteCarlo() const
 {
   return use_hamiltonian_monte_carlo_;
+}
+
+inline double ChompParameters::getRidgeFactor() const
+{
+  return ridge_factor_;
 }
 
 } // namespace chomp

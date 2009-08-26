@@ -76,15 +76,20 @@ void ChompOptimizer::initialize()
   // set up the joint costs:
   joint_costs_.reserve(num_joints_);
 
-  std::vector<double> derivative_costs(3);
-  derivative_costs[0] = parameters_->getSmoothnessCostVelocity();
-  derivative_costs[1] = parameters_->getSmoothnessCostAcceleration();
-  derivative_costs[2] = parameters_->getSmoothnessCostJerk();
-
   double max_cost_scale = 0.0;
+  ros::NodeHandle nh;
   for (int i=0; i<num_joints_; i++)
   {
-    joint_costs_.push_back(ChompCost(group_trajectory_, i, derivative_costs));
+    double joint_cost = 1.0;
+    std::string joint_name = planning_group_->chomp_joints_[i].joint_name_;
+    nh.param("~joint_costs/"+joint_name, joint_cost, 1.0);
+    std::vector<double> derivative_costs(3);
+    derivative_costs[0] = joint_cost*parameters_->getSmoothnessCostVelocity();
+    derivative_costs[1] = joint_cost*parameters_->getSmoothnessCostAcceleration();
+    derivative_costs[2] = joint_cost*parameters_->getSmoothnessCostJerk();
+    
+
+    joint_costs_.push_back(ChompCost(group_trajectory_, i, derivative_costs, parameters_->getRidgeFactor()));
     double cost_scale = joint_costs_[i].getMaxQuadCostInvValue();
     if (max_cost_scale < cost_scale)
       max_cost_scale = cost_scale;
