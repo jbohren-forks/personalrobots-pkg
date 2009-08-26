@@ -132,6 +132,8 @@ class TaskManager:
 
   def start_task(self, req):
     a = app.App(req.taskid)
+    a.load_yaml()
+
     pgroup = None
     runner = self._taskGroups.get(a.provides, None)
     if runner:
