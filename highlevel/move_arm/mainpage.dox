@@ -28,13 +28,14 @@ All these nodes only take standard ROS arguments
  - parameters that <a href="../../planning_environment/html">planning_environment</a> needs 
  - \b "~perform_ik"/bool : enable/disable performing IK for motion plans that only use a Pose Constraint for the end effector
  - \b "~arm"/string : the name of the planning group (as in <a href="../../planning_environment/html">planning_environment</a>) that contains the arm links
+ - \b "~planner_long_range"/string : the name of the long range planning service
+ - \b "~planner_short_range"/string : the name of the short range planning service
 
 \subsection services ROS Services
 
  - \b "controller_start"/string : the name of the service to start the trajectory controller
  - \b "controller_query"/string : the name of the service to query the trajectory controller
  - \b "controller_cancel"/string : the name of the service to cancel a trajectory
- - \b "motion_plan"/string : the name of the service to plan motions
  - \b "arm_ik"/string : the name of the service to perform inverse kinematics, if one is available
  - \b "arm_ik_query"/string : the name of the service to query the inverse kinematics node, if one is available. This is used to make sure the joints IK is performed for are the same as the joints planning is done for.
 

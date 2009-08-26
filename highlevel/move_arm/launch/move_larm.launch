@@ -13,9 +13,6 @@
     <remap from="controller_query"  to="/l_arm_joint_waypoint_controller/TrajectoryQuery" />
     <remap from="controller_cancel" to="/l_arm_joint_waypoint_controller/TrajectoryCancel" />
     
-    <remap from="get_motion_plan_lr" to="ompl_planning/plan_kinematic_path" />
-    <remap from="get_motion_plan_sr" to="fake_motion_planning/plan_kinematic_path" />
-
     <param name="group" type="string" value="left_arm" />
     <param name="show_collisions" type="bool" value="true" />
 

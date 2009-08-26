@@ -59,12 +59,6 @@ namespace move_arm
     /// the string used internally to access control canceling service; this should be remaped in the launch file
     static const std::string CONTROL_CANCEL_NAME     = "controller_cancel";
 
-    /// the string used internally to access the long range motion planning service; this should be remaped in the launch file
-    static const std::string LR_MOTION_PLAN_NAME     = "get_motion_plan_lr";
-
-    /// the string used internally to access the short range motion planning service; this should be remaped in the launch file
-    static const std::string SR_MOTION_PLAN_NAME     = "get_motion_plan_sr";
-
     /// the string used internally to access valid state searching service; this should be remaped in the launch file
     static const std::string SEARCH_VALID_STATE_NAME = "get_valid_state";
 

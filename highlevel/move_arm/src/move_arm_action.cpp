@@ -486,7 +486,9 @@ namespace move_arm
 				    motion_planning_msgs::GetMotionPlan::Request &req)
 	{
 	    ROS_DEBUG("Running long range planner...");
-	    ros::ServiceClient clientPlan = nh_.serviceClient<motion_planning_msgs::GetMotionPlan>(LR_MOTION_PLAN_NAME, true);
+      std::string lr_service_name;
+      nh_.param("~planner_long_range", lr_service_name, std::string("get_motion_plan_lr"));
+	    ros::ServiceClient clientPlan = nh_.serviceClient<motion_planning_msgs::GetMotionPlan>(lr_service_name, true);
 	    
 	    ArmActionState result = runPlanner(clientPlan, req);
 	    
@@ -513,7 +515,9 @@ namespace move_arm
 				    motion_planning_msgs::GetMotionPlan::Request &req)
 	{
 	    ROS_DEBUG("Running short range planner...");
-	    ros::ServiceClient clientPlan = nh_.serviceClient<motion_planning_msgs::GetMotionPlan>(SR_MOTION_PLAN_NAME, true);
+      std::string sr_service_name;
+      nh_.param("~planner_short_range", sr_service_name, std::string("get_motion_plan_sr"));
+	    ros::ServiceClient clientPlan = nh_.serviceClient<motion_planning_msgs::GetMotionPlan>(sr_service_name, true);
 	    
 	    ArmActionState result = runPlanner(clientPlan, req);
 	    
