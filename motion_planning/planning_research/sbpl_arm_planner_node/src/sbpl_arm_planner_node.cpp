@@ -835,13 +835,14 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
 		for(i = 0; i < req.goal_constraints.get_pose_constraint_size(); i++)
 		{
 			goal_pose_constraint_[i] = req.goal_constraints.pose_constraint[i];
+			goal_pose_constraint_[i].pose.header.stamp = ros::Time();
 			poseStampedMsgToTF( goal_pose_constraint_[i].pose, pose_stamped);
 			ROS_DEBUG("[planToPosition] converted pose_constraint to tf");
 
-			if (!tf_.canTransform(planning_frame_, pose_stamped.frame_id_, pose_stamped.stamp_, ros::Duration(3.0)))
+			if (!tf_.canTransform(planning_frame_, pose_stamped.frame_id_, ros::Time(), ros::Duration(3.0)))
 			{
 				ROS_ERROR("[sbpl_arm_planner_node] Cannot transform from %s to %s",pose_stamped.frame_id_.c_str(), planning_frame_.c_str());
-				return false;
+				//return false;
 			}
 			ROS_DEBUG("[planToPosition] attempting to call transformPose()...");
 			tf_.transformPose(planning_frame_, goal_pose_constraint_[i].pose, goal_pose_constraint_[i].pose);
