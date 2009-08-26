@@ -191,7 +191,7 @@ private:
     
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "self_filter", ros::init_options::AnonymousName);
+    ros::init(argc, argv, "self_filter");
 
     SelfFilter s;
     ros::spin();

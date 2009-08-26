@@ -1,5 +1,5 @@
 <launch>
-   <node pkg="robot_self_filter" type="self_filter" respawn="true" output="screen">
+   <node pkg="robot_self_filter" type="self_filter" respawn="true" name="robot_self_filter" output="screen">
      
      <!-- The topic for the input cloud -->
      <remap from="cloud_in" to="tilt_scan_cloud_without_known_objects" />

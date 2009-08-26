@@ -273,7 +273,7 @@ private:
 			data_out.channels[j].values.push_back(cloud->channels[j].values[i]);
 		}
 
-	    ROS_DEBUG("Published filtered cloud (%d points out of %d)", data_out.points.size(), cloud->points.size());
+	    ROS_DEBUG("Published filtered cloud (%d points out of %d)", (int)data_out.points.size(), (int)cloud->points.size());
 	    cloudPublisher_.publish(data_out);
 	}
 	else
@@ -378,7 +378,6 @@ private:
    
 int main(int argc, char **argv)
 {
-  // Took out anonymous - bmm
     ros::init(argc, argv, "clear_known_objects");
 
     ClearKnownObjects cko;

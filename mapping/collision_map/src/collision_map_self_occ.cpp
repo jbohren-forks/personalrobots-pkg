@@ -244,7 +244,7 @@ private:
 	updateMap(obstacles);
 
 	double sec = (ros::WallTime::now() - tm).toSec();
-	ROS_INFO("Updated collision map with %d points at %f Hz", currentMap_.size(), 1.0/sec);
+	ROS_INFO("Updated collision map with %d points at %f Hz", (int)currentMap_.size(), 1.0/sec);
 	
 	publishCollisionMap(currentMap_, header_, cmapPublisher_);
 	mapProcessing_.unlock();
@@ -426,7 +426,7 @@ private:
 
 int main (int argc, char** argv)
 {
-    ros::init(argc, argv, "collision_map_self_occ", ros::init_options::AnonymousName);
+    ros::init(argc, argv, "collision_map_self_occ");
 
     CollisionMapperOcc cm;
     cm.run();
