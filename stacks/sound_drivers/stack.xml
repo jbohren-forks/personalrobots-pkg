@@ -6,7 +6,7 @@
   </description>
   <author>Maintained by Blaise Gassend</author>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/sound_drivers</url>
+  <url>http://ros.org/wiki/sound_drivers</url>
   <depend stack="ros"/> <!-- rospy, roscpp, roslib --> 
 
 </stack>
