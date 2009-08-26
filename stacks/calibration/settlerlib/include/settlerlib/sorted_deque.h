@@ -36,8 +36,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include "ros/time.h"
-#include "ros/console.h"
+#include <ros/time.h>
+#include <ros/console.h>
 
 #ifndef SETTLERLIB_SORTED_DEQUE_H_
 #define SETTLERLIB_SORTED_DEQUE_H_

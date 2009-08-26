@@ -32,28 +32,28 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef SETTLERLIB_DEFLATED_H_
-#define SETTLERLIB_DEFLATED_H_
+#ifndef SETTLERLIB_INTERVAL_CALC_H_
+#define SETTLERLIB_INTERVAL_CALC_H_
 
-#include <boost/shared_ptr.hpp>
-#include "roslib/Header.h"
+#include <vector>
+#include <calibration_msgs/Interval.h>
+#include "sorted_deque.h"
+#include "deflated.h"
 
 namespace settlerlib
 {
 
-class Deflated
+class IntervalCalc
 {
 public:
-  roslib::Header header; // Need header to put in cache
-  std::vector<double> channels_;
-};
+  calibration_msgs::Interval computeLatestInterval(const SortedDeque<DeflatedConstPtr>& signal,
+                                                   const std::vector<double>& tolerances,
+                                                   ros::Duration max_spacing);
 
-typedef boost::shared_ptr<const Deflated> DeflatedConstPtr;
-typedef boost::shared_ptr<Deflated> DeflatedPtr;
+private:
+
+};
 
 }
 
 #endif
-
-
-
