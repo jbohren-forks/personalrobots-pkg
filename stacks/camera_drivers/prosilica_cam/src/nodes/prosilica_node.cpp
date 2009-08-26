@@ -42,7 +42,7 @@
 #include <camera_calibration/pinhole.h>
 #include <image_publisher/image_publisher.h>
 #include <diagnostic_updater/diagnostic_updater.h>
-#include <diagnostic_msgs/DiagnosticStatus.h>
+#include <diagnostic_updater/DiagnosticStatusWrapper.h>
 
 #include <cv.h>
 #include <cvwimage.h>
@@ -251,10 +251,10 @@ public:
       info_srv_ = nh_.advertiseService<>("~cam_info_service", &ProsilicaNode::camInfoService, this);
     }
 
-    diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
-    diagnostic_.addUpdater( &ProsilicaNode::frameStatistics );
-    diagnostic_.addUpdater( &ProsilicaNode::packetStatistics );
-    diagnostic_.addUpdater( &ProsilicaNode::packetErrorStatus );
+    diagnostic_.add( "Frequency Status", this, &ProsilicaNode::freqStatus );
+    diagnostic_.add( "Frame Statistics", this, &ProsilicaNode::frameStatistics );
+    diagnostic_.add( "Packet Statistics", this, &ProsilicaNode::packetStatistics );
+    diagnostic_.add( "Packet Error Status", this, &ProsilicaNode::packetErrorStatus );
 
     // Auto-exposure tends to go wild the first few frames after startup
     if (mode_ == prosilica::Triggered && auto_expose)
@@ -296,38 +296,28 @@ public:
     return 0;
   }
   
-  void freqStatus(diagnostic_msgs::DiagnosticStatus& status)
+  void freqStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Frequency Status";
-
     double freq = (double)(count_)/diagnostic_.getPeriod();
 
     if (freq < (.9*desired_freq_))
     {
-      status.level = 2;
-      status.message = "Desired frequency not met";
+      status.summary(2, "Desired frequency not met");
     }
     else
     {
-      status.level = 0;
-      status.message = "Desired frequency met";
+      status.summary(0, "Desired frequency met");
     }
 
-    status.set_values_size(3);
-    status.values[0].key = "Images in interval";
-    status.values[0].value = count_;
-    status.values[1].key = "Desired frequency";
-    status.values[1].value = desired_freq_;
-    status.values[2].key = "Actual frequency";
-    status.values[2].value = freq;
+    status.add("Images in interval", count_);
+    status.add("Desired frequency", desired_freq_);
+    status.add("Actual frequency", freq);
 
     count_ = 0;
   }
 
-  void frameStatistics(diagnostic_msgs::DiagnosticStatus& status)
+  void frameStatistics(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Frame Statistics";
-
     // Get stats from camera driver
     float frame_rate;
     unsigned long completed, dropped;
@@ -349,35 +339,24 @@ public:
 
     // Set level based on recent % completed frames
     if (dropped_recent == 0) {
-      status.level = 0;
-      status.message = "No dropped frames";
+      status.summary(0, "No dropped frames");
     }
     else if (recent_ratio > 0.8f) {
-      status.level = 1;
-      status.message = "Some dropped frames";
+      status.summary(1, "Some dropped frames");
     }
     else {
-      status.level = 2;
-      status.message = "Excessive proportion of dropped frames";
+      status.summary(2, "Excessive proportion of dropped frames");
     }
 
-    status.set_values_size(5);
-    status.values[0].key = "Camera Frame Rate";
-    status.values[0].value = frame_rate;
-    status.values[1].key = "Recent % Frames Completed";
-    status.values[1].value = recent_ratio * 100.0f;
-    status.values[2].key = "Overall % Frames Completed";
-    status.values[2].value = total_ratio * 100.0f;
-    status.values[3].key = "Frames Completed";
-    status.values[3].value = completed;
-    status.values[4].key = "Frames Dropped";
-    status.values[4].value = dropped;
+    status.add("Camera Frame Rate", frame_rate);
+    status.add("Recent % Frames Completed", recent_ratio * 100.0f);
+    status.add("Overall % Frames Completed", total_ratio * 100.0f);
+    status.add("Frames Completed", completed);
+    status.add("Frames Dropped", dropped);
   }
 
-  void packetStatistics(diagnostic_msgs::DiagnosticStatus& status)
+  void packetStatistics(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Packet Statistics";
-
     // Get stats from camera driver
     unsigned long received, missed, requested, resent;
     cam_->getAttribute("StatPacketsReceived", received);
@@ -398,16 +377,13 @@ public:
     float total_ratio = float(received) / (received + missed);
 
     if (missed_recent == 0) {
-      status.level = 0;
-      status.message = "No missed packets";
+      status.summary(0, "No missed packets");
     }
     else if (recent_ratio > 0.99f) {
-      status.level = 1;
-      status.message = "Some missed packets";
+      status.summary(1, "Some missed packets");
     }
     else {
-      status.level = 2;
-      status.message = "Excessive proportion of missed packets";
+      status.summary(2, "Excessive proportion of missed packets");
     }
 
     unsigned long data_rate;
@@ -432,41 +408,27 @@ public:
     }
 #endif
     
-    status.set_values_size(7);
-    status.values[0].key = "Recent % Packets Received";
-    status.values[0].value = recent_ratio * 100.0f;
-    status.values[1].key = "Overall % Packets Received";
-    status.values[1].value = total_ratio * 100.0f;
-    status.values[2].key = "Received Packets";
-    status.values[2].value = received;
-    status.values[3].key = "Missed Packets";
-    status.values[3].value = missed;
-    status.values[4].key = "Requested Packets";
-    status.values[4].value = requested;
-    status.values[5].key = "Resent Packets";
-    status.values[5].value = resent;
-    status.values[6].key = "Data Rate (bytes/s)";
-    status.values[6].value = data_rate;
+    status.add("Recent % Packets Received", recent_ratio * 100.0f);
+    status.add("Overall % Packets Received", total_ratio * 100.0f);
+    status.add("Received Packets", received);
+    status.add("Missed Packets", missed);
+    status.add("Requested Packets", requested);
+    status.add("Resent Packets", resent);
+    status.add("Data Rate (bytes/s)", data_rate);
   }
 
-  void packetErrorStatus(diagnostic_msgs::DiagnosticStatus& status)
+  void packetErrorStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Packet Error Status";
-    
     unsigned long erroneous;
     cam_->getAttribute("StatPacketsErroneous", erroneous);
 
     if (erroneous == 0) {
-      status.level = 0;
-      status.message = "No erroneous packets";
+      status.summary(0, "No erroneous packets");
     } else {
-      status.level = 2;
-      status.message = "Possible camera hardware failure";
+      status.summary(2, "Possible camera hardware failure");
     }
 
-    status.set_values_size(1);
-    status.values[0].key = "Erroneous Packets";
-    status.values[0].value = erroneous;
+    status.add("Erroneous Packets", erroneous);
   }
 
   bool spin()
