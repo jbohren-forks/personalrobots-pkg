@@ -177,7 +177,7 @@ namespace trex_ros {
     bool cmdValid = false;
 
 
-    std::cout << "At tick " << currentTick << ", H for help." << std::endl;
+    std::cout << "At the start of tick " << currentTick << ", H for help." << std::endl;
     while (!cmdValid && !TREX::Agent::terminated()) {
       std::cout << "> ";
       cmdLine = "";

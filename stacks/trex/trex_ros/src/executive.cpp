@@ -242,7 +242,7 @@ namespace TREX {
    * @brief Causes the agent to dump all it's deliberative reactor assemblies to disk.
    */
   void Executive::dumpAssemblies() {
-    TREX::Agent::instance()->dumpAssemblies();
+    TREX::Agent::instance()->dumpState(true);
   }
 
 
