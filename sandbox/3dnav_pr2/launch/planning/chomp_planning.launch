@@ -1,0 +1,13 @@
+<launch>
+  
+  <include file="$(find 3dnav_pr2)/launch/planning/bits/chomp_planner_longrange_hmc.launch" />
+
+  <param name="/move_right_arm/planner_long_range" value="chomp_planner_longrange/plan_kinematic_path" />
+  <param name="/move_right_arm/long_range_only" value="true" />
+  
+  <param name="/move_left_arm/planner_long_range" value="chomp_planner_longrange/plan_kinematic_path" />
+  <param name="/move_left_arm/long_range_only" value="true" />
+
+</launch>
+
+

@@ -4,4 +4,12 @@
   <include file="$(find 3dnav_pr2)/launch/planning/bits/fake_planning.launch" />
   <include file="$(find 3dnav_pr2)/launch/planning/bits/ompl_search.launch" />
 
+  <param name="/move_right_arm/planner_long_range" value="ompl_planning/plan_kinematic_path" />
+  <param name="/move_right_arm/planner_short_range" value="fake_motion_planning/plan_kinematic_path" />
+  <param name="/move_right_arm/long_range_only" value="false" />
+  
+  <param name="/move_left_arm/planner_long_range" value="ompl_planning/plan_kinematic_path" />
+  <param name="/move_left_arm/planner_short_range" value="fake_motion_planning/plan_kinematic_path" />
+  <param name="/move_left_arm/long_range_only" value="false" />
+
 </launch>
