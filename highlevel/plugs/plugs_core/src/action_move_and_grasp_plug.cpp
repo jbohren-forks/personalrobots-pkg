@@ -47,6 +47,8 @@ MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
   arm_controller_("r_arm_cartesian_trajectory_controller"),
   lifted_(false)
 {
+  node_->param("~x_calibration_error_offset",x_calibration_error_offset_, -0.02);
+  node_->param("~y_calibration_error_offset",y_calibration_error_offset_, -0.03);
 
   node_->param(action_name_ + "/gripper_controller", gripper_controller_, gripper_controller_);
   node_->param(action_name_ + "/arm_controller", arm_controller_, arm_controller_);
@@ -92,8 +94,8 @@ void MoveAndGraspPlugAction::reset()
   gripper_cmd_.data = 0.055;
   lifted_=false;
   req_pose_.pose.header.frame_id = plug_stow_.header.frame_id;
-  req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x - 0.02;
-  req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y;
+  req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x + x_calibration_error_offset_;
+  req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y + y_calibration_error_offset_;
   req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z + 0.05;
 
   req_pose_.pose.pose.orientation.x = -0.19;
@@ -132,7 +134,6 @@ void MoveAndGraspPlugAction::moveToGrasp()
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
 
   req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z - 0.14;
-  req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y - 0.03;
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {

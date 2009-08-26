@@ -92,6 +92,7 @@ private:
   bool lifted_;
   std_msgs::Float64 gripper_cmd_;
    
+  double x_calibration_error_offset_,y_calibration_error_offset_;
  
 };
 
