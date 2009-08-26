@@ -77,7 +77,7 @@ public:
 
     if (rgba.size() != 4)
     {
-      ROS_ERROR("Color contains %i elements instead of 4 elements", rgba.size());
+	ROS_ERROR("Color contains %i elements instead of 4 elements", (int)rgba.size());
       return false;
     }
 

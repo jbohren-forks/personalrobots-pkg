@@ -68,7 +68,7 @@ public:
     }
 
     if (xyz.size() != 3) {
-      ROS_ERROR("Vector contains %i elements instead of 3 elements", xyz.size()); 
+	ROS_ERROR("Vector contains %i elements instead of 3 elements", (int)xyz.size()); 
       return false;
     }
 

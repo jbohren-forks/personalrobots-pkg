@@ -314,7 +314,7 @@ bool Model::initTree(std::map<std::string, std::string> &parent_link_tree)
           // fill in child/parent string map
           parent_link_tree[child_link->name] = parent_link_name;
 
-          ROS_DEBUG("    now Link '%s' has %i children ", parent_link->name.c_str(), parent_link->child_links.size());
+          ROS_DEBUG("    now Link '%s' has %i children ", parent_link->name.c_str(), (int)parent_link->child_links.size());
         }
       }
     }
