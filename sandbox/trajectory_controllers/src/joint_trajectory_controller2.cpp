@@ -119,7 +119,7 @@ bool JointTrajectoryController2::init(mechanism::RobotState *robot, const ros::N
 
 bool JointTrajectoryController2::starting()
 {
-  last_time_ = robot_->hw_->current_time_;
+  last_time_ = robot_->getTime();
   return true;
 }
 
@@ -127,7 +127,7 @@ void JointTrajectoryController2::update()
 {
   // Checks if all the joints are calibrated.
 
-  double time = robot_->hw_->current_time_;
+  double time = robot_->getTime();
   double dt = time - last_time_;
   last_time_ = time;
 
