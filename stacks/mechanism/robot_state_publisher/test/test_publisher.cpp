@@ -52,6 +52,7 @@ using namespace robot_state_publisher;
 int g_argc;
 char** g_argv;
 
+#define EPS 0.01
 
 class TestPublisher : public testing::Test
 {
@@ -99,6 +100,22 @@ TEST_F(TestPublisher, test)
   Duration(15.0).sleep();
 
   ASSERT_TRUE(tf.canTransform("base_link", "torso_lift_link", Time()));
+  ASSERT_TRUE(tf.canTransform("base_link", "r_gripper_palm_link", Time()));
+  ASSERT_TRUE(tf.canTransform("base_link", "r_gripper_palm_link", Time()));
+  ASSERT_TRUE(tf.canTransform("l_gripper_palm_link", "r_gripper_palm_link", Time()));
+  ASSERT_TRUE(tf.canTransform("l_gripper_palm_link", "fl_caster_r_wheel_link", Time()));
+  ASSERT_FALSE(tf.canTransform("base_link", "wim_link", Time()));
+
+  tf::Stamped<tf::Transform> t;
+  tf.lookupTransform("base_link", "r_gripper_palm_link",Time(), t );
+  EXPECT_NEAR(t.getOrigin().x(), 0.769198, EPS);
+  EXPECT_NEAR(t.getOrigin().y(), -0.188800, EPS);
+  EXPECT_NEAR(t.getOrigin().z(), 0.764914, EPS);
+  
+  tf.lookupTransform("l_gripper_palm_link", "r_gripper_palm_link",Time(), t );
+  EXPECT_NEAR(t.getOrigin().x(), 0.000384222, EPS);
+  EXPECT_NEAR(t.getOrigin().y(), -0.376021, EPS);
+  EXPECT_NEAR(t.getOrigin().z(), -1.0858e-05, EPS);
 
   SUCCEED();
 }
