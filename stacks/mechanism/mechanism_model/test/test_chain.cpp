@@ -32,9 +32,7 @@
 #include <boost/scoped_ptr.hpp>
 #include "mechanism_model/robot.h"
 #include "mechanism_model/chain.h"
-#include "tf_conversions/tf_kdl.h"
 #include <kdl/chainfksolverpos_recursive.hpp>
-#include "test_helpers.h"
 
 using namespace mechanism;
 using namespace std;
@@ -60,7 +58,8 @@ TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
   urdf_xml.LoadFile("pr2.urdf");
   TiXmlElement *root = urdf_xml.FirstChildElement("robot");
   ASSERT_TRUE(root != NULL);
-  Robot model;
+  HardwareInterface hw(0);
+  Robot model(&hw);
   ASSERT_TRUE(model.initXml(root));
   RobotState state(&model, &hw);
 
