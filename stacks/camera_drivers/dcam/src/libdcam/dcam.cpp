@@ -647,14 +647,18 @@ dcam::Dcam::getImage(int ms)
         case COLOR_CODING_MONO8:
           camIm->im = camFrame->image;
           camIm->imType = COLOR_CODING_MONO8;
+          camIm->imSize = camFrame->image_bytes;
           break;
         case COLOR_CODING_RGB8:
-	  camIm->imColor = camFrame->image;
+          camIm->imColor = camFrame->image;
           camIm->imColorType = COLOR_CODING_RGB8;
+          camIm->imColorSize = camFrame->image_bytes; 
           break;
         default:
           camIm->imRaw = camFrame->image;
           camIm->imRawType = rawType;
+          camIm->imRawSize = camFrame->image_bytes;
+          break;
         }
 
 //	printf("Time: %llu\n", camFrame->timestamp);
