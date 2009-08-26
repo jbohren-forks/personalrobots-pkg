@@ -417,11 +417,6 @@ SlamGMapping::laserCallback(const tf::MessageNotifier<sensor_msgs::LaserScan>::M
 
     GMapping::OrientedPoint mpose = gsp_->getParticles()[gsp_->getBestParticleIndex()].pose;
     ROS_DEBUG("new best pose: %.3f %.3f %.3f", mpose.x, mpose.y, mpose.theta);
-
-
-    getOdomPose(odom_pose, ros::Time::now());
-
-    getOdomPose(odom_pose, scan->header.stamp);
     ROS_DEBUG("odom pose: %.3f %.3f %.3f", odom_pose.x, odom_pose.y, odom_pose.theta);
     ROS_DEBUG("correction: %.3f %.3f %.3f", mpose.x - odom_pose.x, mpose.y - odom_pose.y, mpose.theta - odom_pose.theta);
 
