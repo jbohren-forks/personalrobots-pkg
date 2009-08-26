@@ -1,21 +1,21 @@
 all: installed
 
-SVN_DIR = libtheora_svn
-SVN_URL = http://svn.xiph.org/trunk/theora
+VERSION		= 1.0
+TARBALL     = build/libtheora-$(VERSION).tar.gz
+TARBALL_URL = http://downloads.xiph.org/releases/theora/libtheora-$(VERSION).tar.bz2
+UNPACK_CMD  = tar -xvjf
+SOURCE_DIR  = build/libtheora-$(VERSION)
 
-#move this revision number forward as appropriate
-SVN_REVISION = -r 16480
+include $(shell rospack find mk)/download_unpack_build.mk
 
-include $(shell rospack find mk)/svn_checkout.mk
-
-installed: $(SVN_DIR)
-	cd $(SVN_DIR) && ./autogen.sh --prefix=$(PWD)/installed
-	cd $(SVN_DIR) && make && make install
+installed: wiped $(SOURCE_DIR)/unpacked
+	echo "Building LibTheora..."
+	cd $(SOURCE_DIR) && ./autogen.sh --prefix=$(PWD)/installed &&  make && make install
 	touch installed
 
-clean:
-	-make -C $(SVN_DIR) clean
-	-$(RM) -r installed
+wiped:
+	make wipe
+	touch wiped
 
-wipe: clean
-	-rm -rf $(SVN_DIR)
+wipe:
+	rm -rf build installed
