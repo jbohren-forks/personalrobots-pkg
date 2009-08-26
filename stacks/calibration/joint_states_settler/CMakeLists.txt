@@ -14,10 +14,11 @@ rosbuild_init()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-# rosbuild_genmsg()
+rosbuild_genmsg()
 # rosbuild_gensrv()
 
-rosbuild_add_library(${PROJECT_NAME} src/joint_states_deflater.cpp)
+rosbuild_add_library(${PROJECT_NAME} src/joint_states_deflater.cpp
+                                     src/joint_states_settler.cpp)
 
 # target_link_libraries(${PROJECT_NAME} another_library)
 # rosbuild_add_boost_directories()

@@ -12,7 +12,12 @@
   <depend package="actionlib"/>
   <depend package="mechanism_msgs"/>
   <depend package="settlerlib"/>
+  <depend package="calibration_msgs"/>
+  <depend package="actionlib_msgs"/>
 
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp" />
+  </export>
 </package>
 
 
