@@ -90,12 +90,21 @@ namespace pr2_ik {
 
   int PR2IKNode::getJointIndex(const std::string &name)
   {
-    for(int i=0; i< dimension_; i++)
+    int i=0; // segment number
+    int j=0; // joint number
+    while(j < dimension_ && i < pr2_ik_solver_.chain_.getNrOfSegments())
     {
+      if(pr2_ik_solver_.chain_.getSegment(i).getJoint().getType() == KDL::Joint::None)
+	{
+    i++;
+	  continue;
+	}
       if(pr2_ik_solver_.chain_.getSegment(i).getJoint().getName() == name)
       {
-        return i;
+        return j;
       }
+      i++;
+      j++;
     }
     return -1;   
   }
