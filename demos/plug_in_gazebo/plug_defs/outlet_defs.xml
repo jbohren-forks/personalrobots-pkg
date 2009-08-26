@@ -15,7 +15,7 @@
 
   <property name="M_PI" value="3.1415926535897931" />
 
-  <property name="wall_x_loc" value="1.25" />
+  <property name="wall_x_loc" value="1.5" />
   <property name="handle_height" value="0.87" />
   <property name="jack_offset_y" value="0.02315" />
   <property name="jack_offset_z" value="0.01935" />

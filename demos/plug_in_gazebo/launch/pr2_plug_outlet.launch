@@ -23,6 +23,9 @@
     <param name="tf_prefix" type="string" value="" />
   </node>
 
+  <!-- anti hack for plug on base grasping -->
+  <param name="/move_and_grasp_plug/x_calibration_error_offset" type="double" value="0" />
+  <param name="/move_and_grasp_plug/y_calibration_error_offset" type="double" value="0" />
 
 </launch>
 

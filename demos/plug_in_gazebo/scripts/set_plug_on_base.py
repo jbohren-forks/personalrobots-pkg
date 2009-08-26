@@ -168,6 +168,7 @@ def main():
         tmpq = tft.quaternion_multiply(tft.quaternion_from_euler(rpy[0],rpy[1],rpy[2],'rxyz'),magnet_q)
         q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
         pose = PoseWithCovariance(Pose(p,q),COV)
+        #pose = PoseWithCovariance(Pose(Point(0.2,0,0.2),Quaternion(0,0,0,1)),COV)
         poseWithRatesStamped = Odometry(h,"/map",pose,TwistWithCovariance());
         pub_pose.publish(poseWithRatesStamped)
         time.sleep(1.05)
