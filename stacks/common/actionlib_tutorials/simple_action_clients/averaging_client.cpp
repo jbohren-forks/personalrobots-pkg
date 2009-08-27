@@ -37,20 +37,20 @@
 /* Author: Melonee Wise */
 #include <ros/node.h>
 #include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
 #include <actionlib_tutorials/AveragingAction.h>
 
 
 
 int main (int argc, char **argv)
 {
-  // helper variables
-  ros::Duration timeout(30.0); //create the timeout for the action
-
   ros::init(argc, argv, "test_averaging"); 
 
   // create the action client
-  actionlib::SimpleActionClient<actionlib_tutorials::AveragingAction> ac("averaging", true); // true causes the client to spin it's own thread
-  sleep(1);
+  actionlib::SimpleActionClient<actionlib_tutorials::AveragingAction> ac("averaging", true); 
+
+  ROS_INFO("Waiting for action server to start.");
+  ac.waitForActionServerToStart(); 
 
   // send a goal to the action 
   actionlib_tutorials::AveragingGoal goal;
@@ -58,12 +58,13 @@ int main (int argc, char **argv)
   ac.sendGoal(goal);
   
   //wait for the action to return
-  bool finished_before_timeout = ac.waitForGoalToFinish(timeout);
+  bool finished_before_timeout = ac.waitForGoalToFinish(ros::Duration(30.0));
 
+  actionlib::TerminalState state = ac.getTerminalState();
   if (finished_before_timeout)
-    ROS_INFO("Finished");
+    ROS_INFO("Action finished: %s",state.toString().c_str());
   else  
-    ROS_INFO("TimedOut");
+    ROS_INFO("Action did not finish before the time out.");
 
   //exit
   return 0;

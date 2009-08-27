@@ -72,7 +72,7 @@ public:
   {
    
     // helper variables
-    ros::Rate r(50); 
+    ros::Rate r(1); 
     std::vector<int> sequence;
     int temp;  
     bool success = true;

@@ -37,6 +37,7 @@
 /* Author: Melonee Wise */
 #include <ros/node.h>
 #include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
 #include <actionlib_tutorials/FibonacciAction.h>
 
 
@@ -48,13 +49,12 @@ int main (int argc, char **argv)
   // create the action client
   // true causes the client to spin it's own thread
   actionlib::SimpleActionClient<actionlib_tutorials::FibonacciAction> ac("fibonacci", true); 
-  sleep(2);
 
   ROS_INFO("Waiting for action server to start.");
   // wait for the action server to start
-  ac.waitForActionServerToStart(); //will wait for infinite time 
+  ac.waitForActionServerToStart(); //will wait for infinite time
+ 
   ROS_INFO("Action server started, sending goal.");
-
   // send a goal to the action 
   actionlib_tutorials::FibonacciGoal goal;
   goal.order = 20;
@@ -63,8 +63,9 @@ int main (int argc, char **argv)
   //wait for the action to return
   bool finished_before_timeout = ac.waitForGoalToFinish(ros::Duration(30.0));
 
+actionlib::TerminalState state = ac.getTerminalState();
   if (finished_before_timeout)
-    ROS_INFO("Action server finished");
+    ROS_INFO("Action finished: %s",state.toString().c_str());
   else  
     ROS_INFO("Action did not finish before the time out.");
 

@@ -55,7 +55,7 @@ public:
   void executeCB(const actionlib_tutorials::FibonacciGoalConstPtr &goal)
   {
     // helper variables
-    ros::Rate r(50); 
+    ros::Rate r(1); 
     bool success = true;
 
     // push_back the seeds for the fibonacci sequence
