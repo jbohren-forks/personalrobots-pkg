@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  else if(argc == 6 && !strcmp(argv[1], "--join")) {
+  else if(argc == 5 && !strcmp(argv[1], "--join")) {
     cout << "Joining " << argv[2] << " and " << argv[3] << ", saving as " << argv[4] << endl;
     DorylusDataset dd1;
     DorylusDataset dd2;
