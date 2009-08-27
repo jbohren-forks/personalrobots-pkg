@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find pr2_default_controllers)/pr2_base_controller_odom.launch"/>
+  <!-- start teleop node -->
+  <node pkg="teleop_base" type="teleop_base_keyboard" output="screen" />
+</launch>
