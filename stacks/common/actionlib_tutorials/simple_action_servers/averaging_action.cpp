@@ -97,7 +97,7 @@ public:
       result_.mean = feedback_.mean;
       result_.std_dev = feedback_.std_dev;
 
-      if(result_.mean < 5.05)
+      if(result_.mean < 5.0)
       {
         ROS_INFO("%s: Aborted", action_name_.c_str());
         //set the action state to aborted

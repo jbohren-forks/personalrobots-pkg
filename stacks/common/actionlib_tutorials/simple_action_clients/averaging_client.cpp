@@ -55,7 +55,7 @@ int main (int argc, char **argv)
   ROS_INFO("Action server started, sending goal.");
   // send a goal to the action 
   actionlib_tutorials::AveragingGoal goal;
-  goal.samples = 40;
+  goal.samples = 100;
   ac.sendGoal(goal);
   
   //wait for the action to return
