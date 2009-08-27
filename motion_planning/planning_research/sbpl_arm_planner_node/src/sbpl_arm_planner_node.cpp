@@ -52,7 +52,7 @@ SBPLArmPlannerNode::~SBPLArmPlannerNode()
 bool SBPLArmPlannerNode::init()
 {
 	grid_origin_[0] = -0.3;
-	grid_origin_[1] = -1.0;
+	grid_origin_[1] = -1.2;
 	grid_origin_[2] = -1.0;
 
   // planner parameters
@@ -86,19 +86,19 @@ bool SBPLArmPlannerNode::init()
   node_.param<std::string>("~joint_name_6", joint_names_[6], "r_wrist_roll_joint");
 
   // planning environment parameters
-	node_.param ("~use_voxel3d_grid", use_voxel3d_grid_, true);
-	node_.param ("~visualize_voxel3d", visualize_voxel3d_, false);
+  node_.param ("~use_voxel3d_grid", use_voxel3d_grid_, true);
+  node_.param ("~visualize_voxel3d", visualize_voxel3d_, false);
   node_.param ("~lowres_cc", lowres_cc_, true);
   node_.param ("~use_collision_map_occ_to_update_voxel", use_cm_for_voxel_, true);
   node_.param ("~use_collision_map",use_collision_map_,false);
   node_.param ("~use_exact_gripper_collision_checking",enable_pm_, true);
   node_.param ("~use multiresolution_motion_primitives", use_multires_primitives_, true);
   node_.param ("~voxel_grid_width_", env_width_, 140);
-  node_.param ("~voxel_grid_height_", env_height_, 220);
-  node_.param ("~voxel_grid_depth_", env_depth_, 200);
+  node_.param ("~voxel_grid_height_", env_height_, 210);
+  node_.param ("~voxel_grid_depth_", env_depth_, 150);
   node_.param ("~voxel_grid_resolution_", env_resolution_, 0.01);
   node_.param ("~upright_gripper_only", upright_gripper_only_, false);
-	node_.param ("~use_jacobian_motion_primitive", use_jacobian_mp_, false);
+  node_.param ("~use_jacobian_motion_primitive", use_jacobian_mp_, false);
 
   // topic names
   node_.param<std::string>("~point_cloud", point_cloud_topic_, "full_cloud_filtered");
@@ -1573,10 +1573,12 @@ bool SBPLArmPlannerNode::interpolatePathToGoal(std::vector<std::vector<double> >
 			}
 		}
 		++pind;
-		
+
 		for(int j = 0; j < num_joints_; ++j)
-			angles[j] = path[pind][j];
-		
+			angles[j] = waypoint[j]; //path[pind][j];
+
+		ROS_INFO("%.3f %.3f %.3f %.3f %.3f %.3f %.3f",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
+
 		if(!sbpl_arm_env_.isValidJointConfiguration(angles))
 		{
 			ROS_INFO("invalid configuration: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
