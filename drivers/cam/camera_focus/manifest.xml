@@ -9,6 +9,7 @@
   <url>http://pr.willowgarage.com/wiki/camera_focus</url>
   <depend package="forearm_cam"/>
   <depend package="dcam"/>
+  <rosdepend name="gnuplot"/>
 </package>
 
 
