@@ -1,0 +1,15 @@
+<launch>
+
+  <!-- Startup the robot -->
+  <include file="$(find pr2_alpha)/prf.launch"/>
+
+  <!-- Init the head controller -->
+  <include file="$(find pr2_default_controllers)/head_position_controller.launch"/>
+
+  <!-- Start wide stereo -->
+  <include file="$(find stereo_image_proc)/wide_stereoproc.launch"/>
+
+  <!-- Start narrow stereo -->
+  <include file="$(find stereo_image_proc)/narrow_stereoproc.launch"/>
+
+</launch>
