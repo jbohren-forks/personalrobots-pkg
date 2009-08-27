@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="move_arm_tools" name="move_arm_gui" type="auto_arm_cmd" output="screen" args="right">    
+  <node pkg="move_arm_tools"  type="auto_arm_cmd" name="move_arm_gui" output="screen" args="right">    
     <remap from="robot_description" to="robot_description" />
     <remap from="arm_ik" to="pr2_ik_right_arm/ik_service" />
     
