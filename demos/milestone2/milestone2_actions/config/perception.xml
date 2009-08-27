@@ -1,4 +1,7 @@
 <launch>
+
+  <include file="$(find 3dnav_pr2)/launch/pr2_planning_environment.launch" />
+
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
   <node pkg="mux" type="throttle" args="3.0 base_scan base_scan_throttled" />
@@ -26,8 +29,63 @@
     <rosparam command="load" ns="scan_filters" file="$(find laser_scan)/default_scan_shadows.yaml" />
     <rosparam command="load" ns="cloud_filters" file="$(find laser_scan)/point_cloud_footprint.filters.yaml" />
     <param name="scan_topic" value="tilt_scan" />
-    <param name="cloud_topic" value="tilt_scan_filtered" />  
+    <param name="cloud_topic" value="tilt_scan_shadow_filtered" />
     <param name="high_fidelity" value="true" />
+  </node>
+
+  <!-- Filter for tilt laser scans that hit the body of the robot -->
+  <node pkg="robot_self_filter" type="self_filter" name="tilt_laser_self_filter" respawn="true" output="screen">
+
+    <!-- The topic for the input cloud -->
+    <remap from="cloud_in" to="tilt_scan_shadow_filtered" />
+
+    <!-- The topic for the output cloud -->
+    <remap from="cloud_out" to="tilt_scan_filtered" />
+
+    <!-- The frame of the sensor used to obtain the data to be
+      filtered; This parameter is optional. If it is not specified,
+      shadow points will be considered outside -->
+    <param name="sensor_frame" type="string" value="laser_tilt_link" />
+
+    <!-- Minimum distance to sensor (for point not to be considered inside) -->
+    <param name="min_sensor_dist" type="double" value="0.01" />
+
+    <!-- The padding to be added for the body parts the robot can see -->
+    <param name="self_see_padd" type="double" value="0.01" />
+
+    <!-- The scaling to be added for the body parts the robot can see -->
+    <param name="self_see_scale" type="double" value="1.0" />
+    
+    <!-- The names of the links the sensor can see -->
+    <param name="self_see_links" type="string" value="l_upper_arm_link
+                  l_upper_arm_roll_link
+                  l_elbow_flex_link
+                  l_forearm_link
+                  l_forearm_roll_link
+                  l_wrist_flex_link
+                  l_wrist_roll_link
+                  l_gripper_l_finger_link
+                  l_gripper_l_finger_tip_link
+                  l_gripper_r_finger_link
+                  l_gripper_r_finger_tip_link
+                  l_shoulder_pan_link
+                  l_shoulder_lift_link
+                  r_upper_arm_link
+                  r_upper_arm_roll_link
+                  r_elbow_flex_link
+                  r_forearm_link
+                  r_forearm_roll_link
+                  r_wrist_flex_link
+                  r_wrist_roll_link
+                  r_gripper_l_finger_link
+                  r_gripper_l_finger_tip_link
+                  r_gripper_r_finger_link
+                  r_gripper_r_finger_tip_link
+                  r_shoulder_pan_link
+                  r_shoulder_lift_link
+                  base_laser
+                  base_link" />
+    
   </node>
 
   <!-- Filter for base laser shadowing/veiling -->
@@ -35,7 +93,60 @@
     <rosparam command="load" ns="scan_filters" file="$(find laser_scan)/default_scan_shadows.yaml" />
     <rosparam command="load" ns="cloud_filters" file="$(find laser_scan)/point_cloud_footprint.filters.yaml" />
     <param name="scan_topic" value="base_scan" />
-    <param name="cloud_topic" value="base_scan_marking" />
+    <param name="cloud_topic" value="base_scan_shadow_filtered" />
+  </node>
+
+  <!-- Filter for base laser scans that hit the body of the robot -->
+  <node pkg="robot_self_filter" type="self_filter" name="base_laser_self_filter" respawn="true" output="screen">
+
+    <!-- The topic for the input cloud -->
+    <remap from="cloud_in" to="base_scan_shadow_filtered" />
+
+    <!-- The topic for the output cloud -->
+    <remap from="cloud_out" to="base_scan_marking" />
+
+    <!-- The frame of the sensor used to obtain the data to be
+      filtered; This parameter is optional. If it is not specified,
+      shadow points will be considered outside -->
+    <param name="sensor_frame" type="string" value="base_laser" />
+
+    <!-- Minimum distance to sensor (for point not to be considered inside) -->
+    <param name="min_sensor_dist" type="double" value="0.01" />
+
+    <!-- The padding to be added for the body parts the robot can see -->
+    <param name="self_see_padd" type="double" value="0.01" />
+
+    <!-- The scaling to be added for the body parts the robot can see -->
+    <param name="self_see_scale" type="double" value="1.0" />
+    
+    <!-- The names of the links the sensor can see -->
+    <param name="self_see_links" type="string" value="l_upper_arm_link
+                  l_upper_arm_roll_link
+                  l_elbow_flex_link
+                  l_forearm_link
+                  l_forearm_roll_link
+                  l_wrist_flex_link
+                  l_wrist_roll_link
+                  l_gripper_l_finger_link
+                  l_gripper_l_finger_tip_link
+                  l_gripper_r_finger_link
+                  l_gripper_r_finger_tip_link
+                  l_shoulder_pan_link
+                  l_shoulder_lift_link
+                  r_upper_arm_link
+                  r_upper_arm_roll_link
+                  r_elbow_flex_link
+                  r_forearm_link
+                  r_forearm_roll_link
+                  r_wrist_flex_link
+                  r_wrist_roll_link
+                  r_gripper_l_finger_link
+                  r_gripper_l_finger_tip_link
+                  r_gripper_r_finger_link
+                  r_gripper_r_finger_tip_link
+                  r_shoulder_pan_link
+                  r_shoulder_lift_link" />
+    
   </node>
 
   <!-- Laser scan assembler for tilt laser -->

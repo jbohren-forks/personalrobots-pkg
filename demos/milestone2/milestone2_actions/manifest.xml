@@ -16,4 +16,6 @@
   <depend package="pr2_experimental_controllers"/>
   <depend package="switch_controller_translator"/>
   <depend package="mux"/>
+  <depend package="robot_self_filter"/>
+  <depend package="3dnav_pr2"/>
 </package>

@@ -20,6 +20,8 @@
   <depend package="point_cloud_assembler"/>
   <depend package="semantic_point_annotator"/>
   <depend package="or_robot_self_filter"/>
+  <depend package="robot_self_filter"/>
+  <depend package="3dnav_pr2"/>
   <depend package="rviz"/>
 
   <!-- Adding experimental controllers as a dependency b/c of tuckarm move -->

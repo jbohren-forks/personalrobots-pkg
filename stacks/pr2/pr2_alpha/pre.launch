@@ -14,7 +14,7 @@
 
 <!-- Power Board Control Node -->
   <param name="power_board_serial" value="1021"/>
-  <node machine="two" pkg="pr2_power_board" type="power_node"  respawn="true"/>
+  <node machine="two" pkg="pr2_power_board" type="power_node" name="power_node" respawn="true"/>
 
 <!-- Robot state publisher -->
  <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
@@ -23,7 +23,7 @@
  </node>
 
 <!-- Battery Monitor -->
-  <node machine="two" pkg="ocean_battery_driver" type="ocean_server"  respawn="true">
+  <node machine="two" pkg="ocean_battery_driver" name="ocean_server" type="ocean_server"  respawn="true">
     <param name="number_of_ports" type="int" value="4" />
     <param name="port0" type="string" value="/dev/ttyUSB0" />
     <param name="port1" type="string" value="/dev/ttyUSB1" />
@@ -32,7 +32,7 @@
     <param name="debug_level" type="int" value="0" />
   </node>
 
-  <node pkg="power_monitor" type="power_monitor"  respawn="true"/>
+  <node pkg="power_monitor" type="power_monitor"  name="power_monitor" respawn="true"/>
 
 
 <!-- Base Laser -->
@@ -60,7 +60,7 @@
   <param name="imu/frameid"  type="string" value="imu" />
   <param name="imu/autocalibrate" type="bool" value="true" />
   <param name="imu/angular_velocity_stdev" type="double" value="0.00017" />
-  <node machine="realtime" pkg="imu_node" type="imu_node" output="screen"/>
+  <node machine="realtime" pkg="imu_node" type="imu_node" name="imu_node" output="screen"/>
 
 <!-- Forearm Cameras -->
   <node machine="two" name="forearm_cam_r" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen">
@@ -93,26 +93,26 @@
 
 
 <!-- Sound  
-  <node pkg="sound_play" type="soundplay_node.py" machine="three" />
+  <node pkg="sound_play" type="soundplay_node.py" name="soundplay_node" machine="three" />
 -->
 
 <!-- Runtime Diagnostics Logging -->
-  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/pre_runtime_automatic /diagnostics" />
+  <node pkg="rosrecord" type="rosrecord" name="rosrecord_diagnostics" args="-f /hwlog/pre_runtime_automatic /diagnostics" />
 
 <!-- NTP monitoring script Warns to console if sync error -->
-  <node pkg="pr2_computer_monitor" type="ntp_monitor.py" args="pre2" machine="realtime"/>
-  <node pkg="pr2_computer_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two"/> 
+  <node pkg="pr2_computer_monitor" name="realtime_ntp_monitor" type="ntp_monitor.py" args="pre2" machine="realtime"/>
+  <node pkg="pr2_computer_monitor" name="two_ntp_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two"/> 
 
   <!-- Disk usage monitoring script Warns to console if disk full -->
-  <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="realtime"/>
-  <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="two"/> 
+  <node pkg="pr2_computer_monitor" name="realtime_hd_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="realtime"/>
+  <node pkg="pr2_computer_monitor" name="two_hd_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="two"/> 
 
   <!-- Monitor CPU temp, usage -->
-  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="realtime" />
-  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="two" />
+  <node pkg="pr2_computer_monitor" name="realtime_cpu_monitor" type="cpu_monitor.py" machine="realtime" />
+  <node pkg="pr2_computer_monitor" name="two_cpu_monitor" type="cpu_monitor.py" machine="two" />
 
   <!-- Joint states diagnostics logging -->
-  <node pkg="mechanism_control" type="joints_to_diagnostics.py" machine="realtime" />
+  <node pkg="mechanism_control" name="joint_state_logging" type="joints_to_diagnostics.py" machine="realtime" />
 
   <!-- Diagnostics aggregation -->
   <node pkg="diagnostic_aggregator" type="aggregator_node"
