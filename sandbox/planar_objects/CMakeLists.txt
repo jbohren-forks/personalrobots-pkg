@@ -30,10 +30,10 @@ genmsg()
 
 rospack_add_executable(box_detector src/box_detector.cpp src/find_planes.cpp src/vis_utils.cpp src/cornercandidate.cpp)
 
-rospack_add_executable(stereo_throttle src/stereo_throttle)
+#rospack_add_executable(stereo_throttle src/stereo_throttle)
 
-rospack_add_executable(box_tracker src/box_tracker.cpp src/vis_utils.cpp src/track_utils.cpp)
+#rospack_add_executable(box_tracker src/box_tracker.cpp src/vis_utils.cpp src/track_utils.cpp)
 
-rospack_add_executable(articulation_learner src/articulation_learner.cpp src/vis_utils.cpp src/track_utils.cpp src/articulation_models.cpp)
+#rospack_add_executable(articulation_learner src/articulation_learner.cpp src/vis_utils.cpp src/track_utils.cpp src/articulation_models.cpp)
 
 #target_link_libraries(example ${PROJECT_NAME})

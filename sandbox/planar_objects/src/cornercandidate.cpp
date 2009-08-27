@@ -225,8 +225,8 @@ double CornerCandidate::computeSupport2d(IplImage* pixOccupied, IplImage* pixDeb
       if (pixDebug != NULL)
         ((uchar*)pixDebug->imageData)[y * pixDebug->widthStep + x * pixDebug->nChannels+1] =
             MIN(255,((uchar*)pixDebug->imageData)[y *
-pixDebug->widthStep 
-+ x * 
+pixDebug->widthStep
++ x *
 pixDebug->nChannels+1] + 64);
     }
     count += y2 - y1 + 1;
@@ -350,7 +350,7 @@ double CornerCandidate::computeDistance2(IplImage* pixOccupied)
     }
     count += y2 - y1 + 1;
   }
-  return -sum/pow((double)count,0.9);
+  return -pow((double)sum,1.2)/(double)count;
 }
 
 

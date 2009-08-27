@@ -112,6 +112,7 @@ void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
         cloud_geometry::areas::convexHull2D(cloud, plane_indices[i], plane_coeff[i],
                         polygon);
         visualizePolygon(cloud, polygon,rgb,i,visualization_pub);
+        cout << " sending convex hull " << endl;
       }
     }
   }
@@ -122,8 +123,7 @@ void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
 
 void visualizePolygon(const sensor_msgs::PointCloud& cloud,geometry_msgs::Polygon &polygon, int rgb, int id, ros::Publisher& visualization_pub ) {
   visualization_msgs::Marker marker;
-  marker.header.frame_id = cloud.header.frame_id;
-  marker.header.stamp = ros::Time((uint64_t)0ULL);
+  marker.header = cloud.header;
   marker.ns = "polygon";
   marker.id = id;
   marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -146,13 +146,12 @@ void visualizePolygon(const sensor_msgs::PointCloud& cloud,geometry_msgs::Polygo
   visualization_pub.publish(  marker );
 }
 
-void visualizeLines(ros::Publisher& visualization_pub_,std::string frame_id,std::vector<std::pair<btVector3, btVector3> > lines, int id, double r, double g,
+void visualizeLines(ros::Publisher& visualization_pub_,roslib::Header header,std::vector<std::pair<btVector3, btVector3> > lines, int id, double r, double g,
                                 double b,double scale)
 {
   // visualize edges in 3D
   visualization_msgs::Marker marker;
-  marker.header.frame_id = frame_id;
-  marker.header.stamp = ros::Time((uint64_t)0ULL);
+  marker.header = header;
   marker.ns = "edges";
   marker.id = id;
   marker.type = visualization_msgs::Marker::LINE_LIST;
@@ -177,9 +176,9 @@ void visualizeLines(ros::Publisher& visualization_pub_,std::string frame_id,std:
   visualization_pub_.publish(marker);
 }
 
-void visualizeLines(ros::Publisher& visualization_pub_, std::string frame_id, std::vector<std::pair<btVector3,
+void visualizeLines(ros::Publisher& visualization_pub_, roslib::Header header, std::vector<std::pair<btVector3,
     btVector3> > lines, int id, int rgb,double scale) {
-  visualizeLines(visualization_pub_, frame_id, lines, id, (rgb&0xff)/255.0,((rgb>>8)&0xff)/255.0,((rgb>>16)&0xff)/255.0,scale);
+  visualizeLines(visualization_pub_, header, lines, id, (rgb&0xff)/255.0,((rgb>>8)&0xff)/255.0,((rgb>>16)&0xff)/255.0,scale);
 }
 
 }

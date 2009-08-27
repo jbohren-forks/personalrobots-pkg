@@ -43,6 +43,7 @@ public:
 
   // PARAMETERS
   int n_planes_max_; // number of planes to be fitted
+  int n_seeds_per_plane_;
   double point_plane_distance_; // maximally allowed point-to-plane distance
 
   bool show_colorized_planes;
@@ -66,6 +67,8 @@ public:
   double rect_min_size;
   double rect_max_size;
   double rect_max_displace;
+
+  double scaling;
 
   int frame;
 

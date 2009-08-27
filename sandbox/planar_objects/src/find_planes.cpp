@@ -126,7 +126,7 @@ void segmentPlanes(const sensor_msgs::PointCloud &const_points, double sac_dista
   vector<int> indices_in_bounds;
   // Get the point indices within z_min <-> z_max
   getPointIndicesInZBounds(points, z_min, z_max, indices_in_bounds);
-  //  ROS_INFO("segmentPlanes #%d running on %d/%d points",number,points.get_points_size(),indices_in_bounds.size());
+   ROS_INFO("segmentPlanes #%d running on %d/%d points",number,points.get_points_size(),indices_in_bounds.size());
 
   // We need to know the viewpoint where the data was acquired
   // For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
@@ -167,8 +167,10 @@ void findPlanes(const sensor_msgs::PointCloud& cloud, int n_planes_max, double s
                              sensor_msgs::PointCloud& outside)
 {
 
-  double z_min = 0.3;
-  double z_max = 3.0;
+//	  double z_min = 0.3;
+//	  double z_max = 3.0;
+	  double z_min = DBL_MIN;
+	  double z_max = DBL_MAX;
   double support = 0.2;
   double min_area = 0.00;
 

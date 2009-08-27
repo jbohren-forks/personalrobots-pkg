@@ -38,7 +38,8 @@ namespace planar_objects
 BoxDetector::BoxDetector() :
   sync_(&BoxDetector::syncCallback, this)
 {
-  nh_.param("~n_planes_max", n_planes_max_, 5);
+	  nh_.param("~n_planes_max", n_planes_max_, 5);
+	  nh_.param("~n_seeds_per_plane", n_seeds_per_plane_, 5);
   nh_.param("~point_plane_distance", point_plane_distance_, 0.01);
 
   nh_.param("~show_colorized_planes", show_colorized_planes, true);
@@ -51,6 +52,7 @@ BoxDetector::BoxDetector() :
   nh_.param("~save_images_matching", save_images_matching, false);
 
   nh_.param("~verbose", verbose, false);
+  nh_.param("~scaling", scaling, 6.00);
 
   nh_.param("~select_frontplane", select_frontplane, -1);
 //  cout << "select_frontplane="<<select_frontplane<<endl;
@@ -86,7 +88,7 @@ BoxDetector::BoxDetector() :
     CVWINDOW("hough");
   }
 
-  string stereo_ns = nh_.resolveName("stereo");  
+  string stereo_ns = nh_.resolveName("stereo");
 // subscribe to topics
   cloud_sub_ = nh_.subscribe(stereo_ns+"/cloud", 1, sync_.synchronize(&BoxDetector::cloudCallback, this));
   disp_sub_ = nh_.subscribe(stereo_ns+"/disparity", 1, sync_.synchronize(&BoxDetector::dispCallback, this));
@@ -98,7 +100,7 @@ BoxDetector::BoxDetector() :
 
   // advertise topics
   cloud_planes_pub_ = nh_.advertise<sensor_msgs::PointCloud> ("~planes", 1);
-  visualization_pub_ = nh_.advertise<visualization_msgs::Marker> ("visualization_marker", 100);
+  visualization_pub_ = nh_.advertise<visualization_msgs::Marker> ("~visualization_marker", 100);
   observations_pub_ = nh_.advertise<BoxObservations> ("~observations", 100);
 
   currentTime = Time::now();
@@ -225,7 +227,7 @@ bool sortCornersByAngle(const CornerCandidate& d1, const CornerCandidate& d2)
 
 void BoxDetector::syncCallback()
 {
-  ROS_INFO("BoxDetector::syncCallback(), %d points in cloud",cloud_->get_points_size());
+  ROS_INFO("BoxDetector::syncCallback(), %d points in cloud, seq=%d",cloud_->get_points_size(),cloud_->header.seq);
 
   Time timeStamp = Time::now();
 
@@ -238,7 +240,7 @@ void BoxDetector::syncCallback()
 
   buildRP();
 
-  findPlanes(*cloud_, n_planes_max_, point_plane_distance_, plane_indices, plane_cloud, plane_coeff,
+  findPlanes(*cloud_, n_planes_max_, point_plane_distance_*scaling, plane_indices, plane_cloud, plane_coeff,
                           outside);
   MEASURE(timeStamp,"findPlanes");
 
@@ -259,7 +261,8 @@ void BoxDetector::syncCallback()
   cvCvtColor(lbridge_.toIpl(), pixDebug, CV_GRAY2BGR);
 
   std::vector<CornerCandidate> corners;
-cout << "frontplane="<<select_frontplane<<endl;
+//  cout << "frontplane="<<select_frontplane<<endl;
+  cout << "planes="<<plane_coeff.size()<<endl;
   for (size_t frontplane = 0; frontplane < plane_coeff.size(); frontplane++)
   {
     if (select_frontplane != -1)
@@ -524,7 +527,7 @@ void BoxDetector::findCornerCandidates2(IplImage* pixOccupied, IplImage *pixFree
     return;
   }
   if (show_lines)
-    visualizeLines(visualization_pub_,cloud_->header.frame_id,lines3d, id, 0.5, 0.5, 0.5);
+    visualizeLines(visualization_pub_,cloud_->header,lines3d, id, 0.5, 0.5, 0.5);
 
   // compute corner candidates
   btVector3 vecPlane(plane_coeff[0], plane_coeff[1], plane_coeff[2]);
@@ -532,10 +535,10 @@ void BoxDetector::findCornerCandidates2(IplImage* pixOccupied, IplImage *pixFree
   candidate.RP = RP;
   candidate.P = P;
   candidate.rect_max_displace = rect_max_displace;
-  candidate.rect_min_size = rect_min_size;
-  candidate.rect_max_size = rect_max_size;
-  candidate.w = rect_min_size;
-  candidate.h = rect_min_size;
+  candidate.rect_min_size = rect_min_size*scaling;
+  candidate.rect_max_size = rect_max_size*scaling;
+  candidate.w = rect_min_size*scaling;
+  candidate.h = rect_min_size*scaling;
 
   for (size_t i = 0; i < lines3d.size(); i++)
   {
@@ -789,7 +792,7 @@ void BoxDetector::visualizeCorners(std::vector<CornerCandidate> &corner, int id)
       lines[i].first = corner[i].tf.getOrigin();
       lines[i].second = corner[i].tf * (vec * 0.05);
     }
-    visualizeLines(visualization_pub_,cloud_->header.frame_id,lines, id + 10 + j, j == 0 ? 1.00 : 0.00, j == 1 ? 1.00 : 0.00, j == 2 ? 1.00 : 0.00);
+    visualizeLines(visualization_pub_,cloud_->header,lines, id + 10 + j, j == 0 ? 1.00 : 0.00, j == 1 ? 1.00 : 0.00, j == 2 ? 1.00 : 0.00);
   }
 }
 
@@ -813,11 +816,11 @@ void BoxDetector::visualizeRectangles3d(std::vector<CornerCandidate> &corner, in
     lines[3].first = corner[i].points3d[3];
     lines[3].second = corner[i].points3d[0];
 
-    visualizeLines(visualization_pub_,cloud_->header.frame_id,lines, id + 100 + i, MIN(i*0.1,1.00), MAX(0.00, 1.00-i*.01), 0.00);
+    visualizeLines(visualization_pub_,cloud_->header,lines, id + 100 + i, MIN(i*0.1,1.00), MAX(0.00, 1.00-i*.01), 0.00,0.002 * scaling);
   }
   lines.resize(0);
   for (size_t i = corner.size(); i < 100; i++)
-    visualizeLines(visualization_pub_,cloud_->header.frame_id,lines, id + 100 + i,1.0,1.0,1.0);
+    visualizeLines(visualization_pub_,cloud_->header,lines, id + 100 + i,1.0,1.0,1.0);
 }
 
 void BoxDetector::visualizeRectangles2d(std::vector<CornerCandidate> &corner,CvScalar col)
@@ -894,14 +897,14 @@ void BoxDetector::findRectangles(std::vector<CornerCandidate> &corner, IplImage*
 
 void BoxDetector::initializeRectangle(CornerCandidate &corner, IplImage* pixDist)
 {
-  corner.w = 0.2;
-  corner.h = 0.2;
+  corner.w = 0.2*scaling;
+  corner.h = 0.2*scaling;
   visualizeRectangle2d(corner,CV_RGB(255,255,255));
   for (int i = 0; i < 20; i++)
   {
     for(int c=0;c<2;c++) {
-      corner.optimizeWidth2(pixDist, -0.05,+0.05, 5,c);
-      corner.optimizeHeight2(pixDist, -0.05,+0.05, 5,c);
+      corner.optimizeWidth2(pixDist, -0.05*scaling,+0.05*scaling, 5,c);
+      corner.optimizeHeight2(pixDist, -0.05*scaling,+0.05*scaling, 5,c);
     }
     corner.optimizePhi(pixDist, -M_PI / (16), +M_PI / (16), 5);
     visualizeRectangle2d(corner,CV_RGB(255-3*i,255-3*i,255-3*i));
@@ -968,13 +971,12 @@ void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree,
   candidate.RP = RP;
   candidate.P = P;
   candidate.rect_max_displace = rect_max_displace;
-  candidate.rect_min_size = rect_min_size;
-  candidate.rect_max_size = rect_max_size;
-  candidate.w = rect_min_size;
-  candidate.h = rect_min_size;
+  candidate.rect_min_size = rect_min_size*scaling;
+  candidate.rect_max_size = rect_max_size*scaling;
+  candidate.w = rect_min_size*scaling;
+  candidate.h = rect_min_size*scaling;
 
-  int MAX_ITER = 4;
-  for(int iter=0;iter<MAX_ITER;iter++) {
+  for(int iter=0;iter<n_seeds_per_plane_;iter++) {
     cout << iter << endl;
     // pick 3 inliers
     int p[3];
