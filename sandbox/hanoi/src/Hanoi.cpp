@@ -1,3 +1,6 @@
+#include <mechanism_msgs/JointStates.h>
+#include <mechanism_msgs/JointState.h>
+
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/areas.h>
@@ -8,8 +11,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Constructor
-Hanoi::Hanoi()
-  : nodeHandle_(), tf_(nodeHandle_)
+Hanoi::Hanoi(ros::NodeHandle &nh)
+  : nodeHandle_(nh), tf_(nodeHandle_)
 {
   std::string cloud_topic;
 
@@ -18,20 +21,23 @@ Hanoi::Hanoi()
   if (!nodeHandle_.getParam("parameter_frame",parameter_frame_))
     parameter_frame_ = "base_link";
 
-  if (!nodeHandle_.getParam("cloud_topic", cloud_topic))
-    cloud_topic_ = "full_cloud_filtered";
-
   // Subscribe to the blobs topic
   blobSubscriber_ = nodeHandle_.subscribe("blobs", 100, &Hanoi::BlobCB, this);
- 
+
+  headPublisher_ = nodeHandle_.advertise<mechanism_msgs::JointStates>("pan_tilt", 1, true);
+
   // Create the publisher for cylinder data
   cylinderPublisher_ = nodeHandle_.advertise<hanoi::Cylinders>("cylinders", 1);
 
-  // Get the point cloud
-  tf::MessageNotifier<sensor_msgs::PointCloud> *message_notifier = 
-    new tf::MessageNotifier<sensor_msgs::PointCloud>( tf_, 
-       boost::bind(&Hanoi::CloudCB,this,_1), cloud_topic_, parameter_frame_, 1);
+  cloudSubscriber_ = nodeHandle_.subscribe("cloud_data",1,&Hanoi::CloudCB,this);
 
+  // Get the point cloud
+  /*tf::MessageNotifier<sensor_msgs::PointCloud> *message_notifier = 
+    new tf::MessageNotifier<sensor_msgs::PointCloud>( tf_, 
+       boost::bind(&Hanoi::CloudCB,this,_1), "cloud_data", parameter_frame_, 1);
+       */
+
+  this->CommandHead(0, 0.5);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,8 +47,27 @@ Hanoi::~Hanoi()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Pan and tilt the head
+void Hanoi::CommandHead(float pan, float tilt)
+{
+  mechanism_msgs::JointStates jointStatesMsg;
+  mechanism_msgs::JointState panJoint, tiltJoint;
+
+  panJoint.name = "head_pan_joint";
+  panJoint.position = pan;
+
+  tiltJoint.name = "head_tilt_joint";
+  tiltJoint.position = tilt;
+
+  jointStatesMsg.joints.push_back(panJoint);
+  jointStatesMsg.joints.push_back(tiltJoint);
+
+  headPublisher_.publish( jointStatesMsg );
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Got a point cloud
-void Hanoi::CloudCB(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr &cloud)
+void Hanoi::CloudCB(const sensor_msgs::PointCloudConstPtr &cloud)
 {
   pointcloud_ = *cloud;
 
@@ -89,7 +114,6 @@ void Hanoi::BlobCB(const cmvision::BlobsConstPtr &msg)
   printf("Red Size[%d] Pos[%d %d]\n", redBlob_.area, redBlob_.x, redBlob_.y);
   printf("Green Size[%d] Pos[%d %d]\n", greenBlob_.area, greenBlob_.x, greenBlob_.y);
   printf("Blue Size[%d] Pos[%d %d]\n", blueBlob_.area, blueBlob_.x, blueBlob_.y);
-
   this->CalculateGraspPoints();
 
   cylinderMessage_.redArea = redBlob_.area;
@@ -121,18 +145,7 @@ void Hanoi::BlobCB(const cmvision::BlobsConstPtr &msg)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Calculate the 3D grasp points
-bool Hanoi::CalculatedGraspPoints()
+bool Hanoi::CalculateGraspPoints()
 {
-  // Transform the Point Cloud Data into the parameter_frame
-  if (!tf_.canTransform(parameter_frame_, pointcloud_.header.frame_id, 
-        pointcloud_.header.stamp, timeout))
-  {
-    ROS_ERROR ("Hanoi: Could not transform point cloud from frame '%s' to frame '%s' at time %f.",
-        pointcloud_.header.frame_id.c_str (), 
-        parameter_frame_.c_str (), pointcloud_.header.stamp.toSec());
-    return false;
-  }
-
-  tf_.transformPointCloud (parameter_frame_, pointcloud_, pointcloud_);
-
+  std::cout << "FrameId:" << pointcloud_.header.frame_id << std::endl;
 }

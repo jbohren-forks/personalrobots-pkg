@@ -5,7 +5,9 @@
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "hanoi");
-  Hanoi hanoi;
+  ros::NodeHandle nh;
+
+  Hanoi hanoi(nh);
 
   ros::spin();
 }

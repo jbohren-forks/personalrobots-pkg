@@ -1,2 +1,9 @@
 <launch>
+  <include file="$(find hanoi)/launch/cmvision.launch"/>
+
+  <node name="hanoi" pkg="hanoi" type="hanoi" output="screen"> 
+    <remap from="cloud_data" to="/wide_stereo/cloud"/>
+    <remap from="pan_tilt" to="head_controller/commands"/>
+  </node>
+
 </launch>
