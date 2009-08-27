@@ -133,15 +133,14 @@ TBK_Node::keyboardLoop()
 
   puts("Reading from keyboard");
   puts("---------------------------");
+  puts("q/z : increase/decrease max angular and linear speeds by 10%");
+  puts("w/x : increase/decrease max linear speed by 10%");
+  puts("e/c : increase/decrease max angular speed by 10%");
+  puts("---------------------------");
   puts("Moving around:");
   puts("   u    i    o");
   puts("   j    k    l");
   puts("   m    ,    .");
-  puts("");
-  puts("q/z : increase/decrease max speeds by 10%");
-  puts("w/x : increase/decrease only linear speed by 10%");
-  puts("e/c : increase/decrease only angular speed by 10%");
-  puts("");
   puts("anything else : stop");
   puts("---------------------------");
 
