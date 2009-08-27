@@ -121,7 +121,3 @@ power:
     'Smart Battery 3.1',
     'Smart Battery 3.2',
     'Smart Battery 3.3']
-other:
-  prefix: Other
-  type: GenericAnalyzer
-  other: true
