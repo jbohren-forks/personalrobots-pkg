@@ -1,0 +1,20 @@
+<launch>
+
+ <include file="$(find pr2_alpha)/$(env ROBOT).machine" /> 
+    <node pkg="sbpl_door_planner_action" type="door_planner_action" respawn="false" name="sbpl_door_planner" output="screen">
+
+     <remap from="obstacles" to="~obstacles" />
+     <remap from="inflated_obstacles" to="~inflated_obstacles" />
+
+     <!--param name="sbpl_action_file" textfile="$(find mpbench)/data/pr2sides.mprim" /-->
+     <!--param name="sbpl_action_file" textfile="$(find sbpl)/matlab/mprim/mprim_unic_sidebackdiag.mprim" /-->
+     <!--param name="sbpl_action_file" textfile="$(find sbpl)/matlab/mprim/pr2_all_2.5cm_20turncost.mprim" /-->
+     <param name="sbpl_action_file" textfile="$(find sbpl)/matlab/mprim/all_file.mprim" />
+
+     <param name="animate" value="true"/>
+     <param name="do_control" value="true"/>
+     <param name="animate_frequency" value="10.0"/>
+     <param name="controller_frequency" value="10.0"/>
+ <rosparam file="$(find sbpl_door_planner_action)/launch/costmap_common_params.yaml" command="load" ns="costmap" />
+    </node>
+</launch>

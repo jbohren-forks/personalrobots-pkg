@@ -30,7 +30,6 @@
 #include <sbpl_door_planner/door_base_collision_cost.h>
 #include <angles/angles.h>
 
-
 #define MAX_COST 255
 //#define DEBUG 1
 using namespace std;

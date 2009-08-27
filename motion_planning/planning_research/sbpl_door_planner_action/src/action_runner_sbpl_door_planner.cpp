@@ -35,9 +35,11 @@
 /* Author: Sachin Chitta */
 
 #include <door_msgs/Door.h>
+#include <door_msgs/DoorCmd.h>
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 #include <pr2_robot_actions/DoorActionState.h>
+#include <pr2_robot_actions/DoorCmdActionState.h>
 
 #include <tf/transform_listener.h>
 #include <sbpl_door_planner_action/sbpl_door_planner_action.h>
@@ -52,7 +54,8 @@ int main(int argc, char** argv)
   ros::init(argc,argv,"sbpl_door_planner"); 
 	SBPLDoorPlanner open;
 
-/*  door_msgs::Door door;
+/*
+  door_msgs::Door door;
   door_msgs::Door feedback;
 
   double tmp; int tmp2;
@@ -78,9 +81,9 @@ int main(int argc, char** argv)
   open.execute(door, feedback);
 */
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(open);
+  runner.connect<door_msgs::DoorCmd, pr2_robot_actions::DoorCmdActionState, door_msgs::Door>(open);
   runner.run();
-	ros::spin();
+  ros::spin();
 
   return 0;
 }
