@@ -69,14 +69,14 @@ def p3dReceived(stuff):
         p3d_received = True
 
 if __name__ == '__main__':
-    pub_r_shoulder_pan   = rospy.Publisher("r_shoulder_pan_position_controller/set_command", Float64)
-    pub_r_shoulder_lift  = rospy.Publisher("r_shoulder_lift_position_controller/set_command", Float64)
-    pub_r_upper_arm_roll = rospy.Publisher("r_upper_arm_roll_position_controller/set_command", Float64)
-    pub_r_elbow_flex     = rospy.Publisher("r_elbow_flex_position_controller/set_command", Float64)
-    pub_r_forearm_roll   = rospy.Publisher("r_forearm_roll_position_controller/set_command", Float64)
-    pub_r_wrist_flex     = rospy.Publisher("r_wrist_flex_position_controller/set_command", Float64)
-    pub_r_wrist_roll     = rospy.Publisher("r_wrist_roll_position_controller/set_command", Float64)
-    pub_r_gripper        = rospy.Publisher("r_gripper_position_controller/set_command", Float64)
+    pub_r_shoulder_pan   = rospy.Publisher("r_shoulder_pan_position_controller/command", Float64)
+    pub_r_shoulder_lift  = rospy.Publisher("r_shoulder_lift_position_controller/command", Float64)
+    pub_r_upper_arm_roll = rospy.Publisher("r_upper_arm_roll_position_controller/command", Float64)
+    pub_r_elbow_flex     = rospy.Publisher("r_elbow_flex_position_controller/command", Float64)
+    pub_r_forearm_roll   = rospy.Publisher("r_forearm_roll_position_controller/command", Float64)
+    pub_r_wrist_flex     = rospy.Publisher("r_wrist_flex_position_controller/command", Float64)
+    pub_r_wrist_roll     = rospy.Publisher("r_wrist_roll_position_controller/command", Float64)
+    pub_r_gripper        = rospy.Publisher("r_gripper_position_controller/command", Float64)
     rospy.Subscriber("r_gripper_palm_pose_ground_truth", Odometry, p3dReceived)
     rospy.init_node(NAME, anonymous=True)
 
