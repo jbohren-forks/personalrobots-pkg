@@ -1069,3 +1069,16 @@ int Trajectory::write(std::string filename, double dT)
   fclose(f);
   return 1;
 }
+
+void Trajectory::getTrajectory(std::vector<trajectory::Trajectory::TPoint> &traj, double dT)
+{
+  double time = tp_.front().time_;
+  TPoint tp;
+  tp.setDimension(dimension_);
+  while(time < lastPoint().time_)
+  {
+    sample(tp,time);
+    traj.push_back(tp);
+    time += dT;
+  }
+}

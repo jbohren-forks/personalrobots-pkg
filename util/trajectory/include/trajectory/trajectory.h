@@ -352,6 +352,7 @@ namespace trajectory
 
     double jointDiff(double from, double to, int index);
 
+    void getTrajectory(std::vector<trajectory::Trajectory::TPoint> &traj, double dT);
   };
 }
 
