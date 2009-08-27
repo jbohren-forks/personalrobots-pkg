@@ -203,12 +203,12 @@ void setupGoalEEf(const std::string &link, const std::vector<double> &pz, move_a
 	goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.04;
 	goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.04;
     
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.25;
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.25;
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.25;
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.25;
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.25;
-	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.25;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.35;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.35;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.35;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.35;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.35;
+	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.35;
     
 	goal.goal_constraints.pose_constraint[0].orientation_importance = 0.2;
 /*    
@@ -326,7 +326,7 @@ void goToIK(ros::NodeHandle &nh,  planning_environment::KinematicModelStateMonit
 		traj.names = names;
 		traj.points.resize(2);
 		traj.points[0].time = 0.2;
-		traj.points[1].time = 0.4;
+		traj.points[1].time = 0.8;
 					
 		for(unsigned  k = 0; k < names.size(); ++k)
 		{
@@ -395,10 +395,14 @@ int goToPlan(ros::NodeHandle &nh, planning_environment::KinematicModelStateMonit
 		traj.names = names;
 		traj.points.resize(response.path.states.size());
 				
-		for(unsigned  k = 0; k < traj.points.size(); ++k)
+		for(unsigned i = 0; i < traj.points.size(); ++i)
 		{
-			traj.points[k].time = response.path.times[k];
-			traj.points[k].positions.push_back(response.path.states[k].vals[0]);
+			traj.points[i].time = response.path.times[i];
+			traj.points[i].set_positions_size(names.size());
+			for(unsigned  k = 0; k < names.size(); ++k)
+			{
+				traj.points[i].positions[k] = response.path.states[i].vals[k];
+			}
 		}
 			
 		send_traj_start_req.traj = traj; 
@@ -417,6 +421,7 @@ int goToPlan(ros::NodeHandle &nh, planning_environment::KinematicModelStateMonit
 		else
 			ROS_ERROR("Unable to start trajectory controller");
 		
+		sleep(6);
 		std::cout << "Success!" << std::endl;
 	}
 	else

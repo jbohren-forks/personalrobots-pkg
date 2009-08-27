@@ -250,7 +250,10 @@ class MoveArmWindow(gtk.Window):
 
     row = row+1
     #######################
-    do_label = gtk.Label("MovePlan Pose Constraint (x,y,z): ")
+    label = gtk.Label("Run Planner without MoveArm:")
+    halign = gtk.Alignment(1,0.5,0,0.5)
+    halign.add(label)
+    do_label = gtk.Label("(x,y,z): ")
     self.posePlan_x = gtk.Entry()
     self.posePlan_y = gtk.Entry()
     self.posePlan_z = gtk.Entry()

@@ -211,6 +211,7 @@ void MoveArmTools::setupGoalEEf(const std::string &link, const std::vector<doubl
 	goal.goal_constraints.pose_constraint.resize(1);
 	goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z +
 			+ motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y;
+	ROS_INFO("ONLY PLANNING TO XYZ");
 	goal.goal_constraints.pose_constraint[0].link_name = link;
 	goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
 	goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "/torso_lift_link";
