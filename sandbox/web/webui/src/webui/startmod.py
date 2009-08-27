@@ -16,7 +16,7 @@ os.environ['ROS_CACHE_TIMEOUT'] = '3600'
 PKG = 'webui' # this package name
 import roslib; roslib.load_manifest(PKG) 
 
-from pyclearsilver import cgistarter
+from webui import cgistarter
 
 from webui import config
 

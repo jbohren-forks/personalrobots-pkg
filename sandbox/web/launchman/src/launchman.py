@@ -127,12 +127,14 @@ class TaskManager:
     self._apps = {}
 
   def _send_status(self):
-    apps = self._apps.keys()
-    self.app_status.publish(AppStatus(apps))
+    apps = []
+    for taskid, runner in self._apps.items():
+      apps.append(Application(taskid, runner.app.name, runner.task.status))
+    self.app_status.publish(apps)
 
   def start_task(self, req):
     a = app.App(req.taskid)
-    a.load_yaml()
+    a.load()
 
     pgroup = None
     runner = self._taskGroups.get(a.provides, None)

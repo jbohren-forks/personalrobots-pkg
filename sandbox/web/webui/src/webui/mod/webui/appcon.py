@@ -1,7 +1,10 @@
 #! /usr/bin/env python
 
 """
-usage: %(progname)s [args]
+usage: %(progname)s 
+   install [taskid]
+   remove [taskid]
+   list
 """
 
 
@@ -43,9 +46,20 @@ def main(argv, stdout, environ):
 
   db = db_webui.initSchema()
 
+  cmd = args[0]
+  args = args[1:]
 
-  for appfn in args:
-    db.apps.installApp(appfn)
+  if cmd == "list":
+    apps = db.apps.listApps()
+    for app in apps:
+      print app.taskid
+  elif cmd == "install":
+    for taskid in args:
+      db.apps.installApp(taskid)
+  elif cmd == "remove":
+    for taskid in args:
+      db.apps.removeApp(taskid)
+
   
 
 

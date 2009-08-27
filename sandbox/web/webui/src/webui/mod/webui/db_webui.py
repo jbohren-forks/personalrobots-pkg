@@ -81,10 +81,20 @@ class ApplicationTable(odb.Table):
     row.taskid = taskid
     row.save()
 
+  def removeApp(self, taskid):
+    row = self.lookup(taskid=taskid)
+    row.delete()
+    
+  def listApps(self):
+    rows = self.fetchAllRows()
+    return rows
+
 class Application(hdfhelp.HdfRow):
   def fetchApp(self, prefix, hdf):
     _app = app.App(str(self.taskid))
     doc = _app.load_yaml()
+
+    hdf.setValue(prefix + "." + "package", _app.package)
 
     for key, val in doc.items():
       if val is not None:

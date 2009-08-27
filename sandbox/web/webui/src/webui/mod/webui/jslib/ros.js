@@ -261,6 +261,8 @@ var TextWidget = Class.create({
   },
 
   receive: function(msg) {
+    if(!this.selector || !this.selectorValue) return;
+
     if(this.selector && this.selectorValue) {
       if(msg[this.selector] != this.selectorValue) return;
     }
@@ -307,14 +309,16 @@ var ScrollingTextWidget = Class.create({
     this.pump = null;
     this.domobj = domobj;
     this.topics = [domobj.getAttribute("topic")];
-    this.maxlines = parseInt(domobj.getAttribute("maxlines", "100"));
+    this.maxlines = domobj.getAttribute("maxlines");
+    if(!this.maxlines) this.maxlines = 40;
+    else this.maxlines = parseInt(this.maxlines);
 
     this.textdiv = null;
   },
 
   init: function() {
       this.domobj.style.position = "absolute";
-      this.domobj.style.overflow = "auto";
+      this.domobj.style.overflowY = "scroll";
 
       this.textdiv = document.createElement("div");
       this.domobj.appendChild(this.textdiv);
@@ -432,14 +436,16 @@ var RosOut_Widget = Class.create({
     this.pump = null;
     this.domobj = domobj;
     this.topics = ['/rosout'];
-    this.maxlines = parseInt(domobj.getAttribute("maxlines", "100"));
+    this.maxlines = domobj.getAttribute("maxlines");
+    if(!this.maxlines) this.maxlines = 100;
+    else this.maxlines = parseInt(this.maxlines);
 
     this.tbl = null;
   },
 
   init: function() {
       this.domobj.style.position = "absolute";
-      this.domobj.style.overflow = "auto";
+      this.domobj.style.overflowY = "scroll";
 
       this.tbl = document.createElement("table");
       this.tbl.width = "100%";

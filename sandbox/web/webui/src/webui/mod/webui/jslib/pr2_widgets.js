@@ -28,7 +28,7 @@ var BatteryMonitor = Class.create({
 
   init: function() {
     this.img = new Image();  
-    this.img.src = 'templates/images/toolbar/battery_gray.png';  
+    this.img.src = '/webui/webui/templates/images/toolbar/battery_gray.png';  
     this.domobj.innerHTML = '<canvas width=41 height=16></canvas><span style="font-size:11px;position:relative;top:-3"></span>'
 
     var width = this.domobj.getAttribute("width");
@@ -80,7 +80,7 @@ var CircuitMonitor = Class.create({
         src = 'orange_ball.png';
       else
         src = 'red_ball.png';
-      html += '<img src="templates/images/toolbar/' + src + '"> ';
+      html += '<img src="/webui/webui/templates/images/toolbar/' + src + '"> ';
     }
     html += '</span>';
     this.domobj.innerHTML = html;
@@ -109,7 +109,7 @@ var ChargeMonitor = Class.create({
     } else {
       src = 'battery_power.png';
     }
-    this.domobj.innerHTML = '<img src="templates/images/toolbar/' + src + '"> ';
+    this.domobj.innerHTML = '<img src="/webui/webui/templates/images/toolbar/' + src + '"> ';
   }
 });
 

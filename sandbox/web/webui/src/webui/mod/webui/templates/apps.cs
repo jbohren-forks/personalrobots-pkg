@@ -8,7 +8,7 @@
 <?cs include:"header.cs" ?>
 <br>
 
-
+<?cs if:0 ?>
 <table align=center cellspacing=5>
 <tr>
 <?cs each:_app=CGI.cur.apps ?>
@@ -16,20 +16,28 @@
 <?cs /each ?>
 </tr>
 </table>
+<?cs /if ?>
 
-
-<table width=80% align=center cellpadding=0 cellspacing=0>
+<table width=30% cellspacing=5>
+<?cs each:_app=CGI.cur.apps ?>
+<tr><td>
+<table class=app border=0>
 <tr>
-<td width=100%>
-<table class=rosout><tr>
-<td class=rosoutHeading style="width: 5%;">Severity</td>
-<td class=rosoutHeading style="width: 80%;">Message</td>
-<td class=rosoutHeading style="width: 15%;">Node</td>
-</table>
-<div class=rosoutWidget objtype=RosOut_Widget></div><br>
+<td width=1% onclick="document.location='<?cs var:CGI.ScriptName?>/app/<?cs var:_app.package ?>/';"><img src="<?cs var:CGI.ScriptName?>/app/<?cs var:_app.package ?>/<?cs var:_app.icon?>" width=100 height=100 border=0></td>
+<td class=app_bar>
+<div class=app_name><?cs var:_app.name ?></div>
+<div class=app_description><?cs var:_app.description ?></div>
+</td>
+<td valign=top>
+<input class=app_button type=button value="" objtype="LaunchButtonWidget2" topic="/app_update" taskid="<?cs var:_app.taskid ?>">
+<div class=app_status objtype=TextWidget topic="/app_update" key=status selector="taskid" selectorValue="<?cs var:_app.taskid?>">&nbsp;</div>
 </td>
 </tr>
 </table>
+</td></tr>
+<?cs /each ?>
+</table>
+
 
 <br>
 <div id=ErrorDiv></div>
