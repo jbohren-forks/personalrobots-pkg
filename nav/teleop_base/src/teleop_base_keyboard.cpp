@@ -32,8 +32,10 @@
 #include <signal.h>
 #include <math.h>
 #include <stdlib.h>
+#include <sys/poll.h>
 
-#include <ros/node.h>
+#include <boost/thread/thread.hpp>
+#include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 
 #define KEYCODE_I 0x69
@@ -70,44 +72,51 @@ class TBK_Node
 {
   private:
     geometry_msgs::Twist cmdvel;
+    ros::NodeHandle n_;
+    ros::Publisher pub_;
 
   public:
     TBK_Node()
     {
-      ros::Node::instance()->advertise<geometry_msgs::Twist>("cmd_vel",1);
+      pub_ = n_.advertise<geometry_msgs::Twist>("cmd_vel",1);
     }
     ~TBK_Node() { }
     void keyboardLoop();
     void stopRobot()
     {
       cmdvel.linear.x = cmdvel.angular.z = 0.0;
-      ros::Node::instance()->publish("cmd_vel", cmdvel);
+      pub_.publish(cmdvel);
     }
 };
 
 TBK_Node* tbk;
 int kfd = 0;
 struct termios cooked, raw;
+bool done;
 
 void
 quit(int sig)
 {
-  tbk->stopRobot();
-  
-  tcsetattr(kfd, TCSANOW, &cooked);
-  exit(0);
+  done = true;
 }
 
 int
 main(int argc, char** argv)
 {
-  ros::init(argc,argv);
-  ros::Node n("tbk");
-  tbk = new TBK_Node();
+  ros::init(argc,argv,"tbk", ros::init_options::AnonymousName | ros::init_options::NoSigintHandler);
+  TBK_Node tbk;
 
   signal(SIGINT,quit);
 
-  tbk->keyboardLoop();
+  boost::thread t = boost::thread::thread(boost::bind(&TBK_Node::keyboardLoop, &tbk));
+  
+  while(!done)
+    ros::spinOnce();
+
+  t.interrupt();
+  t.join();
+  tbk.stopRobot();
+  tcsetattr(kfd, TCSANOW, &cooked);
 
   return(0);
 }
@@ -144,14 +153,30 @@ TBK_Node::keyboardLoop()
   puts("anything else : stop");
   puts("---------------------------");
 
+  struct pollfd ufd;
+  ufd.fd = kfd;
+  ufd.events = POLLIN;
   for(;;)
   {
+    boost::this_thread::interruption_point();
+    
     // get the next event from the keyboard
-    if(read(kfd, &c, 1) < 0)
+    int num;
+    if((num = poll(&ufd, 1, 250)) < 0)
     {
-      perror("read():");
-      exit(-1);
+      perror("poll():");
+      quit(SIGINT);
     }
+    else if(num > 0)
+    {
+      if(read(kfd, &c, 1) < 0)
+      {
+        perror("read():");
+        quit(SIGINT);
+      }
+    }
+    else
+      continue;
 
     switch(c)
     {
@@ -242,7 +267,7 @@ TBK_Node::keyboardLoop()
       cmdvel.linear.x = speed * max_tv;
       cmdvel.angular.z = turn * max_rv;
 
-      ros::Node::instance()->publish("cmd_vel",cmdvel);
+      pub_.publish(cmdvel);
     }
   }
 }
