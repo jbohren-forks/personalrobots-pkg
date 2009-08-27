@@ -79,6 +79,7 @@ bool ChompPlannerNode::init()
 
   // initialize the visualization publisher:
   vis_marker_array_publisher_ = node_handle_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
+  vis_marker_publisher_ = node_handle_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
   // advertise the planning service
   plan_kinematic_path_service_ = node_handle_.advertiseService("~plan_kinematic_path", &ChompPlannerNode::planKinematicPath, this);
@@ -147,7 +148,7 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_msgs::GetMotionPlan::Re
 
   // optimize!
   ChompOptimizer optimizer(&trajectory, &chomp_robot_model_, group, &chomp_parameters_,
-      vis_marker_array_publisher_, &chomp_collision_space_);
+      vis_marker_array_publisher_, vis_marker_publisher_, &chomp_collision_space_);
   optimizer.optimize();
 
   // assume that the trajectory is now optimized, fill in the output structure:

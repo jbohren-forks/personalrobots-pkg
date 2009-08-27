@@ -17,11 +17,11 @@ collision_links:
 joint_costs:
   r_shoulder_pan_joint: 1.0
   r_shoulder_lift_joint: 1.0
-  r_upper_arm_roll_joint: 0.4
-  r_elbow_flex_joint: 0.4
-  r_forearm_roll_joint: 0.2
-  r_wrist_flex_joint: 0.2
-  r_wrist_roll_joint: 0.2
+  r_upper_arm_roll_joint: 1.0
+  r_elbow_flex_joint: 1.0
+  r_forearm_roll_joint: 1.0
+  r_wrist_flex_joint: 1.0
+  r_wrist_roll_joint: 1.0
 
 joint_velocity_limits:
   r_shoulder_pan_joint: 0.5
@@ -50,7 +50,7 @@ collision_space:
     cuboid1:
       size_x: 0.6
       size_y: 0.6
-      size_z: 0.25
+      size_z: 0.3
       origin_x: -0.3
       origin_y: -0.3
       origin_z: 0.0

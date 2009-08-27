@@ -38,6 +38,7 @@
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <chomp_motion_planner/chomp_utils.h>
+#include <Eigen/LU>
 
 using namespace std;
 USING_PART_OF_NAMESPACE_EIGEN
@@ -47,7 +48,9 @@ namespace chomp
 
 ChompOptimizer::ChompOptimizer(ChompTrajectory *trajectory, const ChompRobotModel *robot_model,
     const ChompRobotModel::ChompPlanningGroup *planning_group, const ChompParameters *parameters,
-    const ros::Publisher& vis_marker_array_publisher, ChompCollisionSpace *collision_space):
+    const ros::Publisher& vis_marker_array_publisher,
+    const ros::Publisher& vis_marker_publisher,
+    ChompCollisionSpace *collision_space):
       full_trajectory_(trajectory),
       robot_model_(robot_model),
       planning_group_(planning_group),
@@ -55,7 +58,8 @@ ChompOptimizer::ChompOptimizer(ChompTrajectory *trajectory, const ChompRobotMode
       collision_space_(collision_space),
       group_trajectory_(*full_trajectory_, planning_group_, DIFF_RULE_LENGTH),
       kdl_joint_array_(robot_model_->getKDLTree()->getNrOfJoints()),
-      vis_pub_(vis_marker_array_publisher)
+      vis_marker_array_pub_(vis_marker_array_publisher),
+      vis_marker_pub_(vis_marker_publisher)
 {
   initialize();
 }
@@ -70,6 +74,11 @@ void ChompOptimizer::initialize()
 
   free_vars_start_ = group_trajectory_.getStartIndex();
   free_vars_end_ = group_trajectory_.getEndIndex();
+
+  // set up joint index:
+  group_joint_to_kdl_joint_index_.resize(num_joints_);
+  for (int i=0; i<num_joints_; ++i)
+    group_joint_to_kdl_joint_index_[i] = planning_group_->chomp_joints_[i].kdl_joint_index_;
 
   num_collision_points_ = planning_group_->collision_points_.size();
 
@@ -107,6 +116,8 @@ void ChompOptimizer::initialize()
   final_increments_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
   smoothness_derivative_ = Eigen::VectorXd::Zero(num_vars_all_);
   jacobian_ = Eigen::MatrixXd::Zero(3, num_joints_);
+  jacobian_pseudo_inverse_ = Eigen::MatrixXd::Zero(num_joints_, 3);
+  jacobian_jacobian_tranpose_ = Eigen::MatrixXd::Zero(3, 3);
   random_state_ = Eigen::VectorXd::Zero(num_joints_);
   joint_state_velocities_ = Eigen::VectorXd::Zero(num_joints_);
 
@@ -237,6 +248,10 @@ void ChompOptimizer::optimize()
       ROS_INFO("Animating iteration %d", iteration_);
       animatePath();
     }
+    if (parameters_->getAnimateEndeffector() && iteration_%10 == 0)
+    {
+      animateEndeffector();
+    }
     
   }
   group_trajectory_.getTrajectory() = best_group_trajectory_;
@@ -293,15 +308,29 @@ void ChompOptimizer::calculateCollisionIncrements()
 
       // pass it through the jacobian transpose to get the increments
       planning_group_->collision_points_[j].getJacobian(joint_pos_eigen_[i], joint_axis_eigen_[i],
-          collision_point_pos_eigen_[i][j], jacobian_);
-      collision_increments_.row(i-free_vars_start_).transpose() -=
-          jacobian_.transpose() * cartesian_gradient;
-
+          collision_point_pos_eigen_[i][j], jacobian_, group_joint_to_kdl_joint_index_);
+      if (parameters_->getUsePseudoInverse())
+      {
+        calculatePseudoInverse();
+        collision_increments_.row(i-free_vars_start_).transpose() -=
+            jacobian_pseudo_inverse_ * cartesian_gradient;
+      }
+      else
+      {
+        collision_increments_.row(i-free_vars_start_).transpose() -=
+            jacobian_.transpose() * cartesian_gradient;
+      }
       if (point_is_in_collision_[i][j])
         break;
     }
   }
   //cout << collision_increments_ << endl;
+}
+
+void ChompOptimizer::calculatePseudoInverse()
+{
+  jacobian_jacobian_tranpose_ = jacobian_*jacobian_.transpose() + Eigen::MatrixXd::Identity(3,3)*parameters_->getPseudoInverseRidgeFactor();
+  jacobian_pseudo_inverse_ = jacobian_.transpose() * jacobian_jacobian_tranpose_.inverse();
 }
 
 void ChompOptimizer::calculateTotalIncrements()
@@ -322,6 +351,7 @@ void ChompOptimizer::calculateTotalIncrements()
 
 void ChompOptimizer::addIncrementsToTrajectory()
 {
+//  double scale = 1.0;
   for (int i=0; i<num_joints_; i++)
   {
     double scale = 1.0;
@@ -335,6 +365,8 @@ void ChompOptimizer::addIncrementsToTrajectory()
       scale = min_scale;
     group_trajectory_.getFreeTrajectoryBlock().col(i) += scale * final_increments_.col(i);
   }
+  //ROS_DEBUG("Scale: %f",scale);
+  //group_trajectory_.getFreeTrajectoryBlock() += scale * final_increments_;
 }
 
 void ChompOptimizer::updateFullTrajectory()
@@ -630,6 +662,36 @@ void ChompOptimizer::animatePath()
   }
 }
 
+void ChompOptimizer::animateEndeffector()
+{
+  visualization_msgs::Marker msg;
+  msg.points.resize(num_vars_free_);
+  int joint_index = planning_group_->chomp_joints_[num_joints_-1].kdl_joint_index_;
+  for (int i=0; i<num_vars_free_; ++i)
+  {
+    int j = i+free_vars_start_;
+    msg.points[i].x = joint_pos_[j][joint_index].x();
+    msg.points[i].y = joint_pos_[j][joint_index].y();
+    msg.points[i].z = joint_pos_[j][joint_index].z();
+  }
+  msg.header.frame_id = robot_model_->getReferenceFrame();
+  msg.header.stamp = ros::Time();
+  msg.ns = "chomp_endeffector";
+  msg.id = 0;
+  msg.type = visualization_msgs::Marker::SPHERE_LIST;
+  msg.action = visualization_msgs::Marker::ADD;
+  double scale = 0.05;
+  msg.scale.x = scale;
+  msg.scale.y = scale;
+  msg.scale.z = scale;
+  msg.color.a = 0.6;
+  msg.color.r = 0.5;
+  msg.color.g = 1.0;
+  msg.color.b = 0.3;
+  vis_marker_pub_.publish(msg);
+  ros::WallDuration(0.01).sleep();
+}
+
 void ChompOptimizer::visualizeState(int index)
 {
   visualization_msgs::MarkerArray msg;
@@ -690,7 +752,7 @@ void ChompOptimizer::visualizeState(int index)
     msg.markers[i].color.g = 0.5;
     msg.markers[i].color.b = 0.5;
   }
-  vis_pub_.publish(msg);
+  vis_marker_array_pub_.publish(msg);
 
   // publish arrows for distance field:
   msg.markers.resize(0);
@@ -721,7 +783,7 @@ void ChompOptimizer::visualizeState(int index)
       msg.markers[i].color.g = 0.2;
       msg.markers[i].color.b = 1.0;
   }
-  vis_pub_.publish(msg);
+  vis_marker_array_pub_.publish(msg);
 }
 
 } // namespace chomp

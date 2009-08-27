@@ -67,6 +67,9 @@ public:
   double getHmcStochasticity() const;
   double getHmcAnnealingFactor() const;
   double getRidgeFactor() const;
+  bool getUsePseudoInverse() const;
+  double getPseudoInverseRidgeFactor() const;
+  bool getAnimateEndeffector() const;
 
 private:
   double planning_time_limit_;
@@ -85,6 +88,9 @@ private:
   double hmc_discretization_;
   double hmc_annealing_factor_;
   double ridge_factor_;
+  bool use_pseudo_inverse_;
+  double pseudo_inverse_ridge_factor_;
+  bool animate_endeffector_;
 
 };
 
@@ -174,6 +180,22 @@ inline double ChompParameters::getRidgeFactor() const
 {
   return ridge_factor_;
 }
+
+inline bool ChompParameters::getUsePseudoInverse() const
+{
+  return use_pseudo_inverse_;
+}
+
+inline double ChompParameters::getPseudoInverseRidgeFactor() const
+{
+  return pseudo_inverse_ridge_factor_;
+}
+
+inline bool ChompParameters::getAnimateEndeffector() const
+{
+  return animate_endeffector_;
+}
+
 
 } // namespace chomp
 

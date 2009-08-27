@@ -57,7 +57,9 @@ class ChompOptimizer
 public:
   ChompOptimizer(ChompTrajectory *trajectory, const ChompRobotModel *robot_model,
       const ChompRobotModel::ChompPlanningGroup *planning_group, const ChompParameters *parameters,
-      const ros::Publisher& vis_marker_array_publisher, ChompCollisionSpace *collision_space);
+      const ros::Publisher& vis_marker_array_publisher,
+      const ros::Publisher& vis_marker_publisher,
+      ChompCollisionSpace *collision_space);
   virtual ~ChompOptimizer();
 
   void optimize();
@@ -79,6 +81,7 @@ private:
   ChompCollisionSpace *collision_space_;
   ChompTrajectory group_trajectory_;
   std::vector<ChompCost> joint_costs_;
+  std::vector<int> group_joint_to_kdl_joint_index_;
 
   std::vector<std::vector<KDL::Vector> > joint_axis_;
   std::vector<std::vector<KDL::Vector> > joint_pos_;
@@ -120,10 +123,13 @@ private:
   Eigen::VectorXd smoothness_derivative_;
   KDL::JntArray kdl_joint_array_;
   Eigen::MatrixXd jacobian_;
+  Eigen::MatrixXd jacobian_pseudo_inverse_;
+  Eigen::MatrixXd jacobian_jacobian_tranpose_;
   Eigen::VectorXd random_state_;
   Eigen::VectorXd joint_state_velocities_;
 
-  ros::Publisher vis_pub_;
+  ros::Publisher vis_marker_array_pub_;
+  ros::Publisher vis_marker_pub_;
 
   void initialize();
   void calculateSmoothnessIncrements();
@@ -136,6 +142,7 @@ private:
   void eigenMapTest();
   void handleJointLimits();
   void animatePath();
+  void animateEndeffector();
   void visualizeState(int index);
   double getTrajectoryCost();
   double getSmoothnessCost();
@@ -144,6 +151,7 @@ private:
   void getRandomMomentum();
   void updateMomentum();
   void updatePositionFromMomentum();
+  void calculatePseudoInverse();
 
 };
 

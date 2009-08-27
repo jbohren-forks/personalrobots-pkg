@@ -66,6 +66,9 @@ void ChompParameters::initFromNodeHandle()
   node_handle.param("~hmc_annealing_factor", hmc_annealing_factor_, 0.99);
   node_handle.param("~use_hamiltonian_monte_carlo", use_hamiltonian_monte_carlo_, false);
   node_handle.param("~ridge_factor", ridge_factor_, 0.0);
+  node_handle.param("~use_pseudo_inverse", use_pseudo_inverse_, false);
+  node_handle.param("~pseudo_inverse_ridge_factor", pseudo_inverse_ridge_factor_, 1e-4);
+  node_handle.param("~animate_endeffector", animate_endeffector_, false);
 }
 
 
