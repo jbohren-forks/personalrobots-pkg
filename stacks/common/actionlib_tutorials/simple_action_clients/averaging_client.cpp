@@ -52,6 +52,7 @@ int main (int argc, char **argv)
   ROS_INFO("Waiting for action server to start.");
   ac.waitForActionServerToStart(); 
 
+  ROS_INFO("Action server started, sending goal.");
   // send a goal to the action 
   actionlib_tutorials::AveragingGoal goal;
   goal.samples = 40;
@@ -60,9 +61,11 @@ int main (int argc, char **argv)
   //wait for the action to return
   bool finished_before_timeout = ac.waitForGoalToFinish(ros::Duration(30.0));
 
-  actionlib::TerminalState state = ac.getTerminalState();
   if (finished_before_timeout)
+  {
+    actionlib::TerminalState state = ac.getTerminalState();
     ROS_INFO("Action finished: %s",state.toString().c_str());
+  }
   else  
     ROS_INFO("Action did not finish before the time out.");
 
