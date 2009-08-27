@@ -1,6 +1,6 @@
 /**
  * Go to, and then go thru, the doorway at Sachins office. This test integrates planar
- * navigation and door opening
+ * navigation and door opening, as well as the topological map. 
  */
 #include "master/master.nddl"
 #include "test/locations.nddl"
@@ -17,5 +17,6 @@ eq(g1.start_connector, 60);
 rejectable(driver.Active g2);
 eq_map_pose_msg(g2.object, inside_sachins_office);
 
+// Order the goals
 g0 before g1;
 g1 before g2;
