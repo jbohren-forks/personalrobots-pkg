@@ -23,7 +23,7 @@ INCLUDE_DIR="`pwd`/include"
 echo "Warning, this is not the real include directory. It will be deleted and recreated by make every run. Includes should be next to .cc files." > $INCLUDE_DIR/WARNING.txt
 #scanDirectory `pwd`
 
-PACKAGES="TREX PLASMA PlanWorks"
+PACKAGES="TREX PLASMA"
 
 
 for PACKAGE in $PACKAGES; do
