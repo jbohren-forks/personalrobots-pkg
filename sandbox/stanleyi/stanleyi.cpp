@@ -73,6 +73,9 @@ bool getPolysFromXMLBoundingBox(string filename, Vector< Vector<Point> >& polys,
 bool getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, vector<int>& poly_labels);
 bool getBoundingBoxesFromXML(string filename, vector<CvRect>& boxes, vector<int>& box_labels);
   
+DorylusDataset* collectDatasetFromErrorsXML(string labels_dir, string results_dir);
+
+
 /***************************************************************************
 ***********  Stanleyi
 ****************************************************************************/
@@ -617,6 +620,7 @@ string PerfStats::statString() {
 
 
 //! Runs the classifier on labeled images and saves quantitative results.
+//! @param index_filename file that contains a list of annotation file names in <labels_dir>/annotations/ (without path) to operate on.
 void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, string classifier_filename, string featureset, 
 				  string results_dir) {
 
@@ -628,6 +632,9 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
     cout << "Could not open file " << index_filename << endl;
     return;
   }
+  
+  mkdir(results_dir.c_str(), S_IRWXG | S_IRWXU | S_IRWXO);
+  ofstream predictions_file((results_dir + "/predictions.prd").c_str());
 
   string file;
   vector<string> class_names;
@@ -644,8 +651,10 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
       continue;
     }
 
-    string base = file.substr(0, file.size()-4);
+    string base = file.substr(0, file.size()-4); // Just the numbers, e.g. 1251217161.776097000
     cout << "Working on " << base << endl;
+    predictions_file << endl;
+    predictions_file << "Image ID" << endl << base << endl;
 
     // -- Load the image for marking.
     string img_name = labels_dir + "/images/" + base + ".jpg";
@@ -698,6 +707,12 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
     vector<VectorXf> cumulative_responses(boxes.size(), VectorXf::Zero(class_names.size()-1));
     vector<int> num_kp_per_box(boxes.size(), 0);
 
+    // -- Write prediction meta info.
+    float buf = num_kp;
+    predictions_file.write((char*)&buf, sizeof(float));
+    buf = d.nClasses_;
+    predictions_file.write((char*)&buf, sizeof(float));
+
     // -- Make predictions.
     vector<CvScalar> colors;
     colors.push_back(cvScalar(255,0,0));
@@ -706,6 +721,17 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
     colors.push_back(cvScalar(0,0,0));
     for(int i=0; i<num_kp; ++i) {
       VectorXf response = d.classify(*dd.objs_[i]);
+
+      // -- Write the classification to file.
+      buf = xs[i];
+      predictions_file.write((char*)&buf, sizeof(float));
+      buf = ys[i];
+      predictions_file.write((char*)&buf, sizeof(float));
+
+      for(int j=0; j<response.rows(); j++) {
+	buf = response(j);
+	predictions_file.write((char*)&buf, sizeof(float));
+      }
 
       // -- Draw on the vis.
       float max = 0;
@@ -791,11 +817,11 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
 //     cvWaitKey(0);
 
     // -- Save image to dir.
-    mkdir(results_dir.c_str(), S_IRWXG | S_IRWXU | S_IRWXO);
     mkdir((results_dir + "/images/").c_str(), S_IRWXG | S_IRWXU | S_IRWXO);
     cvSaveImage((results_dir + "/images/" + base + ".jpg").c_str(), img);
   }
   index.close();
+  predictions_file.close();
 
   // -- Save text results file.
   ofstream box_results_file((results_dir + "/box_results.txt").c_str());
@@ -1228,6 +1254,10 @@ int main(int argc, char** argv)
 	 << " with index " << argv[3] << ". Putting results in " << argv[6] << endl;
     s.evaluateClassifier(argv[2], argv[3], argv[4], argv[5], argv[6]);
   }
+  else if(argc > 3 && !strcmp(argv[1], "--collectDatasetFromErrorsXML")) {
+    cout << "Collecting dataset from the errors shown in corrections annotations in " << argv[2] << " and the predictions in " << argv[3] << endl;
+    collectDatasetFromErrorsXML(argv[2], argv[3]);
+  }
 
   else {
     cout << "usage: " << endl;
@@ -1252,8 +1282,13 @@ int main(int argc, char** argv)
     cout << argv[0] << " --evaluateClassifier LABELS INDEX CLASSIFIER FEATURESET_NAME RESULTS_DIR" << endl;
     cout << " INDEX is a file that contains a list of annotation file names in LABELS/annotations/ (without path) to operate on." << endl;
     cout << " FEATURESET_NAME identifies which precomputed features to use." << endl;
+    cout << " RESULTS_DIR is where to save the results of the evaluation." << endl;
     cout << endl;
 
+    cout << endl;
+    cout << argv[0] << " --collectDatasetFromErrorsXML LABELS_DIR PREDICTIONS" << endl;
+    cout << " PREDICTIONS is the file saved by evaluateClassifier that contains the predictions on the images." << endl;
+    cout << endl;
 
     cout << "  where LABELS has the images/ and annotations/ dirs in it." << endl;
   }
@@ -1407,6 +1442,63 @@ bool getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, 
 
   return true;
 
+}
+
+DorylusDataset* collectDatasetFromErrorsXML(string labels_dir, string predictions_filename) {
+  ifstream predictions_file(predictions_filename.c_str());
+  string line;
+  int count = 0;
+  getline(predictions_file, line); // First newline. 
+  while(!predictions_file.eof()) {
+    
+    getline(predictions_file, line);
+    
+    string base;
+    float buf = 0;
+    int num_pts = 0;
+    int num_classes = 0;
+
+    if(line.compare("Image ID") != 0) {
+      cout << line << " : is not Image ID" << endl;
+      while(!predictions_file.eof()) {
+	getline(predictions_file, line);
+	cout << line << endl;
+      }
+      return NULL;
+    }
+    getline(predictions_file, base);
+
+    predictions_file.read((char*)&buf, sizeof(float));
+    num_pts = buf;
+    assert(fabs(buf - (float)num_pts) < 1e-3);
+
+    predictions_file.read((char*)&buf, sizeof(float));
+    num_classes = buf;
+    assert(fabs(buf - (float)num_classes) < 1e-3);
+
+    cout << base << endl;
+    cout << num_pts << endl;
+    cout << num_classes << endl;
+
+    int step = num_classes+2;
+    float raw[num_pts*step];
+    predictions_file.read((char*)raw, sizeof(float)*num_pts*step);
+    getline(predictions_file, line);
+//     for(int i=0; i<num_pts; ++i) {
+//       cout << "Point " << raw[i*step] << " " << raw[i*step+1];
+//       cout << ".  Values: ";
+//       for(int j=2; j<step; ++j) {
+// 	cout << raw[i*step+j] << " ";
+//       }
+//       cout << endl;
+//     }
+
+    cout << "id " << count << endl;
+    count++;
+
+  }
+
+    return NULL;
 }
 
 bool getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& polys, vector<int>& poly_labels, vector<CvRect>& boxes) {
