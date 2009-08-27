@@ -48,6 +48,7 @@ namespace urdf{
 class Vector3
 {
 public:
+  Vector3(double _x,double _y, double _z) {this->x=_x;this->y=_y;this->z=_z;};
   Vector3() {this->clear();};
   double x;
   double y;
@@ -83,6 +84,7 @@ public:
 class Rotation
 {
 public:
+  Rotation(double _x,double _y, double _z, double _w) {this->x=_x;this->y=_y;this->z=_z;this->w=_w;};
   Rotation() {this->clear();};
   void getQuaternion(double &quat_x,double &quat_y,double &quat_z, double &quat_w)
   {
