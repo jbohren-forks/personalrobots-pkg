@@ -64,8 +64,11 @@ public:
 private:
   bool configured_;
   JointStatesDeflater deflater_;
+  std::vector<double> tol_;
+  ros::Duration max_step_;
 
   typedef settlerlib::SortedDeque< boost::shared_ptr<const DeflatedJointStates> > DeflatedMsgCache;
+  typedef settlerlib::SortedDeque<settlerlib::DeflatedConstPtr> DeflatedCache;
   DeflatedMsgCache cache_;
 
 };

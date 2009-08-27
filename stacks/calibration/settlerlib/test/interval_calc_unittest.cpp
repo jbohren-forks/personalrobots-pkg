@@ -109,8 +109,7 @@ TEST(IntervalCalc, easy1)
   tol[1] = 3.5;
   ros::Duration max_step(2,0);
 
-  IntervalCalc interval_calc;
-  calibration_msgs::Interval interval = interval_calc.computeLatestInterval(signal, tol, max_step);
+  calibration_msgs::Interval interval = IntervalCalc::computeLatestInterval(signal, tol, max_step);
   EXPECT_EQ(interval.start.sec, (unsigned int) 6);
   EXPECT_EQ(interval.end.sec,   (unsigned int) 8);
 }
@@ -125,8 +124,7 @@ TEST(IntervalCalc, easy2)
   tol[1] = 3.5;
   ros::Duration max_step(2,0);
 
-  IntervalCalc interval_calc;
-  calibration_msgs::Interval interval = interval_calc.computeLatestInterval(signal, tol, max_step);
+  calibration_msgs::Interval interval = IntervalCalc::computeLatestInterval(signal, tol, max_step);
   EXPECT_EQ(interval.start.sec, (unsigned int) 5);
   EXPECT_EQ(interval.end.sec,   (unsigned int) 8);
 }
@@ -142,8 +140,7 @@ TEST(IntervalCalc, maxStep1)
   ros::Duration max_step;
   max_step.fromSec(.5);
 
-  IntervalCalc interval_calc;
-  calibration_msgs::Interval interval = interval_calc.computeLatestInterval(signal, tol, max_step);
+  calibration_msgs::Interval interval = IntervalCalc::computeLatestInterval(signal, tol, max_step);
   EXPECT_EQ(interval.start.sec, (unsigned int) 8);
   EXPECT_EQ(interval.end.sec,   (unsigned int) 8);
 }
@@ -158,8 +155,7 @@ TEST(IntervalCalc, maxStep2)
   tol[1] = 100;
   ros::Duration max_step(5,0);
 
-  IntervalCalc interval_calc;
-  calibration_msgs::Interval interval = interval_calc.computeLatestInterval(signal, tol, max_step);
+  calibration_msgs::Interval interval = IntervalCalc::computeLatestInterval(signal, tol, max_step);
   EXPECT_EQ(interval.start.sec, (unsigned int) 15);
   EXPECT_EQ(interval.end.sec,   (unsigned int) 18);
 }

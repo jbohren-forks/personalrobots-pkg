@@ -46,9 +46,9 @@ namespace settlerlib
 class IntervalCalc
 {
 public:
-  calibration_msgs::Interval computeLatestInterval(const SortedDeque<DeflatedConstPtr>& signal,
-                                                   const std::vector<double>& tolerances,
-                                                   ros::Duration max_spacing);
+  static calibration_msgs::Interval computeLatestInterval(const SortedDeque<DeflatedConstPtr>& signal,
+                                                          const std::vector<double>& tolerances,
+                                                          ros::Duration max_spacing);
 
 private:
 

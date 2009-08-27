@@ -36,6 +36,7 @@
 
 #include <sstream>
 #include <joint_states_settler/joint_states_settler.h>
+#include <settlerlib/interval_calc.h>
 
 using namespace joint_states_settler;
 
@@ -57,6 +58,8 @@ bool JointStatesSettler::configure(const joint_states_settler::ConfigGoal& goal)
   }
 
   deflater_.setDeflationJointNames(goal.joint_names);
+  tol_ = goal.tolerances;
+  max_step_ = goal.max_step;
   cache_.clear();
   cache_.setMaxSize(goal.cache_size);
 
@@ -64,7 +67,7 @@ bool JointStatesSettler::configure(const joint_states_settler::ConfigGoal& goal)
   info << "Configuring JointStatesSettler with the following joints:";
   for (unsigned int i=0; i<N; i++)
     info << "\n   " << goal.joint_names[i] << ": " << goal.tolerances[i];
-  ROS_INFO(info.str().c_str());
+  ROS_DEBUG(info.str().c_str());
 
   configured_ = true;
   return true;
@@ -82,6 +85,9 @@ calibration_msgs::Interval JointStatesSettler::add(const mechanism_msgs::JointSt
   deflater_.deflate(msg, *deflated);
   cache_.add(deflated);
 
-  //! \todo Do interval processing here
-  return calibration_msgs::Interval();
+  DeflatedCache* bare_cache = (DeflatedCache*)(&cache_);
+
+  calibration_msgs::Interval interval = settlerlib::IntervalCalc::computeLatestInterval(*bare_cache, tol_, max_step_);
+
+  return interval;
 }
