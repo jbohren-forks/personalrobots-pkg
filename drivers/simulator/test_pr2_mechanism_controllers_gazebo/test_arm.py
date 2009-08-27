@@ -195,7 +195,7 @@ class ArmTest(unittest.TestCase):
     
     def test_arm(self):
         print "LNK\n"
-        pub_gripper = rospy.Publisher("/l_gripper_controller/command", Float64)
+        pub_gripper = rospy.Publisher("/l_gripper_position_controller/command", Float64)
         rospy.Subscriber("/l_gripper_palm_pose_ground_truth", Odometry, self.palmP3dInput)
         rospy.Subscriber("/l_gripper_l_finger_pose_ground_truth", Odometry, self.fngrP3dInput)
         rospy.init_node(NAME, anonymous=True)
