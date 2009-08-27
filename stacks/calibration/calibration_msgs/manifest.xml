@@ -9,6 +9,9 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/calibration_msgs</url>
 
+  <!-- common_msgs -->
+  <depend package="geometry_msgs" />
+
   <export>
     <cpp cflags="-I${prefix}/msg/cpp" />
   </export>
