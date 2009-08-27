@@ -7,14 +7,6 @@
   <node pkg="gazebo_tools" type="urdf2factory" args="robot_description_new" respawn="false" output="screen"/>
 
 
-  <!-- send arm a command -->
-  <!-- open gripper .5 radians
-  <include file="$(find arm_gazebo)/controllers/r_arm_position_controller.launch" />
-  -->
-  <!-- tests
-  <node pkg="robot_mechanism_controllers" type="control.py" args="set r_gripper_controller 0.5" respawn="false" output="screen" />
-  -->
-
   <!-- for visualization -->
   <!--
   <node pkg="rviz" type="rviz" respawn="false" output="screen" />

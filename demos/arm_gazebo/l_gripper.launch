@@ -6,16 +6,6 @@
   <!-- push robot_description_new to factory and spawn robot in gazebo -->
   <node pkg="gazebo_tools" type="urdf2factory" args="robot_description_new" respawn="false" output="screen"/>
 
-  <!-- start arm controller -->
-  <!--
-  <include file="$(find arm_gazebo)/controllers/l_gripper_controller.launch" />
-  -->
-
-  <!-- send arm a command -->
-  <!--
-  <node pkg="robot_mechanism_controllers" type="control.py" args="set l_gripper_controller 0.5" respawn="false" output="screen" />
-  -->
-
   <!-- for visualization -->
   <!--
   <node pkg="rviz" type="rviz" respawn="false" output="screen" />

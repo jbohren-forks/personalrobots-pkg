@@ -17,15 +17,7 @@
   <!-- start arm controller -->
   <include file="$(find arm_gazebo)/controllers/r_arm_position_controller.launch"/>
 
-  <!-- send arm a command -->
-  <!-- open gripper .5 radians
-  <node pkg="robot_mechanism_controllers" type="control.py" args="set r_gripper_controller 0.5" respawn="false" output="screen" />
-  -->
-
-  <!-- Tug Arms For Navigation -->
-  <!--
-  <node pkg="arm_gazebo" type="grasp2.py" output="screen"/>
-  -->
+  <!-- some hand waving -->
   <node pkg="arm_gazebo" type="grasp_preprogrammed.py" output="screen"/>
 
   <!-- for visualization -->
