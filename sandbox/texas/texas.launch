@@ -13,6 +13,7 @@
 <!-- pr2_etherCAT -->
   <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x /robotdesc/pr2" output="screen"/>
 
+  <node pkg="mechanism_control" type="spawner.py" args="pr2_base_controller" />
 
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/pre_runtime_automatic /diagnostics" />
