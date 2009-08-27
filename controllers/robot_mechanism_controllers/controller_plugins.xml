@@ -10,5 +10,4 @@
   <class name="JointUDCalibrationController" type="controller::JointUDCalibrationController" base_class_type="controller::Controller" />
 
   <class name="TriggerController" type="controller::TriggerController" base_class_type="controller::Controller" />
-  <class name="TriggerControllerNode" type="controller::TriggerControllerNode" base_class_type="controller::Controller" />
 </library>

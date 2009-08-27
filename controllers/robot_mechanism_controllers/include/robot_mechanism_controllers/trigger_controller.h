@@ -220,38 +220,21 @@ public:
 
 private:
   double getTick();
+  
+  bool setWaveformSrv(trigger_configuration &req,
+      robot_mechanism_controllers::SetWaveform::Response &resp);
     
   mechanism::RobotState * robot_;
   ActuatorCommand *actuator_command_;
   
   double prev_tick_;
   
+  ros::ServiceServer set_waveform_handle_;
+  ros::NodeHandle node_handle_;
+  
   // Configuration of controller.
   trigger_configuration config_;
   std::string actuator_name_;
-};
-
-/** @class TriggerControllerNode
-* @brief Provides a thin wrapper for ROS communicaition with the trigger controller
-*/
-class TriggerControllerNode : public Controller
-{
-public:
-  TriggerControllerNode();
-  
-  virtual ~TriggerControllerNode();
-
-  void update();
-  
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
-  
-private:
-  bool setWaveformSrv(trigger_configuration &req,
-      robot_mechanism_controllers::SetWaveform::Response &resp);
- 
-  ros::ServiceServer set_waveform_handle_;
-  ros::NodeHandle node_handle_;
-  TriggerController * c_;
 };
 
 };

@@ -62,7 +62,6 @@ Rectangular: (running = 1, pulsed = 0)
 #include "pluginlib/class_list_macros.h"
 
 PLUGINLIB_REGISTER_CLASS(TriggerController, controller::TriggerController, controller::Controller)
-PLUGINLIB_REGISTER_CLASS(TriggerControllerNode, controller::TriggerControllerNode, controller::Controller)
 
 using std::string;
 using namespace controller;
@@ -114,6 +113,12 @@ void TriggerController::update()
 
 bool TriggerController::init(mechanism::RobotState *robot, const ros::NodeHandle& n)
 {
+  node_handle_ = n;
+
+  ROS_DEBUG("LOADING TRIGGER CONTROLLER NODE");
+  //string prefix = config->Attribute("name");
+  //ROS_DEBUG_STREAM("the prefix is "<<prefix);
+
   assert(robot);
   robot_=robot;
 
@@ -154,6 +159,8 @@ bool TriggerController::init(mechanism::RobotState *robot, const ros::NodeHandle
 
   prev_tick_ = getTick();
 
+  set_waveform_handle_ = node_handle_.advertiseService("set_waveform", &TriggerController::setWaveformSrv, this);
+
   ROS_DEBUG("TriggerController::init completed successfully"
       " rr=%f ph=%f al=%i r=%i p=%i dc=%f.",
       config_.rep_rate, config_.phase, config_.active_low, config_.running, config_.pulsed, config_.duty_cycle);
@@ -161,67 +168,23 @@ bool TriggerController::init(mechanism::RobotState *robot, const ros::NodeHandle
   return true;
 }
 
-//------------------- NODE -------------
-
-ROS_REGISTER_CONTROLLER(TriggerControllerNode);
-
-TriggerControllerNode::TriggerControllerNode()
-{
-  ROS_DEBUG("creating controller node...");
-  c_ = new TriggerController();
-  ROS_DEBUG("done");
-}
-
-TriggerControllerNode::~TriggerControllerNode()
-{
-  delete c_;
-}
-
-void TriggerControllerNode::update()
-{
-  c_->update();
-}
-
-bool TriggerControllerNode::setWaveformSrv(
+bool TriggerController::setWaveformSrv(
     trigger_configuration &req,
     robot_mechanism_controllers::SetWaveform::Response &resp)
 {
   // FIXME This should be safe despite the asynchronous barrier. Should I
   // be doing anything special to ensure that things get written in order?
-  c_->config_.running = false; // Turn off pulsing before we start.
-  c_->config_.rep_rate = req.rep_rate;
-  c_->config_.phase = req.phase;
-  c_->config_.duty_cycle = req.duty_cycle;
-  c_->config_.active_low = !!req.active_low;
-  c_->config_.pulsed = !!req.pulsed;
-  c_->config_.running = !!req.running;
+  config_.running = false; // Turn off pulsing before we start.
+  config_.rep_rate = req.rep_rate;
+  config_.phase = req.phase;
+  config_.duty_cycle = req.duty_cycle;
+  config_.active_low = !!req.active_low;
+  config_.pulsed = !!req.pulsed;
+  config_.running = !!req.running;
 
   ROS_DEBUG("TriggerController::setWaveformSrv completed successfully"
-      " rr=%f ph=%f al=%i r=%i p=%i dc=%f.", c_->config_.rep_rate, c_->config_.phase,
-      c_->config_.active_low, c_->config_.running, c_->config_.pulsed, c_->config_.duty_cycle);
+      " rr=%f ph=%f al=%i r=%i p=%i dc=%f.", config_.rep_rate, config_.phase,
+      config_.active_low, config_.running, config_.pulsed, config_.duty_cycle);
 
   return true;
-}
-
-bool TriggerControllerNode::init(mechanism::RobotState *robot, const ros::NodeHandle& n)
-{
-  node_handle_ = n;
-  //Init the model.
-
-  ROS_DEBUG("LOADING TRIGGER CONTROLLER NODE");
-  //string prefix = config->Attribute("name");
-  //ROS_DEBUG_STREAM("the prefix is "<<prefix);
-
-  // Parses subcontroller configuration
-  if(c_->init(robot, node_handle_))
-  {
-    set_waveform_handle_ = node_handle_.advertiseService("set_waveform", &TriggerControllerNode::setWaveformSrv, this);
-
-    // Default parameters
-
-    ROS_DEBUG("DONE LOADING TRIGGER CONTROLLER NODE");
-    return true;
-  }
-  ROS_DEBUG("ERROR LOADING TRIGGER CONTROLLER NODE");
-  return false;
 }
