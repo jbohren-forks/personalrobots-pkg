@@ -495,6 +495,7 @@ imWindow::DisplayImage(unsigned char *im, int w, int h, int ls, int type, int nd
       linesize *= 2;
     }
 
+  printf("Linesize: %d  Skip: %d\n", linesize, skipw);
   redraw();
 }
 
@@ -601,7 +602,12 @@ imWindow::drawit()
 	  fl_draw_image_mono(gamma_image_cb_fn, (void *)&cbd, xoff, yoff, width, height, 1);
 	}
       else
-        fl_draw_image_mono(pixelData, xoff, yoff, width, height, skipw, linesize);
+	{
+	  printf("[fl_draw_image_mono] Linesize: %d  Skip: %d\n", linesize, skipw);
+	  fl_draw_image_mono(pixelData, xoff, yoff, width, height, skipw, linesize);
+	  // NOTE: some weird rules on how the linesize changes for image widths not a multiple of skipw
+	  //	  fl_draw_image_mono(pixelData, xoff, yoff, width, height, skipw, linesize+4);
+	}
     }
   else if (pixelType == RGB24)
     {
