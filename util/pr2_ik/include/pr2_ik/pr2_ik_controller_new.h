@@ -50,7 +50,7 @@
 //since it needs an extra joint angle to specify the free parameter
 #include <manipulation_msgs/IKRequest.h> 
 
-#include <pr2_mechanism_controllers/TrajectoryStart.h>
+#include <experimental_controllers/TrajectoryStart.h>
 
 namespace pr2_ik
 {

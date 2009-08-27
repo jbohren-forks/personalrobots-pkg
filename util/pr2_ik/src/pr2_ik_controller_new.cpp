@@ -124,9 +124,9 @@ namespace pr2_ik {
         joint_traj.points[0].positions[i] = jnt_pos_out(i);
         ROS_DEBUG("IK Cmd %d: %f",i,jnt_pos_out(i));
       }
-      pr2_mechanism_controllers::TrajectoryStart srv;
+      experimental_controllers::TrajectoryStart srv;
       srv.request.traj = joint_traj;
-      ros::ServiceClient control_srv = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>(control_service_name_);
+      ros::ServiceClient control_srv = node_handle_.serviceClient<experimental_controllers::TrajectoryStart>(control_service_name_);
       if(control_srv.call(srv))
       {
         ROS_DEBUG("IK controller service success");

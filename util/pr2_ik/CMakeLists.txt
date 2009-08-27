@@ -13,7 +13,7 @@ rospack_add_library(pr2_ik
  src/pr2_ik.cpp
  src/pr2_ik_solver.cpp)
 
-rospack_add_executable(pr2_ik_controller src/pr2_ik_controller.cpp)
+rospack_add_executable(pr2_ik_controller src/pr2_ik_controller_new.cpp)
 target_link_libraries(pr2_ik_controller pr2_ik)
 
 rospack_add_executable(pr2_ik_node src/pr2_ik_node.cpp)
