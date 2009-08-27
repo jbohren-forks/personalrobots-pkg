@@ -61,7 +61,7 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     }
 #else
     IplImage* red = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
-#if defined(RED)
+#if defined(_RED)
     cvSetImageCOI(src, 3);
     cvCopy(src, red);
     cvSetImageCOI(src, 0);
@@ -79,7 +79,6 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     cvSetImageCOI(src, 0);
 #endif //_RED
     detect_outlets_one_way(red, outlet_templ, outlets, src, output_path, filename);
-    cvReleaseImage(&red);
 #endif
     
     if(outlets.size() != (size_t)outlet_templ.get_count())
