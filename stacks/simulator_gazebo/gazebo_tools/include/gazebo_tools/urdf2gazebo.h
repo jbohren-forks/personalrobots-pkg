@@ -131,7 +131,7 @@ namespace urdf2gazebo
 
       void convertLink(TiXmlElement *root, boost::shared_ptr<const urdf::Link> link, const btTransform &transform, bool enforce_limits);
 
-      void convert( TiXmlDocument &urdf_in, TiXmlDocument &gazebo_xml_out, bool enforce_limits);
+      void convert( TiXmlDocument &urdf_in, TiXmlDocument &gazebo_xml_out, bool enforce_limits, urdf::Vector3 initial_xyz, urdf::Vector3 initial_rpy,bool xml_declaration = false);
 
       std::string robot_model_name_;
       std::map<std::string, GazeboExtension* > gazebo_extensions_;

@@ -784,7 +784,7 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, boost::shared_ptr<const urdf::
         convertLink(root, link->child_links[i], currentTransform, enforce_limits);
 }
 
-void URDF2Gazebo::convert(TiXmlDocument &urdf_in, TiXmlDocument &gazebo_xml_out, bool enforce_limits)
+void URDF2Gazebo::convert(TiXmlDocument &urdf_in, TiXmlDocument &gazebo_xml_out, bool enforce_limits, urdf::Vector3 initial_xyz, urdf::Vector3 initial_rpy,bool xml_declaration)
 {
 
     // copy model to a string
@@ -801,8 +801,12 @@ void URDF2Gazebo::convert(TiXmlDocument &urdf_in, TiXmlDocument &gazebo_xml_out,
     }
 
 
-    TiXmlDeclaration *decl = new TiXmlDeclaration("1.0", "", "");
-    gazebo_xml_out.LinkEndChild(decl);
+    // add xml declaration if needed
+    if (xml_declaration)
+    {
+      TiXmlDeclaration *decl = new TiXmlDeclaration("1.0", "", "");
+      gazebo_xml_out.LinkEndChild(decl);
+    }
     
     /* create root element and define needed namespaces */
     TiXmlElement *robot = new TiXmlElement("model:physical");
@@ -821,8 +825,8 @@ void URDF2Gazebo::convert(TiXmlDocument &urdf_in, TiXmlDocument &gazebo_xml_out,
     robot->SetAttribute("name", robot_model_name_);
     
     /* set the transform for the whole model to identity */
-    addKeyValue(robot, "xyz", "0 0 0");
-    addKeyValue(robot, "rpy", "0 0 0");
+    addKeyValue(robot, "xyz", vector32str(initial_xyz));
+    addKeyValue(robot, "rpy", vector32str(initial_rpy));
     btTransform transform;
     transform.setIdentity();
     

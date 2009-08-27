@@ -35,6 +35,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <vector>
 #include <string>
 #include <sstream>
 
@@ -42,21 +43,123 @@
 #include <gazebo/GazeboError.hh>
 
 #include "ros/ros.h"
+#include <boost/program_options.hpp>
 
 #include <gazebo_tools/urdf2gazebo.h>
 
-using namespace urdf2gazebo;
-
 void usage(const char *progname)
 {
-    printf("\nUsage: %s urdf_param_name [initial x y z roll pitch yaw gazebo_model_name]\n", progname);
-    printf("  For example: urdf2factory robot_description 0 0 1 0 0 90 pr3_model\n\n");
-    printf("  Note: gazebo_model_name defaults to the robot description parameter.\n\n");
+    printf("\nUsage: %s urdf_param_name [options]\n", progname);
+    printf("  Note: model name in Gazebo defaults to the robot description parameter name.\n");
+    printf("  Example: spawn_urdf --help\n\n");
+    printf("  Example: spawn_urdf robot_description_new -x 10\n\n");
 }
+
+namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-    ros::init(argc,argv,"urdf2factory",ros::init_options::AnonymousName);
+    ros::init(argc,argv,"spawn_urdf",ros::init_options::AnonymousName);
+
+    double initial_x = 0;
+    double initial_y = 0;
+    double initial_z = 0;
+    double initial_rx = 0;
+    double initial_ry = 0;
+    double initial_rz = 0;
+
+    // parse options
+    po::options_description v_desc("Allowed options");
+    v_desc.add_options()
+      ("help,h" , "produce this help message")
+      ("model-name,m" , po::value<std::string>() , "name of the model in simulation, defaults to the parameter name of the urdf.")
+      ("init-x,x" , po::value<double>() , "set initial x position of model.")
+      ("init-y,y" , po::value<double>() , "set initial y position of model.")
+      ("init-z,z" , po::value<double>() , "set initial z position of model.")
+      ("yaw,w" , po::value<double>() , "set initial yaw (rz) of model.  application orders are r-p-y.")
+      ("pitch,p" , po::value<double>() , "set initial pitch (ry) of model.  application orders are r-p-y.")
+      ("roll,r" , po::value<double>() , "set initial roll (rx) of model.  application orders are r-p-y.");
+
+    po::options_description h_desc("Hidden options");
+    h_desc.add_options()
+      ("urdf-param" , po::value< std::vector<std::string> >(), "ROS param name containing URDF as a string.");
+
+    po::options_description desc("Allowed options");
+    desc.add(v_desc).add(h_desc);
+
+    po::positional_options_description p_desc;
+    p_desc.add("urdf-param", -1);
+
+    po::variables_map vm;
+    //po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::store(po::command_line_parser(argc, argv).options(desc).positional(p_desc).run(), vm);
+    po::notify(vm);
+
+    if (vm.count("help"))
+    {
+      usage(argv[0]);
+      std::cout << v_desc << std::endl;
+      exit(1);
+    }
+
+    std::string robot_model_name;
+    if (vm.count("urdf-param"))
+    {
+      std::vector<std::string> str_vec = vm["urdf-param"].as<std::vector<std::string> >();
+      if (str_vec.size() > 1)
+      {
+        ROS_ERROR("multiple urdf not supported");
+        exit(1);
+      }
+      else
+      {
+        ROS_DEBUG("URDF parameter names are: ");
+        for (std::vector<std::string>::iterator str = str_vec.begin(); str != str_vec.end(); str++)
+        {
+          ROS_DEBUG("  %s",str->c_str());
+          robot_model_name = *str;
+          // get rid of slahses
+          std::replace(robot_model_name.begin(),robot_model_name.end(),'/','_');
+        }
+      }
+    }
+
+    if (vm.count("model-name"))
+    {
+      robot_model_name = vm["model-name"].as<std::string>();
+    }
+    ROS_DEBUG("model name: %s",robot_model_name.c_str());
+
+    if (vm.count("init-x"))
+    {
+      initial_x = vm["init-x"].as<double>();
+      ROS_DEBUG("x: %f",initial_x);
+    }
+    if (vm.count("init-y"))
+    {
+      initial_y = vm["init-y"].as<double>();
+      ROS_DEBUG("y: %f",initial_y);
+    }
+    if (vm.count("init-z"))
+    {
+      initial_z = vm["init-z"].as<double>();
+      ROS_DEBUG("z: %f",initial_z);
+    }
+    if (vm.count("roll"))
+    {
+      initial_rx = vm["roll"].as<double>();
+      ROS_DEBUG("roll: %f",initial_rx);
+    }
+    if (vm.count("pitch"))
+    {
+      initial_ry = vm["pitch"].as<double>();
+      ROS_DEBUG("pitch: %f",initial_ry);
+    }
+    if (vm.count("yaw"))
+    {
+      initial_rz = vm["yaw"].as<double>();
+      ROS_DEBUG("yaw: %f",initial_rz);
+    }
 
     if (argc < 2)
     {
@@ -64,36 +167,8 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    double initial_x = 0;
-    double initial_y = 0;
-    double initial_z = 0;
-    if (argc >= 5)
-    {
-        initial_x = atof(argv[2]);
-        initial_y = atof(argv[3]);
-        initial_z = atof(argv[4]);
-    }
-    double initial_rx = 0;
-    double initial_ry = 0;
-    double initial_rz = 0;
-    if (argc >= 8)
-    {
-        initial_rx = atof(argv[5]);
-        initial_ry = atof(argv[6]);
-        initial_rz = atof(argv[7]);
-    }
-
     urdf::Vector3 initial_xyz(initial_x,initial_y,initial_z);
     urdf::Vector3 initial_rpy(initial_rx,initial_ry,initial_rz);
-
-    std::string robot_model_name(argv[1]);
-    if (argc >= 9)
-    {
-        robot_model_name = std::string(argv[8]);
-    }
-    // get rid of slahses
-    std::replace(robot_model_name.begin(),robot_model_name.end(),'/','_');
-
 
     // connect to gazebo
     gazebo::Client *client = new gazebo::Client();
@@ -107,7 +182,7 @@ int main(int argc, char **argv)
     {
       try
       {
-        ROS_INFO("urdf2factory waiting for gazebo factory, usually launched by 'roslaunch `rospack find gazebo`/launch/empty_world.launch'");
+        ROS_INFO("spawn_urdf waiting for gazebo factory, usually launched by 'roslaunch `rospack find gazebo`/launch/empty_world.launch'");
         client->ConnectWait(serverId, GZ_CLIENT_ID_USER_FIRST);
         connected_to_server = true;
       }
@@ -118,9 +193,6 @@ int main(int argc, char **argv)
         connected_to_server = false;
       }
     }
-
-    /// @todo: hack, waiting for system to startup, find out why ConnectWait goes through w/o locking in gazebo
-    usleep(2000000);
 
     /// Open the Factory interface
     try
@@ -135,8 +207,6 @@ int main(int argc, char **argv)
 
     // Load parameter server string for pr2 robot description
     ros::NodeHandle rosnode;
-    ROS_INFO("-------------------- starting node for pr2 param server factory \n");
-
     std::string urdf_param_name = std::string(argv[1]);
     std::string full_urdf_param_name;
     rosnode.searchParam(urdf_param_name,full_urdf_param_name);
@@ -150,13 +220,11 @@ int main(int argc, char **argv)
     //
     // init a parser library
     //
-    URDF2Gazebo u2g(robot_model_name);
+    urdf2gazebo::URDF2Gazebo u2g(robot_model_name);
     // do the number crunching to make gazebo.model file
     TiXmlDocument urdf_in, xml_out;
     urdf_in.Parse(xml_content.c_str());
-    u2g.convert(urdf_in, xml_out, enforce_limits,initial_xyz,initial_rpy);
-
-    //std::cout << " xml_out " << xml_out << std::endl << std::endl;
+    u2g.convert(urdf_in, xml_out, enforce_limits, initial_xyz, initial_rpy);
 
     // copy model to a string
     std::ostringstream stream;

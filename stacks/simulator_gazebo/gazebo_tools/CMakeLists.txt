@@ -24,3 +24,7 @@ target_link_libraries(bin/urdf2factory urdf2gazebo)
 
 rospack_add_executable(bin/urdf2file src/urdf2file.cpp)
 target_link_libraries(bin/urdf2file urdf2gazebo)
+
+rospack_add_executable(bin/spawn_urdf src/spawn_urdf.cpp)
+target_link_libraries(bin/spawn_urdf urdf2gazebo)
+rospack_link_boost(bin/spawn_urdf program_options)

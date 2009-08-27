@@ -66,8 +66,12 @@ int main(int argc, char **argv)
     TiXmlDocument urdf_in(argv[1]), xml_out;
     urdf_in.LoadFile();
     
+    // default initial pose is all 0's
+    urdf::Vector3 initial_xyz;
+    urdf::Vector3 initial_rpy;
+
     URDF2Gazebo u2g(std::string("pr2_model"));
-    u2g.convert(urdf_in, xml_out, enforce_limits);
+    u2g.convert(urdf_in, xml_out, enforce_limits,initial_xyz,initial_rpy,true);
     
     if (!xml_out.SaveFile(argv[2]))
     {
