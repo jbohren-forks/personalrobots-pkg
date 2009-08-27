@@ -42,7 +42,6 @@ namespace trex_ros{
   void ROSReactor::handleTickStart(){
     lock();
     DbCore::handleTickStart();
-    publishPlan();
     unlock();
   }
 
@@ -50,6 +49,7 @@ namespace trex_ros{
     bool result(false);
     lock();
     result = DbCore::synchronize();
+    TREX_INFO("trex:monitor:ros", TeleoReactor::nameString() << "Publishing plan over ROS: " << publishPlan());
     unlock();
     return result;
   }
@@ -104,7 +104,7 @@ namespace trex_ros{
     }
   }
 
-  void ROSReactor::publishPlan(){
+  std::string ROSReactor::publishPlan(){
     DbCore::PlanDescription planDesc;
     trex_ros::PlanDescription planDescMsg;
 
@@ -143,6 +143,8 @@ namespace trex_ros{
 
     // Publish PlanDescription
     plan_pub_.publish(planDescMsg);
+
+    return std::string("Done.");
   }
 
 }

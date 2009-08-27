@@ -37,7 +37,7 @@ plasma:
 #	touch patch-PLASMA 
 
 # Get TREX
-TREX_REVISION=234
+TREX_REVISION=245
 trex: plasma
 # If ROS_TREX_GOOGLE_CODE_USERNAME is defined in the environment, check
 # out with that username. This will allow commits to be made directly back

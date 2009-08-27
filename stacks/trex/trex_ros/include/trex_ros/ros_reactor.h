@@ -81,7 +81,7 @@ namespace trex_ros {
     /**
      * @brief Plublish the plan over ROS
      */
-    void publishPlan();
+    std::string publishPlan();
   };
 }
 #endif
