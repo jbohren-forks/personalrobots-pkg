@@ -778,12 +778,12 @@ private:
     	bbox.height = (int) sizes[max_ind].second;
 
 
-    	sensor_msgs::PointCloud outlet_cloud = filterPointCloud(*cloud_, bbox);
+    	sensor_msgs::PointCloud handle_cloud = filterPointCloud(*cloud_, bbox);
 
     	Stats xstats;
     	Stats ystats;
     	Stats zstats;
-    	pointCloudStatistics(outlet_cloud, xstats, ystats, zstats );
+    	pointCloudStatistics(handle_cloud, xstats, ystats, zstats );
 
         geometry_msgs::PointStamped handle_stereo;
 
@@ -828,7 +828,7 @@ private:
     	boost::unique_lock<boost::mutex> lock(data_lock_);
 
         for (int i=0;i<frames_no_;++i) {
-        	ROS_INFO("OutletSpotter: Waiting for stereo data");
+        	ROS_INFO("Stereo Handle Detector: Waiting for stereo data");
         	got_images_ = false;
         	preempted_ = false;
         	// block until images are available to process
@@ -837,7 +837,7 @@ private:
         		data_cv_.wait(lock);
         	}
         	if (preempted_) {
-        		ROS_INFO("OutletSpotter: detect loop preempted, stereo data not received");
+        		ROS_INFO("Stereo Handle Detector: detect loop preempted, stereo data not received");
         		return false;
         	}
 
@@ -845,7 +845,7 @@ private:
         		// show original disparity
         		cvShowImage("disparity_original", disp_);
         	}
-        	ROS_INFO("OutletSpotter: Running handle detection");
+        	ROS_INFO("Stereo Handle Detector: Running handle detection");
         	// eliminate from disparity locations that cannot contain a handle
         	applyPositionPrior();
         	// run cascade classifier
