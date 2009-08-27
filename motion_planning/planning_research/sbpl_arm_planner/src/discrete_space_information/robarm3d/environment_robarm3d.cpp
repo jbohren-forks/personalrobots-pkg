@@ -696,8 +696,13 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
    save_expanded_states = false;
 
    EnvROBARMCfg.enable_direct_primitive = true;
-
    EnvROBARMCfg.RPYHeuristicDistance_m = 1;
+	 
+	 EnvROBARMCfg.object_in_gripper = false;
+	 EnvROBARMCfg.object_m[0] = 0;
+	 EnvROBARMCfg.object_m[1] = 0;
+	 EnvROBARMCfg.object_m[2] = 0.2;
+	 EnvROBARMCfg.object_radius_m = 0.04;
 }
 
 void EnvironmentROBARM3D::InitializeEnvConfig()
@@ -1278,18 +1283,13 @@ void EnvironmentROBARM3D::ReadParamsFile(FILE* fCfg)
     else if(strcmp(sTemp,"Length_of_Grasped_Cylinder(meters):") == 0)
     {
       fscanf(fCfg, "%s", sTemp);
-      EnvROBARMCfg.grasped_object_length_m = atof(sTemp);
+      EnvROBARMCfg.object_m[2] = atof(sTemp);
     }
     else if(strcmp(sTemp,"Cylinder_in_Gripper:") == 0)
     {
       fscanf(fCfg, "%s", sTemp);
-      EnvROBARMCfg.object_grasped = atoi(sTemp);
+      EnvROBARMCfg.object_in_gripper = atoi(sTemp);
     }
-//         else if(strcmp(sTemp,"EndEffGoal_MarginOfError(meters):") == 0)
-//         {
-//             fscanf(fCfg, "%s", sTemp);
-//             EnvROBARMCfg.goal_moe_m = atof(sTemp);
-//         }
     else if(strcmp(sTemp,"LowRes_Collision_Checking:") == 0)
     {
       fscanf(fCfg, "%s", sTemp);
@@ -5148,37 +5148,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
 		return 0;
 	}
 
-  //check if joints are hitting obstacle
-//   if(!isValidCell(endeff,6,Grid3D,vGrid) || !isValidCell(wrist,6,Grid3D,vGrid) || !isValidCell(elbow,6,Grid3D,vGrid))
-//     return 0;
-
-    //check the validity of the corresponding arm links (line segments)
-/*  if(!IsValidLineSegment(shoulder, elbow, EnvROBARMCfg.upper_arm_radius, pTestedCells, Grid3D, vGrid) ||
-	!IsValidLineSegment(elbow,wrist, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, vGrid) ||
-	!IsValidLineSegment(wrist,endeff, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, vGrid))
-	{
-	if(pTestedCells == NULL)
-	{
-#if DEBUG_VALID_COORD
-	printf("[IsValidCoord] shoulder: (%i %i %i) --> elbow: (%i %i %i)\n",shoulder[0],shoulder[1],shoulder[2],elbow[0],elbow[1],elbow[2]);
-	printf("[IsValidCoord] wrist: (%i %i %i)\n",wrist[0],wrist[1],wrist[2]);
-	printf("[IsValidCoord] endeff: (%i %i %i)\n",endeff[0],endeff[1],endeff[2]);
-	printf("[IsValidCoord] Arm link collision checking failed.\n");
-#endif
-	return 0;
-}
-	else
-	{
-#if DEBUG_VALID_COORD
-	printf("[IsValidCoord] Arm link collision checking failed..\n");
-#endif
-	retvalue = 0;
-}
-}
-*/
-// 	dist_temp = IsValidLineSegment(shoulder, elbow, EnvROBARMCfg.upper_arm_radius, pTestedCells, Grid3D);
 	if(!IsValidLineSegment(shoulder, elbow, EnvROBARMCfg.upper_arm_radius, pTestedCells, Grid3D,dist_temp))
-// 	if(dist_temp <= EnvROBARMCfg.upper_arm_radius)
 	{
 		if(pTestedCells == NULL)
 		{
@@ -5206,9 +5176,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
 	
 	pTestedCells = NULL;
 
-// 	dist = IsValidLineSegment(elbow,wrist, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D);
 	if(!IsValidLineSegment(elbow,wrist, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, dist_temp))
-// 	if(dist <= EnvROBARMCfg.forearm_radius)
 	{
 		if(pTestedCells == NULL)
 		{
@@ -5231,9 +5199,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
 	
 	pTestedCells = NULL;
 
-// 	dist = IsValidLineSegment(wrist,endeff, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D);
 	if(!IsValidLineSegment(wrist,endeff, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, dist_temp))
-// 	if(dist <= EnvROBARMCfg.forearm_radius)
 	{
 		if(pTestedCells == NULL)
 		{
@@ -5306,6 +5272,25 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
 			if(dist_temp < dist)
 				dist = dist_temp;
 		}
+	}
+	
+	if(!EnvROBARMCfg.object_in_gripper)
+	{
+		short unsigned int object[3], gripper_tip[3] = {endeff[0]+(0.18/grid_cell_m), endeff[1], endeff[2]};
+		//get position of gripper in torso_lift_link frame
+		object[0] = (gripper_tip[0] + (orientation[0][0]*EnvROBARMCfg.object_m[0] + orientation[0][1]*EnvROBARMCfg.object_m[1] + orientation[0][2]*EnvROBARMCfg.object_m[2]) / grid_cell_m) + 0.5;
+		object[1] = (gripper_tip[1] + (orientation[1][0]*EnvROBARMCfg.object_m[0] + orientation[1][1]*EnvROBARMCfg.object_m[1] + orientation[1][2]*EnvROBARMCfg.object_m[2]) / grid_cell_m) + 0.5;
+		object[2] = (gripper_tip[2] + (orientation[2][0]*EnvROBARMCfg.object_m[0] + orientation[2][1]*EnvROBARMCfg.object_m[1] + orientation[2][2]*EnvROBARMCfg.object_m[2]) / grid_cell_m) + 0.5;;
+
+		int object_radius = EnvROBARMCfg.object_radius_m/grid_cell_m;
+		if(object[0] >= grid_dims[0] || object[1] >= grid_dims[1] || object[2] >= grid_dims[2] || !isValidCell(object,object_radius,Grid3D,vGrid))
+			return 0;
+
+		pTestedCells = NULL;
+	
+		
+		if(!IsValidLineSegment(gripper_tip, object, object_radius, pTestedCells, Grid3D, dist_temp))
+			return 0;
 	}
 	
 	return retvalue;

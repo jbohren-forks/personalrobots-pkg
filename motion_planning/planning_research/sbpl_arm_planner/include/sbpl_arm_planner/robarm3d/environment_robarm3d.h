@@ -265,6 +265,9 @@ typedef struct ENV_ROBARM_CONFIG
 		bool enable_direct_primitive;
 		int RPYHeuristicDistance_c;
 		double RPYHeuristicDistance_m;
+		bool object_in_gripper;
+		double object_m[3];
+		double object_radius_m;
 		
 /* Motion Primitives */
     //successor actions
