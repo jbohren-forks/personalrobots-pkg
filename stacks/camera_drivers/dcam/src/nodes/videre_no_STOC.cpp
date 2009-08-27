@@ -98,6 +98,7 @@ class VidereNode
 {
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
+  ros::NodeHandle camera_nh_;
   ros::NodeHandle left_nh_;
   ros::NodeHandle right_nh_;
 
@@ -130,7 +131,7 @@ public:
   // Videre.
   dcam::StereoDcam* stcam_;
 
-  VidereNode() : private_nh_("~"), left_nh_("left"), right_nh_("right"), diagnostic_(this), count_(0)
+  VidereNode() : private_nh_("~"), camera_nh_("camera"), left_nh_(camera_nh_, "left"), right_nh_(camera_nh_, "right"), diagnostic_(this), count_(0)
   {
     // Set up segfault handler
     signal(SIGSEGV, &sigsegv_handler);
