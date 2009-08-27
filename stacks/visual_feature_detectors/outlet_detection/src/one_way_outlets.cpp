@@ -270,9 +270,11 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     
     printf("Found %d test features, time elapsed: %f\n", (int)features.size(), float(time2 - time1)/cvGetTickFrequency()*1e-6);
     
+#if 0
     IplImage* test_image_features = cvCreateImage(cvSize(test_image->width, test_image->height), IPL_DEPTH_8U, 3);
     cvCvtColor(test_image, test_image_features, CV_GRAY2RGB);
     DrawFeatures(test_image_features, features);
+#endif
     
     CvOneWayDescriptorObject* descriptors = const_cast<CvOneWayDescriptorObject*>(outlet_template.get_one_way_descriptor_base());
     vector<feature_t> hole_candidates;
@@ -352,6 +354,11 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
             
         }
 #endif
+        if(desc_idx < 0)
+        {
+            printf("Descriptor not found for feature %i, skipping...\n", i);
+            continue;
+        }
         
         CvPoint center_new = descriptors->GetDescriptor(desc_idx)->GetCenter();
         CvScalar color = descriptors->IsDescriptorObject(desc_idx) ? CV_RGB(0, 255, 0) : CV_RGB(255, 0, 0);
@@ -389,12 +396,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
         cvCircle(image1, center_new, 20, cvScalar(255, 0, 0), 2);
         cvCircle(image2, center, 20, cvScalar(255, 0, 0), 2);
 #endif   
-        
-        //printf("Old center: %d,%d; new center: %d,%d\n", center_new.x, center_new.y, center.x, center.y);
-        CvAffinePose pose = descriptors->GetDescriptor(desc_idx)->GetPose(pose_idx);
-        //            printf("i = %d, pose: %f,%f,%f,%f\n", i, pose.phi, pose.theta, pose.lambda1, pose.lambda2);
-        //            printf("Distance = %f\n\n", distance);
-        
+                
 #if 0
         cvNamedWindow("1", 1);
         cvShowImage("1", image1);
@@ -405,6 +407,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
         cvReleaseImage(&image1);
         cvReleaseImage(&image2);
 #endif   
+        
     }
     
     int64 time3 = cvGetTickCount();
