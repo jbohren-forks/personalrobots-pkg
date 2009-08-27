@@ -5039,7 +5039,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
   else
   {
     int num = 0;
-		if(GetDistToClosestGoal(endeff_pos, &num) <= .3/EnvROBARMCfg.GridCellWidth)
+   if(GetDistToClosestGoal(endeff_pos, &num) <= .24/EnvROBARMCfg.GridCellWidth)
     { 
 //       printf("planning monitor: distance of endeff(%u %u %u) to goal #%i is %i\n", endeff_pos[0],endeff_pos[1],endeff_pos[2], num, GetDistToClosestGoal(endeff_pos, &num));
       // printf("checking %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
@@ -5318,6 +5318,7 @@ void EnvironmentROBARM3D::initPlanningMonitor(pm_wrapper *pm)
 
 bool EnvironmentROBARM3D::isValidJointConfiguration(const double * angles)
 {
+  unsigned char dist;
   short unsigned int endeff[3], wrist[3], elbow[3], coord[NUMOFLINKS];
   double orientation[3][3];
 
@@ -5325,7 +5326,7 @@ bool EnvironmentROBARM3D::isValidJointConfiguration(const double * angles)
 
   ComputeCoord(angles, coord);
 
-  return IsValidCoord(coord,endeff,wrist,elbow,orientation);
+  return IsValidCoord(coord,endeff,wrist,elbow,orientation,dist);
 }
 
 bool EnvironmentROBARM3D::isPathValid(double** path, int num_waypoints)
