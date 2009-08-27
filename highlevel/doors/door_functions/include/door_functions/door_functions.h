@@ -36,6 +36,7 @@
 #define DOOR_FUNCTIONS_H
 
 #include <door_msgs/Door.h>
+#include <door_msgs/DoorCmd.h>
 #include <tf/tf.h>
 #include <string.h>
 #include <kdl/frames.hpp>
@@ -45,6 +46,7 @@ namespace door_functions{
 /// get robot and gripper pose
   tf::Stamped<tf::Pose> getRobotPose(const door_msgs::Door& door, double dist);
   tf::Stamped<tf::Pose> getGripperPose(const door_msgs::Door& door, double angle, double dist);
+  tf::Stamped<tf::Pose> getGripperPose(const door_msgs::Door& door, double angle, double dist, int side);
   tf::Stamped<tf::Pose> getHandlePose(const door_msgs::Door& door, int side=1);
   double getNearestDoorAngle(const tf::Pose& robot_pose, const door_msgs::Door& door, double robot_dist, double touch_dist);
 

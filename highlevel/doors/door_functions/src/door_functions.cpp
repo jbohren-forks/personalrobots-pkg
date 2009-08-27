@@ -40,8 +40,8 @@ using namespace std;
 using namespace KDL;
 
 
-namespace door_functions{
-
+namespace door_functions
+{
   static const double eps_angle = 5.0*M_PI/180.0;
   static const double gripper_height = 0.8;
 
@@ -65,7 +65,6 @@ namespace door_functions{
     
     return robot_pose;  
   }
-  
   
   double getNearestDoorAngle(const tf::Pose& robot_pose, const door_msgs::Door& door, double robot_dist, double touch_dist)
   { 
@@ -116,6 +115,44 @@ namespace door_functions{
     
     return gripper_pose;  
   }
+
+  tf::Stamped<tf::Pose> getGripperPose(const door_msgs::Door& door, double angle, double dist, int side)
+  {
+    Vector x_axis(1,0,0);
+    
+    // get hinge point
+    Vector hinge, frame_vec;
+    if (door.hinge == door_msgs::Door::HINGE_P1){
+      hinge = Vector(door.door_p1.x, door.door_p1.y, door.door_p1.z);
+      frame_vec = Vector(door.frame_p2.x - door.frame_p1.x, door.frame_p2.y - door.frame_p1.y, door.frame_p2.z - door.frame_p1.z);
+    }
+    else if (door.hinge == door_msgs::Door::HINGE_P2){
+      hinge = Vector(door.door_p2.x, door.door_p2.y, door.door_p2.z);
+      frame_vec = Vector(door.frame_p1.x - door.frame_p2.x, door.frame_p1.y - door.frame_p2.y, door.frame_p1.z - door.frame_p2.z);
+    }
+
+    // get gripper pos
+    frame_vec.Normalize();
+    frame_vec = frame_vec * dist;
+    Rotation rot_angle = Rotation::RotZ(angle);
+    Vector gripper_pos = hinge + (rot_angle * frame_vec);
+    
+    tf::Stamped<tf::Pose> gripper_pose;
+    Vector normal_frame = getFrameNormal(door);
+    gripper_pose.frame_id_ = door.header.frame_id;
+    gripper_pose.stamp_ = door.header.stamp;
+    gripper_pose.setOrigin( tf::Vector3(gripper_pos(0), gripper_pos(1), gripper_height));
+    if(side == door_msgs::DoorCmd::PULL)
+    {
+      gripper_pose.setRotation( tf::Quaternion(getVectorAngle(-x_axis, normal_frame)+angle, 0, 0) ); 
+    }
+    else
+    {
+      gripper_pose.setRotation( tf::Quaternion(getVectorAngle(x_axis, normal_frame)+angle, 0, 0) ); 
+    }
+    return gripper_pose;  
+  }
+
 
   geometry_msgs::Point32 getHingeAxisPoint(const door_msgs::Door& door)
   {
@@ -201,7 +238,6 @@ namespace door_functions{
     return angle;
   }
 
-
   double getVectorAngle(const Vector& v1, const Vector& v2)
   {
     Vector vec1 = v1; vec1.Normalize();
@@ -211,14 +247,12 @@ namespace door_functions{
     return atan2(perp_dot, dot);
   }
 
-
   Vector getDoorNormal(const door_msgs::Door& door)
   {
     Vector frame_normal = getFrameNormal(door);
     Rotation rot_frame_door = Rotation::RotZ(getDoorAngle(door));
     return rot_frame_door * frame_normal;
   }
-
 
   Vector getFrameNormal(const door_msgs::Door& door)
   {
@@ -235,7 +269,6 @@ namespace door_functions{
 
     return normal;
   }
-
 
   bool transformTo(const tf::Transformer& tf, const string& goal_frame, const door_msgs::Door& door_in, door_msgs::Door& door_out, const std::string& fixed_frame)
   {
@@ -370,7 +403,6 @@ namespace door_functions{
       return 1.0;
   }
 
-
   double getDoorDir(const door_msgs::Door& d)
   {
     // get frame vector
@@ -396,7 +428,6 @@ namespace door_functions{
       return 1.0;
   }
 
-
   std::ostream& operator<< (std::ostream& os, const door_msgs::Door& d)
   {
     os << "Door message in " << d.header.frame_id << " at time " << d.header.stamp.toSec() << endl;
@@ -420,4 +451,6 @@ namespace door_functions{
     os << " - angle [deg] " << getDoorAngle(d)*180.0/M_PI << endl;
     return os;
   }
+
+
 }
