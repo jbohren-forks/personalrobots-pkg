@@ -8,16 +8,17 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/hanoi</url>
-  <depend package="cmvision"/>
   <depend package="roscpp"/>
+  <depend package="cmvision"/>
+  <depend package="sensor_msgs"/>
   <depend package="prosilica_cam"/>
+  <depend package="gazebo" />
+  <depend package="gazebo_tools"/>
+  <depend package="move_arm_tools"/>
+  <depend package="tf"/>
+  <depend package="point_cloud_mapping"/>
 
   <export>
-    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lprosilica"
-      cflags="-I${prefix}/include -I${prefix}/srv/cpp"/>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
   </export>
-
-
 </package>
-
-

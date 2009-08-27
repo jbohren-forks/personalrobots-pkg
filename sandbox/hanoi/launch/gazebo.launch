@@ -1,0 +1,16 @@
+<launch>
+  <!-- start up empty world -->
+  <include file="$(find gazebo)/launch/empty_world.launch"/>
+
+  <!-- start pr2 robot -->
+  <include file="$(find pr2_gazebo)/pr2.launch"/>
+
+  <!--<include file="$(find 3dnav_pr2)/launch/perception/laser-perception.launch"/>-->
+
+
+  <!-- table -->
+  <param name="desk3" textfile="$(find gazebo_worlds)/objects/desk3.model" />
+  <node pkg="gazebo_tools" type="xml2factory" args="desk3 1.0 0.0 0.0 0 0 0 desk3" respawn="false" output="screen" />
+
+</launch>
+
