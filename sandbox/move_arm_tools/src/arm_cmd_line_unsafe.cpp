@@ -249,7 +249,7 @@ void getIK(bool r, ros::NodeHandle &nh, planning_environment::KinematicModelStat
 	manipulation_srvs::IKService::Request request;
 	manipulation_srvs::IKService::Response response;
 	request.data.pose_stamped.header.stamp = ros::Time::now();
-	request.data.pose_stamped.header.frame_id = "torso_lift_link"; //km.getFrameId();
+	request.data.pose_stamped.header.frame_id = km.getFrameId();
 	request.data.pose_stamped.pose.position.x = x;
 	request.data.pose_stamped.pose.position.y = y;
 	request.data.pose_stamped.pose.position.z = z;
@@ -299,7 +299,7 @@ void goToIK(ros::NodeHandle &nh,  planning_environment::KinematicModelStateMonit
 	manipulation_srvs::IKService::Request request;
 	manipulation_srvs::IKService::Response response;
 	request.data.pose_stamped.header.stamp = ros::Time::now();
-	request.data.pose_stamped.header.frame_id = "torso_lift_link"; //km.getFrameId();
+	request.data.pose_stamped.header.frame_id = km.getFrameId();
 	request.data.pose_stamped.pose.position.x = x;
 	request.data.pose_stamped.pose.position.y = y;
 	request.data.pose_stamped.pose.position.z = z;
