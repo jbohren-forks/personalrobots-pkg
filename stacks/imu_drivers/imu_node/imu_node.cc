@@ -82,6 +82,9 @@ Reads the following parameters from the parameter server
  - @b "~frame_id"      : @b [string] the frame in which imu readings will be returned (Default: "imu")
  - @b "~autostart"     : @b [bool] whether the imu starts on its own (this is only useful for bringing up an imu in test mode)
  - @b "~autocalibrate" : @b [bool] whether the imu automatically computes its biases at startup (not useful if you intend to calibrate via the calibrate service)
+ - @b "~orientation_stdev" : @b [double] square root of the orientation_covariance diagonal elements in rad (Default: 0.035)
+ - @b "~angular_velocity_stdev" : @b [double] square root of the angular_velocity_covariance diagonal elements in rad/s (Default: 0.012)
+ - @b "~linear_acceleration_stdev" : @b [double] square root of the linear_acceleration_covariance diagonal elements in m/s^2 (Default: 0.098)
 
  **/
 
@@ -146,6 +149,10 @@ public:
   double bias_y_;
   double bias_z_;
 
+  double angular_velocity_stdev_, angular_velocity_covariance_;
+  double linear_acceleration_covariance_, linear_acceleration_stdev_;
+  double orientation_covariance_, orientation_stdev_;
+
   double desired_freq_;
   diagnostic_updater::FrequencyStatus freq_diag_;
 
@@ -173,9 +180,30 @@ public:
     bias_x_ = bias_y_ = bias_z_ = 0;
 
     node_handle_.param("~frameid", frameid_, string("imu"));
+    reading.header.frame_id = frameid_;
 
     node_handle_.param("~time_offset", offset_, 0.0);
 
+    node_handle_.param("~linear_acceleration_stdev", linear_acceleration_stdev_, 0.098); 
+    node_handle_.param("~orientation_stdev", orientation_stdev_, 0.035); 
+    node_handle_.param("~angular_velocity_stdev", angular_velocity_stdev_, 0.012); 
+
+    double angular_velocity_covariance = angular_velocity_stdev_ * angular_velocity_stdev_;
+    double orientation_covariance = orientation_stdev_ * orientation_stdev_;
+    double linear_acceleration_covariance = linear_acceleration_stdev_ * linear_acceleration_stdev_;
+    
+    reading.linear_acceleration_covariance[0] = linear_acceleration_covariance;
+    reading.linear_acceleration_covariance[4] = linear_acceleration_covariance;
+    reading.linear_acceleration_covariance[8] = linear_acceleration_covariance;
+
+    reading.angular_velocity_covariance[0] = angular_velocity_covariance;
+    reading.angular_velocity_covariance[4] = angular_velocity_covariance;
+    reading.angular_velocity_covariance[8] = angular_velocity_covariance;
+    
+    reading.orientation_covariance[0] = orientation_covariance;
+    reading.orientation_covariance[4] = orientation_covariance;
+    reading.orientation_covariance[8] = orientation_covariance;
+    
     self_test_.setPretest(&ImuNode::pretest);
     self_test_.addTest(&ImuNode::InterruptionTest);
     self_test_.addTest(&ImuNode::ConnectTest);
@@ -299,9 +327,7 @@ public:
       
       tf::quaternionTFToMsg(quat, reading.orientation);
       
-      
       reading.header.stamp = ros::Time::now().fromNSec(time);
-      reading.header.frame_id = frameid_;
 
       starttime = ros::Time::now().toSec();
       imu_data_pub_.publish(reading);
@@ -359,7 +385,7 @@ public:
   {
     status.name = "Interruption Test";
 
-    if (node_handle_.getNode()->numSubscribers("imu_data") == 0 )
+    if (imu_data_pub_.getNumSubscribers() == 0 )
     {
       status.level = 0;
       status.message = "No operation interrupted.";

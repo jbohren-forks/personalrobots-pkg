@@ -55,6 +55,7 @@
   <param name="imu/port"  type="string" value="/dev/ttyUSB0" />
   <param name="imu/autostart" type="bool" value="true" />
   <param name="imu/frameid"  type="string" value="imu" />
+  <param name="imu/angular_velocity_covariance" type="double" value="0.00017" />
   <param name="imu/autocalibrate" type="bool" value="true" />
   <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
@@ -95,7 +96,7 @@
 
 
 <!-- Forearm Camera -->
-  <node machine="three" name="forearm_cam_r" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen">
+  <node machine="three" name="forearm_cam_r" pkg="forearm_cam" type="forearm_node" respawn="true" output="screen">
     <param name="camera_url" type="str" value="name://forearm_r"/>
     <param name="video_mode" type="str" value="640x480x30" />
     <param name="auto_exposure" type="bool" value="True" />
