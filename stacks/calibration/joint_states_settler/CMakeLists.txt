@@ -20,6 +20,12 @@ rosbuild_genmsg()
 rosbuild_add_library(${PROJECT_NAME} src/joint_states_deflater.cpp
                                      src/joint_states_settler.cpp)
 
+
+rosbuild_add_executable(joint_states_settler_node src/joint_states_settler_node.cpp)
+target_link_libraries(joint_states_settler_node ${PROJECT_NAME})
+
+rosbuild_add_executable(view_interval src/view_interval.cpp)
+
 # target_link_libraries(${PROJECT_NAME} another_library)
 # rosbuild_add_boost_directories()
 # rosbuild_link_boost(${PROJECT_NAME} thread)
