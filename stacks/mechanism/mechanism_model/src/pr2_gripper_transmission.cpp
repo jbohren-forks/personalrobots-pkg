@@ -345,8 +345,7 @@ void PR2GripperTransmission::propagatePositionBackwards(
   ROS_ASSERT(as.size() == 1);
   ROS_ASSERT(js.size() == passive_joints_.size() + 1);
 
-  //FIXME: we want to keep the simulation stable by using the minimum rate joint, this is until
-  //       I complete the correct mimic behavior w/o dynamics
+  // keep the simulation stable by using the minimum rate joint to compute gripper gap rate
   int min_rate_joint_index;
   double joint_angle, joint_rate, joint_torque;
   getAngleRateTorqueFromMinRateJoint(js, as, min_rate_joint_index, joint_angle, joint_rate, joint_torque);
@@ -472,7 +471,7 @@ void PR2GripperTransmission::propagateEffortBackwards(
         inverseGapStates(joint_theta,joint_MR,joint_dMR_dtheta,joint_dtheta_dt,joint_dMR_dt);
 
 
-        // FIXME: hackery, due to transmission values, MT is too large for the damping available
+        // @todo: due to high transmission ratio, MT is too large for the damping available
         // with the given time step size in sim, so until implicit damping is implemented,
         // we'll scale MT with inverse of velocity to some power
         int max_joint_rate_index;
