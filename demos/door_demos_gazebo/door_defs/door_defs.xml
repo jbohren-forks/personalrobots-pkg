@@ -238,7 +238,7 @@
     </collision>
   </link>
   <gazebo reference="handle_link">
-    <material>PR2/Shiny</material>
+    <material>PR2/Handle</material>
     <laserRetro>3900.0</laserRetro>
     <mu1>50.0</mu1>
     <mu2>50.0</mu2>
@@ -276,7 +276,7 @@
     </collision>
   </link>
   <gazebo reference="handle1_link">
-    <material>PR2/Shiny</material>
+    <material>PR2/Handle</material>
     <laserRetro>3900.0</laserRetro>
     <turnGravityOff>true</turnGravityOff>
     <selfCollide>false</selfCollide>
