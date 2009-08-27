@@ -26,7 +26,7 @@ import bullet
 
 import roslaunch
 import roslaunch.pmon
-import wg_hardware_roslaunch.roslaunch_caller as roslaunch_caller
+from roslaunch_caller import roslaunch_caller 
 
 from nav_msgs import *
 from nav_msgs.msg import *

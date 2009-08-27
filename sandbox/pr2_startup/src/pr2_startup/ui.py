@@ -50,8 +50,7 @@ import wx
 import time
 from wx import xrc
 
-
-import wg_hardware_roslaunch.roslaunch_caller as roslaunch_caller
+from roslaunch_caller import roslaunch_caller 
 
 class PR2StartUpAppFrame(wx.Frame):
   def __init__(self, parent):

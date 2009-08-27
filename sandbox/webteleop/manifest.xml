@@ -14,7 +14,7 @@
   <depend package="bullet_python"/>
   <depend package="bullet"/>
   <depend package="tf"/>
-  <depend package="wg_hardware_roslaunch"/>
+  <depend package="roslaunch_caller" />
   <depend package="pr2_default_controllers" />
   <depend package="joy" />
 
