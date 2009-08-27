@@ -623,7 +623,7 @@ int compareAllOutlets(vector<outlet_test_elem>& test_data, int accuracy)
 
 //----------------------------
 //run test
-void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
+void runOneWayOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
 							const outlet_template_t& outlet_templ,vector<outlet_test_elem>& test_data, char* output_path)
 {
 	IplImage* img1 = cvLoadImage(test_data[0].filename);
