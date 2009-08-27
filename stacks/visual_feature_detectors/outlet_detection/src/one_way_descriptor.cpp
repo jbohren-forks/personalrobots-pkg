@@ -612,7 +612,7 @@ void FindOneWayDescriptorEx(int desc_count, const CvOneWayDescriptor* descriptor
         {
             distance = _distance;
             desc_idx = _desc_idx;
-            _pose_idx = pose_idx;
+            pose_idx = _pose_idx;
             scale = cur_scale;
         }
     }
