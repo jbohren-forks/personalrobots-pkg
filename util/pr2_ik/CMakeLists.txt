@@ -12,7 +12,7 @@ rospack_add_library(pr2_ik
  src/pr2_ik.cpp
  src/pr2_ik_solver.cpp)
 
-rospack_add_executable(pr2_ik_controller src/pr2_ik_controller.cpp)
+rospack_add_executable(pr2_ik_controller src/pr2_ik_controller_new.cpp)
 target_link_libraries(pr2_ik_controller pr2_ik)
 
 rospack_add_executable(pr2_ik_node src/pr2_ik_node.cpp)
@@ -26,9 +26,9 @@ rospack_add_rostest(test_pr2_ik.xml)
 
 #rospack_add_executable(test_fk_simple test/test_fk_simple.cpp)
 #target_link_libraries(test_fk_simple pr2_ik)
-#rospack_add_executable(test_ik_node test/test_ik_node.cpp)
-#target_link_libraries(test_ik_node pr2_ik)
-#rospack_add_executable(test_ik_wc_node test/test_ik_with_collision.cpp)
+rospack_add_executable(test_ik_node test/test_ik_node.cpp)
+target_link_libraries(test_ik_node pr2_ik)
+rospack_add_executable(test_ik_wc_node test/test_ik_with_collision.cpp)
 #target_link_libraries(test_ik_node pr2_ik)
 #rospack_add_executable(pr2_ik_single_test test/test_ik_single.cpp)
 #target_link_libraries(pr2_ik_single_test pr2_ik)

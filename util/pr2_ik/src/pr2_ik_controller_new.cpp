@@ -32,7 +32,7 @@
  */
 
 #include <algorithm>
-#include <pr2_ik/pr2_ik_controller.h>
+#include <pr2_ik/pr2_ik_controller_new.h>
 
 #include "ros/node.h"
 
@@ -45,21 +45,22 @@ using namespace ros;
 namespace pr2_ik {
 
   PR2IKController::PR2IKController()
-      : node_(ros::Node::instance()),
-        command_notifier_(NULL),
-        dimension_(7)
+      :dimension_(7)
   {
-    node_->param<std::string>("~root_name", root_name_, "torso_lift_link");
-    node_->param<std::string>("~control_topic_name",control_topic_name_,"r_arm_joint_trajectory_controller/command");
-    node_->param<bool>("~free_angle_constraint",free_angle_constraint_,false);
-    node_->param<int>("~dimension",dimension_,7);
-    node_->advertise<manipulation_msgs::JointTraj>(control_topic_name_, 1);
+    node_handle_.param<std::string>("~root_name", root_name_, "torso_lift_link");
+    node_handle_.param<std::string>("~control_topic_name",control_topic_name_,"/r_arm_joint_trajectory_controller/command");
+    node_handle_.param<std::string>("~control_service_name",control_service_name_,"/r_arm_joint_trajectory_controller/TrajectoryStart");
+    node_handle_.param<bool>("~free_angle_constraint",free_angle_constraint_,false);
+    node_handle_.param<int>("~dimension",dimension_,7);
+    invalid_pub_ = node_handle_.advertise<geometry_msgs::PoseStamped>("/invalid",1);
+    control_pub_ = node_handle_.advertise<manipulation_msgs::JointTraj>(control_topic_name_,1);
+    command_sub_ = node_handle_.subscribe("~command",20,&PR2IKController::command,this);
 
     if(free_angle_constraint_)
     {
       double free_angle_constraint_min, free_angle_constraint_max;
-      node_->param<double>("~free_angle_constraint_min",free_angle_constraint_min,-M_PI);
-      node_->param<double>("~free_angle_constraint_max",free_angle_constraint_max,M_PI);
+      node_handle_.param<double>("~free_angle_constraint_min",free_angle_constraint_min,-M_PI);
+      node_handle_.param<double>("~free_angle_constraint_max",free_angle_constraint_max,M_PI);
       pr2_ik_solver_.pr2_ik_->min_angles_[pr2_ik_solver_.pr2_ik_->free_angle_] = free_angle_constraint_min;
       pr2_ik_solver_.pr2_ik_->max_angles_[pr2_ik_solver_.pr2_ik_->free_angle_] = free_angle_constraint_max;
     }
@@ -68,27 +69,23 @@ namespace pr2_ik {
 
   PR2IKController::~PR2IKController()
   {
-        node_->unadvertise(control_topic_name_);
   }
 
   bool PR2IKController::init()
   {
-    command_notifier_.reset(new MessageNotifier<pr2_ik::PoseCmd>(&tf_, node_,
-                                                                         boost::bind(&PR2IKController::command, this, _1),
-                                                                         "~command", root_name_, 10));
+    ROS_INFO("Publishing to controller on topic name %s",control_topic_name_.c_str());
     ROS_DEBUG("Initialized IK controller");
     return true;
   }
 
-  void PR2IKController::command(const tf::MessageNotifier<pr2_ik::PoseCmd>::MessagePtr& pose_msg)
+  void PR2IKController::command(const manipulation_msgs::IKRequestConstPtr &pose_msg)
   {
-    ROS_DEBUG("Got pose command");
-    pr2_ik::PoseCmd pose_msg_in = *pose_msg;
-    // convert message to transform
-    Stamped<Pose> pose_stamped;
+    manipulation_msgs::IKRequest pose_msg_in = *pose_msg;
+    tf::Stamped<tf::Pose> pose_stamped;
     geometry_msgs::PoseStamped pose_stamped_msg;
-    pose_stamped_msg.pose = pose_msg_in.pose;
-    pose_stamped_msg.header = pose_msg_in.header;
+    pose_stamped_msg = pose_msg_in.pose_stamped;
+    pose_stamped_msg.header = pose_msg_in.pose_stamped.header;
+    pose_stamped_msg.header.stamp = ros::Time();
 
     poseStampedMsgToTF(pose_stamped_msg, pose_stamped);
     ROS_DEBUG("Converted pose command to tf");
@@ -100,18 +97,20 @@ namespace pr2_ik {
     poseToFrame(pose_stamped, pose_desired_);
     ROS_DEBUG("Converted tf command to KDL");
 
+    poseStampedTFToMsg(pose_stamped,pose_stamped_msg);
     //Do the IK
     KDL::JntArray jnt_pos_in;
     KDL::JntArray jnt_pos_out;
     jnt_pos_in.resize(dimension_);
-    if(pose_msg_in.positions.size() == dimension_)
+    if((int)pose_msg_in.positions.size() == dimension_)
     {
       for(int i=0; i < dimension_; i++)
         jnt_pos_in(i) = pose_msg_in.positions[i];
     }
     else
     {
-      jnt_pos_in(pr2_ik_solver_.pr2_ik_->free_angle_) = pose_msg_in.free_angle_value;
+      for(int i=0; i < dimension_; i++)
+        jnt_pos_in(i) = -0.2;
     }
     bool ik_valid = (pr2_ik_solver_.CartToJntSearch(jnt_pos_in,pose_desired_,jnt_pos_out,10) >= 0);
 
@@ -125,13 +124,23 @@ namespace pr2_ik {
         joint_traj.points[0].positions[i] = jnt_pos_out(i);
         ROS_DEBUG("IK Cmd %d: %f",i,jnt_pos_out(i));
       }
-      ROS_DEBUG(" ");
-      node_->publish(control_topic_name_,joint_traj);
-      ROS_INFO("Publishing to controller on topic name %s",control_topic_name_.c_str());
-      ROS_INFO("IK valid");   
+      pr2_mechanism_controllers::TrajectoryStart srv;
+      srv.request.traj = joint_traj;
+      ros::ServiceClient control_srv = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>(control_service_name_);
+      if(control_srv.call(srv))
+      {
+        ROS_DEBUG("IK controller service success");
+      }
+      else
+      {
+        ROS_DEBUG("IK controller service failed");
+      }
+//      control_pub_.publish(joint_traj);
+      ROS_DEBUG("IK valid: %d", pose_msg_in.pose_stamped.header.seq);   
     }
     else
     {
+      invalid_pub_.publish(pose_stamped_msg);
       ROS_ERROR("IK controller solution invalid");   
     }
   }
@@ -149,9 +158,8 @@ namespace pr2_ik {
 } // namespace
 
 int main(int argc, char** argv){
-  ros::init(argc, argv);
-  ros::Node ros_node("right_arm_ik_controller");
+  ros::init(argc, argv,"right_arm_ik_controller");
   pr2_ik::PR2IKController pr2_ik_controller;
-  ros_node.spin();
+  ros::spin();
   return(0);
 }
