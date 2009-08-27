@@ -1,0 +1,15 @@
+[300%] Building CXX object src/CMakeFiles/hanoi.dir/Hanoi.o
+/u/gerkey/code/personalrobots/sandbox/hanoi/src/Hanoi.cpp: In constructor
+‘Hanoi::Hanoi()’:
+/u/gerkey/code/personalrobots/sandbox/hanoi/src/Hanoi.cpp:31: warning:
+unused variable ‘message_notifier’
+/u/gerkey/code/personalrobots/sandbox/hanoi/src/Hanoi.cpp: In member
+function ‘void Hanoi::BlobCB(const cmvision::BlobsConstPtr&)’:
+/u/gerkey/code/personalrobots/sandbox/hanoi/src/Hanoi.cpp:93: error: ‘class
+Hanoi’ has no member named ‘CalculateGraspPoints’
+/u/gerkey/code/personalrobots/sandbox/hanoi/src/Hanoi.cpp: In member
+function ‘bool Hanoi::CalculatedGraspPoints()’:
+/u/gerkey/code/personalrobots/sandbox/hanoi/src/Hanoi.cpp:128: error:
+‘timeout’ was not declared in this scope
+make[3]: *** [src/CMakeFiles/hanoi.dir/Hanoi.o] Error 1
+
