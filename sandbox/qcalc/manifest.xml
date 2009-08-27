@@ -9,7 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/qcalc</url>
   <depend package="bullet"/>
-  <rosdep package="fltk"/>
+  <rosdep name="fltk"/>
 
 </package>
 
