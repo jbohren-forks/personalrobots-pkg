@@ -561,7 +561,7 @@ int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data, 
 			result->total = nTotal-nSkipped;
 			result->correct = nCorrect;
 			result->skipped = nSkipped;
-			result->incorrect = (int)test_data.size()-nCorrect-nNA;
+			result->incorrect = (int)test_data.size()-nCorrect-nNA-nSkipped;
 		}
 		return nTotal-nSkipped;
 	}
