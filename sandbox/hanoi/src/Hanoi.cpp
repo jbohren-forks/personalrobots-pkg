@@ -148,4 +148,6 @@ void Hanoi::BlobCB(const cmvision::BlobsConstPtr &msg)
 bool Hanoi::CalculateGraspPoints()
 {
   std::cout << "FrameId:" << pointcloud_.header.frame_id << std::endl;
+
+  return true;
 }
