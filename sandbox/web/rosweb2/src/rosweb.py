@@ -587,11 +587,10 @@ handlers = [{'url': '/ros', 'handler': ROSWebHandler.handle_ROS}]
 def load_plugins():
   global handlers
   plugins = roslib.scriptutil.rospack_plugins(PKG_NAME)
-  for plugin in plugins:
+  for (package, plugin) in plugins:
     try:
-      mods = plugin.split('.')
-      package = mods[0]
       roslib.load_manifest(package)
+      mods = plugin.split('.')
       mod = __import__(plugin)
       for sub_mod in mods[1:]:
         mod = getattr(mod, sub_mod)
