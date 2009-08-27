@@ -49,7 +49,7 @@ StowPlugAction::StowPlugAction() :
 
   node_->param(action_name_ + "/gripper_controller", gripper_controller_, gripper_controller_);
   node_->param(action_name_ + "/arm_controller", arm_controller_, arm_controller_);
-  node_->advertise<std_msgs::Float64>(gripper_controller_ + "/set_command", 1);
+  node_->advertise<std_msgs::Float64>(gripper_controller_ + "/command", 1);
 
   if(gripper_controller_ == "" )
     {
@@ -131,7 +131,7 @@ void StowPlugAction::moveToStow()
     deactivate(robot_actions::ABORTED, empty_);
   }
 
-  node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
+  node_->publish(gripper_controller_ + "/command", gripper_cmd_);
   return;
 }
 
@@ -145,7 +145,7 @@ void StowPlugAction::releasePlug()
     deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
   }
-  node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
+  node_->publish(gripper_controller_ + "/command", gripper_cmd_);
 
   // DO U REALLY WANT TO SUBSCRIBE EACH TIME? WHAT HAPPENS IF U DO NOT?
   node_->subscribe(gripper_controller_ + "/state", controller_state_msg_, &StowPlugAction::checkGrasp, this, 1);
@@ -162,7 +162,7 @@ void StowPlugAction::checkGrasp()
     return;
   }
 
-  node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
+  node_->publish(gripper_controller_ + "/command", gripper_cmd_);
 
   // Make sure that the gripper has stopped moving
   if(last_grasp_value_ < controller_state_msg_.process_value)
