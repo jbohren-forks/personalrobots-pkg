@@ -8,6 +8,7 @@ import unavail
 
 _map_cache = {}
 _scale_cache = {}
+_tile_cache = {}
 
 def config_plugin():
   return [{'url': '/map', 'handler': map_tiler_handler}]
@@ -33,12 +34,29 @@ def get_scaled_map(service_name, scale):
     im = get_map(service_name)
     if scale != 1:
       size = im.size
-      im = im.resize((int(size[0] / scale), int(size[1] / scale)))
+      im = im.resize((int(size[0] / scale), int(size[1] / scale)), Image.ANTIALIAS)
     _scale_cache[scale_key] = im
   else:
     im = _scale_cache[scale_key]
   return im
 
+def get_tile(service_name, scale, x, y, width, height):
+  tile_key = '%s:%s:%s:%s:%s:%s' % (service_name, scale, x, y, width, height)
+  if not _tile_cache.has_key(tile_key):
+    # Get the map (possibly cached) from the map server
+    im = get_scaled_map(service_name, scale)
+
+    # Crop the requested tile and convert to JPEG
+    im = im.crop((x, y, x + width, y + height))
+    buf = cStringIO.StringIO()
+    im.save(buf, format='JPEG')
+    jpeg = buf.getvalue()
+    _tile_cache[tile_key] = jpeg
+  else:
+    jpeg = _tile_cache[tile_key]
+  return jpeg
+
+ 
 def map_tiler_handler(self, path, qdict):
   service_name = qdict.get('service', ['static_map'])[0]
   scale = float(qdict.get('scale', [1])[0])
@@ -48,14 +66,7 @@ def map_tiler_handler(self, path, qdict):
   height = int(qdict.get('height', [256])[0])
 
   try:
-    # Get the map (possibly cached) from the map server
-    im = get_scaled_map(service_name, scale)
-
-    # Crop the requested tile and convert to JPEG
-    im = im.crop((x, y, x + width, y + height))
-    buf = cStringIO.StringIO()
-    im.save(buf, format='JPEG')
-    jpeg = buf.getvalue()
+    jpeg = get_tile(service_name, scale, x, y, width, height)
   except:
     import base64
     jpeg = base64.decodestring(unavail.unavail)
@@ -63,6 +74,7 @@ def map_tiler_handler(self, path, qdict):
 
 def send_image(self, jpeg):
   self.send_response(200)
+  self.send_header('Cache-Control', 'max-age=3600')
   self.send_header('Content-Type', 'image/jpeg')
   self.send_header('Content-Length', str(len(jpeg)))
   self.end_headers()
