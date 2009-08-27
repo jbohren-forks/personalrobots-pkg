@@ -8,7 +8,10 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/settlerlib</url>
 
+  <!-- ros -->
   <depend package="roscpp"/>
+
+  <!-- calibration -->
   <depend package="calibration_msgs"/>
 
   <export>

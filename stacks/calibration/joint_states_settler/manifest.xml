@@ -8,12 +8,22 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/joint_states_settler</url>
+
+  <!-- ROS -->
   <depend package="roscpp"/>
+
+  <!-- common_msgs -->
+  <depend package="actionlib_msgs"/>
+
+  <!-- common -->
   <depend package="actionlib"/>
+
+  <!-- mechanism -->
   <depend package="mechanism_msgs"/>
+
+  <!-- calibration -->
   <depend package="settlerlib"/>
   <depend package="calibration_msgs"/>
-  <depend package="actionlib_msgs"/>
 
   <export>
     <cpp cflags="-I${prefix}/msg/cpp" />
