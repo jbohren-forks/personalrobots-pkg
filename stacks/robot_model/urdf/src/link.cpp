@@ -231,7 +231,7 @@ bool Visual::initXml(TiXmlElement *config)
     this->material.reset(new Material);
     if (!this->material->initXml(mat))
     {
-      ROS_WARN("Could not parse material element in Visual block, maybe defined outside.");
+      ROS_DEBUG("Could not parse material element in Visual block, maybe defined outside.");
       this->material.reset();
     }
     else
