@@ -1,7 +1,7 @@
 <launch>
 
-  <rosparam command="load" file="$(find texas)/dallas.yaml" />
-  <node pkg="mechanism_control" type="spawner.py" args="dallas_controller" />
+  <rosparam command="load" file="$(find texas)/dallas_base_controller.yaml" ns="pr2_base_controller"/>
+  <node pkg="mechanism_control" type="spawner.py" args="pr2_base_controller" />
 
   <!-- Swapping walk and run.  Run (Caps) is now super slow -->
   <param name="walk_vel" value="0.4" />
@@ -9,7 +9,6 @@
   <param name="yaw_rate" value="0.5" />
   <param name="yaw_run_rate" value="0.2" />
   <node pkg="teleop_pr2" type="teleop_pr2_keyboard" output="screen">
-    <remap from="cmd_vel" to="/dallas_controller/cmd_vel" />
   </node>
   
 </launch>

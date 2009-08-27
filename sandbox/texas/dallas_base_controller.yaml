@@ -1,0 +1,46 @@
+caster_names: bl_caster_rotation_link
+
+type: Pr2BaseController
+
+caster_pid_gains: &caster_pid_gains
+  p: 3.0
+  d: 0.0
+  i: 0.1
+  i_clamp: 4.0
+wheel_pid_gains: &wheel_pid_gains
+  p: 2.0
+  d: 0.0
+  i: 0.01
+  i_clamp: 0.4
+
+bl_caster_l_wheel_joint:
+ *wheel_pid_gains
+bl_caster_r_wheel_joint:
+ *wheel_pid_gains
+
+bl_caster_rotation_joint:
+ *caster_pid_gains
+
+caster_speed_threshold: 0.2
+caster_position_error_threshold: 0.05
+wheel_speed_threshold: 0.2
+caster_effort_threshold: 3.45
+wheel_effort_threshold: 3.45
+kp_wheel_steer: 2.0
+alpha_stall: 0.5
+kp_caster_steer: 40.0
+timeout: 0.4
+max_accel: 
+ ax: 0.5
+ ay: 2.0 
+ alphaz: 2.0
+
+state_publish_time: 0.25
+
+max_vel: 
+ vx: 1.0
+ vy: 1.0 
+ omegaz: 2.0
+
+cmd_topic:
+ /cmd_vel
