@@ -160,6 +160,9 @@ void ChompOptimizer::initialize()
     multivariate_gaussian_.push_back(MultivariateGaussian(Eigen::VectorXd::Zero(num_vars_free_), joint_costs_[i].getQuadraticCostInverse()));
   }
 
+  // animation init:
+  animate_endeffector_segment_number_ = robot_model_->getForwardKinematicsSolver()->segmentNameToIndex(parameters_->getAnimateEndeffectorSegment());
+
 }
 
 ChompOptimizer::~ChompOptimizer()
@@ -248,7 +251,7 @@ void ChompOptimizer::optimize()
       ROS_INFO("Animating iteration %d", iteration_);
       animatePath();
     }
-    if (parameters_->getAnimateEndeffector() && iteration_%10 == 0)
+    if (parameters_->getAnimateEndeffector())
     {
       animateEndeffector();
     }
@@ -637,7 +640,7 @@ void ChompOptimizer::getRandomMomentum()
 
 void ChompOptimizer::updateMomentum()
 {
-  double alpha = 1.0 - parameters_->getHmcStochasticity();
+  //double alpha = 1.0 - parameters_->getHmcStochasticity();
   double eps = parameters_->getHmcDiscretization();
   if (iteration_ > 0)
     momentum_ = (momentum_ + eps*final_increments_);
@@ -666,13 +669,14 @@ void ChompOptimizer::animateEndeffector()
 {
   visualization_msgs::Marker msg;
   msg.points.resize(num_vars_free_);
-  int joint_index = planning_group_->chomp_joints_[num_joints_-1].kdl_joint_index_;
+ // int joint_index = planning_group_->chomp_joints_[num_joints_-1].kdl_joint_index_;
+  int sn = animate_endeffector_segment_number_;
   for (int i=0; i<num_vars_free_; ++i)
   {
     int j = i+free_vars_start_;
-    msg.points[i].x = joint_pos_[j][joint_index].x();
-    msg.points[i].y = joint_pos_[j][joint_index].y();
-    msg.points[i].z = joint_pos_[j][joint_index].z();
+    msg.points[i].x = segment_frames_[j][sn].p.x();
+    msg.points[i].y = segment_frames_[j][sn].p.y();
+    msg.points[i].z = segment_frames_[j][sn].p.z();
   }
   msg.header.frame_id = robot_model_->getReferenceFrame();
   msg.header.stamp = ros::Time();
@@ -689,7 +693,7 @@ void ChompOptimizer::animateEndeffector()
   msg.color.g = 1.0;
   msg.color.b = 0.3;
   vis_marker_pub_.publish(msg);
-  ros::WallDuration(0.01).sleep();
+  ros::WallDuration(0.1).sleep();
 }
 
 void ChompOptimizer::visualizeState(int index)

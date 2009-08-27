@@ -70,6 +70,7 @@ public:
   bool getUsePseudoInverse() const;
   double getPseudoInverseRidgeFactor() const;
   bool getAnimateEndeffector() const;
+  std::string getAnimateEndeffectorSegment() const;
 
 private:
   double planning_time_limit_;
@@ -91,6 +92,7 @@ private:
   bool use_pseudo_inverse_;
   double pseudo_inverse_ridge_factor_;
   bool animate_endeffector_;
+  std::string animate_endeffector_segment_;
 
 };
 
@@ -196,6 +198,10 @@ inline bool ChompParameters::getAnimateEndeffector() const
   return animate_endeffector_;
 }
 
+inline std::string ChompParameters::getAnimateEndeffectorSegment() const
+{
+  return animate_endeffector_segment_;
+}
 
 } // namespace chomp
 

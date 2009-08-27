@@ -130,6 +130,7 @@ private:
 
   ros::Publisher vis_marker_array_pub_;
   ros::Publisher vis_marker_pub_;
+  int animate_endeffector_segment_number_;
 
   void initialize();
   void calculateSmoothnessIncrements();
