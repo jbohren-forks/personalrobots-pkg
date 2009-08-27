@@ -26,7 +26,3 @@ joints:
   prefix: Joints
   startswith: [
     'Joint']
-other:
-  prefix: Other
-  type: GenericAnalyzer
-  other: true
