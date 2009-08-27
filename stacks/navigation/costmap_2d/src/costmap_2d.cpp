@@ -656,7 +656,7 @@ namespace costmap_2d{
     for(unsigned int i = 0; i < polygon.size(); ++i){
       MapLocation loc;
       if(!worldToMap(polygon[i].x, polygon[i].y, loc.x, loc.y)){
-        ROS_WARN("Polygon lies outside map bounds, so we can't fill it");
+        ROS_DEBUG("Polygon lies outside map bounds, so we can't fill it");
         return false;
       }
       map_polygon.push_back(loc);
