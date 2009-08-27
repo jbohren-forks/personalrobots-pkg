@@ -117,6 +117,16 @@ int main(int argc, char** argv) {
     }
   }
 
+  else if(argc == 6 && !strcmp(argv[1], "--join")) {
+    cout << "Joining " << argv[2] << " and " << argv[3] << ", saving as " << argv[4] << endl;
+    DorylusDataset dd1;
+    DorylusDataset dd2;
+    dd1.load(argv[2]);
+    dd2.load(argv[3]);
+    dd2.join(dd1);
+    dd2.save(argv[4]);
+  }
+
   // -- Usage.
   else {
     cout << "usage: " << endl;
@@ -150,5 +160,7 @@ int main(int argc, char** argv) {
     cout << " Runs CLASSIFIER on DATASET and prints the objective." << endl;
     cout << endl;
 
+    cout << argv[0] << " --join DATASET1 DATASET2 DATASET_SAVENAME" << endl;
+    cout << endl;
   }
 }
