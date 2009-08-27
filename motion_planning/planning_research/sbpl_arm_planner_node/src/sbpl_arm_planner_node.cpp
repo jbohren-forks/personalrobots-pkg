@@ -29,6 +29,7 @@
  /** \author Sachin Chitta, Benjamin Cohen */
 
 #include <sbpl_arm_planner_node/sbpl_arm_planner_node.h>
+#include <fstream>
 clock_t starttime;
 
 FILE* fPaths = fopen("paths.txt", "w");
@@ -1100,10 +1101,10 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 						ROS_DEBUG("Computed an IK solution but it was in collision");
 			
 					//check that the path to the goal from IK is safe in 0.1 rad increments
-					if(!interpolatePathToGoal(path, 0.1))
-						ROS_DEBUG("ik solution %i: a joint configuration on the way to the final waypoint is in collision", ik_attempts);
-					else
-						invalid_ik = false;
+// 					if(!interpolatePathToGoal(path, 0.1))
+// 						ROS_DEBUG("ik solution %i: a joint configuration on the way to the final waypoint is in collision", ik_attempts);
+// 					else
+// 						invalid_ik = false;
 				}
 				++ik_attempts;
       }
@@ -1140,8 +1141,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 					angles_r[j] = arm_path.states[i].vals[j];
 
 				sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
-				ROS_INFO("    xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
-								 xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
+				ROS_INFO("    xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
 			}
 			
 			// print out error to goal position
@@ -1460,6 +1460,11 @@ bool SBPLArmPlannerNode::computeIK(const geometry_msgs::PoseStamped &pose_stampe
 bool SBPLArmPlannerNode::initChain(std::string robot_description)
 {
   KDL::Tree my_tree;
+	
+// 	printf("IN THE NODE USING LOCAL PR2_DESC.XML\n");
+// 	std::ifstream ifs("/u/bcohen/ros/pkg2/motion_planning/planning_research/sbpl_arm_planner/pr2_desc.xml");
+// 	std::string str((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+// 	
   if (!KDL::treeFromString(robot_description, my_tree))
   {
     printf("Failed to parse tree from manipulator description file.\n");
