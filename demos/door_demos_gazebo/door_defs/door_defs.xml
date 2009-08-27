@@ -199,7 +199,7 @@
     </collision>
   </link>
   <gazebo reference="door_link">
-    <material>PR2/White</material>
+    <material>PR2/Grey</material>
     <laserRetro>2000</laserRetro>
     <turnGravityOff>true</turnGravityOff>
     <selfCollide>false</selfCollide>
