@@ -46,7 +46,7 @@ using namespace ros;
 
 using namespace controller;
 
-PLUGINLIB_REGISTER_CLASS(CartesianTrajectoryController, CartesianTrajectoryController, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianTrajectoryController, controller::CartesianTrajectoryController, controller::Controller)
 
 namespace controller {
 
