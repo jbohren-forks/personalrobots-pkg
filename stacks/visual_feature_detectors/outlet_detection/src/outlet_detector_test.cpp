@@ -554,7 +554,7 @@ int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data, 
 		}
 		if (nCorrect+nNA > 0)
 			fprintf(f,"---------------------\n");
-		fprintf(f,"Total images:%d\nSkipped:%d\nCorrect:%d\nIncorrect:%d\nNA:%d",nTotal,nSkipped,nCorrect,(int)test_data.size()-nCorrect-nNA,nNA);
+		fprintf(f,"Total images:%d\nSkipped:%d\nCorrect:%d\nIncorrect:%d\nNA:%d",nTotal-nSkipped,nSkipped,nCorrect,(int)test_data.size()-nCorrect-nNA,nNA);
 		fclose(f);
 		if (result)
 		{
