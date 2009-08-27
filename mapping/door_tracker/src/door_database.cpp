@@ -59,6 +59,8 @@
 #include <Eigen/Array>
 #include <Eigen/SVD>
 
+#include <std_srvs/Empty.h>
+
 #define HINGE_POINT_CONST 200
 
 using namespace std;
@@ -83,12 +85,18 @@ class DoorDatabase
 
     ros::ServiceServer door_srv_; 
 
+    ros::ServiceServer upload_srv_;
+
+    ros::ServiceServer initialize_srv_;
+
     int hinge_number_;
 
     /*** Parameters to be updated from the param server ***/
     std::string door_msg_topic_;
     std::string door_service_name_;
+    std::string upload_service_name_;
     std::string door_database_frame_;
+    std::string initialize_database_service_name_;
 
     int min_angles_per_door_;
     double angle_difference_threshold_;
@@ -106,17 +114,27 @@ class DoorDatabase
 
       double tmp; int tmp2;
 
-      node_handle_.param("~p_door_frame_p1_x", tmp, 0.5); door_msg_.frame_p1.x = tmp;
-      node_handle_.param("~p_door_frame_p1_y", tmp, -0.5); door_msg_.frame_p1.y = tmp;
-      node_handle_.param("~p_door_frame_p2_x", tmp, 0.5); door_msg_.frame_p2.x = tmp;
-      node_handle_.param("~p_door_frame_p2_y", tmp, 0.5); door_msg_.frame_p2.y = tmp;
-      node_handle_.param("~p_door_hinge" , tmp2, -1); door_msg_.hinge = tmp2;
-      node_handle_.param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
+      node_handle_.param("~p_door_frame_p1_x", tmp, 0.5); 
+      door_msg_.frame_p1.x = tmp;
+      node_handle_.param("~p_door_frame_p1_y", tmp, -0.5); 
+      door_msg_.frame_p1.y = tmp;
+      node_handle_.param("~p_door_frame_p2_x", tmp, 0.5); 
+      door_msg_.frame_p2.x = tmp;
+      node_handle_.param("~p_door_frame_p2_y", tmp, 0.5); 
+      door_msg_.frame_p2.y = tmp;
+      node_handle_.param("~p_door_hinge" , tmp2, -1); 
+      door_msg_.hinge = tmp2;
+      node_handle_.param("~p_door_rot_dir" , tmp2, -1); 
+      door_msg_.rot_dir = tmp2;
+
       node_handle_.param<std::string>("~door_service_name", door_service_name_,"~door_service");
+      node_handle_.param<std::string>("~upload_service_name", upload_service_name_,"~upload_service");
+      node_handle_.param<std::string>("~initialize_service_name", initialize_database_service_name_,"~initialize_service");
 
       door_msg_.header.frame_id = "base_link";
       door_sub_ = node_handle_.subscribe(door_msg_topic_,1,&DoorDatabase::doorMsgCallBack,this);
       door_srv_ = node_handle_.advertiseService(door_service_name_,&DoorDatabase::doorQuery,this);
+      upload_srv_ = node_handle_.advertiseService(upload_service_name_,&DoorDatabase::uploadDatabase,this);
       hinge_number_ = 0;
     };
 
@@ -132,7 +150,48 @@ class DoorDatabase
 
     void initializeDatabase()
     {
+      int num_doors;
+      node_handle_.param<int>("~number_doors",num_doors,0);
+      if(num_doors <= 0)
+        return;
+      door_msgs::Door door;
+      for(int i=0; i<num_doors; i++)
+      {
+        std::stringstream ss;
+        ss >> i;
+        std::string key = "~door[" + ss.str() + "]/";
+        std::string value;
+        if(!node_handle_.searchParam(key+"frame_id",value))
+        {
+          continue;
+        }
+        node_handle_.getParam(key+"frame_id",door.header.frame_id,"odom_combined");
+        double tmp;
+        node_handle_.getParam(key+"frame_p1/x",tmp); door.frame_p1.x = tmp;
+        node_handle_.getParam(key+"frame_p1/y",tmp); door.frame_p1.y = tmp;
+        node_handle_.getParam(key+"frame_p1/z",tmp); door.frame_p1.z = tmp;
 
+        node_handle_.getParam(key+"frame_p2/x",tmp); door.frame_p2.x = tmp;
+        node_handle_.getParam(key+"frame_p2/y",tmp); door.frame_p2.y = tmp;
+        node_handle_.getParam(key+"frame_p2/z",tmp); door.frame_p2.z = tmp;
+
+        node_handle_.getParam(key+"door_p1/x",tmp); door.door_p1.x = tmp;
+        node_handle_.getParam(key+"door_p1/y",tmp); door.door_p1.y = tmp;
+        node_handle_.getParam(key+"door_p1/z",tmp); door.door_p1.z = tmp;
+
+        node_handle_.getParam(key+"door_p2/x",tmp); door.door_p2.x = tmp;
+        node_handle_.getParam(key+"door_p2/y",tmp); door.door_p2.y = tmp;
+        node_handle_.getParam(key+"door_p2/z",tmp); door.door_p2.z = tmp;
+
+        node_handle_.getParam(key+"handle/x",tmp); door.handle.x = tmp;
+        node_handle_.getParam(key+"handle/y",tmp); door.handle.y = tmp;
+        node_handle_.getParam(key+"handle/z",tmp); door.handle.z = tmp;
+
+        node_handle_.getParam(key+"handle/hinge",door.hinge);
+        node_handle_.getParam(key+"handle/rot_dir",door.rot_dir);
+        addToDatabase(database_,door);
+        ROS_DEBUG("Loaded door information from database");
+      }
     }
 
     geometry_msgs::Point32 findHingePosition(door_tracker::DoorDatabaseObject &db)
@@ -388,6 +447,55 @@ class DoorDatabase
       }
       return false;
     }
+
+    bool initializeDatabase(std_srvs::Empty::Request &request, std_srvs::Empty::Response &response)
+    {
+      initializeDatabase();
+      return true;
+    }
+
+
+    bool uploadDatabase(std_srvs::Empty::Request &request, std_srvs::Empty::Response &response)
+    {
+      if(database_.empty())
+      {
+        ROS_ERROR("No entries in the database");
+        return false;
+      }
+
+      node_handle_.setParam("~number_doors",(int)database_.size());
+      for(unsigned int i=0; i < database_.size(); i++)
+      {
+        std::stringstream ss;
+        ss >> i;
+        std::string key = "~door[" + ss.str() + "]/";
+        node_handle_.setParam(key+"frame_id",database_[i].door.header.frame_id);
+
+        node_handle_.setParam(key+"frame_p1/x",database_[i].door.frame_p1.x);
+        node_handle_.setParam(key+"frame_p1/y",database_[i].door.frame_p1.y);
+        node_handle_.setParam(key+"frame_p1/z",database_[i].door.frame_p1.z);
+
+        node_handle_.setParam(key+"frame_p2/x",database_[i].door.frame_p2.x);
+        node_handle_.setParam(key+"frame_p2/y",database_[i].door.frame_p2.y);
+        node_handle_.setParam(key+"frame_p2/z",database_[i].door.frame_p2.z);
+
+        node_handle_.setParam(key+"door_p1/x",database_[i].door.door_p1.x);
+        node_handle_.setParam(key+"door_p1/y",database_[i].door.door_p1.y);
+        node_handle_.setParam(key+"door_p1/z",database_[i].door.door_p1.z);
+
+        node_handle_.setParam(key+"door_p2/x",database_[i].door.door_p2.x);
+        node_handle_.setParam(key+"door_p2/y",database_[i].door.door_p2.y);
+        node_handle_.setParam(key+"door_p2/z",database_[i].door.door_p2.z);
+
+        node_handle_.setParam(key+"handle/x",database_[i].door.handle.x);
+        node_handle_.setParam(key+"handle/y",database_[i].door.handle.y);
+        node_handle_.setParam(key+"handle/z",database_[i].door.handle.z);
+
+        node_handle_.setParam(key+"handle/hinge",database_[i].door.hinge);
+        node_handle_.setParam(key+"handle/rot_dir",database_[i].door.rot_dir);
+      }
+      return true;
+    }
 };
 
 
@@ -395,7 +503,7 @@ int main (int argc, char** argv)
 {
   ros::init (argc, argv, "door_database");
   DoorDatabase p;
-  ROS_INFO("Waiting for tracker to finish");
+  ROS_INFO("Started door database node");
   ros::spin();
   return (0);
 }

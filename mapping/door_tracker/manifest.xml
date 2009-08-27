@@ -10,6 +10,7 @@
 
   <depend package="eigen" />
   <depend package="roscpp" />
+  <depend package="std_srvs" />
   <depend package="laser_scan" />
   <depend package="sensor_msgs" />
   <depend package="geometry_msgs" />

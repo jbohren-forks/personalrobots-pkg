@@ -172,10 +172,7 @@ class DoorTracker
  * \param eps_angle the maximum allowed difference between normals in degrees for cluster/region growing
  * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
  */
-    void
-    findClusters (const sensor_msgs::PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
-                  int nx_idx, int ny_idx, int nz_idx,
-                  double eps_angle, unsigned int min_pts_per_cluster)
+    void findClusters(const sensor_msgs::PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters, int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster)
     {
       // Create a tree for these points
       cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
@@ -294,11 +291,8 @@ class DoorTracker
 
     void shutdown()
     {
-      if(active_)
-      {
         active_ = false;
         num_clouds_received_ = 0;
-      }
     }
 
     void updateGlobalPose()
@@ -655,7 +649,7 @@ class DoorTracker
       ROS_DEBUG ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.",min_bbox.x, min_bbox.y, min_bbox.z, max_bbox.x, max_bbox.y, max_bbox.z, (int)indices.size ());
     }
 
-    void get3DBounds (geometry_msgs::Point32 *p1, geometry_msgs::Point32 *p2, geometry_msgs::Point32 &min_b, geometry_msgs::Point32 &max_b, int multiplier)
+    void get3DBounds(geometry_msgs::Point32 *p1, geometry_msgs::Point32 *p2, geometry_msgs::Point32 &min_b, geometry_msgs::Point32 &max_b, int multiplier)
     {
       // Get the door_frame distance in the X-Y plane
       float door_frame = sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
@@ -695,8 +689,7 @@ class DoorTracker
      * \param stamped_in the input point
      * \param stamped_out the output point
     */
-    inline void
-    transformPoint (tf::TransformListener *tf, const std::string &target_frame,
+    inline void transformPoint (tf::TransformListener *tf, const std::string &target_frame,
                     const tf::Stamped< geometry_msgs::Point32 > &stamped_in, tf::Stamped< geometry_msgs::Point32 > &stamped_out)
     {
       tf::Stamped<tf::Point> tmp;
@@ -714,6 +707,7 @@ class DoorTracker
       stamped_out.y = tmp[1];
       stamped_out.z = tmp[2];
     }
+
 };
 
 
@@ -722,7 +716,7 @@ int main(int argc, char** argv)
   ros::init (argc, argv, "door_tracker");
   DoorTracker p;
   ROS_INFO("Waiting for tracker to finish");
-  ros::spin ();
+  ros::spin();
   return (0);
 }
 
