@@ -35,90 +35,6 @@ void CornerCandidate::updatePoints2d()
   }
 }
 
-double CornerCandidate::computeDistance(IplImage* distImage)
-{
-  updatePoints3d();
-  updatePoints2d();
-
-  bool invalidPoints = false;
-  for (int i = 0; i < 4; i++)
-  {
-    if (points2d[i].x < 0)
-      invalidPoints = true;
-    if (points2d[i].y < 0)
-      invalidPoints = true;
-    if (points2d[i].x >= distImage->width)
-      invalidPoints = true;
-    if (points2d[i].y >= distImage->height)
-      invalidPoints = true;
-  }
-  if (invalidPoints)
-    return DBL_MAX;
-
-  int global_sum = 0;
-  int global_count = 0;
-  for (int i = 0; i < 4; i++)
-  {
-    CvLineIterator iterator;
-
-    int sum = 0;
-    int count = cvInitLineIterator(distImage, points2d[i], points2d[(i + 1) % 4], &iterator, 8, 0);
-    for (int j = 0; j < count; j++)
-    {
-      sum += iterator.ptr[0];
-      CV_NEXT_LINE_POINT(iterator);
-    }
-    global_sum += sum;
-    global_count += count;
-  }
-  //  cout <<"global_sum="<<global_sum<<" global_count="<<global_count<<endl;
-  double size = 1.00;
-//  size = sqrt(sqrt(w*h));
-  size = 0.2+w*h;
-  return (global_sum / (double)global_count) * size;
-}
-
-void CornerCandidate::optimizeWidth(IplImage* distImage, double a, double b, int steps)
-{
-  double best_d = DBL_MAX;
-  double best_w = w;
-  double d;
-  double start = w;
-  for (int i = 0; i < steps; i++)
-  {
-    w = MIN(rect_max_size,MAX( rect_min_size,start + a + ((b-a)*(i))/(double)steps));
-    d = computeDistance2(distImage);
-    //    cout << "i="<<i<<" steps="<<steps<< " w="<<w<<" d="<<d << endl;
-    if (d < best_d)
-    {
-      best_d = d;
-      best_w = w;
-    }
-  }
-  //  cout << "found w="<< best_w << endl;
-
-  w = best_w;
-}
-
-void CornerCandidate::optimizeHeight(IplImage* distImage, double a, double b, int steps)
-{
-  double best_d = DBL_MAX;
-  double best_h = h;
-  double d;
-  double start = h;
-  for (int i = 0; i < steps; i++)
-  {
-    h = MIN(rect_max_size,MAX( rect_min_size,start + a + ((b-a)*(i))/(double)steps));
-    d = computeDistance2(distImage);
-    if (d < best_d)
-    {
-      best_d = d;
-      best_h = h;
-    }
-  }
-  h = best_h;
-}
-
 void CornerCandidate::optimizePhi(IplImage* distImage, double a, double b, int steps)
 {
   double best_d = DBL_MAX;
@@ -143,60 +59,17 @@ void CornerCandidate::optimizePhi(IplImage* distImage, double a, double b, int s
   tf = org_tf * wh*btTransform(btQuaternion(btVector3(0, 0, 1), a + ((b - a) * (best_i)) / (double)steps))*wh_inv;
 }
 
-void CornerCandidate::optimizeX(IplImage* distImage, double a, double b, int steps)
-{
-  double best_d = DBL_MAX;
-  int best_i = 0;
-  double d;
-
-  btTransform org_tf = tf;
-
-  for (int i = 0; i < steps; i++)
-  {
-    tf = org_tf * btTransform(btQuaternion::getIdentity(), btVector3(a + ((b - a) * (i)) / (double)steps, 0, 0));
-    d = computeDistance2(distImage);
-    //    cout << "i="<<i<<" steps="<<steps<< " x+="<<a + (((b-a)*(i))/(double)steps)<<" d="<<d
-    //    <<  " x="<<tf.getOrigin().x()
-    //<<  " y="<<tf.getOrigin().y()
-    //<<  " z="<<tf.getOrigin().z()
-    //    <<endl;
-    if (d < best_d)
-    {
-      best_d = d;
-      best_i = i;
-    }
-  }
-  tf = org_tf * btTransform(btQuaternion::getIdentity(), btVector3(a + ((b - a) * (best_i)) / (double)steps, 0, 0));
-}
-
-void CornerCandidate::optimizeY(IplImage* distImage, double a, double b, int steps)
-{
-  double best_d = DBL_MAX;
-  int best_i = 0;
-  double d;
-
-  btTransform org_tf = tf;
-
-  for (int i = 0; i < steps; i++)
-  {
-    tf = org_tf * btTransform(btQuaternion::getIdentity(), btVector3(0, a + ((b - a) * (i)) / (double)steps, 0));
-    d = computeDistance2(distImage);
-    if (d < best_d)
-    {
-      best_d = d;
-      best_i = i;
-    }
-  }
-  tf = org_tf * btTransform(btQuaternion::getIdentity(), btVector3(0, a + ((b - a) * (best_i)) / (double)steps, 0));
-}
-
 double CornerCandidate::computeSupport2d(IplImage* pixOccupied, IplImage* pixDebug)
 {
   std::map<int, std::map<int, bool> > rect;
 
   for (int i = 0; i < 4; i++)
   {
-    CvLineIterator iterator;
+	if(points2d[i].x <0 || points2d[i].x >=pixOccupied->width
+		||points2d[i].y <0 || points2d[i].y >=pixOccupied->height)
+		return(0.00);
+
+	CvLineIterator iterator;
 
     int count = cvInitLineIterator(pixOccupied, points2d[i], points2d[(i + 1) % 4], &iterator, 8, 0);
     for (int j = 0; j < count; j++)
@@ -323,6 +196,10 @@ double CornerCandidate::computeDistance2(IplImage* pixOccupied)
 
   for (int i = 0; i < 4; i++)
   {
+	if(points2d[i].x <0 || points2d[i].x >=pixOccupied->width
+			||points2d[i].y <0 || points2d[i].y >=pixOccupied->height)
+		return(DBL_MAX);
+
     CvLineIterator iterator;
 
     int count = cvInitLineIterator(pixOccupied, points2d[i], points2d[(i + 1) % 4], &iterator, 8, 0);

@@ -248,11 +248,6 @@ void BoxDetector::syncCallback()
     visualizePlanes(*cloud_, plane_indices, plane_cloud, plane_coeff, outside, show_convex_hulls);
   MEASURE(timeStamp,"visualizePlanes");
 
-  //  int backplane = 0; // assume that the largest plane belongs to the background
-  //  int frontplane = 1;
-  //  findFrontAndBackPlane(frontplane, backplane, plane_indices, plane_coeff);
-  //  visualizeFrontAndBackPlane(frontplane, backplane, *cloud_, plane_indices, plane_cloud, plane_coeff, outside, false);
-
   pixOccupied = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
   pixFree = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
   pixUnknown = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
@@ -292,8 +287,6 @@ void BoxDetector::syncCallback()
 
     std::vector<CornerCandidate> corner;
     findCornerCandidates(pixOccupied, pixFree, pixUnknown, pixDist, plane_coeff[frontplane], plane_indices[frontplane],corner, frontplane * 1000);
-
-//    corner = groupCorners(corner, 20);
 
     findRectangles(corner, pixOccupied);
 
@@ -382,56 +375,6 @@ bool BoxDetector::spin()
   return true;
 }
 
-void BoxDetector::findFrontAndBackPlane(int& frontplane, int& backplane, std::vector<std::vector<int> >& plane_indices,
-                                       vector<vector<double> >& plane_coeff)
-{
-  int n = plane_coeff.size();
-  double ip3 = inner_prod(plane_coeff[backplane], plane_coeff[backplane]);
-  ROS_INFO("backplane %d, ip %f", backplane, ip3);
-
-  for (int i = 0; i < n; i++)
-  {
-    ROS_INFO ("plane %d: %d inliers: [%g, %g, %g, %g]", i, plane_indices[i].size(),
-        plane_coeff[i][0], plane_coeff[i][1], plane_coeff[i][2], plane_coeff[i][3]);
-    //    ROS_INFO("i=%d, prod=%f",i,inner_prod(plane_coeff[backplane],plane_coeff[i]));
-  }
-
-  double ip = inner_prod(plane_coeff[backplane], plane_coeff[frontplane]);
-  int i = frontplane + 1;
-  //  ROS_INFO("backplane %d, frontplane %d, ip %f", backplane, frontplane,ip);
-  while (i < n)
-  {
-    double ip2 = inner_prod(plane_coeff[backplane], plane_coeff[i]);
-    if (ip2 > ip && plane_coeff[backplane][3] > plane_coeff[i][3])
-    {
-      frontplane = i;
-      ip = ip2;
-    }
-    //    ROS_INFO("backplane %d, frontplane %d, ip %f, i %d, ip2 %f", backplane, frontplane,ip,i,ip2);
-    i++;
-  }
-  //  ROS_INFO("backplane %d, frontplane %d", backplane, frontplane);
-}
-
-void BoxDetector::visualizeFrontAndBackPlane(int frontplane, int backplane, const sensor_msgs::PointCloud& cloud,
-                                            std::vector<std::vector<int> >& plane_indices, std::vector<
-                                                sensor_msgs::PointCloud>& plane_cloud,
-                                            std::vector<std::vector<double> >& plane_coeff,
-                                            sensor_msgs::PointCloud& outside, bool convexHull)
-{
-  std::vector<float> plane_color;
-  plane_color.resize(plane_coeff.size());
-  for (size_t i = 0; i < plane_coeff.size(); i++)
-  {
-    plane_color[i] = HSV_to_RGBf(0.7, 0, 0.3);
-  }
-  plane_color[backplane] = HSV_to_RGBf(0.3, 0.3, 1);
-  plane_color[frontplane] = HSV_to_RGBf(0., 0.3, 1);
-  visualizePlanes2(*cloud_, plane_indices, plane_cloud, plane_coeff, plane_color, outside, cloud_planes_pub_,
-                             visualization_pub_, convexHull);
-
-}
-
 void BoxDetector::visualizePlanes(const sensor_msgs::PointCloud& cloud, std::vector<std::vector<int> >& plane_indices,
                                  std::vector<sensor_msgs::PointCloud>& plane_cloud,
                                  std::vector<std::vector<double> >& plane_coeff, sensor_msgs::PointCloud& outside,
@@ -446,337 +389,6 @@ void BoxDetector::visualizePlanes(const sensor_msgs::PointCloud& cloud, std::vec
   visualizePlanes2(*cloud_, plane_indices, plane_cloud, plane_coeff, plane_color, outside, cloud_planes_pub_,
                              visualization_pub_, convexHull);
 
-}
-
-void BoxDetector::findCornerCandidates2(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown,
-                                      IplImage* &pixCannyDist, vector<double>& plane_coeff,vector<int>& plane_indices,
-                                      std::vector<CornerCandidate> &corner, int id)
-{
-  //  // occupied pixels in plane, distance transform
-  //  IplImage* pixOccupiedDist = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  //
-  //  cvNot(pixOccupied,pixOccupied);
-  //  cvDistTransform(pixOccupied, pixOccupiedDist,CV_DIST_L1);
-  //  cvNot(pixOccupied,pixOccupied);
-
-  //  cvShowImage( "occupied-dist", pixOccupiedDist );
-
-  //  IplImage* pixMerged = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
-  //  cvMerge(pixOccupied,pixFree,pixUnknown,NULL,pixMerged);
-  //  cvShowImage( "merged", pixMerged);
-
-  // dilate (increase) free pixels
-  IplImage* pixFreeDilated = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  cvDilate(pixFree, pixFreeDilated, NULL, 10);
-  cvShowImage("free-dilated", pixFreeDilated);
-
-  // canny edge image of occupied pixels
-  IplImage* pixCanny = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  cvCanny(pixOccupied, pixCanny, 50, 200, 3);
-  cvShowImage("canny", pixCanny);
-
-  // only keep edges that lie substantially close to free pixels
-  IplImage* pixCannyFiltered = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  cvAnd(pixCanny, pixFreeDilated, pixCannyFiltered);
-  cvShowImage("canny-filtered", pixCannyFiltered);
-
-  // dilate filtered canny edge image..
-  IplImage* pixCannyFilteredAndDilated = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  cvDilate(pixCannyFiltered, pixCannyFilteredAndDilated, NULL, 1);
-  cvShowImage("canny-filtered-dilated", pixCannyFilteredAndDilated);
-
-  // find edges via hough transform
-  IplImage* pixHough = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
-  cvCvtColor(lbridge_.toIpl(), pixHough, CV_GRAY2BGR);
-
-  // visualize edges in 2D
-  CvMemStorage* storage = cvCreateMemStorage(0);
-  CvSeq* lines = 0;
-  lines = cvHoughLines2(pixCannyFilteredAndDilated, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI / 180, 5, 30, 15);
-
-  for (int i = 0; i < lines->total; i++)
-  {
-    CvPoint* line = (CvPoint*)cvGetSeqElem(lines, i);
-//    cvLine(pixDebug, line[0], line[1], CV_RGB(rand()%255,rand()%255,rand()%255), 1, 8);
-    cvLine(pixDebug, line[0], line[1], CV_RGB(255,128,128), 1, 8);
-  }
-
-  // compute 3d lines
-  std::vector<std::pair<btVector3, btVector3> > lines3d;
-  std::vector<btVector3> linesVec;
-  lines3d.resize(lines->total);
-  linesVec.resize(lines->total);
-  for (int i = 0; i < lines->total; i++)
-  {
-    CvPoint* line = (CvPoint*)cvGetSeqElem(lines, i);
-    lines3d[i].first = calcPt(line[0].x, line[0].y, plane_coeff);
-    lines3d[i].second = calcPt(line[1].x, line[1].y, plane_coeff);
-    linesVec[i] = lines3d[i].second - lines3d[i].first;
-  }
-  if(verbose)  cout << "line candidates: " << (lines->total) << endl;
-  if (lines->total > max_lines)
-  {
-    if(verbose)  cout << "too many lines! skipping plane " << endl;
-    cvClearMemStorage(storage);
-    cvReleaseMemStorage(&storage);
-    cvReleaseImage(&pixFreeDilated);
-    cvReleaseImage(&pixCanny);
-    cvReleaseImage(&pixCannyFiltered);
-    cvReleaseImage(&pixCannyFilteredAndDilated);
-    cvReleaseImage(&pixHough);
-    return;
-  }
-  if (show_lines)
-    visualizeLines(visualization_pub_,cloud_->header,lines3d, id, 0.5, 0.5, 0.5);
-
-  // compute corner candidates
-  btVector3 vecPlane(plane_coeff[0], plane_coeff[1], plane_coeff[2]);
-  CornerCandidate candidate;
-  candidate.RP = RP;
-  candidate.P = P;
-  candidate.rect_max_displace = rect_max_displace;
-  candidate.rect_min_size = rect_min_size*scaling;
-  candidate.rect_max_size = rect_max_size*scaling;
-  candidate.w = rect_min_size*scaling;
-  candidate.h = rect_min_size*scaling;
-
-  for (size_t i = 0; i < lines3d.size(); i++)
-  {
-    for (size_t j = i + 1; j < lines3d.size(); j++)
-    {
-      CvPoint* line1 = (CvPoint*)cvGetSeqElem(lines, i);
-      CvPoint* line2 = (CvPoint*)cvGetSeqElem(lines, j);
-      double x1 = line1[0].x;
-      double x2 = line1[1].x;
-      double x3 = line2[0].x;
-      double x4 = line2[1].x;
-
-      double y1 = line1[0].y;
-      double y2 = line1[1].y;
-      double y3 = line2[0].y;
-      double y4 = line2[1].y;
-
-      // check whether parallel
-      if ((y4 - y3) * (x2 - x1) == (x4 - x3) * (y2 - y1))
-        continue;
-
-      // compute intersection point
-      double ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
-      double ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
-      candidate.x = x1 + ua * (x2 - x1);
-      candidate.y = y1 + ua * (y2 - y1);
-
-      if (candidate.x < 0)
-        continue;
-      if (candidate.y < 0)
-        continue;
-      if (candidate.x >= pixHough->width)
-        continue;
-      if (candidate.y >= pixHough->height)
-        continue;
-
-      candidate.w = 0.10;
-      candidate.h = 0.10;
-
-      btVector3 position = calcPt(candidate.x, candidate.y, plane_coeff);
-
-      // ratio line distance/length
-      candidate.dist1 = ua > 1.0 ? ua - 1.0 : (ua < 0.0 ? -ua : 0.0);
-      candidate.dist2 = ub > 1.0 ? ua - 1.0 : (ub < 0.0 ? -ub : 0.0);
-
-      double dist_threshold = 1; // intersection point not further away as length of line segment
-
-      if (ua > 1.0 + dist_threshold)
-        continue;
-      if (ub > 1.0 + dist_threshold)
-        continue;
-      if (ua < 0.0 - dist_threshold)
-        continue;
-      if (ub < 0.0 - dist_threshold)
-        continue;
-
-      btVector3& vec1 = (lines3d[i].first.distance(position) > lines3d[i].second.distance(position) ? lines3d[i].first
-          - position : lines3d[i].second - position).normalize();
-      btVector3& vec2 = (lines3d[j].first.distance(position) > lines3d[j].second.distance(position) ? lines3d[j].first
-          - position : lines3d[j].second - position).normalize();
-
-      // compute angle
-      candidate.angle = vec1.angle(vec2);
-      //      cout << "vec1="<<vec1.x()<<" "<<vec1.y()<<" "<<vec1.z()<< endl;
-      //      cout << "vec2="<<vec2.x()<<" "<<vec2.y()<<" "<<vec2.z()<< endl;
-      //      cout <<"angle between vec1 and vec2: "<<(angle/M_PI*180.0)<<endl;
-
-      // angle between 90deg +- 22.5deg?
-      if (fabs(candidate.angle - M_PI_2) > M_PI / 8)
-        continue;
-
-      // correct error in vec1 and vec2 to achieve 90deg
-      double s = vecPlane.dot(vec1.cross(vec2)) > 0 ? 1 : -1;
-      if (s < 0)
-      {
-        btVector3 vTemp = vec2;
-        vec2 = vec1;
-        vec1 = vTemp;
-      }
-      btVector3 vec1corr = vec1.rotate(vecPlane, 1 * (candidate.angle - M_PI_2) / 2);
-      btVector3 vec2corr = vec2.rotate(vecPlane, -1 * (candidate.angle - M_PI_2) / 2);
-      //      cout <<"angle between vec1corr and vec2corr: "<<(vec1corr.angle(vec2corr)/M_PI*180.0)<<" s="<<s<<endl;
-
-      // orientation
-      btQuaternion orientation;
-      btMatrix3x3 rotation;
-      rotation[0] = vec1corr.rotate(vecPlane, 0); // x
-      rotation[1] = vec2corr.rotate(vecPlane, 0); // y
-      rotation[2] = vecPlane; // z
-      rotation = rotation.transpose();
-      rotation.getRotation(orientation);
-      candidate.tf = btTransform(orientation, position);
-
-      corner.push_back(candidate);
-    }
-  }
-  if(verbose) cout << "corner candidates: " << (corner.size()) << endl;
-  if ((int)corner.size() > max_corners)
-  {
-    if(verbose)  cout << "too many corners! skipping plane " << endl;
-    corner.clear();
-
-    cvClearMemStorage(storage);
-    cvReleaseMemStorage(&storage);
-    cvReleaseImage(&pixFreeDilated);
-    cvReleaseImage(&pixCanny);
-    cvReleaseImage(&pixCannyFiltered);
-    cvReleaseImage(&pixCannyFilteredAndDilated);
-    cvReleaseImage(&pixHough);
-
-    return;
-  }
-
-  // sort by angle
-  std::sort(corner.begin(), corner.end(), sortCornersByAngle);
-  //  for(size_t i=0;i<MIN(1,corner.size());i++) {
-  //    cout << "angle: "<<(corner[i].second/M_PI*180.0)<<endl;
-  //    // show frames
-  //    char buf[50];
-  //    sprintf(buf,"x%d",i);
-  //    tf::Stamped<tf::Pose> table_pose_frame(corner[i].first, cloud_->header.stamp, buf, cloud_->header.frame_id);
-  //    broadcaster_.sendTransform(table_pose_frame);
-  //  }
-
-  IplImage* pixColoredCannyFiltered = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
-  cvCvtColor(pixCannyFiltered, pixColoredCannyFiltered, CV_GRAY2BGR);
-  cvAndS(pixColoredCannyFiltered,cvScalar(255,255,255),pixColoredCannyFiltered );
-  cvCopy(pixColoredCannyFiltered,pixDebug,pixCannyFiltered);
-  cvReleaseImage(&pixColoredCannyFiltered);
-
-  cvShowImage("hough", pixHough);
-
-  cvNot(pixCannyFiltered, pixCannyFiltered);
-  cvDistTransform(pixCannyFiltered, pixCannyDist, CV_DIST_L1);
-
-  cvShowImage("distance", pixCannyDist);
-
-  //  cvReleaseImage(&pixOccupiedDist);
-  //  cvReleaseImage(&pixOccupied);
-  //  cvReleaseImage(&pixFree);
-  //  cvReleaseImage(&pixUnknown);
-  //  cvReleaseImage(&pixCanny);
-  cvClearMemStorage(storage);
-  cvReleaseMemStorage(&storage);
-  cvReleaseImage(&pixFreeDilated);
-  cvReleaseImage(&pixCanny);
-  cvReleaseImage(&pixCannyFiltered);
-  cvReleaseImage(&pixCannyFilteredAndDilated);
-  cvReleaseImage(&pixHough);
-}
-
-std::vector<CornerCandidate> BoxDetector::groupCorners(std::vector<CornerCandidate> &corner, double group_dist)
-{
-  // group within distance
-  std::vector<std::vector<CornerCandidate> > grouped_corners;
-  for (size_t i = 0; i < corner.size(); i++)
-  {
-    std::vector<CornerCandidate> vec;
-    vec.push_back(corner[i]);
-    grouped_corners.push_back(vec);
-  }
-  bool changed = true;
-  while (changed)
-  {
-    changed = false;
-    for (size_t i = 0; i < grouped_corners.size(); i++)
-    {
-      for (size_t j = i + 1; j < grouped_corners.size(); j++)
-      {
-        // check whether these two groups are close enough --> merge groups and break loop
-        for (size_t a = 0; a < grouped_corners[i].size(); a++)
-        {
-          for (size_t b = 0; b < grouped_corners[j].size(); b++)
-          {
-            //            cout << grouped_corners[i][a].x<<";"<<grouped_corners[i][a].y<<"   "<<grouped_corners[j][b].x <<";"<<grouped_corners[j][b].y << endl;
-            if (SQR(grouped_corners[i][a].x - grouped_corners[j][b].x)
-                + SQR(grouped_corners[i][a].y - grouped_corners[j][b].y) < SQR(group_dist))
-            {
-              // merge groups
-              //              cout << "merging.." << endl;
-              grouped_corners[i].insert(grouped_corners[i].end(), grouped_corners[j].begin(), grouped_corners[j].end());
-              grouped_corners.erase(grouped_corners.begin() + j);
-              changed = true;
-              j--;
-              break;
-            }
-          }
-          if (changed)
-            break;
-        }
-      }
-    }
-  }
-
-  //  // filter groups with low support
-  //  size_t min_support = 1;
-  //  changed = true;
-  //  while (changed)
-  //  {
-  //    changed = false;
-  //    for (size_t i = 0; i < grouped_corners.size(); i++)
-  //    {
-  //      if (grouped_corners[i].size() < min_support)
-  //      {
-  //        grouped_corners.erase(grouped_corners.begin() + i);
-  //        changed = true;
-  //        break;
-  //      }
-  //    }
-  //  }
-
-  //  cout << "corner groups: " << (grouped_corners.size()) << endl;
-  std::vector<CornerCandidate> result;
-  //  result.resize(MIN(1,grouped_corners.size()));
-  result.resize(grouped_corners.size());
-
-  for (size_t i = 0; i < result.size(); i++)
-  {
-    result[i] = grouped_corners[i][0];
-
-    btQuaternion o = grouped_corners[i][0].tf.getRotation();
-    btVector3 t = grouped_corners[i][0].tf.getOrigin();
-
-    for (size_t j = 1; j < grouped_corners[i].size(); j++)
-    {
-      o = o.slerp(grouped_corners[i][j].tf.getRotation(), 1 / (j+1.0));
-      t = t.lerp(grouped_corners[i][j].tf.getOrigin(), 1 / (j+1.0));
-    }
-
-    result[i].tf = btTransform(o, t);
-  }
-  //  for (size_t i = 0; i < MIN(4,grouped_corners.size()); i++)
-  //  {
-  //    char buf[50];
-  //    sprintf(buf, "x%d", i);
-  //    broadcaster_.sendTransform(grouped_corners[i][0].tf, ros::Time::now(), buf, "/stereo");
-  //  }
-  return result;
 }
 
 void BoxDetector::visualizeCorners(std::vector<CornerCandidate> &corner, int id)
@@ -867,8 +479,8 @@ void BoxDetector::findRectangles(std::vector<CornerCandidate> &corner, IplImage*
     initializeRectangle(corner[i], pixDist);
 
     CvScalar col;
-    if( corner[i].computeSupport2d(pixOccupied) >= min_precision
-        & corner[i].computeSupport3d(*cloud_,plane_indices[current_plane]) >= min_recall) {
+    if( (corner[i].computeSupport2d(pixOccupied) >= min_precision)
+        & (corner[i].computeSupport3d(*cloud_,plane_indices[current_plane]) >= min_recall)) {
       col = CV_RGB(0,255,0);
     } else {
       col = CV_RGB(255,0,0);
@@ -887,12 +499,6 @@ void BoxDetector::findRectangles(std::vector<CornerCandidate> &corner, IplImage*
     cvCopy(pixSave,pixDebug);
     cvReleaseImage(&pixSave);
   }
-
-  //  for(size_t i=0;i<corner.size();i++) {
-  //    optimizeRectangle(corner[i],pixCannyDist);
-  //  }
-
-  //  cvReleaseImage(&pixDist);
 }
 
 void BoxDetector::initializeRectangle(CornerCandidate &corner, IplImage* pixDist)
@@ -1011,12 +617,6 @@ void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree,
 
     corner.push_back(candidate);
   }
-
-//  IplImage* pixColoredCannyFiltered = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
-//  cvCvtColor(pixCannyFiltered, pixColoredCannyFiltered, CV_GRAY2BGR);
-//  cvAndS(pixColoredCannyFiltered,cvScalar(255,255,255),pixColoredCannyFiltered );
-//  cvCopy(pixColoredCannyFiltered,pixDebug,pixCannyFiltered);
-//  cvReleaseImage(&pixColoredCannyFiltered);
 
   cvNot(pixCanny, pixCanny);
   cvDistTransform(pixCanny, pixCannyDist, CV_DIST_L1);

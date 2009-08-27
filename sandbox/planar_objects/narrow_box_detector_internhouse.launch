@@ -1,9 +1,11 @@
 <launch>
-    <node pkg="planar_objects" type="box_detector" respawn="false" output="screen" name="box_detector">
+    <node pkg="planar_objects" type="box_detector" respawn="true" output="screen" name="box_detector">
       <remap from="stereo" to="narrow_stereo" />
       <param name="verbose" type="bool" value="false"/>
 
       <param name="n_planes_max" type="int" value="5"/>
+      <param name="n_seeds_per_plane" type="int" value="5"/>
+
       <param name="point_plane_distance" value="0.01"/>
 
       <param name="show_colorized_planes" type="bool" value="true"/>

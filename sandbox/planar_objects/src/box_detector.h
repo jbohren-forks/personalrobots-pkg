@@ -143,17 +143,9 @@ public:
   // Main loop
   bool spin();
 
-  void findFrontAndBackPlane(int& frontplane, int& backplane, std::vector<std::vector<int> >& indices, std::vector<
-      std::vector<double> >& plane_coeff);
-  void findCornerCandidates2(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown, IplImage* &pixDist,
-                            std::vector<double> & plane_coeff, std::vector<int>& plane_indices,std::vector<CornerCandidate> &corner,int id);
   void findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown, IplImage* &pixDist,
                             std::vector<double> & plane_coeff, std::vector<int>& plane_indices,std::vector<CornerCandidate> &corner,int id);
-  std::vector<CornerCandidate> groupCorners(std::vector<CornerCandidate> &corner, double group_dist = 20);
   void visualizeCorners(std::vector<CornerCandidate> &corner, int id = 0);
-  void visualizeFrontAndBackPlane(int frontplane, int backplane, const sensor_msgs::PointCloud& cloud, std::vector<
-      std::vector<int> >& plane_indices, std::vector<sensor_msgs::PointCloud>& plane_cloud, std::vector<std::vector<
-      double> >& plane_coeff, sensor_msgs::PointCloud& outside, bool showConvexHull = false);
   void visualizePlanes(const sensor_msgs::PointCloud& cloud, std::vector<
       std::vector<int> >& plane_indices, std::vector<sensor_msgs::PointCloud>& plane_cloud, std::vector<std::vector<
       double> >& plane_coeff, sensor_msgs::PointCloud& outside, bool showConvexHull = false);
