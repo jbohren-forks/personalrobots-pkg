@@ -14,5 +14,5 @@
   <include file="$(find milestone2_executive)/door_domain_executive.launch" />
   <node pkg="trex_pr2" type="trexfast" output="screen" />
   -->
-  <node pkg="doors_core" type="test_executive" output="screen" />
+  <node pkg="doors_planner_core" type="test_executive" output="screen" />
 </launch>
