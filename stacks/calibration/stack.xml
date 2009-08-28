@@ -10,7 +10,7 @@
   <depend stack="ros"/>
   <depend stack="common_msgs"/> <!-- actionlib_msgs, geometry_msgs, sensor_msgs -->
   <depend stack="common"/> <!-- actionlib -->
-  <depend stack="mechanism"/> <!-- mechanism_msgs -->
+  <depend stack="pr2_mechanism"/> <!-- mechanism_msgs -->
   <depend stack="geometry"/> <!-- tf -->
   <depend stack="stereo" /> <!-- stereo_msgs -->
 
