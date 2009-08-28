@@ -555,4 +555,232 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     cvReleaseImage(&image1);
     cvReleaseImage(&image2);
 }
+//------------------------------
+void detect_outlets_one_way_2(IplImage* test_image, const outlet_template_t& outlet_template, 
+                            vector<outlet_t>& holes, IplImage* color_image, 
+                            const char* output_path, const char* output_filename)
+{
+	holes.clear();
+    IplImage* image = cvCreateImage(cvSize(test_image->width, test_image->height), IPL_DEPTH_8U, 3);
+    cvCvtColor(test_image, image, CV_GRAY2RGB);
+    IplImage* image1 = cvCloneImage(color_image);
+    IplImage* image2 = cvCloneImage(image1);
+    
+    int64 time1 = cvGetTickCount();
+    
+    vector<feature_t> features;
+    GetHoleFeatures(test_image, features, outlet_template.GetHoleContrast());
+    
+    int64 time2 = cvGetTickCount();
+    
+    printf("Found %d test features, time elapsed: %f\n", (int)features.size(), float(time2 - time1)/cvGetTickFrequency()*1e-6);
+    
+    
+    CvOneWayDescriptorObject* descriptors = const_cast<CvOneWayDescriptorObject*>(outlet_template.get_one_way_descriptor_base());
+    vector<feature_t> hole_candidates;
+	vector<int> pose_idx_vec;
+	vector<int> desc_idx_vec;
+    int patch_width = descriptors->GetPatchSize().width/2;
+    int patch_height = descriptors->GetPatchSize().height/2; 
+    for(int i = 0; i < (int)features.size(); i++)
+	{
+        CvPoint center = features[i].pt;
+        float scale = features[i].size;
+        
+        CvRect roi = cvRect(center.x - patch_width/2, center.y - patch_height/2, patch_width, patch_height);
+        cvSetImageROI(test_image, roi);
+        roi = cvGetImageROI(test_image);
+        if(roi.width != patch_width || roi.height != patch_height)
+        {
+            continue;
+        }
 
+        roi = resize_rect(roi, 1.0f);
+        cvSetImageROI(test_image, roi);
+
+        int desc_idx = -1;
+        int pose_idx = -1;
+        float distance = 0;
+        
+        CvMat* avg = 0;
+        CvMat* eigenvectors = 0;
+        descriptors->GetLowPCA(&avg, &eigenvectors);
+
+        descriptors->FindDescriptor(test_image, desc_idx, pose_idx, distance);
+
+        if(desc_idx < 0)
+        {
+            printf("Descriptor not found for feature %i, skipping...\n", i);
+            continue;
+        }
+        
+        CvPoint center_new = descriptors->GetDescriptor(desc_idx)->GetCenter();
+        CvScalar color = descriptors->IsDescriptorObject(desc_idx) ? CV_RGB(0, 255, 0) : CV_RGB(255, 0, 0);
+        int part_idx = descriptors->GetDescriptorPart(desc_idx);
+		
+		int min_ground_idx = (int)(descriptors->GetLabeledFeatures().size()) * 2 / 3; // 3 there is number of holes in the outlet (including ground hole)
+        if(part_idx >= 0 && part_idx < min_ground_idx)
+        {
+            color = CV_RGB(255, 255, 0);
+        }
+        
+        if((part_idx >= min_ground_idx) && (part_idx <  (int)(descriptors->GetLabeledFeatures().size())))
+        {
+            color = CV_RGB(0, 255, 255);
+        }
+        
+        if(part_idx >= 0)
+        {
+            feature_t candidate = features[i];
+            if(part_idx < min_ground_idx) candidate.class_id = 0;
+            else candidate.class_id = 1;
+            hole_candidates.push_back(candidate);  
+			pose_idx_vec.push_back(pose_idx);
+			desc_idx_vec.push_back(desc_idx);
+        }
+        
+        cvCircle(image, center, scale, color, 2);
+        
+        cvResetImageROI(test_image);          
+    }
+    
+    int64 time3 = cvGetTickCount();
+    printf("Features matched. Time elapsed: %f\n", float(time3 - time2)/cvGetTickFrequency()*1e-6);       
+    
+    //        printf("%d features before filtering\n", (int)hole_candidates.size());
+    vector<feature_t> hole_candidates_filtered;
+    float dist = calc_set_std(descriptors->_GetLabeledFeatures());
+
+	vector<int> idx_filtered;
+
+	FilterOutletFeatures(hole_candidates, hole_candidates_filtered, idx_filtered, dist*4);
+    hole_candidates = hole_candidates_filtered;
+	vector<feature_t> train_features = descriptors->_GetLabeledFeatures();
+	CvMat* transform = cvCreateMat(2, 3, CV_32FC1);
+	for (int i=0;i<(int)hole_candidates.size();i++)
+	{
+		vector<feature_t> features = train_features;
+		CvAffinePose pose = descriptors->GetDescriptor(desc_idx_vec[idx_filtered[i]])->GetPose(pose_idx_vec[idx_filtered[i]]);
+
+		GenerateAffineTransformFromPose(cvSize(descriptors->GetPatchSize().width*2, descriptors->GetPatchSize().height*2),pose,transform);
+		for (int j=0;j<(int)train_features.size();j++)
+		{
+			features[j].pt.x = cvmGet(transform,0,0)*train_features[j].pt.x+cvmGet(transform,0,1)*train_features[j].pt.y+cvmGet(transform,0,2);
+			features[j].pt.y = cvmGet(transform,1,0)*train_features[j].pt.x+cvmGet(transform,1,1)*train_features[j].pt.y+cvmGet(transform,1,2);
+		}
+		
+		CvPoint vec;
+		if (hole_candidates[i].class_id == 0)
+		{
+			vec.x = hole_candidates[i].pt.x - features[0].pt.x;
+			vec.y = hole_candidates[i].pt.y - features[0].pt.y;
+		}
+		else
+		{
+			
+			vec.x = hole_candidates[i].pt.x - features[(int)(features.size())-1].pt.x;
+			vec.y = hole_candidates[i].pt.y - features[(int)(features.size())-1].pt.y;
+		}
+		//IplImage* r = cvCloneImage(color_image);
+
+		//CvScalar color_parts[] = {CV_RGB(255, 255, 0), CV_RGB(0, 255, 255)};
+		//for(int j = 0; j < (int)features.size(); j++)
+		//{
+		//	CvPoint center;
+		//	center.x = features[j].pt.x + vec.x; 
+		//	center.y = features[j].pt.y + vec.y; 
+		//	cvCircle(r, center, features[j].size, color_parts[features[j].class_id], 2);
+		//}
+
+		//char p[1024];
+		//sprintf(p,"d:/temp/tmp/%d.jpg",i);
+		//cvSaveImage(p,r);
+		//cvReleaseImage(&r);
+		
+	}
+
+	cvReleaseMat(&transform);
+
+    vector<int> indices;
+
+#if defined(_GHT) // Test histogram calculating
+	int x_size = test_image->width/10;
+	int y_size = test_image->height/10;
+	int x_scale_size = 7;
+	int y_scale_size = 7;
+	int angle1_size = 7;
+	int angle2_size = 7;
+	int hist_size[] = {x_size, y_size, angle1_size, x_scale_size, y_scale_size, angle2_size};
+	float x_ranges[] ={ 0, test_image->width }; 
+	float y_ranges[] = { 0, test_image->height };
+	float angle1_ranges[] = { -CV_PI/4, CV_PI/4 };
+	float angle2_ranges[] = { -CV_PI/4, CV_PI/4 };
+	float x_scale_ranges[] = { 0.7, 1.1 };
+	float y_scale_ranges[] = { 0.7, 1.1 };
+	float* ranges[] ={ x_ranges, y_ranges, angle1_ranges, x_scale_ranges, y_scale_ranges, angle2_ranges};
+
+    float modelErrorMin = 1e10;
+#if defined(_VERBOSE)
+    IplImage* _image1 = cvCloneImage(color_image);
+#endif //_VERBOSE
+    for(int i = 0; i < descriptors->GetPyrLevels(); i++)
+    {
+        vector<feature_t> train_features;
+        ScaleFeatures(descriptors->_GetLabeledFeatures(), train_features, 1.0f/(1<<i));
+        
+        vector<outlet_t> _holes;
+                
+#if defined(_VERBOSE) 
+        cvCopy(color_image, _image1);
+        float modelError = generalizedHoughTransform(hole_candidates,train_features,hist_size,ranges,_holes, image2,_image1);
+#else
+        float modelError = generalizedHoughTransform(hole_candidates,train_features,hist_size,ranges,_holes);
+#endif //_VERBOSE
+        
+        if(modelError < modelErrorMin)
+        {
+            modelErrorMin = modelError;
+            holes = _holes;
+            printf("Picked up scale %d\n", i);
+#if defined(_VERBOSE)
+            cvCopy(_image1, image1);
+#endif //_VERBOSE
+
+        }
+    }
+#if defined(_VERBOSE)
+    cvReleaseImage(&_image1);
+#endif //_VERBOSE
+    
+#endif //_GHT
+  
+    
+    
+    int64 time4 = cvGetTickCount();
+    printf("Object detection completed. Time elapsed: %f\n", float(time4 - time3)/cvGetTickFrequency()*1e-6);
+    printf("Total time elapsed: %f\n", float(time4 - time1)/cvGetTickFrequency()*1e-6);
+    
+    CvScalar color_parts[] = {CV_RGB(255, 255, 0), CV_RGB(0, 255, 255)};
+    for(int i = 0; i < (int)hole_candidates.size(); i++)
+    {
+        cvCircle(image2, hole_candidates[i].pt, hole_candidates[i].size, color_parts[hole_candidates[i].class_id], 2);
+    }
+    
+    
+    
+#if defined(_VERBOSE)
+    char test_image_filename[1024];
+    sprintf(test_image_filename, "%s/features/%s", output_path, output_filename);
+    cvSaveImage(test_image_filename, image);
+    
+    sprintf(test_image_filename, "%s/outlets/%s", output_path, output_filename);
+    cvSaveImage(test_image_filename, image1);
+    
+    sprintf(test_image_filename, "%s/features_filtered/%s", output_path, output_filename);
+    cvSaveImage(test_image_filename, image2);
+#endif //_VERBOSE
+    
+    cvReleaseImage(&image);
+    cvReleaseImage(&image1);
+    cvReleaseImage(&image2);
+}

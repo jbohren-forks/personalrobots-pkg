@@ -28,6 +28,10 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
                             vector<outlet_t>& holes, IplImage* color_image, 
                             const char* output_path, const char* output_filename);
 
+void detect_outlets_one_way_2(IplImage* test_image, const outlet_template_t& outlet_template, 
+                            vector<outlet_t>& holes, IplImage* color_image, 
+                            const char* output_path, const char* output_filename);
+
 
  
 #endif //_ONE_WAY_OUTLET

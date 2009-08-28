@@ -474,6 +474,65 @@ void FilterOutletFeatures(const vector<feature_t>& src_features, vector<feature_
     }
 }
 
+//-----------------------
+void FilterOutletFeatures(const vector<feature_t>& src_features, vector<feature_t>& dst_features, vector<int>& dst_indexes, float max_dist)
+{
+    vector<int> ground_idx;
+	dst_indexes.clear();
+    // find all ground hole candidates
+    for(int i = 0; i < (int)src_features.size(); i++)
+    {
+        if(src_features[i].class_id == 1)
+        {
+            ground_idx.push_back(i);
+        }
+    }
+    
+    // find all pairs of ground holes that are close enough to each other and filter out one of them
+    vector<int> ground_idx_filtered;
+    for(int i = 0; i < (int)ground_idx.size(); i++)
+    {
+        int flag = 0;
+        for(int j = 0; j < (int)ground_idx_filtered.size(); j++)
+        {
+            if(length(src_features[ground_idx[i]].pt - src_features[ground_idx_filtered[j]].pt) < max_dist)
+            {
+                flag = 1;
+                break;
+            }
+        }
+        
+        if(flag == 0)
+        {
+            ground_idx_filtered.push_back(ground_idx[i]);
+        }
+    }
+    
+    ground_idx = ground_idx_filtered;
+    vector<int> indices;
+    indices.assign(src_features.size(), 0);
+    for(int i = 0; i < (int)ground_idx.size(); i++)
+    {
+        for(int j = 0; j < (int)src_features.size(); j++)
+        {
+            if(length(src_features[j].pt - src_features[ground_idx[i]].pt) < max_dist)
+            {
+                indices[j] = 1;
+            }
+        }
+    }
+    
+    // now copy the features
+    for(int i = 0; i < (int)src_features.size(); i++)
+    {
+        if(indices[i])
+        {
+            dst_features.push_back(src_features[i]);
+			dst_indexes.push_back(i);
+        }
+    }
+}
+//----------------------------------
 void ClusterOutletFeatures(const vector<feature_t>& src_features, vector<feature_t>& clusters, float max_dist)
 {
     vector<int> ground_idx;

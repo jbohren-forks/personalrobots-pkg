@@ -22,6 +22,8 @@ void DetectObjectConstellation(const vector<feature_t>& train, const vector<feat
 void InferMissingObjects(const vector<feature_t>& train, const vector<feature_t>& input, CvMat* homography, const vector<int>& indices, 
                          vector<feature_t>& full);
 void FilterOutletFeatures(const vector<feature_t>& src_features, vector<feature_t>& dst_features, float max_dist);
+void FilterOutletFeatures(const vector<feature_t>& src_features, vector<feature_t>& dst_features, vector<int>& dst_indexes, float max_dist);
+
 void ClusterOutletFeatures(const vector<feature_t>& src_features, vector<feature_t>& clusters, float max_dist);
 void SelectNeighborFeatures(const vector<feature_t>& src_features, CvPoint center, vector<feature_t>& dst_features, float max_dist);
 
