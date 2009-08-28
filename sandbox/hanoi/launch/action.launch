@@ -1,0 +1,9 @@
+<launch>
+
+  <!-- Init the head controller -->
+  <include file="$(find pr2_default_controllers)/head_position_controller.launch"/>
+
+  <!-- Start right arm -->
+  <include file="$(find 3dnav_pr2)/launch/actions/right_arm.launch"/>
+
+</launch>

@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- Start wide stereo -->
+  <!--<include file="$(find stereo_image_proc)/wide_stereoproc.launch"/>-->
+
+  <!-- Start narrow stereo -->
+  <!--<include file="$(find stereo_image_proc)/narrow_stereoproc.launch"/>-->
+
+  <!-- Start laser perception -->
+  <include file="$(find 3dnav_pr2)/launch/perception/laser-perception.launch"/>
+
+</launch>
