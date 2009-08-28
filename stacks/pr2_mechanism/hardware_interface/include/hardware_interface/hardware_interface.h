@@ -154,7 +154,7 @@ public:
     deleteElements(&actuators_);
   }
   std::vector<Actuator*> actuators_;
-  double current_time_;
+  ros::Time current_time_;
 };
 
 #endif
