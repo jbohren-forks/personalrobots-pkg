@@ -1,3 +1,5 @@
+<!-- This file is no longer used in the regression test; if it's not needed, it
+should be removed -->
 <launch>
 <group ns="pr2_ik_regression_test">    
       <param name="tip_name" value="r_wrist_roll_link" />     
