@@ -236,7 +236,7 @@ void JointWaypointController::waypointTrajToSplineTraj(const manipulation_msgs::
   for (int i=0; i<num_segments; i++)
   {
     double duration = waypoint_traj.points[i+1].time - waypoint_traj.points[i].time;
-    spline_traj.segments[i].duration = ros::Time(duration);
+    spline_traj.segments[i].duration = ros::Duration(duration);
 
     spline_traj.segments[i].a.resize(num_joints);
     spline_traj.segments[i].b.resize(num_joints);
