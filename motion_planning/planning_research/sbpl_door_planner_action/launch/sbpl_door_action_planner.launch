@@ -11,7 +11,7 @@
      <!--param name="sbpl_action_file" textfile="$(find sbpl)/matlab/mprim/pr2_all_2.5cm_20turncost.mprim" /-->
      <param name="sbpl_action_file" textfile="$(find sbpl)/matlab/mprim/all_file.mprim" />
 
-     <param name="animate" value="true"/>
+     <param name="animate" value="false"/>
      <param name="do_control" value="true"/>
      <param name="animate_frequency" value="10.0"/>
      <param name="controller_frequency" value="10.0"/>

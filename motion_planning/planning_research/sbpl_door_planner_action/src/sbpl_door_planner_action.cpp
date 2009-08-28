@@ -362,7 +362,14 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::DoorCmd& d
   goal_.x = (door.frame_p1.x+door.frame_p2.x)/2.0 + distance_goal_ * cos(goal_.th);
   goal_.y = (door.frame_p1.y+door.frame_p2.y)/2.0 + distance_goal_ * sin(goal_.th);
 
-  publishDoor(door_env_.door,0.0);
+  if(door_open_direction_ == door_msgs::DoorCmd::PULL)
+  {
+    goal_.th = atan2(-door_normal(1),-door_normal(0));
+    goal_.x = (door.frame_p1.x+door.frame_p2.x)/2.0 - distance_goal_ * cos(goal_.th);
+    goal_.y = (door.frame_p1.y+door.frame_p2.y)/2.0 - distance_goal_ * sin(goal_.th);
+  }
+
+  publishDoor(door_env_.door,getFrameAngle(door_env_.door));
   ROS_DEBUG("Goal: %f %f %f",goal_.x,goal_.y,goal_.th);
   if(!isPreemptRequested())
   {
@@ -568,6 +575,7 @@ bool SBPLDoorPlanner::scalePlan(const manipulation_msgs::JointTraj &traj, const 
   std::vector<trajectory::Trajectory::TPoint> result_c;
   trajectory::Trajectory traj_c(traj.points[0].positions.size());
   manipulation_msgs::JointTraj result;
+  traj_c.setJointWraps(2);
   traj_c.autocalc_timing_ = true;
   traj_c.setMaxRates(velocity_limits_);
   traj_c.setInterpolationMethod(trajectory_type_);
