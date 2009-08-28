@@ -22,9 +22,9 @@ from tabletop_objects.srv import *
 
 
 def call_service():
-    print "Waiting for service"
-    rospy.wait_for_service('table_top/find_object_poses')
     try:
+        print "Waiting for service"
+        rospy.wait_for_service('table_top/find_object_poses', 1.0)
         # create a handle to the add_two_ints service
         find_object_poses = rospy.ServiceProxy('table_top/find_object_poses', FindObjectPoses)
 
@@ -36,6 +36,8 @@ def call_service():
 
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
+    except rospy.ROSException, e:
+        print "Got exceptio: %s"%e
 
 
 class PublishThread(Thread):

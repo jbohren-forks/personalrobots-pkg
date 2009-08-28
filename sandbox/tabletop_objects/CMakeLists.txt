@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.4.6)
 
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-#set(ROS_BUILD_TYPE RelWithDebInfo)
-set(ROS_BUILD_TYPE Debug)
+set(ROS_BUILD_TYPE RelWithDebInfo)
+#set(ROS_BUILD_TYPE Debug)
 
 rosbuild_init()
 rosbuild_add_boost_directories()
@@ -33,5 +33,7 @@ add_custom_target(media_files ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/meshes)
 
 rosbuild_add_executable(tabletop_detector src/tabletop_detector.cpp) 
 rosbuild_add_executable(model_fitter src/model_fitter.cpp src/ply.c src/mesh_loader.cpp)
-rosbuild_add_executable(publish_scene src/publish_scene.cpp)
 rosbuild_link_boost(model_fitter filesystem)
+rosbuild_add_executable(publish_scene src/publish_scene.cpp)
+rosbuild_add_executable(compute_features src/compute_features.cpp src/ply.c src/mesh_loader.cpp)
+rosbuild_link_boost(compute_features filesystem)

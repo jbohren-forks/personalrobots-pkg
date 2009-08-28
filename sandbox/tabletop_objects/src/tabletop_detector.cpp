@@ -687,29 +687,32 @@ private:
 			color = default_color;
 		}
 
+		printf("Publish marker %d\n", idx);
+
 		visualization_msgs::Marker marker;
 		marker.header.frame_id = "table_frame";
-		marker.header.stamp = stamp;
+		marker.header.stamp = ros::Time::now();
 		marker.ns = "tabletop_clusters";
 		marker.id = 200+idx;
 		marker.type = visualization_msgs::Marker::SPHERE;
 		marker.action = visualization_msgs::Marker::ADD;
 		marker.pose.position.x = p.x;
 		marker.pose.position.y = p.y;
-		marker.pose.position.z = p.z;
+		marker.pose.position.z = 0;
 		marker.pose.orientation.x = 0.0;
 		marker.pose.orientation.y = 0.0;
 		marker.pose.orientation.z = 0.0;
 		marker.pose.orientation.w = 1.0;
 		marker.scale.x = radius*2;
 		marker.scale.y = radius*2;
-		marker.scale.z = 0;
+		marker.scale.z = 0.001;
 		marker.color.a = 1.0;
 		marker.color.r = color[0];
 		marker.color.g = color[1];
 		marker.color.b = color[2];
 
 		marker_pub_.publish(marker);
+		ros::Duration(0.1).sleep();
 	}
 
 	class NNGridIndexer
@@ -1015,7 +1018,7 @@ private:
 //		printf("Total dist: %f\n", total_dist);
 
 //		for (size_t i=0;i<clusters.size();++i) {
-//			showCluster(clusters[i], step, i, cloud.header.stamp);
+//			showCluster(centers[i], step, i, cloud.header.stamp);
 //		}
 
 	}

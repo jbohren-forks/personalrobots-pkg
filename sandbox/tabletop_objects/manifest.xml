@@ -22,6 +22,7 @@
   <depend package="chamfer_matching"/>
   <depend package="mapping_msgs"/>
   <depend package="tabletop_msgs"/>
+  <depend package="distance_field"/>
 
 
  <export>

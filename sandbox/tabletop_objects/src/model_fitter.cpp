@@ -45,12 +45,20 @@
 #include "mapping_msgs/Object.h"
 
 #include "tf/transform_datatypes.h"
+
+#include "distance_field/propagation_distance_field.h"
+
+
+//#define PUBLISH_GRASH_POSE
+
 #ifdef PUBLISH_GRASH_POSE
 #include <tf/transform_broadcaster.h>
 #endif
 
 namespace bfs = boost::filesystem;
 using namespace std;
+
+
 
 namespace model_fit {
 
@@ -59,34 +67,25 @@ namespace model_fit {
 class ModelFitSet;
 
 class TemplateModel {
-	int x_res, y_res, z_res;
-	float x_min, y_min, z_min;
-	float x_max, y_max, z_max;
-	float x_d, y_d, z_d;
-	float truncate_value;
-
-	float *grid;
-	mapping_msgs::Object mesh_;
-
-	string name_;
 
 public:
-	TemplateModel()
+	distance_field::PropagationDistanceField* distance_voxel_grid_;
+	float truncate_value;
+	mapping_msgs::Object mesh_;
+
+	geometry_msgs::Point min_, max_;
+
+	TemplateModel() : truncate_value(0.10)
 	{
 
 	}
 
 	~TemplateModel()
 	{
-		delete[] grid;
+		delete distance_voxel_grid_;
 	}
 
-	void load(const string& file, const string& name);
-
-	string name()
-	{
-		return name_;
-	}
+	void load(const string& file);
 
 	geometry_msgs::Pose graspPose()
 	{
@@ -115,13 +114,13 @@ public:
 	{
 		geometry_msgs::Pose pose = graspPose();
 
-		low_extent.x = pose.position.x-x_min;
-		low_extent.y = pose.position.y-y_min;
-		low_extent.z = pose.position.z-z_min;
+		low_extent.x = pose.position.x-min_.x;
+		low_extent.y = pose.position.y-min_.y;
+		low_extent.z = pose.position.z-min_.z;
 
-		high_extent.x = x_max-pose.position.x;
-		high_extent.y = y_max-pose.position.y;
-		high_extent.z = z_max-pose.position.z;
+		high_extent.x = min_.x-pose.position.x;
+		high_extent.y = min_.y-pose.position.y;
+		high_extent.z = min_.z-pose.position.z;
 
 	}
 
@@ -130,15 +129,9 @@ public:
 		return mesh_;
 	}
 
-
 	void show(const ros::Publisher& publisher,const ros::Time& time, const geometry_msgs::Point32& location, float fit_score);
 
-	bool in_bounds(int x, int y, int z)
-	{
-		return (x>=0 && x<x_res && y>=0 && y<y_res && z>=0 && z<z_res);
-	}
-
-	void fitPointCloud(const sensor_msgs::PointCloud& cloud, const geometry_msgs::Point32& location, ModelFitSet& mfs);
+	double fitPointCloud(const sensor_msgs::PointCloud& cloud, const geometry_msgs::Point32& location, geometry_msgs::Point32& vector, ModelFitSet& mfs);
 
 	void findBestFit(const sensor_msgs::PointCloud& cloud, ModelFitSet& mfs);
 };
@@ -233,34 +226,40 @@ public:
 
 
 
-void TemplateModel::load(const string& file, const string& name)
+void TemplateModel::load(const string& file)
 {
-	name_ = name;
-
-	FILE* f;
-	f = fopen(file.c_str(),"r");
-	if (f==NULL) {
-		ROS_ERROR("Cannot open template file: %s", file.c_str());
-	}
-	fscanf(f,"%d %d %d ", &x_res, &y_res, &z_res );
-	fscanf(f,"%g %g %g ", &x_min, &y_min, &z_min );
-	fscanf(f,"%g %g %g ", &x_max, &y_max, &z_max );
-	x_d = (x_max-x_min)/(x_res-1);
-	y_d = (y_max-y_min)/(y_res-1);
-	z_d = (z_max-z_min)/(z_res-1);
-
-	grid = new float[x_res*y_res*z_res];
-	fread(grid, sizeof(float), x_res*y_res*z_res, f);
-	fclose(f);
-
-	truncate_value = *max_element(grid, grid+x_res*y_res*z_res);
-
-
-	bfs::path file_path(file);
-	bfs::path ply_file = bfs::change_extension(file_path, ".ply").leaf();
-	bfs::path reduced_path = file_path.parent_path() / "reduced" / ply_file;
 	PLYModelLoader modle_loader;
-	modle_loader.readFromFile(reduced_path.string(),mesh_);
+	modle_loader.readFromFile(file,mesh_);
+
+	geometry_msgs::Point min, max;
+
+	if (mesh_.vertices.size()>0) {
+		min = mesh_.vertices[0];
+		max = mesh_.vertices[0];
+
+		for (size_t i=0;i<mesh_.vertices.size();++i) {
+
+			if (min.x > mesh_.vertices[i].x) min.x = mesh_.vertices[i].x;
+			if (min.y > mesh_.vertices[i].y) min.y = mesh_.vertices[i].y;
+			if (min.z > mesh_.vertices[i].z) min.z = mesh_.vertices[i].z;
+			if (max.x < mesh_.vertices[i].x) max.x = mesh_.vertices[i].x;
+			if (max.y < mesh_.vertices[i].y) max.y = mesh_.vertices[i].y;
+			if (max.z < mesh_.vertices[i].z) max.z = mesh_.vertices[i].z;
+		}
+	}
+
+	ROS_INFO("Size: (%g,%g,%g, %g, %g, %g)\n",min.x, min.y, min.z, max.x, max.y, max.z);
+
+	distance_voxel_grid_ = new distance_field::PropagationDistanceField(max.x-min.x,max.y-min.y, max.z-min.z, 0.002, min.x,min.y,min.z, 1.0 );
+
+	std::vector<btVector3> points;
+	points.reserve(mesh_.vertices.size());
+	for (size_t i=0; i<mesh_.vertices.size(); ++i)
+	{
+		points.push_back(btVector3(mesh_.vertices[i].x,mesh_.vertices[i].y,mesh_.vertices[i].z));
+	}
+	distance_voxel_grid_->reset();
+	distance_voxel_grid_->addPointsToField(points);
 }
 
 
@@ -282,10 +281,10 @@ void TemplateModel::show(const ros::Publisher& publisher, const ros::Time& time,
 	marker.pose.orientation.y = 0.0;
 	marker.pose.orientation.z = 0.0;
 	marker.pose.orientation.w = 1.0;
-	marker.scale.x = x_d;
-	marker.scale.y = y_d;
-	marker.scale.z = z_d;
-	marker.color.a = 0.7;
+	marker.scale.x = distance_voxel_grid_->getResolution(distance_field::PropagationDistanceField::DIM_X)/2;
+	marker.scale.y = distance_voxel_grid_->getResolution(distance_field::PropagationDistanceField::DIM_Y)/2;
+	marker.scale.z = distance_voxel_grid_->getResolution(distance_field::PropagationDistanceField::DIM_Z)/2;
+	marker.color.a = 1.0;
 
 
 	if (fit_score<7.0) {
@@ -299,14 +298,13 @@ void TemplateModel::show(const ros::Publisher& publisher, const ros::Time& time,
 		marker.color.b = 0.0;
 	}
 
-	for (int i=0;i<x_res;++i) {
-		for (int j=0;j<y_res;++j) {
-			for (int k=0;k<z_res;++k) {
-				if (grid[((i*y_res)+j)*z_res+k]==0) {
+	for (int i=0;i<distance_voxel_grid_->getNumCells(distance_field::PropagationDistanceField::DIM_X);++i) {
+		for (int j=0;j<distance_voxel_grid_->getNumCells(distance_field::PropagationDistanceField::DIM_Y);++j) {
+			for (int k=0;k<distance_voxel_grid_->getNumCells(distance_field::PropagationDistanceField::DIM_Z);++k) {
+
+				if (distance_voxel_grid_->getDistanceFromCell(i,j,k)<0.001) {
 					geometry_msgs::Point p;
-					p.x = i*x_d+x_min;
-					p.y = j*y_d+y_min;
-					p.z = k*z_d+z_min;
+					distance_voxel_grid_->gridToWorld(i,j,k, p.x,p.y,p.z);
 					marker.points.push_back(p);
 				}
 			}
@@ -316,28 +314,54 @@ void TemplateModel::show(const ros::Publisher& publisher, const ros::Time& time,
 }
 
 
-void TemplateModel::fitPointCloud(const sensor_msgs::PointCloud& cloud, const geometry_msgs::Point32& location, ModelFitSet& mfs)
+double TemplateModel::fitPointCloud(const sensor_msgs::PointCloud& cloud, const geometry_msgs::Point32& location, geometry_msgs::Point32& vector, ModelFitSet& mfs)
 {
-	float score = 0;
-	float max_dist = 0;
-	for (size_t i=0;i<cloud.points.size();i++) {
-		int x = int(((cloud.points[i].x-location.x)-x_min)/x_d);
-		int y = int(((cloud.points[i].y-location.y)-y_min)/y_d);
-		int z = int(((cloud.points[i].z-location.z)-z_min)/z_d);
+	double score = 0;
+	double max_dist = 0;
 
-		float val;
-		if (in_bounds(x,y,z)) {
-			val = grid[((x*y_res)+y)*z_res+z];
+	vector.x = 0;
+	vector.y = 0;
+	vector.z = 0;
+	int cnt = 0;
+
+	for (size_t i=0;i<cloud.points.size();i++) {
+		double wx = cloud.points[i].x-location.x;
+		double wy = cloud.points[i].y-location.y;
+		double wz = cloud.points[i].z-location.z;
+
+		int x, y, z;
+		double val;
+		if (distance_voxel_grid_->worldToGrid(wx,wy,wz,x,y,z)) {
+			distance_field::PropDistanceFieldVoxel& voxel = distance_voxel_grid_->getCell(x,y,z);
+			double cx, cy, cz;
+			distance_voxel_grid_->gridToWorld(voxel.closest_point_[0],voxel.closest_point_[1],voxel.closest_point_[2],
+						cx,cy,cz);
+			val = distance_voxel_grid_->getDistanceFromCell(x,y,z);
+			vector.x += (cx-wx);
+			vector.y += (cy-wy);
+			vector.z += (cz-wz);
+			cnt++;
 		}
 		else {
 			val = truncate_value;
 		}
+		if (val>truncate_value) {
+			val = truncate_value;
+		}
+
 		max_dist = max(max_dist,val);
 		score += val;
 	}
 	score /= (cloud.points.size());
+	if (cnt!=0) {
+		vector.x /=  cnt;
+		vector.y /=  cnt;
+		vector.z /=  cnt;
+	}
 
 	mfs.add(this, location, score, max_dist);
+
+	return score;
 }
 
 void TemplateModel::findBestFit(const sensor_msgs::PointCloud& cloud, ModelFitSet& mfs)
@@ -350,22 +374,24 @@ void TemplateModel::findBestFit(const sensor_msgs::PointCloud& cloud, ModelFitSe
 	for (int i=0;i<count;++i) {
 		center.x += cloud.points[i].x;
 		center.y += cloud.points[i].y;
-		//			center.z += cloud.points[i].z;
+		center.z = min(center.z, cloud.points[i].z );
 	}
-
 	center.x /=count;
 	center.y /=count;
-	//		center.z /=count;
 
 	geometry_msgs::Point32 location = center;
+	geometry_msgs::Point32 vector;
 
-	for (float dx=-0.02; dx<=0.02; dx+=0.01) {
-		for (float dy=-0.02; dy<=0.02; dy+=0.01) {
-			location.x = center.x + dx;
-			location.y = center.y + dy;
 
-			fitPointCloud(cloud, location, mfs);
-		}
+	double newcost = fitPointCloud(cloud, location, vector, mfs);;
+	double cost = newcost + 1;
+
+	while (newcost<cost) {
+		cost = newcost;
+		location.x -= vector.x;
+		location.y -= vector.y;
+//		location.z -= vector.z;
+		newcost = fitPointCloud(cloud, location, vector, mfs);
 	}
 }
 
@@ -406,11 +432,10 @@ public:
 	}
 
 
-	void loadTemplate(const string& filename, const string& model_name)
+	void loadTemplate(const string& filename)
 	{
-		ROS_INFO("Loading template: %s", filename.c_str());
 		TemplateModel* tpl = new TemplateModel();
-		tpl->load(filename, model_name);
+		tpl->load(filename);
 		templates.push_back(tpl);
 	}
 
@@ -424,8 +449,8 @@ public:
 
 		bfs::directory_iterator dir_iter(template_dir), dir_end;
 		for(;dir_iter != dir_end; ++dir_iter) {
-			if (bfs::extension(*dir_iter)==".dt") {
-				loadTemplate(dir_iter->string(), bfs::basename(*dir_iter));
+			if (bfs::extension(*dir_iter)==".ply") {
+				loadTemplate(dir_iter->string());
 			}
 		}
 
@@ -453,6 +478,7 @@ public:
 		ROS_INFO("Best score: %g, time:%g", mfs.best_fit_[0].score(), duration);
 
 		mfs.best_fit_[0].model_->show(marker_pub_, req.cloud.header.stamp,  mfs.best_fit_[0].location_,  mfs.best_fit_[0].score());
+//		mfs.best_fit_[0].model_->distance_voxel_grid_->visualize(0.0,0.0001, "table_frame", ros::Time::now());
 
 		resp.object.grasp_pose.pose = mfs.best_fit_[0].graspPose();
 		resp.object.grasp_pose.header.stamp = req.cloud.header.stamp;
@@ -462,6 +488,9 @@ public:
 		resp.object.object_pose.header.frame_id = req.cloud.header.frame_id;
 		resp.object.object = mfs.best_fit_[0].model_->objectMesh();
 		resp.score = mfs.best_fit_[0].score();
+
+
+
 
 
 #ifdef PUBLISH_GRASH_POSE
