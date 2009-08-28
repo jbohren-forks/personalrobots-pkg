@@ -71,6 +71,7 @@ class TemplateModel {
 public:
 	distance_field::PropagationDistanceField* distance_voxel_grid_;
 	float truncate_value;
+	string name_;
 	mapping_msgs::Object mesh_;
 
 	geometry_msgs::Point min_, max_;
@@ -228,6 +229,8 @@ public:
 
 void TemplateModel::load(const string& file)
 {
+	name_ = bfs::basename(file);
+
 	PLYModelLoader modle_loader;
 	modle_loader.readFromFile(file,mesh_);
 
@@ -437,6 +440,7 @@ public:
 		TemplateModel* tpl = new TemplateModel();
 		tpl->load(filename);
 		templates.push_back(tpl);
+
 	}
 
 	void loadTemplateModels(const string& path)
@@ -488,6 +492,7 @@ public:
 		resp.object.object_pose.header.frame_id = req.cloud.header.frame_id;
 		resp.object.object = mfs.best_fit_[0].model_->objectMesh();
 		resp.score = mfs.best_fit_[0].score();
+		resp.model_name = mfs.best_fit_[0].model_->name_;
 
 
 

@@ -72,6 +72,7 @@
 #include "geometry_msgs/Point32.h"
 #include "geometry_msgs/PointStamped.h"
 #include "visualization_msgs/Marker.h"
+#include "tabletop_objects/TrackObject.h"
 
 #include <string>
 
@@ -122,6 +123,7 @@ public:
 	ros::Publisher object_pub_;
 	ros::Publisher objects_pub_;
 	ros::Publisher marker_pub_;
+	ros::Publisher track_object_pub_;
 
 	ros::ServiceServer service_;
 
@@ -199,6 +201,7 @@ public:
 //		advertise<sensor_msgs::PointCloud> ("~outliers", 1);
 //		advertise<sensor_msgs::PointCloud> ("~inliers", 1);
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
+		track_object_pub_ = nh_.advertise<tabletop_objects::TrackObject>("track_object",1);
 
 		ros::AdvertiseServiceOptions service_opts = ros::AdvertiseServiceOptions::create<tabletop_objects::FindObjectPoses>("table_top/find_object_poses",
 							boost::bind(&TabletopDetector::findObjectPoses, this, _1, _2),ros::VoidPtr(), &service_queue_);
@@ -1131,11 +1134,12 @@ private:
 	}
 
 
-	void fitModels(const vector<sensor_msgs::PointCloud>& clouds, vector<tabletop_msgs::TableTopObject>& objects)
+	void fitModels(const vector<sensor_msgs::PointCloud>& clouds, vector<tabletop_msgs::TableTopObject>& objects, vector<string>& names)
 	{
 
 		int count = 0;
 		objects.resize(clouds.size());
+		names.resize(clouds.size());
 		for (size_t k=0;k<clouds.size();++k) {
 
 			if (display_) {
@@ -1152,7 +1156,9 @@ private:
 
 				// TODO: change this to real-world average distance error
 				if (resp.score<5.0) {
-					objects[count++] = resp.object;
+					objects[count] = resp.object;
+					names[count] = resp.model_name;
+					count++;
 				}
 			}
 			else {
@@ -1161,6 +1167,7 @@ private:
 		}
 
 		objects.resize(count);
+		names.resize(count);
 	}
 
 
@@ -1211,9 +1218,17 @@ private:
 		vector<sensor_msgs::PointCloud> clouds;
 		findTabletopClusters(objects_table_frame, centers, clouds);
 
-		fitModels(clouds, objects);
+		vector<string> names;
+		fitModels(clouds, objects, names);
 
+		if (objects.size()!=0) {
+			tabletop_objects::TrackObject track_object;
+			track_object.pose = objects[0].object_pose;
+			track_object.object_id = names[0];
+			track_object_pub_.publish(track_object);
+		}
 		objects_pub_.publish(objects_table_frame);
+
 	}
 
 

@@ -278,7 +278,7 @@ private:
 
 	void leftImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
-//		ROS_INFO("got left image callback");
+		//ROS_INFO("got left image callback: %lld", image->header.stamp.toNSec());
 		boost::unique_lock<boost::mutex> lock(data_lock_);
 
 		limage_ = image;
@@ -290,14 +290,14 @@ private:
 	void disparityImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
 		boost::unique_lock<boost::mutex> lock(data_lock_);
-//		ROS_INFO("got disparity callback");
+		//ROS_INFO("got disparity callback: %lld", image->header.stamp.toNSec());
 		dimage_ = image;
 	}
 
 	void dispinfoCallback(const stereo_msgs::DisparityInfo::ConstPtr& dinfo)
 	{
 		boost::unique_lock<boost::mutex> lock(data_lock_);
-//		ROS_INFO("got dispinfo callback");
+		//ROS_INFO("got dispinfo callback: %lld", dinfo->header.stamp.toNSec());
 		dispinfo_ = dinfo;
 	}
 
@@ -309,7 +309,7 @@ private:
 	void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud)
 	{
 		boost::unique_lock<boost::mutex> lock(data_lock_);
-//		ROS_INFO("got cloud callback");
+		//ROS_INFO("got cloud callback: %lld", point_cloud->header.stamp.toNSec());
 		cloud_ = point_cloud;
 	}
 
@@ -828,7 +828,7 @@ private:
     	boost::unique_lock<boost::mutex> lock(data_lock_);
 
         for (int i=0;i<frames_no_;++i) {
-        	ROS_INFO("Stereo Handle Detector: Waiting for stereo data");
+        	ROS_INFO("DoorHandleDetector: Waiting for stereo data");
         	got_images_ = false;
         	preempted_ = false;
         	// block until images are available to process
@@ -837,7 +837,7 @@ private:
         		data_cv_.wait(lock);
         	}
         	if (preempted_) {
-        		ROS_INFO("Stereo Handle Detector: detect loop preempted, stereo data not received");
+        		ROS_INFO("DoorHandleDetector: detect loop preempted, stereo data not received");
         		return false;
         	}
 
@@ -845,7 +845,7 @@ private:
         		// show original disparity
         		cvShowImage("disparity_original", disp_);
         	}
-        	ROS_INFO("Stereo Handle Detector: Running handle detection");
+        	ROS_INFO("DoorHandleDetector: Running handle detection");
         	// eliminate from disparity locations that cannot contain a handle
         	applyPositionPrior();
         	// run cascade classifier

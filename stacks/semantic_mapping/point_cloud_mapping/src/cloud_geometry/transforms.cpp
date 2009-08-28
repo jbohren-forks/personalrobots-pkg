@@ -202,6 +202,12 @@ namespace cloud_geometry
 	  transformation(1,3) = centroid_b.y - centroid_rotated_a.y;
 	  transformation(2,3) = centroid_b.z - centroid_rotated_a.z;
 
+
+//	  transformation.setIdentity();
+//	  transformation(0,3) = centroid_b.x - centroid_a.x;
+//	  transformation(1,3) = centroid_b.y - centroid_a.y;
+//	  transformation(2,3) = centroid_b.z - centroid_a.z;
+
 	  return true;
 
   }
