@@ -62,6 +62,7 @@
 #include <motion_planning_msgs/PoseConstraint.h>
 #include <mechanism_msgs/MechanismState.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <boost/numeric/ublas/matrix.hpp>
 
 #include <robot_voxelizer/robot_voxelizer.h>
@@ -97,6 +98,7 @@ class SBPLArmPlannerNode
       ros::NodeHandle node_;
       ros::Publisher marker_publisher_;
       ros::Publisher sbpl_map_publisher_;
+			ros::Publisher marker_array_publisher_;
       ros::ServiceServer planning_service_;
 //       ros::Subscriber mechanism_subscriber_;
 			ros::Subscriber joint_states_subscriber_;

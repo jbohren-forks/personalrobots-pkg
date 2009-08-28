@@ -23,6 +23,12 @@
     <depend package="pm_wrapper"/>
 		<depend package="angles"/>
 		<depend package="bullet" />
+		
+		<depend package="rospy"/>
+		<depend package="nav_msgs" />
+		<depend package="pr2_mechanism_controllers"/> 
+    <depend package="robot_mechanism_controllers"/>
+		<depend package="move_arm" />
   <url></url>
 
   <export>

@@ -64,7 +64,7 @@ bool SBPLArmPlannerNode::init()
 	node_.param ("~print_out_path", print_path_, false);
   node_.param<std::string>("~planner_type", planner_type_, "cartesian"); //"cartesian" or "joint_space"
   node_.param<std::string>("~planning_frame", planning_frame_, std::string("torso_lift_link"));
-	node_.param ("~seconds_per_waypoint", waypoint_time_, 0.06);
+	node_.param ("~seconds_per_waypoint", waypoint_time_, 0.2);
 
   // robot parameters
   node_.param<std::string>("~arm_name", arm_name_, "right_arm");
@@ -106,7 +106,7 @@ bool SBPLArmPlannerNode::init()
   node_.param<std::string>("~collision_map_topic", collision_map_topic_, "collision_map_occ");
 
   // visualization parameters
-  node_.param ("~visualize_goal", visualize_goal_, true);
+  node_.param ("~visualize_goal", visualize_goal_, false);
 
 	//initialize the planning monitor
 	initializePM();
@@ -122,10 +122,11 @@ bool SBPLArmPlannerNode::init()
 	joint_states_subscriber_ = node_.subscribe("/joint_states", 1, &SBPLArmPlannerNode::jointStatesCallback, this);
 
   if(visualize_goal_)
+	{
     marker_publisher_ = node_.advertise<visualization_msgs::Marker>("visualization_marker", 3);
-
-
-
+		marker_array_publisher_ = node_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 3);
+	}
+	
   //initialize voxel grid  & subscribe to correct collision map topic
   if(use_voxel3d_grid_)
   {
@@ -1668,13 +1669,13 @@ bool SBPLArmPlannerNode::interpolatePath(std::vector<std::vector<double> > path_
 void SBPLArmPlannerNode::displayExpandedStates()
 {
   std::vector<int> states;
-	int last = 0;
-	KDL::Frame current_frame;
-	double angles[num_joints_];//, xyz_m[3], rpy_r[3];
-	visualization_msgs::Marker obs_marker;
+// 	int last = 0;
+// 	KDL::Frame current_frame;
+	double angles[num_joints_], xyz_m[3], rpy_r[3];
+// 	visualization_msgs::Marker obs_marker;
 
-	KDL::JntArray jnt_pos;
-	jnt_pos.resize(arm_chain_.getNrOfJoints());
+// 	KDL::JntArray jnt_pos;
+// 	jnt_pos.resize(arm_chain_.getNrOfJoints());
 
 	//get expanded state IDs
 	states = sbpl_arm_env_.debugExpandedStates();
@@ -1682,6 +1683,7 @@ void SBPLArmPlannerNode::displayExpandedStates()
 	if(states.empty())
 		ROS_INFO("There are no states in the expanded states list");
 
+/*	
 	obs_marker.header.frame_id = planning_frame_;
 	obs_marker.header.stamp = ros::Time();
 	obs_marker.ns = "sbpl_arm_planner";
@@ -1715,42 +1717,68 @@ void SBPLArmPlannerNode::displayExpandedStates()
 
 	ROS_DEBUG("published markers for %d expanded nodes",obs_marker.points.size());
 	marker_publisher_.publish(obs_marker);
-/*	
+*/
 	
-	marker_array.set_markers_size(states.size());
-	for(unsigned int i = 0; i < states.size(); ++i)
+	visualization_msgs::MarkerArray marker_array;
+	//marker_array.set_markers_size(states.size()*2);
+	unsigned int mind = 0;
+	for(unsigned int i = 0; i < states.size(); i=i+10)
 	{
-		marker_array.markers[i].header.frame_id = planning_frame_;
-		marker_array.markers[i].header.stamp = ros::Time();
-		marker_array.markers[i].ns = "sbpl_arm_planner";
-		marker_array.markers[i].id = 3;
-		marker_array.markers[i].type = visualization_msgs::Marker::ARROW;
-		marker_array.markers[i].action =  visualization_msgs::Marker::ADD;
-		marker_array.markers[i].scale.x = 3*env_resolution_;
-		marker_array.markers[i].scale.y = 3*env_resolution_;
-		marker_array.markers[i].scale.z = 3*env_resolution_;
-		marker_array.markers[i].color.r = 1.0;
-		marker_array.markers[i].color.g = 0.0;
-		marker_array.markers[i].color.b = 0.5;
-		marker_array.markers[i].color.a = 0.5;
-		marker_array.markers[i].lifetime = ros::Duration(40.0);
+		marker_array.set_markers_size(marker_array.get_markers_size()+2);
+		marker_array.markers[mind].header.frame_id = planning_frame_;
+		marker_array.markers[mind].header.stamp = ros::Time();
+		marker_array.markers[mind].ns = "sbpl_arm_planner";
+		marker_array.markers[mind].id = mind;
+		marker_array.markers[mind].type = visualization_msgs::Marker::CUBE;
+		marker_array.markers[mind].action =  visualization_msgs::Marker::ADD;
+		marker_array.markers[mind].scale.x = 3*env_resolution_;
+		marker_array.markers[mind].scale.y = 3*env_resolution_;
+		marker_array.markers[mind].scale.z = 3*env_resolution_;
+		marker_array.markers[mind].color.r = 1.0 - double(i)/double(states.size());
+		marker_array.markers[mind].color.g = 0.0 + double(i)/double(states.size());
+		marker_array.markers[mind].color.b = 0.0;
+		marker_array.markers[mind].color.a = 0.5;
+		marker_array.markers[mind].lifetime = ros::Duration(60.0);
 
-		sbpl_arm_env_.StateID2Angles(states[k], angles);
-		for (unsigned int p = 0; p < (unsigned int) num_joints_; p++)
-			jnt_pos(p) = angles[p];
-
-		jnt_to_pose_solver_->JntToCart(jnt_pos, current_frame, -1);
+		sbpl_arm_env_.StateID2Angles(states[i], angles);
+		sbpl_arm_env_.ComputeEndEffectorPos(angles, xyz_m, rpy_r);
+				
+		marker_array.markers[mind].pose.position.x = xyz_m[0];
+		marker_array.markers[mind].pose.position.y = xyz_m[1];
+		marker_array.markers[mind].pose.position.z = xyz_m[2];
 		
-		marker_array.markers[i].pose.position.x = current_frame.p(0);
-		marker_array.markers[i].pose.position.y = current_frame.p(1);
-		marker_array.markers[i].pose.position.z = current_frame.p(2);
+		++mind;
+		
+		//arrows
+		marker_array.markers[mind].header.frame_id = planning_frame_;
+		marker_array.markers[mind].header.stamp = ros::Time();
+		marker_array.markers[mind].ns = "sbpl_arm_planner";
+		marker_array.markers[mind].id = mind;
+		marker_array.markers[mind].type = visualization_msgs::Marker::ARROW;
+		marker_array.markers[mind].action =  visualization_msgs::Marker::ADD;
+		marker_array.markers[mind].scale.x = 4*env_resolution_;
+		marker_array.markers[mind].scale.y = 4*env_resolution_;
+		marker_array.markers[mind].scale.z = 4*env_resolution_;
+		marker_array.markers[mind].color.r = 0.0;
+		marker_array.markers[mind].color.g = 0.5;
+		marker_array.markers[mind].color.b = 0.5;
+		marker_array.markers[mind].color.a = 0.5;
+		marker_array.markers[mind].lifetime = ros::Duration(60.0);
 
-		marker_array.markers[i].pose.orientation.x = current_frame.p(0);
-		marker_array.markers[i].pose.orientation.y = current_frame.p(1);
-		marker_array.markers[i].pose.orientation.z = current_frame.p(2);
-		marker_array.markers[i].pose.orientation.w = current_frame.p(2);
-		}
-	}*/
+		marker_array.markers[mind].pose.position.x = xyz_m[0];
+		marker_array.markers[mind].pose.position.y = xyz_m[1];
+		marker_array.markers[mind].pose.position.z = xyz_m[2];
+
+		btQuaternion marker_quat(rpy_r[0],rpy_r[1],rpy_r[2]);
+		marker_array.markers[mind].pose.orientation.x = marker_quat.getX();
+		marker_array.markers[mind].pose.orientation.y = marker_quat.getY();
+		marker_array.markers[mind].pose.orientation.z = marker_quat.getZ();
+		marker_array.markers[mind].pose.orientation.w = marker_quat.getW();
+
+		++mind;
+	}
+	ROS_DEBUG("published markers for %d expanded nodes", marker_array.get_markers_size());
+	marker_array_publisher_.publish(marker_array);
 }
 
 void SBPLArmPlannerNode::printPath(const motion_planning_msgs::KinematicPath &arm_path)
