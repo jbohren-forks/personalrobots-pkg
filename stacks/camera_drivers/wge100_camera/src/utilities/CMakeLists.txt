@@ -1,26 +1,26 @@
 rospack_add_executable(access_register access_register.cpp)
-target_link_libraries(access_register forearmcam)
+target_link_libraries(access_register wge100camera)
 
 rospack_add_executable(set_calibration set_calibration.cpp)
-target_link_libraries(set_calibration forearmcam)
+target_link_libraries(set_calibration wge100camera)
 
 rospack_add_executable(set_name set_name.cpp)
-target_link_libraries(set_name forearmcam)
+target_link_libraries(set_name wge100camera)
 
 rospack_add_executable(reconfigure_cam reconfigure_cam.cpp)
-target_link_libraries(reconfigure_cam forearmcam)
+target_link_libraries(reconfigure_cam wge100camera)
 
 rospack_add_executable(reset_cam reset_cam.cpp)
-target_link_libraries(reset_cam forearmcam)
+target_link_libraries(reset_cam wge100camera)
 
 rospack_add_executable(upload_mcs upload_mcs.cpp)
-target_link_libraries(upload_mcs forearmcam)
+target_link_libraries(upload_mcs wge100camera)
 
 rospack_add_executable(discover discover.cpp)
-target_link_libraries(discover forearmcam)
+target_link_libraries(discover wge100camera)
 
 rospack_add_executable(check_flash check_flash.cpp)
-target_link_libraries(check_flash forearmcam)
+target_link_libraries(check_flash wge100camera)
 
 rospack_add_executable(read_all_flash read_all_flash.cpp)
-target_link_libraries(read_all_flash forearmcam)
+target_link_libraries(read_all_flash wge100camera)

@@ -42,8 +42,8 @@
 
 #include <net/if.h>
 
-#include "forearm_cam/fcamlib.h"
-#include "forearm_cam/host_netutil.h"
+#include "wge100_camera/fcamlib.h"
+#include "wge100_camera/host_netutil.h"
 
 int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
 {

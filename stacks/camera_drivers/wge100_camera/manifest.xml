@@ -1,7 +1,7 @@
 <package>
   <description>A library and ROS node to provide access to the forearm camera from MindTribe.</description>
   <author>Blaise Gassend, Patrick Mihelich, Eric MacIntosh, David Palchak</author>
-  <url>http://www.ros.org/wiki/forearm_cam</url>
+  <url>http://www.ros.org/wiki/wge100_camera</url>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
@@ -11,7 +11,6 @@
   <depend package="diagnostic_updater" />
   <depend package="driver_base" />
   <depend package="self_test" />
-  <depend package="robot_mechanism_controllers" />
   <depend package="dynamic_reconfigure" />
   <depend package="camera_calibration_parsers" />
   <export>

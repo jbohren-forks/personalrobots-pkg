@@ -1,7 +1,7 @@
 <launch>
 
   <!-- The simulator -->
-  <include file="$(find forearm_cam)/test/test_with_sim.launch" />
+  <include file="$(find wge100_camera)/test/test_with_sim.launch" />
 
   <!-- Self-test test -->
   <test test-name="selftest" pkg="self_test" type="selftest_rostest" name="selftest">

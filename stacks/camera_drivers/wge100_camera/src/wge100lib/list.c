@@ -3,8 +3,8 @@
  *
  */
 #include <stdlib.h>
-#include "forearm_cam/list.h"
-#include "forearm_cam/host_netutil.h"
+#include "wge100_camera/list.h"
+#include "wge100_camera/host_netutil.h"
 
 /**
  * Initializes a new camera list using macros from list.h

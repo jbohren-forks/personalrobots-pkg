@@ -1,4 +1,4 @@
-rospack_add_executable(fcam_sim fcam_sim.cc)
-target_link_libraries(fcam_sim forearmcam)
+rospack_add_executable(wge100_sim wge100_sim.cc)
+target_link_libraries(wge100_sim wge100camera)
 
 

@@ -1,4 +1,4 @@
-#include "forearm_cam/fcamlib.h"
+#include "wge100_camera/fcamlib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,8 +9,8 @@
 #include <net/if.h>
 #include <ifaddrs.h>
 
-#include "forearm_cam/host_netutil.h"
-#include "forearm_cam/ipcam_packet.h"
+#include "wge100_camera/host_netutil.h"
+#include "wge100_camera/ipcam_packet.h"
 
 /// Amount of time in microseconds that the host should wait for packet replies
 #define STD_REPLY_TIMEOUT SEC_TO_USEC(0.1) // Should be tens of ms at least or flash writes will fail.

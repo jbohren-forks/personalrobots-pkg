@@ -1,10 +1,10 @@
 <launch>
 
   <!-- The simulator -->
-  <node name="forearm_simulator" pkg="forearm_cam" type="fcam_sim" output="screen"/>
+  <node name="wge100_simulator" pkg="wge100_camera" type="wge100_sim" output="screen"/>
 
   <!-- The camera node -->
-  <group ns="forearm">
+  <group ns="wge100">
     <param name="camera_url" type="str" value="serial://12345@127.0.0.1#lo"/>
     <param name="video_mode" type="str" value="640x480x15"/>
     <param name="do_colorize" type="bool" value="True"/>
@@ -13,6 +13,6 @@
     <param name="trig_controller" type="string" value=""/>
     <param name="port" type="int" value="62100"/>
   </group>
-  <node name="forearm" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  <node name="wge100" pkg="wge100_camera" type="wge100_camera_node" respawn="false" output="screen"/>
 
 </launch>

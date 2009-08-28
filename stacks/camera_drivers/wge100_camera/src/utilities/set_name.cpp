@@ -44,9 +44,9 @@
 #include <ros/console.h>
 #include <ros/time.h>
 
-#include <forearm_cam/ipcam_packet.h>
-#include <forearm_cam/host_netutil.h>
-#include <forearm_cam/fcamlib.h>
+#include <wge100_camera/ipcam_packet.h>
+#include <wge100_camera/host_netutil.h>
+#include <wge100_camera/fcamlib.h>
   
 uint16_t checksum(uint16_t *data)
 {

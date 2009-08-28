@@ -38,7 +38,7 @@
 // TODO: Check that partial EOF missing frames get caught.
 // @todo Do the triggering based on a stream of incoming timestamps.
 
-#include <forearm_cam/ForearmCamReconfigurator.h>
+#include <wge100_camera/WGE100CameraReconfigurator.h>
 
 #include <ros/node.h>
 #include <sensor_msgs/Image.h>
@@ -49,24 +49,24 @@
 #include <diagnostic_updater/update_functions.h>
 #include <diagnostic_updater/publisher.h>
 #include <self_test/self_test.h>
-#include <robot_mechanism_controllers/SetWaveform.h>
-#include <robot_mechanism_controllers/trigger_controller.h>
+//#include <robot_mechanism_controllers/SetWaveform.h>
+//#include <robot_mechanism_controllers/trigger_controller.h>
 #include <stdlib.h>
 #include <limits>
 #include <math.h>
 #include <linux/sysctl.h>
 #include <iostream>
 #include <fstream>
-#include <forearm_cam/BoardConfig.h>
+#include <wge100_camera/BoardConfig.h>
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
 #include <driver_base/driver.h>
 #include <driver_base/driver_node.h>
 #include <camera_calibration_parsers/parse.h>
 
-#include "forearm_cam/fcamlib.h"
-#include "forearm_cam/host_netutil.h"
-#include "forearm_cam/mt9v.h"
+#include "wge100_camera/fcamlib.h"
+#include "wge100_camera/host_netutil.h"
+#include "wge100_camera/mt9v.h"
 
 // The FrameTimeFilter class takes a stream of image arrival times that
 // include time due to system load and network asynchrony, and generates a
@@ -184,12 +184,12 @@ private:
   double frame_period_;
 };
 
-class ForearmCamDriver : public driver_base::Driver
+class WGE100CameraDriver : public driver_base::Driver
 {
-  friend class ForearmCamNode;
+  friend class WGE100CameraNode;
 
 public:
-  forearm_cam::ForearmCamConfig config_;
+  wge100_camera::WGE100CameraConfig config_;
 
 private:
   // Driver classes
@@ -229,8 +229,8 @@ private:
 
   // Trigger information
   std::string trig_controller_cmd_;
-  controller::trigger_configuration trig_req_;
-  robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
+//  controller::trigger_configuration trig_req_;
+//  robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
   
   // Threads
   boost::shared_ptr<boost::thread> image_thread_;
@@ -240,9 +240,9 @@ private:
   UseFrameFunction useFrame_;
   
 public:
-  typedef forearm_cam::ForearmCamReconfigurator Reconfigurator;
+  typedef wge100_camera::WGE100CameraReconfigurator Reconfigurator;
   
-  ForearmCamDriver()
+  WGE100CameraDriver()
   {
     misfire_blank_ = 0;
     
@@ -293,7 +293,7 @@ public:
     }
   }
 
-  ~ForearmCamDriver()
+  ~WGE100CameraDriver()
   {
 //    fcamCamListDelAll(&camList);
     close();
@@ -384,14 +384,14 @@ public:
         trig_controller_cmd_ = config_.trig_controller + "/set_waveform";
 
         ROS_DEBUG("Setting trigger.");
-        trig_req_.running = 1;
-        trig_req_.rep_rate = config_.trig_rate; 
-        trig_req_.phase = config_.trig_phase;
-        trig_req_.active_low = 0;
-        trig_req_.pulsed = 1;
-        trig_req_.duty_cycle = 0; // Unused in pulsed mode.
+//        trig_req_.running = 1;
+//        trig_req_.rep_rate = config_.trig_rate; 
+//        trig_req_.phase = config_.trig_phase;
+//        trig_req_.active_low = 0;
+//        trig_req_.pulsed = 1;
+//        trig_req_.duty_cycle = 0; // Unused in pulsed mode.
 
-        trig_service_ = node_handle_.serviceClient<robot_mechanism_controllers::SetWaveform>(trig_controller_cmd_);
+//        trig_service_ = node_handle_.serviceClient<robot_mechanism_controllers::SetWaveform>(trig_controller_cmd_);
         // Retry a few times in case the service is just coming up.
       }
       else
@@ -462,7 +462,7 @@ public:
     // Initialize frame time filter.
     frameTimeFilter_ = FrameTimeFilter(desired_freq_, 0.001, 0.5 / imager_freq_); 
     
-    config_bord_service_ = node_handle_.advertiseService("~board_config", &ForearmCamDriver::boardConfig, this);
+    config_bord_service_ = node_handle_.advertiseService("~board_config", &WGE100CameraDriver::boardConfig, this);
     
     state_ = OPENED;
     last_camera_ok_time_ = ros::Time::now().toSec(); // If we get here we are communicating with the camera well.
@@ -481,7 +481,7 @@ public:
     ROS_DEBUG("start()");
     assert(state_ == OPENED);
     state_ = RUNNING;   
-    image_thread_.reset(new boost::thread(boost::bind(&ForearmCamDriver::imageThread, this)));
+    image_thread_.reset(new boost::thread(boost::bind(&WGE100CameraDriver::imageThread, this)));
   }
 
   void doStop()
@@ -550,18 +550,18 @@ private:
     // Start video
     if (!trig_controller_cmd_.empty())
     {
-      trig_req_.running = 1;
-      if (!trig_service_.call(trig_req_, trig_rsp_))
-      {
-        ROS_DEBUG("Could not start trigger on first attempt. Sleeping and retrying.");
-        sleep(3); // Perhaps the trigger is just being brought up.
-        if (!trig_service_.call(trig_req_, trig_rsp_))
-        {
-          ROS_ERROR("Unable to set trigger controller.");
-          //node_handle_.shutdown();
-          goto end_image_thread;
-        }
-      }
+//      trig_req_.running = 1;
+//      if (!trig_service_.call(trig_req_, trig_rsp_))
+//      {
+//        ROS_DEBUG("Could not start trigger on first attempt. Sleeping and retrying.");
+//        sleep(3); // Perhaps the trigger is just being brought up.
+//        if (!trig_service_.call(trig_req_, trig_rsp_))
+//        {
+//          ROS_ERROR("Unable to set trigger controller.");
+//          //node_handle_.shutdown();
+//          goto end_image_thread;
+//        }
+//      }
     }
     frameTimeFilter_.reset_filter();
     ROS_INFO("Camera streaming.");
@@ -574,9 +574,9 @@ private:
       return;
     }
     // Receive video
-    fcamVidReceive(camera_.ifName, port, height_, width_, &ForearmCamDriver::frameHandler, this);*/
+    fcamVidReceive(camera_.ifName, port, height_, width_, &WGE100CameraDriver::frameHandler, this);*/
     
-    fcamVidReceiveAuto( &camera_, height_, width_, &ForearmCamDriver::frameHandler, this);
+    fcamVidReceiveAuto( &camera_, height_, width_, &WGE100CameraDriver::frameHandler, this);
     
     /*// Stop Triggering
     if (!trig_controller_cmd_.empty())
@@ -585,7 +585,7 @@ private:
       trig_req_.running = 0;
       /// @todo need to turn on a node in the case where the node is
       //already down.
-      //ros::Node shutdown_node("forearm_node", ros::Node::ANONYMOUS_NAME | ros::Node::DONT_ADD_ROSOUT_APPENDER); // Need this because the node has been shutdown already
+      //ros::Node shutdown_node("wge100_camera_node", ros::Node::ANONYMOUS_NAME | ros::Node::DONT_ADD_ROSOUT_APPENDER); // Need this because the node has been shutdown already
       if (!trig_service_.call(trig_req_, trig_rsp_))
       { // This probably means that the trigger controller was turned off,
         // so we don't really care.
@@ -664,10 +664,10 @@ end_image_thread:
 
   double getTriggeredFrameTime(double firstPacketTime)
   {
-    // Assuming that there was no delay in receiving the first packet,
+    /*// Assuming that there was no delay in receiving the first packet,
     // this should tell us the time at which the first trigger after the
     // image exposure occurred.
-    double pulseStartTime = 
+    double pulseStartTime = 0;
       controller::TriggerController::getTickStartTimeSec(firstPacketTime, trig_req_);
 
     // We can now compute when the exposure ended. By offsetting to the
@@ -677,8 +677,9 @@ end_image_thread:
       controller::TriggerController::getTickDurationSec(trig_req_) +
       1 / imager_freq_ -
       1 / config_.trig_rate;
-
-    return exposeEndTime;
+    
+    return exposeEndTime;*/
+    return 0;
   }
 
   double getExternallyTriggeredFrameTime(double firstPacketTime)
@@ -798,7 +799,7 @@ end_image_thread:
 
   static int frameHandler(fcamFrameInfo *frameInfo, void *userData)
   {
-    ForearmCamDriver &fa_node = *(ForearmCamDriver*)userData;
+    WGE100CameraDriver &fa_node = *(WGE100CameraDriver*)userData;
     return fa_node.frameHandler(frameInfo);
   }
 
@@ -839,7 +840,7 @@ end_image_thread:
     return success;
   }
 
-  bool boardConfig(forearm_cam::BoardConfig::Request &req, forearm_cam::BoardConfig::Response &rsp)
+  bool boardConfig(wge100_camera::BoardConfig::Request &req, wge100_camera::BoardConfig::Response &rsp)
   {
     MACAddress mac;
     if (req.mac.size() != 6)
@@ -864,11 +865,11 @@ end_image_thread:
   
 };
 
-class ForearmCamNode : public driver_base::DriverNode<ForearmCamDriver>
+class WGE100CameraNode : public driver_base::DriverNode<WGE100CameraDriver>
 {
 public:
-  ForearmCamNode(ros::NodeHandle &nh) :
-    driver_base::DriverNode<ForearmCamDriver>(nh),
+  WGE100CameraNode(ros::NodeHandle &nh) :
+    driver_base::DriverNode<WGE100CameraDriver>(nh),
     cam_pub_(node_handle_.advertise<sensor_msgs::Image>("~image_raw", 1), 
         diagnostic_,
         diagnostic_updater::FrequencyStatusParam(&driver_.desired_freq_, &driver_.desired_freq_, 0.05), 
@@ -879,8 +880,8 @@ public:
         diagnostic_updater::TimeStampStatusParam()),
     calibrated_(false)
   {
-    driver_.useFrame_ = boost::bind(&ForearmCamNode::publishImage, this, _1, _2, _3, _4);
-    driver_.setPostOpenHook(boost::bind(&ForearmCamNode::postOpenHook, this));
+    driver_.useFrame_ = boost::bind(&WGE100CameraNode::publishImage, this, _1, _2, _3, _4);
+    driver_.setPostOpenHook(boost::bind(&WGE100CameraNode::postOpenHook, this));
   }
   
 private:  
@@ -910,7 +911,7 @@ private:
   
   virtual void reconfigureHook(int level)
   {
-    ROS_DEBUG("ForearmCamNode::reconfigureHook called at level %x", level);
+    ROS_DEBUG("WGE100CameraNode::reconfigureHook called at level %x", level);
     if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_CLOSE) == level)
     {
       cam_info_.width = driver_.width_;
@@ -940,12 +941,12 @@ private:
   virtual void addDiagnostics()
   {
     // Set up diagnostics
-    diagnostic_.add("Link Status", &driver_, &ForearmCamDriver::linkStatus );
+    diagnostic_.add("Link Status", &driver_, &WGE100CameraDriver::linkStatus );
   }
   
   virtual void addRunningTests()
   {
-    self_test_.add( "Streaming Test", this, &ForearmCamNode::streamingTest);
+    self_test_.add( "Streaming Test", this, &WGE100CameraNode::streamingTest);
   }
   
   virtual void addOpenedTests()
@@ -954,10 +955,10 @@ private:
   
   virtual void addStoppedTests()
   {
-    ROS_DEBUG("Adding forearm camera video mode tests.");
+    ROS_DEBUG("Adding wge100 camera video mode tests.");
     for (int i = 0; i < MT9V_NUM_MODES; i++)
     {
-      diagnostic_updater::TaskFunction f = boost::bind(&ForearmCamNode::videoModeTest, this, MT9VModes[i].name, _1);
+      diagnostic_updater::TaskFunction f = boost::bind(&WGE100CameraNode::videoModeTest, this, MT9VModes[i].name, _1);
       self_test_.add( str(boost::format("Test Pattern in mode %s")%MT9VModes[i].name), f );
     }
   }
@@ -1016,7 +1017,7 @@ private:
   void videoModeTest(const std::string mode, diagnostic_updater::DiagnosticStatusWrapper& status) 
   {
     const std::string oldmode = driver_.config_.video_mode;
-    ForearmCamDriver::UseFrameFunction oldUseFrame = driver_.useFrame_;
+    WGE100CameraDriver::UseFrameFunction oldUseFrame = driver_.useFrame_;
 
     driver_.config_.video_mode = mode;
     driver_.config_update();
@@ -1056,5 +1057,5 @@ reset_state:
 
 int main(int argc, char **argv)
 { 
-  return driver_base::main<ForearmCamNode>(argc, argv, "forearm_camera");
+  return driver_base::main<WGE100CameraNode>(argc, argv, "wge100_cameraera");
 }
