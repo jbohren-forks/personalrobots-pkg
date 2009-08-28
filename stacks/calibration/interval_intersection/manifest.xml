@@ -1,0 +1,20 @@
+<package>
+  <description brief="interval_intersection">
+
+     interval_intersection
+
+  </description>
+  <author>Romain Thibaux</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/interval_intersection</url>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" />
+  </export>
+
+  <depend package="roscpp"/>
+  <depend package="calibration_msgs"/>
+</package>
+
+
