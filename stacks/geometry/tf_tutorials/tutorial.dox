@@ -49,8 +49,8 @@ It does not provide as much diagnostics, and even if it returns true, that does
 not guarentee a successful transform even if called immediately with the same 
 parameters, so you still need a try catch block for robustness.  
 
-@par notifier_example The MessageNotifier
-The tf::MessageMotifier class is a convenient and efficient way to hold data until
+@par notifier_example The MessageFilter
+The tf::MessageFilter class is a convenient and efficient way to hold data until
 transform information is available.  There is an example of data coming in 
 and being held until transforms become available at the bottom of the page.  
 

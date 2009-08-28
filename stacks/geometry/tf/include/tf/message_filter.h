@@ -77,6 +77,15 @@ public:
  * The callbacks used in this class are of the same form as those used by roscpp's message callbacks.
  *
  * MessageFilter is templated on a message type.
+ *
+ * \section example_usage Example Usage
+ *
+ * If you want to hook a MessageFilter into a ROS topic:
+\verbatim
+message_filters::Subscriber<MessageType> sub(node_handle_, "topic", 10);
+tf::MessageFilter<MessageType> tf_filter(sub, tf_listener_, "/map", 10);
+tf_filter.registerCallback(boost::bind(&MyClass::myCallback, this, _1));
+\endverbatim
  */
 template<class M>
 class MessageFilter : public MessageFilterBase, public message_filters::SimpleFilter<M>

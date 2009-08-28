@@ -28,11 +28,12 @@
  */
 
 #include "tf/transform_listener.h"
-#include "tf/message_notifier.h"
+#include "tf/message_filter.h"
+#include <message_filters/subscriber.h>
 #include <boost/bind.hpp>
-#include "ros/node.h"
+#include "ros/ros.h"
 
-void print_pose(const std::string& name, const tf::Stamped<tf::Pose>& pose)
+void printPose(const std::string& name, const tf::Stamped<tf::Pose>& pose)
 {
   ROS_INFO("%s is at (%f %f %f) with orientation (%f, %f, %f, %f) in frame %s at time %.2f", 
            name.c_str(), 
@@ -48,27 +49,28 @@ void print_pose(const std::string& name, const tf::Stamped<tf::Pose>& pose)
 
 }
 
-class NotifierUsingClass
+class FilterUsingClass
 {
 public:
   tf::TransformListener& tfl_;
 
-  void notifierCallback(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr& message)
+  void callback(const geometry_msgs::PoseStamped::ConstPtr& message)
   {
     tf::Stamped<tf::Pose> pose;
     tf::poseStampedMsgToTF(*message, pose);
     ROS_INFO("Notifer Callback");
     try{
-    tfl_.transformPose("canaveral", pose, pose);
+      tfl_.transformPose("canaveral", pose, pose);
+      ROS_INFO("Received MessageFilter callback");
     }
     catch (tf::TransformException& ex)
     {
-      ROS_ERROR("This sould never be called for the notifier only callsback when this is possible.  But it's good practice to use it anyway.");
-    print_pose("object", pose);    
+      ROS_ERROR("This should never be called for the notifier only callsback when this is possible.  But it's good practice to use it anyway.");
+      printPose("object", pose);
     }    
   };
   
-  NotifierUsingClass(tf::TransformListener& tfl): tfl_(tfl)
+  FilterUsingClass(tf::TransformListener& tfl): tfl_(tfl)
   {
     
   };
@@ -79,14 +81,14 @@ public:
 int main(int argc, char ** argv)
 {
   //Initialize ROS
-  ros::init(argc, argv);
+  ros::init(argc, argv, "tf_tutorial_listener");
 
-  ros::Node node("tf_tutorial_listener");
+  ros::NodeHandle nh;
 
   tf::TransformListener tfl(ros::Duration(15.0));  //Create a TransformListener with 15 seconds of caching
 
 
-  while(node.ok())
+  while(ros::ok())
   {
     //initializing a pose that we'll use multiple times
     tf::Pose identity;
@@ -98,7 +100,7 @@ int main(int argc, char ** argv)
     tf::Stamped<tf::Pose> shuttle_pose(identity, ros::Time::now(), "space_shuttle");
     try{
       tfl.transformPose("hawaii", shuttle_pose, shuttle_pose);
-      print_pose("Shuttle", shuttle_pose);  
+      printPose("Shuttle", shuttle_pose);
     }
     catch (tf::TransformException& ex)
     {
@@ -110,7 +112,7 @@ int main(int argc, char ** argv)
     shuttle_pose.stamp_ = ros::Time().fromSec(0);
     try {
       tfl.transformPose("hawaii", shuttle_pose, shuttle_pose);
-      print_pose("Shuttle", shuttle_pose);  
+      printPose("Shuttle", shuttle_pose);
     }
     catch (tf::TransformException& ex)
     {
@@ -123,7 +125,7 @@ int main(int argc, char ** argv)
     shuttle_pose.stamp_ = ros::Time::now() - ros::Duration(5);
     try {
       tfl.transformPose("hawaii", ros::Time(), shuttle_pose, "sun", shuttle_pose);
-      print_pose("Shuttle", shuttle_pose);  
+      printPose("Shuttle", shuttle_pose);
     }
     catch (tf::TransformException& ex)
     {
@@ -141,16 +143,21 @@ int main(int argc, char ** argv)
 
     //Notifier
     ROS_INFO("This class will buffer messages coming in on topic objects and provide a callback when they can be transformed into target frame canaveral");
-    NotifierUsingClass notifier_callback_class(tfl);   
-    tf::MessageNotifier<geometry_msgs::PoseStamped>* notifier = new tf::MessageNotifier<geometry_msgs::PoseStamped>(tfl,
-                                                                                                              boost::bind(&NotifierUsingClass::notifierCallback, &notifier_callback_class, _1), //callback function
-                                                                                                              std::string("object"), //topic
-                                                                                                              std::string("canaveral"), //target_frame
-                                                                                                              100); //queue size
+    FilterUsingClass filter_callback_class(tfl);
+    message_filters::Subscriber<geometry_msgs::PoseStamped> sub(nh, "object", 100);
+    tf::MessageFilter<geometry_msgs::PoseStamped> filter(sub,
+                                                         tfl,
+                                                         "canaveral", //target frame
+                                                         100); //queue size
+    filter.registerCallback(boost::bind(&FilterUsingClass::callback, &filter_callback_class, _1));
 
-          
-    sleep(10);
-    delete notifier;
+
+    ros::Time start = ros::Time::now();
+    while (ros::ok() && ros::Time::now() < start + ros::Duration(10))
+    {
+      ros::spinOnce();
+      ros::Duration(0.1).sleep();
+    }
     ROS_INFO("RESTARTING");
   }
   return 0;

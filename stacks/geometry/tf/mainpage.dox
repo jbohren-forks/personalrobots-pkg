@@ -123,14 +123,14 @@ The tf::TransformListener class inherits from tf::Transformer to provide all the
 basic library.  In addition, it provides methods to transform data ROS messages directly and
 it automatically listens for transforms published on ROS. 
 
-@subsection message_notifier MessageNotifier
-The tf::MessageNotifier is the recommended method for receiving almost any sensor data from ROS.
+@subsection message_filter MessageFilter
+The tf::MessageFilter is the recommended method for receiving almost any sensor data from ROS.
 Data in ROS can be published with respect to any known frame. 
-The tf::MessageNotifier class makes it easy to use this data 
+The tf::MessageFilter class makes it easy to use this data 
 by providing callbacks only when it is possible to transform it into your desired 
 target frame.
 
-The tf::MessageNotifier class can subscribe to any ROS datatype that has a ROS Header.
+The tf::MessageFilter class can subscribe to any ROS datatype that has a ROS Header.
 
 @subsection broadcaster TransformBroadcaster
 The tf::TransformBroadcaster class is the complement to the tf::TransformListener class.  The broadcaster class provides a 
@@ -246,7 +246,7 @@ constant ExtrapolationException.
 In a distributed system information is not available instantaneously 
 in all parts of the system.  Depending on the setup is is possible for 
 data to be available before all the transforms necessary are available.  
-The recommended way to deal with this is to use a tf::MessageNotifier.
+The recommended way to deal with this is to use a tf::MessageFilter.
 
  - I'm seeing a huge (~1.2E9 second) extrapolation error, why is that?
 
@@ -447,7 +447,7 @@ slight drift correction (ala amcl_player).
 Our experimentation has shown that interpolation is fine, but
 extrapolation almost always ends up becoming more of a problem than a
 solution.  If you are having trouble with data being ready before
-transforms are available I suggest using the tf::MessageNotifier class in
+transforms are available I suggest using the tf::MessageFilter class in
 tf.  It will queue incoming data until transforms are available.
 Having tried allowing "just a little" extrapolation, waiting for
 accurate data to be available has proved a much better approach.

@@ -97,6 +97,8 @@ class Transformer;
  * without blocking the rest of the application.
  *
  \endverbatim
+
+ \deprecated Deprecated in favor of tf::MessageFilter
  */
 template<class MessageT>
 class MessageNotifier : public MessageNotifierBase
@@ -114,7 +116,7 @@ public:
    * \param queue_size The number of messages to keep around waiting for transform data.
    * \note A queue size of 0 means infinite, which can be dangerous
    */
-  MessageNotifier(Transformer& tf, Callback callback,
+  ROSCPP_DEPRECATED MessageNotifier(Transformer& tf, Callback callback,
       const std::string& topic, const std::string& target_frame,
       uint32_t queue_size)
   : tf_(tf)
@@ -146,9 +148,9 @@ public:
 
   /**
    * \brief Constructor
-   * Backwards compatible API call.  Please switch to prototype without Node*
+   * \deprecated in favor of tf::MessageFilter
    */
-  MessageNotifier(Transformer* tf, ros::Node* node, Callback callback,
+  ROSCPP_DEPRECATED MessageNotifier(Transformer* tf, ros::Node* node, Callback callback,
       const std::string& topic, const std::string& target_frame,
       uint32_t queue_size)
   : tf_(*tf)
@@ -175,7 +177,7 @@ public:
                                   boost::bind(&MessageNotifier::incomingTFMessage, this, _1));
 
     thread_handle_ = boost::thread(boost::bind(&MessageNotifier::workerThread, this));
-  } __attribute__((deprecated));
+  }
 
   /**
    * \brief Destructor
