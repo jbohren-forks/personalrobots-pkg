@@ -101,6 +101,10 @@ namespace door_base_collision_cost
 
     void printPoint(std::string name, geometry_msgs::Point32 point);
 
+    double local_door_open_angle_;  /*! Angle of the door when open (in local door frame) */
+
+    double local_door_closed_angle_; /*! Angle of the door when closed (in local door frame) */
+
     private:
 
     void transform2DInverse(const geometry_msgs::Point32 &point_in,
@@ -144,10 +148,6 @@ namespace door_base_collision_cost
                                const double &robot_global_yaw, 
                                std::vector<geometry_msgs::Point32> &fp_out);
 
-
-    double local_door_open_angle_;  /*! Angle of the door when open (in local door frame) */
-
-    double local_door_closed_angle_; /*! Angle of the door when closed (in local door frame) */
 
     double local_door_min_angle_;
 

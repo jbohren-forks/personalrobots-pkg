@@ -597,8 +597,20 @@ int EnvironmentNAVXYTHETADOORLAT::GetFromToHeuristic(int FromStateID, int ToStat
   EnvNAVXYTHETADOORHashEntry_t* FromHashEntry = StateID2CoordTable[FromStateID];
   EnvNAVXYTHETADOORHashEntry_t* ToHashEntry = StateID2CoordTable[ToStateID];
 	
+  double angle, door_angle_cost;
 
-  return (int)(NAVXYTHETALAT_COSTMULT_MTOMM*EuclideanDistance_m(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y)/EnvNAVXYTHETALATCfg.nominalvel_mpersecs);	
+  //get the world 3d robot pose
+  EnvNAVXYTHETALAT3Dpt_t point3D;
+  point3D.x = DISCXY2CONT(FromHashEntry->X, EnvNAVXYTHETALATCfg.cellsize_m);
+  point3D.y = DISCXY2CONT(FromHashEntry->Y, EnvNAVXYTHETALATCfg.cellsize_m);
+  point3D.theta = DiscTheta2Cont(FromHashEntry->Theta, NAVXYTHETALAT_THETADIRS);
+  GetMinCostDoorAngle(point3D.x, point3D.y, point3D.theta, FromHashEntry->door_intervalind, angle, door_angle_cost);
+
+  int cost = abs(NAVXYTHETALAT_COSTMULT_MTOMM * (int) angles::to_degrees(angles::normalize_angle(angle-db_.global_door_open_angle_)));
+  printf("Hash Entry x:%f y:%f theta:%f int:%d ,",point3D.x,point3D.y,point3D.theta,(int) FromHashEntry->door_intervalind);
+  printf("Angle: %d, Open Angle: %d, Cost %d\n",(int) angles::to_degrees(angle),(int)(angles::to_degrees)(db_.global_door_open_angle_),cost);
+  return cost;
+//  return (int)(NAVXYTHETALAT_COSTMULT_MTOMM*EuclideanDistance_m(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y)/EnvNAVXYTHETALATCfg.nominalvel_mpersecs);	
 
 }
 
