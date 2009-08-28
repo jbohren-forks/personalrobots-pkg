@@ -133,7 +133,7 @@ public:
   JointState *getJointState(const std::string &name);
   const JointState *getJointState(const std::string &name) const;
 
-  ros::Time getTime() {return hw_->current_time_;};
+  ros::Time getTime() {ros::Time t; return t.fromSec(hw_->current_time_);};
 
  /**
   * Each transmission refers to the actuators and joints it connects by name.
