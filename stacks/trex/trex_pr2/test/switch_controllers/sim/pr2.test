@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find trex_pr2)/test/trex_config.launch" />
+  <param name="/trex/start_dir" value="$(find trex_pr2)/test/switch_controllers/sim"/>
+  <test test-name="m2_lite" pkg="trex_pr2" type="trexfast" time-limit="30.0" args="--hyper --gtest" />
+</launch>
