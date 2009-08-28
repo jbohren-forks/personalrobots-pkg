@@ -32,8 +32,9 @@
 #include <stage.hh>
 
 // roscpp
-#include <ros/node.h>
-#include "boost/thread/mutex.hpp"
+#include <ros/ros.h>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
@@ -48,15 +49,17 @@
 #define CMD_VEL "cmd_vel"
 
 // Our node
-class StageNode : public ros::Node
+class StageNode
 {
   private:
     // Messages that we'll send or receive
-    geometry_msgs::Twist *velMsgs;
     sensor_msgs::LaserScan *laserMsgs;
     nav_msgs::Odometry *odomMsgs;
     nav_msgs::Odometry *groundTruthMsgs;
     roslib::Time timeMsg;
+
+    // roscpp-related bookkeeping
+    ros::NodeHandle n_;
 
     // A mutex to lock access to fields that are used in message callbacks
     boost::mutex msg_lock;
@@ -64,6 +67,11 @@ class StageNode : public ros::Node
     // The models that we're interested in
     std::vector<Stg::StgModelLaser *> lasermodels;
     std::vector<Stg::StgModelPosition *> positionmodels;
+    std::vector<ros::Publisher> laser_pubs_;
+    std::vector<ros::Publisher> odom_pubs_;
+    std::vector<ros::Publisher> ground_truth_pubs_;
+    std::vector<ros::Subscriber> cmdvel_subs_;
+    ros::Publisher time_pub_;
 
     // A helper function that is executed for each stage model.  We use it
     // to search for models of interest.
@@ -85,7 +93,7 @@ class StageNode : public ros::Node
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
-     StageNode(int argc, char** argv, bool gui, const char* fname);
+    StageNode(int argc, char** argv, bool gui, const char* fname);
     ~StageNode();
 
     // Subscribe to models of interest.  Currently, we find and subscribe
@@ -98,7 +106,7 @@ class StageNode : public ros::Node
     void Update();
 
     // Message callback for a MsgBaseVel message, which set velocities.
-    void cmdvelReceived();
+    void cmdvelReceived(int idx, const boost::shared_ptr<geometry_msgs::Twist const>& msg);
 
     // The main simulator object
     Stg::StgWorld* world;
@@ -130,25 +138,23 @@ StageNode::ghfunc(gpointer key,
 }
 
 void
-StageNode::cmdvelReceived()
+StageNode::cmdvelReceived(int idx, const boost::shared_ptr<geometry_msgs::Twist const>& msg)
 {
   boost::mutex::scoped_lock lock(msg_lock);
-  for (size_t r = 0; r < this->positionmodels.size(); r++)
-  {
-    this->positionmodels[r]->SetSpeed(this->velMsgs[r].linear.x, 
-                                      this->velMsgs[r].linear.y, 
-                                      this->velMsgs[r].angular.z);
-  }
+  this->positionmodels[idx]->SetSpeed(msg->linear.x, 
+                                      msg->linear.y, 
+                                      msg->angular.z);
   this->base_last_cmd = this->sim_time;
 }
 
-StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
-  ros::Node("stageros")
+StageNode::StageNode(int argc, char** argv, bool gui, const char* fname)
 {
   this->sim_time.fromSec(0.0);
   this->base_last_cmd.fromSec(0.0);
   double t;
-  param("~base_watchdog_timeout", t, 0.2);
+  ros::NodeHandle localn("~");
+  if(!localn.getParam("base_watchdog_timeout", t))
+    t = 0.2;
   this->base_watchdog_timeout.fromSec(t);
 
   // initialize libstage
@@ -171,7 +177,6 @@ StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
   size_t numRobots = positionmodels.size();
   ROS_INFO("found %d position model(s) in the file", numRobots);
 
-  this->velMsgs = new geometry_msgs::Twist[numRobots];
   this->laserMsgs = new sensor_msgs::LaserScan[numRobots];
   this->odomMsgs = new nav_msgs::Odometry[numRobots];
   this->groundTruthMsgs = new nav_msgs::Odometry[numRobots];
@@ -187,7 +192,7 @@ StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
 int
 StageNode::SubscribeModels()
 {
-  setParam("/use_sim_time", true);
+  n_.setParam("/use_sim_time", true);
 
   for (size_t r = 0; r < this->positionmodels.size(); r++)
   {
@@ -205,19 +210,17 @@ StageNode::SubscribeModels()
       ROS_ERROR("no position");
       return(-1);
     }
-    advertise<sensor_msgs::LaserScan>(mapName(BASE_SCAN,r), 10);
-    advertise<nav_msgs::Odometry>(mapName(ODOM,r), 10);
-    advertise<nav_msgs::Odometry>(
-                                  mapName(BASE_POSE_GROUND_TRUTH,r), 10);
-    subscribe(mapName(CMD_VEL,r), velMsgs[r], &StageNode::cmdvelReceived, 10);
+    laser_pubs_.push_back(n_.advertise<sensor_msgs::LaserScan>(mapName(BASE_SCAN,r), 10));
+    odom_pubs_.push_back(n_.advertise<nav_msgs::Odometry>(mapName(ODOM,r), 10));
+    ground_truth_pubs_.push_back(n_.advertise<nav_msgs::Odometry>(mapName(BASE_POSE_GROUND_TRUTH,r), 10));
+    cmdvel_subs_.push_back(n_.subscribe<geometry_msgs::Twist>(mapName(CMD_VEL,r), 10, boost::bind(&StageNode::cmdvelReceived, this, r, _1)));
   }
-  advertise<roslib::Time>("/time",10);
+  time_pub_ = n_.advertise<roslib::Time>("/time",10);
   return(0);
 }
 
 StageNode::~StageNode()
 {
-  delete[] velMsgs;
   delete[] laserMsgs;
   delete[] odomMsgs;
   delete[] groundTruthMsgs;
@@ -266,7 +269,7 @@ StageNode::Update()
 
       this->laserMsgs[r].header.frame_id = mapName("base_laser", r);
       this->laserMsgs[r].header.stamp = sim_time;
-      publish(mapName(BASE_SCAN,r), this->laserMsgs[r]);
+      this->laser_pubs_[r].publish(this->laserMsgs[r]);
     }
 
     // Also publish the base->base_laser Tx.  This could eventually move
@@ -297,7 +300,7 @@ StageNode::Update()
     this->odomMsgs[r].header.frame_id = mapName("odom", r);
     this->odomMsgs[r].header.stamp = sim_time;
 
-    publish(mapName(ODOM,r),this->odomMsgs[r]);
+    this->odom_pubs_[r].publish(this->odomMsgs[r]);
 
     tf::Quaternion q;
     tf::quaternionMsgToTF(odomMsgs[r].pose.pose.orientation, q);
@@ -334,12 +337,11 @@ StageNode::Update()
     this->groundTruthMsgs[r].header.frame_id = mapName("odom", r);
     this->groundTruthMsgs[r].header.stamp = sim_time;
 
-    publish(mapName(BASE_POSE_GROUND_TRUTH,r), this->groundTruthMsgs[r]);
-
+    this->ground_truth_pubs_[r].publish(this->groundTruthMsgs[r]);
   }
 
   this->timeMsg.rostime = sim_time;
-  publish("/time", this->timeMsg);
+  this->time_pub_.publish(this->timeMsg);
 }
 
 int 
@@ -351,7 +353,7 @@ main(int argc, char** argv)
     exit(-1);
   }
 
-  ros::init(argc,argv);
+  ros::init(argc, argv, "stageros");
 
   bool gui = true;
   for(int i=0;i<(argc-1);i++)
@@ -365,10 +367,12 @@ main(int argc, char** argv)
   if(sn.SubscribeModels() != 0)
     exit(-1);
 
-  while(sn.ok() && !sn.world->TestQuit())
+  boost::thread t = boost::thread::thread(boost::bind(&ros::spin));
+  while(ros::ok() && !sn.world->TestQuit())
   {
     sn.Update();
   }
+  t.join();
 
   exit(0);
 }
