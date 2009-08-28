@@ -147,11 +147,17 @@ public:
 
     if(received_header_ == false) //still receiving header info
     {
-    	if(oggpacket.packetno != 0)
+    	if((int)oggpacket.packetno == 999999)
+    	{
+    		ROS_DEBUG("Dropping flush packet.");
+    		return;
+    	}
+
+    	/*if(oggpacket.packetno != 0)
     	{
     		ROS_DEBUG("Dumping header packet because packet# is non-zero: %d.", (int)oggpacket.packetno);
     		return;
-    	}
+    	}*/
     	//static th_setup_info* setup_info_ptr = null;
     	//static th_setup_info** setup_info_ = &setup_info_ptr;
     	ROS_DEBUG("Setup_info: %p", setup_info_);
