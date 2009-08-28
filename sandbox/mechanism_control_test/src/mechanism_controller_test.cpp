@@ -102,8 +102,6 @@ void controlLoop()
     if(count % 1000000 == 0)
       printf("%d seconds simulated \n", count / 1000);
     count++;
-
-    ros::spinOnce();
   }
 
   //Done - return
