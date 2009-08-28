@@ -9,5 +9,6 @@
   
   <depend stack="common"/> <!-- tinyxml --> 
   <depend stack="ros"/> <!-- rosconsole --> 
+  <depend stack="geometry"/> <!-- kdl tf tf_conversions --> 
 
 </stack>
