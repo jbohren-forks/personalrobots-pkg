@@ -14,3 +14,6 @@ float64[] costs
 # joint velocity that will move the link down the gradient of the distance
 # field (away from collisions)
 JointVelocityArray[] gradient
+
+# A boolean value which indicates whether the configuration is in collision
+uint8 in_collision
