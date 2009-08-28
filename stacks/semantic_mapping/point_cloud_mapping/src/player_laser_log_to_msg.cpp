@@ -106,7 +106,7 @@ class PlayerLogToMsg
       string line;
       vector<string> st;
 
-      while (1)
+      while (nh_.ok ())
       {
         getline (logfile_stream_, line);
         // Do we assume that the input is a file? If so, and EOF, break
