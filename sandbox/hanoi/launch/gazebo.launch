@@ -5,12 +5,22 @@
   <!-- start pr2 robot -->
   <include file="$(find pr2_gazebo)/pr2.launch"/>
 
-  <!--<include file="$(find 3dnav_pr2)/launch/perception/laser-perception.launch"/>-->
+
+  <!-- Init the head controller -->
+  <include file="$(find pr2_default_controllers)/head_position_controller.launch"/>
+
+  <!-- Start wide stereo -->
+  <include file="$(find stereo_image_proc)/wide_stereoproc.launch"/>
+
+  <!-- Start narrow stereo -->
+  <include file="$(find stereo_image_proc)/narrow_stereoproc.launch"/>
+
+  <include file="$(find 3dnav_pr2)/launch/perception/laser-perception.launch"/>
 
 
   <!-- table -->
-  <param name="desk3" textfile="$(find gazebo_worlds)/objects/desk3.model" />
-  <node pkg="gazebo_tools" type="xml2factory" args="desk3 1.0 0.0 0.0 0 0 0 desk3" respawn="false" output="screen" />
+  <!--<param name="desk3" textfile="$(find gazebo_worlds)/objects/desk3.model" />
+  <node pkg="gazebo_tools" type="xml2factory" args="desk3 1.0 0.0 0.0 0 0 0 desk3" respawn="false" output="screen" />-->
 
 </launch>
 

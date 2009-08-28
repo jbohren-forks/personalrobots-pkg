@@ -30,6 +30,10 @@ class Hanoi
   /// \brief Pan and tilt the head
   private: void CommandHead(float pan, float tilt);
 
+  /// \brief Command arm
+  private: void CommandArm(float x, float y, float z, 
+                           float roll, float pitch, float yaw);
+
   private: ros::NodeHandle nodeHandle_;
   private: tf::TransformListener tf_;
 
@@ -51,6 +55,7 @@ class Hanoi
   private: std::string parameter_frame_, fixed_frame_;
 
   private: hanoi::Cylinders cylinderMessage_;
+
 };
 
 #endif

@@ -7,6 +7,9 @@
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <point_cloud_mapping/geometry/intersections.h>
 
+#include "LinearMath/btQuaternion.h"
+#include "move_arm_tools/ArmCtrlCmd.h"
+
 #include "Hanoi.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -16,7 +19,6 @@ Hanoi::Hanoi(ros::NodeHandle &nh)
 {
   std::string cloud_topic;
 
-  //moveArmService_ = nodeHandle_.serviceClient("/auto_arm_cmd_server");
   
   if (!nodeHandle_.getParam("parameter_frame",parameter_frame_))
     parameter_frame_ = "base_link";
@@ -31,12 +33,15 @@ Hanoi::Hanoi(ros::NodeHandle &nh)
 
   cloudSubscriber_ = nodeHandle_.subscribe("cloud_data",1,&Hanoi::CloudCB,this);
 
+  moveArmService_ = nodeHandle_.serviceClient<move_arm_tools::ArmCtrlCmd::Request, move_arm_tools::ArmCtrlCmd::Response> ("/auto_arm_cmd_server");
+
   // Get the point cloud
   /*tf::MessageNotifier<sensor_msgs::PointCloud> *message_notifier = 
     new tf::MessageNotifier<sensor_msgs::PointCloud>( tf_, 
        boost::bind(&Hanoi::CloudCB,this,_1), "cloud_data", parameter_frame_, 1);
        */
 
+  this->CommandArm(0.5, 0, 0.5, 0, 0 ,0);
   this->CommandHead(0, 0.5);
 }
 
@@ -66,13 +71,40 @@ void Hanoi::CommandHead(float pan, float tilt)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Command arm
+void Hanoi::CommandArm(float x, float y, float z, 
+                       float roll, float pitch, float yaw)
+{
+  move_arm_tools::ArmCtrlCmd::Request req;
+  move_arm_tools::ArmCtrlCmd::Response res;
+
+  std::stringstream cmd;
+
+  btQuaternion quat(yaw, pitch, roll);
+
+  cmd << "plan " << x << " " << y << " " << z << " " 
+    << quat.getX() << " " << quat.getY() << " " << quat.getZ() 
+    << " " << quat.getW();
+
+  req.cmd = cmd.str();
+  req.allowed_time = 60.0;
+
+  printf("Moving arm...\r\n");
+  moveArmService_.call(req, res);
+
+  if (res.success)
+    printf("success\n");
+  else
+    printf("failure\n");
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Got a point cloud
 void Hanoi::CloudCB(const sensor_msgs::PointCloudConstPtr &cloud)
 {
   pointcloud_ = *cloud;
 
-  ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.points.size (), pointcloud_.header.frame_id.c_str (),
-            (int)pointcloud_.channels.size (), cloud_geometry::getAvailableChannels (pointcloud_).c_str ());
+  //ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.points.size (), pointcloud_.header.frame_id.c_str (), (int)pointcloud_.channels.size (), cloud_geometry::getAvailableChannels (pointcloud_).c_str ());
 
 }
 

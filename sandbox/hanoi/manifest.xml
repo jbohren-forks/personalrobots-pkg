@@ -19,6 +19,8 @@
   <depend package="tf"/>
   <depend package="point_cloud_mapping"/>
   <depend package="mechanism_msgs"/>
+  <depend package="bullet"/>
+  <depend package="move_arm_tools"/>
 
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
