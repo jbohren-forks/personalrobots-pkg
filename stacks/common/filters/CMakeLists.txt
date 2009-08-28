@@ -6,6 +6,7 @@ rosbuild_add_boost_directories()
 
 #Plugins
 rosbuild_add_library(mean src/mean.cpp)
+rosbuild_add_library(increment src/increment.cpp)
 rosbuild_add_library(median src/median.cpp)
 rosbuild_add_library(transfer_function src/transfer_function.cpp)
 

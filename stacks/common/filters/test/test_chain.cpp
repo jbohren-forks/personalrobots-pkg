@@ -30,38 +30,6 @@
 #include "gtest/gtest.h"
 #include "filters/filter_chain.h"
 
-/*
-template <typename T>
-class TestFilter : public filters::FilterBase<T>
-{
-public:
-  TestFilter() { printf("Constructor\n");};
-  
-  ~TestFilter() { printf("Destructor\n");};
-
-  virtual bool configure() 
-  {
-    printf("Configured with %d \n", this->number_of_channels_);
-    
-    return true;
-  };
-
-  virtual bool update(const T & data_in, T& data_out)
-  {
-    printf("Update called\n");
-    return true;
-  };
-  virtual bool update(const std::vector<T> & data_in, std::vector<T>& data_out)
-  {
-    printf("Update called\n");
-    return true;
-  };
-
-
-
-};
-
-*/
 
 
 TEST(MultiChannelFilterChain, configuring){
@@ -143,6 +111,7 @@ TEST(MultiChannelFilterChain, TwoFilters){
   }
 }
 
+
 TEST(MultiChannelFilterChain, TransferFunction){
   double epsilon = 1e-4;
  
@@ -214,6 +183,97 @@ TEST(MultiChannelFilterChain, OverlappingNames){
 
 }
 */
+
+TEST(FilterChain, ReconfiguringChain){
+  filters::FilterChain<int> chain("int");
+  
+  int v1 = 1;
+  int v1a = 9;
+
+  EXPECT_TRUE(chain.configure("OneIncrements")); 
+  EXPECT_TRUE(chain.update(v1, v1a));
+  EXPECT_EQ(2, v1a);
+  chain.clear();
+  
+  EXPECT_TRUE(chain.configure("TwoIncrements")); 
+  EXPECT_TRUE(chain.update(v1, v1a));
+  EXPECT_EQ(3, v1a);
+  chain.clear();
+  
+}
+
+TEST(FilterChain, ThreeIncrementChains){
+  filters::FilterChain<int> chain("int");  
+  int v1 = 1;
+  int v1a = 9;
+
+  EXPECT_TRUE(chain.configure("ThreeIncrements")); 
+  EXPECT_TRUE(chain.update(v1, v1a));
+  EXPECT_EQ(4, v1a);
+  chain.clear();
+    
+}
+
+TEST(FilterChain, TenIncrementChains){
+  filters::FilterChain<int> chain("int");  
+  int v1 = 1;
+  int v1a = 9;
+
+  EXPECT_TRUE(chain.configure("TenIncrements")); 
+  EXPECT_TRUE(chain.update(v1, v1a));
+  EXPECT_EQ(11, v1a);
+  chain.clear();
+    
+}
+/*
+TEST(MultiChannelFilterChain, ReconfiguringMultiChannelChain){
+  filters::MultiChannelFilterChain<int> chain("int");
+  
+  int v1 = 1;
+  int v1a = 9;
+
+  EXPECT_TRUE(chain.configure("OneMultiChannelIncrements")); 
+  EXPECT_TRUE(chain.update(v1, v1a));
+  EXPECT_EQ(2, v1a);
+  chain.clear();
+  
+  EXPECT_TRUE(chain.configure("TwoMultiChannelIncrements")); 
+  EXPECT_TRUE(chain.update(v1, v1a));
+  EXPECT_EQ(3, v1a);
+  chain.clear();
+  
+}
+
+TEST(MultiChannelFilterChain, ThreeMultiChannelIncrementChains){
+  filters::MultiChannelFilterChain<int> chain("int");  
+  int v1 = 1;
+  int v1a = 9;
+
+  EXPECT_TRUE(chain.configure("ThreeMultiChannelIncrements")); 
+  EXPECT_TRUE(chain.update(v1, v1a));
+  EXPECT_EQ(4, v1a);
+  chain.clear();
+    
+}
+*/
+TEST(MultiChannelFilterChain, TenMultiChannelIncrementChains){
+  filters::MultiChannelFilterChain<int> chain("int");  
+  std::vector<int> v1;
+  v1.push_back(1);
+  v1.push_back(1);
+  v1.push_back(1);
+  std::vector<int> v1a = v1;
+
+  EXPECT_TRUE(chain.configure(3, "TenMultiChannelIncrements")); 
+  EXPECT_TRUE(chain.update(v1, v1a));
+  for (unsigned int i = 0; i < 3; i++)
+  {
+    EXPECT_EQ(11, v1a[i]);
+  }
+  chain.clear();
+    
+}
+
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);

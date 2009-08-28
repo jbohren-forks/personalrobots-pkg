@@ -105,7 +105,7 @@ public:
     else
     {
       result = reference_pointers_[0]->update(data_in, buffer0_);  //first copy in
-      for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last
+      for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last (never called if size=2)
       {
         if (i %2 == 1)
           result = result && reference_pointers_[i]->update(buffer0_, buffer1_);
@@ -114,10 +114,10 @@ public:
         
         if (result == false) {return false; }; //don't keep processing on failure
       }
-      if (list_size % 2 == 1) // odd number last deposit was in buffer0
-        result = result && reference_pointers_.back()->update(buffer0_, data_out);
-      else
+      if (list_size % 2 == 1) // odd number last deposit was in buffer1
         result = result && reference_pointers_.back()->update(buffer1_, data_out);
+      else
+        result = result && reference_pointers_.back()->update(buffer0_, data_out);
     }
     return result;
     
@@ -291,7 +291,7 @@ public:
     else
     {
       result = reference_pointers_[0]->update(data_in, buffer0_);  //first copy in
-      for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last
+      for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last (never if size = 2)
       {
         if (i %2 == 1)
           result = result && reference_pointers_[i]->update(buffer0_, buffer1_);
@@ -300,10 +300,10 @@ public:
 
         if (result == false) {return false; }; //don't keep processing on failure
       }
-      if (list_size % 2 == 1) // odd number last deposit was in buffer0
-        result = result && reference_pointers_.back()->update(buffer0_, data_out);
-      else
+      if (list_size % 2 == 1) // odd number last deposit was in buffer1
         result = result && reference_pointers_.back()->update(buffer1_, data_out);
+      else
+        result = result && reference_pointers_.back()->update(buffer0_, data_out);
     }
     return result;
             
