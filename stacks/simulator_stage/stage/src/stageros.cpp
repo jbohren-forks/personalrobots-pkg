@@ -28,6 +28,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+
 // libstage
 #include <stage.hh>
 
@@ -156,6 +161,16 @@ StageNode::StageNode(int argc, char** argv, bool gui, const char* fname)
   if(!localn.getParam("base_watchdog_timeout", t))
     t = 0.2;
   this->base_watchdog_timeout.fromSec(t);
+
+  // We'll check the existence of the world file, because libstage doesn't
+  // expose its failure to open it.  Could go further with checks (e.g., is
+  // it readable by this user).
+  struct stat s;
+  if(stat(fname, &s) != 0)
+  {
+    ROS_FATAL("The world file %s does not exist.", fname);
+    ROS_BREAK();
+  }
 
   // initialize libstage
   Stg::Init( &argc, &argv );
