@@ -159,6 +159,7 @@ void CvOneWayDescriptorBase::InitializeDescriptor(int desc_idx, IplImage* train_
 {
     m_descriptors[desc_idx].SetPCADimHigh(m_pca_dim_high);
     m_descriptors[desc_idx].SetPCADimLow(m_pca_dim_low);
+    m_descriptors[desc_idx].SetTransforms(m_poses, m_transforms);
     
     if(!m_pca_hr_eigenvectors)
     {
