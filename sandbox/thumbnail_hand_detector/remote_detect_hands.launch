@@ -1,0 +1,31 @@
+<launch>
+  <group ns="headcart">	
+    <!-- Machines -->
+    <include file="$(find pr2_head_cart)/hcb.machine" />
+
+    <!-- Power Board Control Node -->
+    <node pkg="pr2_power_board" type="power_node"  respawn="true"/>
+
+  <!-- Wide is on robot right, goes to realtime -->
+  <group ns="wide_stereo">
+    <node machine="realtime" pkg="dcam" type="stereodcam" name="stereodcam" respawn="false" >
+      <param name="videre_mode" type="str" value="none"/>
+      <param name="fps" type="double" value="15.0"/>
+      <param name="frame_id" type="string" value="wide_stereo_optical_frame"/>
+      <param name="exposure_auto" type="bool" value="true"/>
+      <param name="brightness_auto" type="bool" value="true"/>
+      <param name="gain_auto" type="bool" value="true"/>
+    </node>  
+  </group>
+
+    <include file="$(find stereo_image_proc)/wide_stereoproc.launch" />
+    
+    
+    <node pkg="thumbnail_hand_detector" type="thumbnail_hand_detector" name="thumbnail_hand_detector" args="$(find thumbnail_hand_detector)/more_negatives_round3.d" respawn="false" output="screen">
+      <remap from="image" to="wide_stereo/left/image_rect_color"/>
+      <param name="save" type="bool" value="true"/>
+      <param name="visualize" type="bool" value="false"/>
+    </node>
+
+  </group>
+</launch>

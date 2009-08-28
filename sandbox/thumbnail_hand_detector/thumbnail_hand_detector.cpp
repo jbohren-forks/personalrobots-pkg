@@ -131,7 +131,8 @@ private:
   
   std::string window_name_;
   boost::format filename_format_;
-  int count_;
+  int save_count_;
+  int detection_count_;
   
   bool visualize_;
   bool save_;
@@ -139,10 +140,16 @@ private:
   vector<ImageDescriptor*> descriptors_;
 
 public:
-  ThumbnailHandDetector(const ros::NodeHandle& node_handle, string classifier_filename, bool visualize, bool save)
-    : node_handle_(node_handle), filename_format_(""), count_(0), visualize_(visualize), save_(save)
+  ThumbnailHandDetector(const ros::NodeHandle& node_handle, string classifier_filename)
+    : node_handle_(node_handle), filename_format_(""), save_count_(0), detection_count_(0)
   {
     node_handle_.param("~window_name", window_name_, node_handle_.resolveName("image"));
+    
+    //node_handle_.param<bool>("~save", save_, false); // Why doesn't this work?
+    node_handle_.param<bool>("/headcart/thumbnail_hand_detector/save", save_, false);
+    node_handle_.param<bool>("/headcart/thumbnail_hand_detector/visualize", visualize_, false);
+
+    cout << "Save flag: " << save_ << ", visualize flag: " << visualize_ << endl;
 
     bool autosize;
     node_handle_.param("~autosize", autosize, false);
@@ -179,7 +186,7 @@ public:
       if(id > max_id)
 	max_id = id;
     }
-    count_ = max_id + 1;
+    save_count_ = max_id + 1;
   }
 
   ~ThumbnailHandDetector()
@@ -244,8 +251,10 @@ public:
       }
 
       if(total_response > 0) {
+	detection_count_++;
+
 	std::stringstream ss;
-	ss << "Found hand." << endl;
+	ss << "Found hand.  Detection count: " << detection_count_ << endl;
 	std_msgs::String msg;
 	msg.data = ss.str();
 	pub_.publish(msg);
@@ -253,10 +262,10 @@ public:
 	ROS_INFO_STREAM("Found hand.  Response: " << total_response);
 	if(save_) {
 	  char buf[100];
-	  sprintf(buf, "hands/hand%05d.jpg", count_);
+	  sprintf(buf, "hands/hand%05d.jpg", save_count_);
 	  cvSaveImage(buf, small);
 	  cout << "   Saved " << buf;
-	  count_++;
+	  save_count_++;
 	}
 	cout << endl;
       }
@@ -340,7 +349,6 @@ public:
 
 int main(int argc, char **argv)
 {
-  //  ros::init(argc, argv, "thumbnail_hand_detector", ros::init_options::AnonymousName);
   ros::init(argc, argv, "thumbnail_hand_detector");
   ros::NodeHandle n;
   if (n.resolveName("image") == "/image") {
@@ -350,24 +358,11 @@ int main(int argc, char **argv)
 
   if(argc != 2) {
     cout << "usage: " << argv[0] << " CLASSIFIER_FILENAME image:=<image topic>" << endl;
-    cout << " Environment variable options:" << endl;
-    cout << "   VISUALIZE= Turns on visualization." << endl;
-    cout << "   SAVE= Turns on saving of hand images." << endl;
-
     return 1;
   }
 
 
-
-  bool visualize = false;
-  if(getenv("VISUALIZE") != NULL) 
-    visualize = true;
-
-  bool save = false;
-  if(getenv("SAVE") != NULL) 
-    save = true;
-
-  ThumbnailHandDetector view(n, argv[1], visualize, save);
+  ThumbnailHandDetector view(n, argv[1]);
   ros::spin();
   return 0;
 }
