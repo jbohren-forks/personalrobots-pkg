@@ -61,8 +61,10 @@
 
 #include <std_srvs/Empty.h>
 
-#define HINGE_POINT_CONST 200
+#include <fstream>
 
+#define HINGE_POINT_CONST 200
+#define DOOR_TRACKER_MAX 20
 using namespace std;
 using namespace door_tracker;
 using namespace Eigen;
@@ -135,6 +137,7 @@ class DoorDatabase
       door_sub_ = node_handle_.subscribe(door_msg_topic_,1,&DoorDatabase::doorMsgCallBack,this);
       door_srv_ = node_handle_.advertiseService(door_service_name_,&DoorDatabase::doorQuery,this);
       upload_srv_ = node_handle_.advertiseService(upload_service_name_,&DoorDatabase::uploadDatabase,this);
+      initialize_srv_ = node_handle_.advertiseService(initialize_database_service_name_,&DoorDatabase::initializeDatabaseSrv,this);
       hinge_number_ = 0;
     };
 
@@ -145,7 +148,7 @@ class DoorDatabase
     void doorMsgCallBack(const door_msgs::DoorConstPtr &door_msg_in)
     {
       door_msgs::Door door_msg = *door_msg_in;
-      updateDatabase(door_msg_);
+      updateDatabase(door_msg);
     }
 
     void initializeDatabase()
@@ -153,16 +156,24 @@ class DoorDatabase
       int num_doors;
       node_handle_.param<int>("~number_doors",num_doors,0);
       if(num_doors <= 0)
+      {
+        ROS_INFO("No doors in database");
         return;
+      }
+      else
+      {
+        ROS_INFO("%d doors in database",num_doors);
+      }
       door_msgs::Door door;
       for(int i=0; i<num_doors; i++)
       {
-        std::stringstream ss;
-        ss >> i;
-        std::string key = "~door[" + ss.str() + "]/";
+        char tmp_char[DOOR_TRACKER_MAX];
+        sprintf(tmp_char,"%d",i);
+        std::string key = node_handle_.getName() + "/door[" + std::string(tmp_char) + "]/";
         std::string value;
         if(!node_handle_.searchParam(key+"frame_id",value))
         {
+          ROS_INFO("Could not find frame_id %s",(key+"frame_id").c_str());
           continue;
         }
         node_handle_.getParam(key+"frame_id",door.header.frame_id,"odom_combined");
@@ -448,7 +459,7 @@ class DoorDatabase
       return false;
     }
 
-    bool initializeDatabase(std_srvs::Empty::Request &request, std_srvs::Empty::Response &response)
+    bool initializeDatabaseSrv(std_srvs::Empty::Request &request, std_srvs::Empty::Response &response)
     {
       initializeDatabase();
       return true;
@@ -466,9 +477,9 @@ class DoorDatabase
       node_handle_.setParam("~number_doors",(int)database_.size());
       for(unsigned int i=0; i < database_.size(); i++)
       {
-        std::stringstream ss;
-        ss >> i;
-        std::string key = "~door[" + ss.str() + "]/";
+        char tmp_char[DOOR_TRACKER_MAX];
+        sprintf(tmp_char,"%d",i);
+        std::string key = "~door[" + std::string(tmp_char) + "]/";
         node_handle_.setParam(key+"frame_id",database_[i].door.header.frame_id);
 
         node_handle_.setParam(key+"frame_p1/x",database_[i].door.frame_p1.x);

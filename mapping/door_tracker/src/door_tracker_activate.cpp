@@ -35,35 +35,25 @@
 #include <ros/node.h>
 #include <std_msgs/String.h>
 
-using namespace ros;
-
-class test_base_node :public ros::Node
-{
-  public:
-    test_base_node(std::string node_name):ros::Node(node_name){};
-    ~test_base_node(){}
-    void spin()
-    {
-      ros::Node* node = ros::Node::instance();
-      std_msgs::String activate_msg;
-      activate_msg.data = std::string("activate");
-      node->advertise<std_msgs::String>("/door_tracker_node/activate",1);
-//      while(ok())
-//      {
-       node->publish("/door_tracker_node/activate",activate_msg);
-       sleep(3.0);
-       node->publish("/door_tracker_node/activate",activate_msg);
-       sleep(3.0);
-//      }
-    }
-};
-
 int main(int argc, char** argv)
 {
-   ros::init(argc,argv); 
-
-   test_base_node n("test_door_tracker");
-
-   n.spin();
-
+  ros::init(argc,argv,"activate_door_tracker"); 
+  ros::NodeHandle node_handle;
+  ros::spinOnce();
+  std::string msg;
+  if(argc < 2)
+  {
+    ROS_ERROR("No command provided");
+    exit(1);
+  }
+  else
+  {
+    msg = std::string(argv[1]);
+  }
+  std_msgs::String activate_msg;
+  activate_msg.data = msg;
+  ros::Publisher activate_pub = node_handle.advertise<std_msgs::String>("/door_tracker_node/activate",1);
+  activate_pub.publish(activate_msg);
+  sleep(1.0);
+  activate_pub.publish(activate_msg);
 }

@@ -124,6 +124,7 @@ class DoorTracker
     ros::Publisher viz_pub_;
     ros::Publisher door_pub_;
     ros::ServiceServer door_srv_;
+    ros::Subscriber activate_sub_;
 
     /********** Parameters that need to be gotten from the param server *******/
     std::string door_msg_topic_, base_laser_topic_,fixed_frame_;
@@ -139,12 +140,12 @@ class DoorTracker
 
     bool first_time_;
 
-  DoorTracker():message_notifier_(NULL), filter_chain_("sensor_msgs::LaserScan")
+    DoorTracker():message_notifier_(NULL), filter_chain_("sensor_msgs::LaserScan")
     {
       num_clouds_received_ = 0;
       continuous_detection_ = false;
       active_ = false;
-      node_handle_.subscribe("~activate",1,&DoorTracker::activate,this);
+      activate_sub_ = node_handle_.subscribe("~activate",1,&DoorTracker::activate,this);
       ROS_DEBUG("Started door tracker");
       //Laser Scan Filtering
       filter_chain_.configure("~filters");
@@ -152,6 +153,36 @@ class DoorTracker
       euclidean_cluster_angle_tolerance_    = angles::from_degrees (25.0);
       euclidean_cluster_min_pts_            = 20;               // 1000 points
       euclidean_cluster_distance_tolerance_ = 0.03;               // 5 cm
+
+      node_handle_.param<std::string>("~p_door_msg_topic_", door_msg_topic_, "door_message");                              // 10 degrees
+      node_handle_.param<std::string>("~p_base_laser_topic_", base_laser_topic_, "/base_scan");                              // 10 degrees
+
+      node_handle_.param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 100 points at high resolution
+      node_handle_.param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
+      node_handle_.param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
+      node_handle_.param ("~p_frame_multiplier_", frame_multiplier_,6.0);
+      node_handle_.param ("~p_sac_min_points_left", sac_min_points_left_, 10);
+      node_handle_.param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
+      node_handle_.param ("~p_door_max_width", door_max_width_, 0.9);                    // maximum width of a door: 1.4m
+      node_handle_.param("~p_fixed_frame", fixed_frame_, string("map"));
+
+      eps_angle_ = angles::from_degrees (eps_angle_);                      // convert to radians
+
+      double tmp; int tmp2;
+      node_handle_.param("~p_door_frame_p1_x", tmp, 0.5); door_msg_.frame_p1.x = tmp;
+      node_handle_.param("~p_door_frame_p1_y", tmp, -0.5); door_msg_.frame_p1.y = tmp;
+      node_handle_.param("~p_door_frame_p2_x", tmp, 0.5); door_msg_.frame_p2.x = tmp;
+      node_handle_.param("~p_door_frame_p2_y", tmp, 0.5); door_msg_.frame_p2.y = tmp;
+      node_handle_.param("~p_door_hinge" , tmp2, -1); door_msg_.hinge = tmp2;
+      node_handle_.param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
+      door_msg_.header.frame_id = "base_link";
+      node_handle_.param("~publish_all_candidates" , publish_all_candidates_, false);
+      viz_pub_ = node_handle_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+      door_pub_ = node_handle_.advertise<door_msgs::Door>( "~door_message", 0 );
+      door_srv_ = node_handle_.advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
+      message_notifier_.reset(new tf::MessageNotifier<sensor_msgs::LaserScan> (tf_, boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_, fixed_frame_, 1));
+      message_notifier_->setTolerance(ros::Duration(.02));
+      first_time_ = false;
     };
 
     ~DoorTracker()
@@ -254,38 +285,6 @@ class DoorTracker
 
     void start()
     {
-      if(first_time_)
-      {
-        node_handle_.param<std::string>("~p_door_msg_topic_", door_msg_topic_, "door_message");                              // 10 degrees
-        node_handle_.param<std::string>("~p_base_laser_topic_", base_laser_topic_, "base_scan");                              // 10 degrees
-
-        node_handle_.param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 100 points at high resolution
-        node_handle_.param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
-        node_handle_.param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
-        node_handle_.param ("~p_frame_multiplier_", frame_multiplier_,6.0);
-        node_handle_.param ("~p_sac_min_points_left", sac_min_points_left_, 10);
-        node_handle_.param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
-        node_handle_.param ("~p_door_max_width", door_max_width_, 0.9);                    // maximum width of a door: 1.4m
-        node_handle_.param("~p_fixed_frame", fixed_frame_, string("map"));
-
-        eps_angle_ = angles::from_degrees (eps_angle_);                      // convert to radians
-
-        double tmp; int tmp2;
-        node_handle_.param("~p_door_frame_p1_x", tmp, 0.5); door_msg_.frame_p1.x = tmp;
-        node_handle_.param("~p_door_frame_p1_y", tmp, -0.5); door_msg_.frame_p1.y = tmp;
-        node_handle_.param("~p_door_frame_p2_x", tmp, 0.5); door_msg_.frame_p2.x = tmp;
-        node_handle_.param("~p_door_frame_p2_y", tmp, 0.5); door_msg_.frame_p2.y = tmp;
-        node_handle_.param("~p_door_hinge" , tmp2, -1); door_msg_.hinge = tmp2;
-        node_handle_.param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
-        door_msg_.header.frame_id = "base_link";
-        node_handle_.param("~publish_all_candidates" , publish_all_candidates_, false);
-        viz_pub_ = node_handle_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-        door_pub_ = node_handle_.advertise<door_msgs::Door>( "~door_message", 0 );
-        door_srv_ = node_handle_.advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
-        message_notifier_.reset(new tf::MessageNotifier<sensor_msgs::LaserScan> (tf_, boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_, fixed_frame_, 1));
-        message_notifier_->setTolerance(ros::Duration(.02));
-        first_time_ = false;
-      }
       active_ = true;
     }
 
@@ -322,10 +321,17 @@ class DoorTracker
 
     void laserCallBack(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& scan_msg)
     {
+      door_msgs::Door door_tmp;
       if(!active_)
+      {
+        ROS_DEBUG("Door tracker not active so returning");
         return;
+      }
       if(!done_detection_)
+      {
+        ROS_DEBUG("Not done with detection so returning");
         return;
+      }
       cloud_msg_mutex_.lock();
       done_detection_  = false;
       sensor_msgs::LaserScan filtered_scan;
@@ -341,7 +347,7 @@ class DoorTracker
         return;
       }
       num_clouds_received_++;
-      ROS_DEBUG("Received a point cloud with %d points in frame: %s",(int) cloud_.points.size(),cloud_.header.frame_id.c_str());
+      ROS_INFO("Received a point cloud with %d points in frame: %s",(int) cloud_.points.size(),cloud_.header.frame_id.c_str());
       if(cloud_.points.empty())
       {
         ROS_WARN("Received an empty point cloud");
@@ -355,7 +361,7 @@ class DoorTracker
       }
       if(continuous_detection_) // do this on every laser callback
       {
-        findDoor();
+        findDoor(door_tmp);
       }
       cloud_msg_mutex_.unlock();
     }
@@ -395,7 +401,7 @@ class DoorTracker
       return;
     }
 
-    void findDoor()
+    bool findDoor(door_msgs::Door &door_result)
     {
       ROS_DEBUG("Finding door");
       //cloud_msg_mutex_.lock();
@@ -469,13 +475,18 @@ class DoorTracker
         door_tmp.header = cloud.header;
         door_tmp.header.frame_id = fixed_frame_;
         door_pub_.publish(door_tmp);
+        done_detection_ = true;
+        door_result = door_tmp;
+        return true;
       }
-      ROS_DEBUG("Done finding door");
+      ROS_INFO("Done finding door");
       done_detection_ = true;
+      return false;
     }
 
     bool detectDoorService(door_handle_detector::DoorsDetector::Request &req, door_handle_detector::DoorsDetector::Response &resp)
     {
+      door_msgs::Door door_tmp;
       door_msg_mutex_.lock();
       door_msg_ = req.door;
       door_msg_mutex_.unlock();
@@ -486,9 +497,16 @@ class DoorTracker
       {
         tictoc.sleep ();
       }
-      findDoor(); //Find the door
+      bool res = findDoor(door_tmp);
       shutdown();
-      return true;
+      if(res)
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
     }
 
     void activate(const std_msgs::StringConstPtr &activate_msg)
