@@ -1,5 +1,5 @@
 <launch>
   <include file="$(find trex_pr2)/test/trex_config.launch" />
-  <param name="/trex/start_dir" value="$(find trex_pr2)/test/drive_recharge/sim"/>
-  <test test-name="drive_recharge" pkg="trex_pr2" type="trexfast" time-limit="30.0" args="--hyper --gtest" />
+  <param name="/trex/start_dir" value="$(find trex_pr2)/test/plug_in/sim"/>
+  <test test-name="plug_in" pkg="trex_pr2" type="trexfast" time-limit="30.0" args="--hyper --gtest" />
 </launch>
