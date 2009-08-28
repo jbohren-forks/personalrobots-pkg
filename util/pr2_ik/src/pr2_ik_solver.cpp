@@ -45,18 +45,17 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
   active_ = false;
   int free_angle;
   std::string urdf_xml,full_urdf_xml;
-  ros::Node::instance()->param("~urdf_xml", urdf_xml,std::string("robot_description_new"));
+  node_handle_.param("~urdf_xml", urdf_xml,std::string("robot_description_new"));
 
-  ros::NodeHandle node_handle;
-  node_handle.searchParam(urdf_xml,full_urdf_xml);
+  node_handle_.searchParam(urdf_xml,full_urdf_xml);
 
-  ros::Node::instance()->param("~free_angle",free_angle,2);
+  node_handle_.param("~free_angle",free_angle,2);
   // Load robot description
   TiXmlDocument xml;
   ROS_DEBUG("Reading xml file from parameter server\n");
-  assert(ros::Node::instance());
+//  assert(ros::Node::instance());
   std::string result;
-  if (ros::Node::instance()->getParam(full_urdf_xml, result))
+  if (node_handle_.getParam(full_urdf_xml, result))
     xml.Parse(result.c_str());
   else
   {
@@ -75,11 +74,11 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
   // get name of root and tip from the parameter server
   std::string root_name;
   std::string tip_name;
-  if (!ros::Node::instance()->getParam("~root_name", root_name)){
+  if (!node_handle_.getParam("~root_name", root_name)){
     ROS_FATAL("PR2IK: No root name found on parameter server");
     exit(1);
   }
-  if (!ros::Node::instance()->getParam("~tip_name", tip_name)){
+  if (!node_handle_.getParam("~tip_name", tip_name)){
     ROS_FATAL("PR2IK: No tip name found on parameter server");
     exit(1);
   }
@@ -174,7 +173,7 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
     ROS_DEBUG("Joint: %d, angle limits: (%f,%f)",i,min_angles[i],max_angles[i]);
   }
 
-  ros::Node::instance()->param<double>("~search_discretization_angle",search_discretization_angle_,0.001);
+  node_handle_.param<double>("~search_discretization_angle",search_discretization_angle_,0.001);
 
   // create robot chain from root to tip
   KDL::Tree tree;

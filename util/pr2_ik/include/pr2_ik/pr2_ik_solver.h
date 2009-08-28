@@ -129,6 +129,8 @@ namespace pr2_ik
     bool getCount(int &count, int max_count, int min_count);
 
     double search_discretization_angle_;
+
+    ros::NodeHandle node_handle_;
   };
 }
 #endif// PR2_IK_PR2_IK_SOLVER_H

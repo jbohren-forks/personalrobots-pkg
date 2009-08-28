@@ -55,6 +55,7 @@ namespace pr2_ik {
     invalid_pub_ = node_handle_.advertise<geometry_msgs::PoseStamped>("/invalid",1);
     control_pub_ = node_handle_.advertise<manipulation_msgs::JointTraj>(control_topic_name_,1);
     command_sub_ = node_handle_.subscribe("~command",20,&PR2IKController::command,this);
+    control_srv_ = node_handle_.serviceClient<experimental_controllers::TrajectoryStart>(control_service_name_);
 
     if(free_angle_constraint_)
     {
@@ -126,8 +127,7 @@ namespace pr2_ik {
       }
       experimental_controllers::TrajectoryStart srv;
       srv.request.traj = joint_traj;
-      ros::ServiceClient control_srv = node_handle_.serviceClient<experimental_controllers::TrajectoryStart>(control_service_name_);
-      if(control_srv.call(srv))
+      if(control_srv_.call(srv))
       {
         ROS_DEBUG("IK controller service success");
       }
@@ -135,7 +135,6 @@ namespace pr2_ik {
       {
         ROS_DEBUG("IK controller service failed");
       }
-//      control_pub_.publish(joint_traj);
       ROS_DEBUG("IK valid: %d", pose_msg_in.pose_stamped.header.seq);   
     }
     else

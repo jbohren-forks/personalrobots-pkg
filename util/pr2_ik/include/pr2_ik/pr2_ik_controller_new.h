@@ -93,5 +93,6 @@ namespace pr2_ik
     ros::Publisher invalid_pub_;
 
     ros::Subscriber command_sub_;
+
   };
 }
