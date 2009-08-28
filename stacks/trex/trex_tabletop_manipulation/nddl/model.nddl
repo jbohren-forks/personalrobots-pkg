@@ -1,0 +1,9 @@
+#include "TREX.nddl"
+
+class MoveObject extends Behavior {
+  predicate Active{
+    WorldObject obj;
+  }
+
+  MoveObject(Mode _mode){ super(_mode); }
+};

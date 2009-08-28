@@ -1,0 +1,8 @@
+<package>
+  <description>A package for tabletop manipulation.</description>
+  <author>Conor McGann</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="trex_pr2" />
+
+</package>
