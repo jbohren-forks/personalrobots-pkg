@@ -38,6 +38,8 @@
 #include <string>
 #include <vector>
 
+#include <ros/ros.h>
+
 // See http://prdev.willowgarage.com/trac/personalrobots/ticket/883
 template <class C>
 void deleteElements(C *c)
