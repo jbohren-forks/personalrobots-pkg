@@ -139,7 +139,7 @@ robot_actions::ResultStatus DetectHandleAction::execute(const door_msgs::Door& g
 			 pow(result_laser.handle.y - result_camera.handle.y,2) +
 			 pow(result_laser.handle.z - result_camera.handle.z,2));
     ROS_INFO("difference between laser and camera result = %f", error);
-    if (error < 0.1){
+    if (error < this->handle_laser_camera_distance_tol){
       // store handle position
       feedback = result_laser;
       feedback.handle.x = (result_laser.handle.x + result_camera.handle.x)/2.0;
@@ -175,6 +175,13 @@ robot_actions::ResultStatus DetectHandleAction::execute(const door_msgs::Door& g
 
       ROS_INFO("Found handle in %i tries", nr_tries+1);
       return robot_actions::SUCCESS;
+    }
+    else
+    {
+      ROS_WARN("Distance between laser and camera handle detection is more than %f m apart",this->handle_laser_camera_distance_tol);
+      ROS_WARN("         laser results: x = %f y = %f z = %f ", result_laser.handle.x, result_laser.handle.y, result_laser.handle.z);
+      ROS_WARN("        camera results: x = %f y = %f z = %f ", result_camera.handle.x, result_camera.handle.y, result_camera.handle.z);
+      ROS_WARN("Retrying handle detection");
     }
   }
   ROS_ERROR("Did not find hanlde in %i tries", max_retries);

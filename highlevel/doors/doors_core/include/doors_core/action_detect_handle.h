@@ -64,6 +64,7 @@ private:
   ros::Publisher pub_;
   tf::TransformListener& tf_;
 
+  const static double handle_laser_camera_distance_tol = 0.1;
 };
 
 }
