@@ -37,12 +37,48 @@
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/Point32.h>
 
+#include <vector>
 #include <Eigen/Core>
+#include <Eigen/LU>
 
 namespace cloud_geometry
 {
   namespace transforms
   {
+
+	/**
+	 * \brief Computes the rigid transformation between two point clouds
+	 *
+	 * Computes the optimal transformation between two sets of point clouds (in a least square sense),
+	 * using the algorithm of:
+	 * Arun, Huanng and Blostein - Least-Square Fitting of Two Point Sets
+	 *
+	 * \param pc_a first point cloud
+	 * \param pc_b second point cloud
+	 * \param transformation the computed transformation between the two point clouds
+	 *
+	 * \return true is there is a valid transformation found
+	 */
+	bool getPointsRigidTransformation(const sensor_msgs::PointCloud& pc_a, const sensor_msgs::PointCloud& pc_b,
+  										  Eigen::Matrix4d &transformation);
+
+	/**
+	 * \brief Computes the rigid transformation between two point clouds
+	 *
+	 * Computes the optimal transformation between two sets of point clouds (in a least square sense),
+	 * using the algorithm of:
+	 * Arun, Huanng and Blostein - Least-Square Fitting of Two Point Sets
+	 *
+	 * \param pc_a first point cloud
+	 * \param indices_a indices of points from the first point cloud to be used
+	 * \param pc_b second point cloud
+	 * \param indices_b indices of points from the first point cloud to be used
+	 * \param transformation the computed transformation between the two point clouds
+	 * \return true is there is a valid transformation found
+	 */
+	bool getPointsRigidTransformation(const sensor_msgs::PointCloud& pc_a, const std::vector<int>& indices_a,
+										  const sensor_msgs::PointCloud& pc_b, const std::vector<int>& indices_b,
+										  Eigen::Matrix4d &transformation);
 
     void getPlaneToPlaneTransformation (const std::vector<double> &plane_a, const std::vector<double> &plane_b, float tx, float ty, float tz,
                                         Eigen::Matrix4d &transformation);

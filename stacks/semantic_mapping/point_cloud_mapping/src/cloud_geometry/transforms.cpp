@@ -32,11 +32,179 @@
 
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/transforms.h>
+#include <point_cloud_mapping/geometry/nearest.h>
+
+#include <Eigen/SVD>
+
 
 namespace cloud_geometry
 {
   namespace transforms
   {
+
+  /**
+   * See header file
+   */
+  bool getPointsRigidTransformation(const sensor_msgs::PointCloud& pc_a_, const sensor_msgs::PointCloud& pc_b_,
+		  Eigen::Matrix4d &transformation)
+  {
+
+	  assert (pc_a_.get_points_size()==pc_b_.get_points_size());
+
+	  sensor_msgs::PointCloud pc_a = pc_a_;
+	  sensor_msgs::PointCloud pc_b = pc_b_;
+
+	  // translate both point cloud so that their centroid will be in origin
+	  geometry_msgs::Point32 centroid_a;
+	  geometry_msgs::Point32 centroid_b;
+
+	  nearest::computeCentroid(pc_a, centroid_a);
+	  nearest::computeCentroid(pc_b, centroid_b);
+
+	  for (size_t i=0;i<pc_a.get_points_size();++i) {
+		  pc_a.points[i].x -= centroid_a.x;
+		  pc_a.points[i].y -= centroid_a.y;
+		  pc_a.points[i].z -= centroid_a.z;
+	  }
+
+	  for (size_t i=0;i<pc_b.get_points_size();++i) {
+		  pc_b.points[i].x -= centroid_b.x;
+		  pc_b.points[i].y -= centroid_b.y;
+		  pc_b.points[i].z -= centroid_b.z;
+	  }
+
+	  // solve for rotation
+	  Eigen::Matrix3d correlation;
+	  correlation.setZero();
+
+	  for (size_t i=0;i<pc_a.get_points_size();++i) {
+		  correlation(0,0) += pc_a.points[i].x * pc_b.points[i].x;
+		  correlation(0,1) += pc_a.points[i].x * pc_b.points[i].y;
+		  correlation(0,2) += pc_a.points[i].x * pc_b.points[i].z;
+
+		  correlation(1,0) += pc_a.points[i].y * pc_b.points[i].x;
+		  correlation(1,1) += pc_a.points[i].y * pc_b.points[i].y;
+		  correlation(1,2) += pc_a.points[i].y * pc_b.points[i].z;
+
+		  correlation(2,0) += pc_a.points[i].z * pc_b.points[i].x;
+		  correlation(2,1) += pc_a.points[i].z * pc_b.points[i].y;
+		  correlation(2,2) += pc_a.points[i].z * pc_b.points[i].z;
+	  }
+
+	  Eigen::SVD<Eigen::Matrix3d> svd = correlation.svd();
+
+	  Eigen::Matrix3d Ut = svd.matrixU().transpose();
+	  Eigen::Matrix3d V = svd.matrixV();
+	  Eigen::Matrix3d X = V*Ut;
+
+	  double det = X.determinant();
+	  if (det<0) {
+		  V.col(2) = -V.col(2);
+		  X = V*Ut;
+	  }
+
+	  transformation.setZero();
+	  transformation.corner<3,3>(Eigen::TopLeft) = X;
+	  transformation(3,3) = 1;
+
+	  sensor_msgs::PointCloud pc_rotated_a;
+	  transformPoints(pc_a_.points, pc_rotated_a.points, transformation);
+
+	  geometry_msgs::Point32 centroid_rotated_a;
+	  nearest::computeCentroid(pc_rotated_a, centroid_rotated_a);
+
+	  transformation(0,3) = centroid_b.x - centroid_rotated_a.x;
+	  transformation(1,3) = centroid_b.y - centroid_rotated_a.y;
+	  transformation(2,3) = centroid_b.z - centroid_rotated_a.z;
+
+	  return true;
+
+  }
+
+
+  /**
+   * See header file
+   */
+	bool getPointsRigidTransformation(const sensor_msgs::PointCloud& pc_a_, const std::vector<int>& indices_a,
+										  const sensor_msgs::PointCloud& pc_b_, const std::vector<int>& indices_b,
+										  Eigen::Matrix4d &transformation)
+	{
+
+	  assert (indices_a.size()==indices_b.size());
+
+	  sensor_msgs::PointCloud pc_a;
+	  sensor_msgs::PointCloud pc_b;
+
+	  getPointCloud(pc_a_, indices_a, pc_a);
+	  getPointCloud(pc_b_, indices_b, pc_b);
+
+	  // translate both point cloud so that their centroid will be in origin
+	  geometry_msgs::Point32 centroid_a;
+	  geometry_msgs::Point32 centroid_b;
+
+	  nearest::computeCentroid(pc_a, centroid_a);
+	  nearest::computeCentroid(pc_b, centroid_b);
+
+	  for (size_t i=0;i<pc_a.get_points_size();++i) {
+		  pc_a.points[i].x -= centroid_a.x;
+		  pc_a.points[i].y -= centroid_a.y;
+		  pc_a.points[i].z -= centroid_a.z;
+	  }
+
+	  for (size_t i=0;i<pc_b.get_points_size();++i) {
+		  pc_b.points[i].x -= centroid_b.x;
+		  pc_b.points[i].y -= centroid_b.y;
+		  pc_b.points[i].z -= centroid_b.z;
+	  }
+
+	  // solve for rotation
+	  Eigen::Matrix3d correlation;
+	  correlation.setZero();
+
+	  for (size_t i=0;i<pc_a.get_points_size();++i) {
+		  correlation(0,0) += pc_a.points[i].x * pc_b.points[i].x;
+		  correlation(0,1) += pc_a.points[i].x * pc_b.points[i].y;
+		  correlation(0,2) += pc_a.points[i].x * pc_b.points[i].z;
+
+		  correlation(1,0) += pc_a.points[i].y * pc_b.points[i].x;
+		  correlation(1,1) += pc_a.points[i].y * pc_b.points[i].y;
+		  correlation(1,2) += pc_a.points[i].y * pc_b.points[i].z;
+
+		  correlation(2,0) += pc_a.points[i].z * pc_b.points[i].x;
+		  correlation(2,1) += pc_a.points[i].z * pc_b.points[i].y;
+		  correlation(2,2) += pc_a.points[i].z * pc_b.points[i].z;
+	  }
+
+	  Eigen::SVD<Eigen::Matrix3d> svd = correlation.svd();
+
+	  Eigen::Matrix3d Ut = svd.matrixU().transpose();
+	  Eigen::Matrix3d V = svd.matrixV();
+	  Eigen::Matrix3d X = V*Ut;
+
+	  double det = X.determinant();
+	  if (det<0) {
+		  V.col(2) = -V.col(2);
+		  X = V*Ut;
+	  }
+
+	  transformation.setZero();
+	  transformation.corner<3,3>(Eigen::TopLeft) = X;
+	  transformation(3,3) = 1;
+
+	  sensor_msgs::PointCloud pc_rotated_a;
+	  getPointCloud(pc_a_, indices_a, pc_a);
+	  transformPoints(pc_a.points, pc_rotated_a.points, transformation);
+
+	  geometry_msgs::Point32 centroid_rotated_a;
+	  nearest::computeCentroid(pc_rotated_a, centroid_rotated_a);
+
+	  transformation(0,3) = centroid_b.x - centroid_rotated_a.x;
+	  transformation(1,3) = centroid_b.y - centroid_rotated_a.y;
+	  transformation(2,3) = centroid_b.z - centroid_rotated_a.z;
+
+	  return true;
+
+  }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Obtain a 4x4 rigid transformation matrix (with translation)
