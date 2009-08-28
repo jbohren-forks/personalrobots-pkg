@@ -160,8 +160,8 @@ public:
 
     if(visualize_) {    
       ROS_INFO_STREAM("Starting visualization.");
-      cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
-      cvNamedWindow("small", CV_WINDOW_AUTOSIZE);
+//       cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
+//       cvNamedWindow("small", CV_WINDOW_AUTOSIZE);
       cvNamedWindow("Classification", CV_WINDOW_AUTOSIZE);
       cvStartWindowThread();
     }
@@ -221,7 +221,7 @@ public:
       IplImage* small = cvCreateImage(cvSize(128, 128), img->depth, img->nChannels);
       cvResize(img, small, CV_INTER_NN);
       cvResetImageROI(img);
-      cvShowImage("small", small);
+      //cvShowImage("small", small);
 
       IplImage* vis = NULL;
       if(visualize_) 
@@ -268,11 +268,19 @@ public:
 	  save_count_++;
 	}
 	cout << endl;
-      }
 
+	// -- Make the image green.
+	for(int r=0; r<img->height; r++) {
+	  uchar* ptr = (uchar*)(img->imageData + r * img->widthStep);
+	  for(int c=0; c<img->width; c++) {
+	    ptr[3*c+1] = 200;
+	  }
+	}
+      }
+      
       if(visualize_) {
-	cvShowImage(window_name_.c_str(), img);
-	cvShowImage("Classification", vis);
+	//cvShowImage(window_name_.c_str(), img);
+	cvShowImage("Classification", img);
       }
 
       // -- Cleanup.
