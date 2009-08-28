@@ -362,7 +362,7 @@ namespace door_functions
 
     result.door_p1 = hinge;
     result.door_p2 = new_edge;
-    if(door.hinge == 1)
+    if(door.hinge == door.HINGE_P2)
     {
       result.door_p2 = hinge;
       result.door_p1 = new_edge;
