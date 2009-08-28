@@ -1,4 +1,0 @@
-<launch>
-  <param name="/trex/input_file" value="recharger.cfg"/>
-  <include file="$(find trex_pr2)/test/real.launch" />
-</launch>
