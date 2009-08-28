@@ -122,14 +122,14 @@ public:
 
   std::string getJointName();
   mechanism::JointState *joint_state_;           /**< Joint we're controlling. */
-  double dt_;
+  ros::Duration dt_;
 
   double command_;                                /**< Last commanded position. */
 private:
   ros::NodeHandle node_;
   mechanism::RobotState *robot_;                  /**< Pointer to robot structure. */
   control_toolbox::Pid pid_controller_;           /**< Internal PID controller. */
-  double last_time_;                              /**< Last time stamp of update. */
+  ros::Time last_time_;                              /**< Last time stamp of update. */
   int loop_count_;
 
   friend class JointVelocityControllerNode;

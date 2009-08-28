@@ -395,9 +395,9 @@ void JointTrajectoryController::computeJointErrors()
   }
 }
 
-bool JointTrajectoryController::checkWatchDog(double current_time)
+bool JointTrajectoryController::checkWatchDog(ros::Time current_time)
 {
-  if(current_time - last_traj_req_time_ < max_allowed_update_time_)
+  if((current_time - last_traj_req_time_).toSec() < max_allowed_update_time_)
   {
     if(watch_dog_active_)
     {
@@ -417,7 +417,7 @@ void JointTrajectoryController::resetTrajectoryTimes()
 {
   trajectory_start_time_ = current_time_;
   trajectory_wait_time_ = 0.0;
-  trajectory_end_time_ = joint_trajectory_->getTotalTime()+trajectory_start_time_;
+  trajectory_end_time_ = trajectory_start_time_ + ros::Duration(joint_trajectory_->getTotalTime());
 //  ROS_INFO("Resetting trajectory time");
 //  ROS_INFO("Trajectory time: %f",joint_trajectory_->getTotalTime());
 }
@@ -425,7 +425,7 @@ void JointTrajectoryController::resetTrajectoryTimes()
 void JointTrajectoryController::getJointCommands()
 {
   double sample_time(0.0);
-  sample_time = current_time_ - trajectory_start_time_;
+  sample_time = (current_time_ - trajectory_start_time_).toSec();
   joint_trajectory_->sample(trajectory_point_,sample_time);
 
   for(int i=0; i < num_joints_; ++i)
@@ -449,7 +449,7 @@ bool JointTrajectoryController::trajectoryDone()
 
   if(current_time_ >= trajectory_end_time_)
   {
-    trajectory_wait_time_ = current_time_ - trajectory_end_time_;
+    trajectory_wait_time_ = (current_time_ - trajectory_end_time_).toSec();
     if(trajectory_wait_time_ >= trajectory_wait_timeout_)
     {
       trajectory_wait_time_ = 0.0;
@@ -602,7 +602,7 @@ void JointTrajectoryController::updateTrajectoryQueue(int id, int finish_status)
   if(num_trajectory_available_ > 0 && id >= 0)
   {
     joint_trajectory_status_[id] = finish_status;
-    joint_trajectory_time_[id] = trajectory_end_time_ - trajectory_start_time_;
+    joint_trajectory_time_[id] = (trajectory_end_time_ - trajectory_start_time_).toSec();
     if(finish_status != JointTrajectoryController::ACTIVE)
       num_trajectory_available_--;
   }
@@ -780,9 +780,9 @@ bool JointTrajectoryController::queryJointTrajSrv(experimental_controllers::Traj
   if(current_trajectory_id_ == (int)req.trajectoryid)
   {
     if((int) resp.done == JointTrajectoryController::DONE)
-      resp.trajectorytime = trajectory_end_time_ - trajectory_start_time_;
+      resp.trajectorytime = (trajectory_end_time_ - trajectory_start_time_).toSec();
     else
-      resp.trajectorytime = current_time_ - trajectory_start_time_;
+      resp.trajectorytime = (current_time_ - trajectory_start_time_).toSec();
   }
   else
   {
@@ -922,7 +922,7 @@ void JointTrajectoryController::deleteTrajectoryFromQueue(int id)
 
 void JointTrajectoryController::publishDiagnostics()
 {
-  if(!((current_time_ - last_diagnostics_publish_time_) > diagnostics_publish_delta_time_))
+  if(!((current_time_ - last_diagnostics_publish_time_).toSec() > diagnostics_publish_delta_time_))
   {
     return;
   }

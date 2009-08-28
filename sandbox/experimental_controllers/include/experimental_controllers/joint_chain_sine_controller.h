@@ -89,7 +89,7 @@ public:
 private:
   mechanism::Chain mechanism_chain_;            /**< Kinematic chain */
   mechanism::RobotState *robot_state_;          /**< Pointer to robot structure. */
-  double last_time_;                            /**< Last time stamp of update. */
+  ros::Time last_time_;                         /**< Last time stamp of update. */
   bool initialized_;                            /**< Flag which indicates whether this class has been initialized */
   KDL::Chain kdl_chain_;                        /**< KDL chain */
   KDL::JntArrayVel jnt_pos_vel_;                /**< Joint positions and velocities */

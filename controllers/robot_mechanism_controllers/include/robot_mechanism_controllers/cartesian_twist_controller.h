@@ -97,7 +97,8 @@ private:
   ros::NodeHandle node_;
   ros::Subscriber sub_command_;
   void command(const geometry_msgs::TwistConstPtr& twist_msg);
-  double last_time_, ff_trans_, ff_rot_;
+  double ff_trans_, ff_rot_;
+  ros::Time last_time_;
 
   // pid controllers
   std::vector<control_toolbox::Pid> fb_pid_controller_;

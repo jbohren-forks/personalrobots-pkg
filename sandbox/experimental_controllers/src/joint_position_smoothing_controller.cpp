@@ -138,7 +138,7 @@ void JointPositionSmoothController::update()
 
   assert(robot_ != NULL);
   double error(0);
-  double time = robot_->getTime();
+  ros::Time time = robot_->getTime();
 
   assert(joint_state_->joint_);
 

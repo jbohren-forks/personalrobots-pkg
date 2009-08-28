@@ -64,7 +64,7 @@ public:
 private:
   ros::NodeHandle node_;
   ros::Subscriber sub_command_;
-  double last_time_;
+  ros::Time last_time_;
 
   // pid controllers
   std::vector<control_toolbox::Pid> vel_pid_controller_, pos_pid_controller_;

@@ -92,7 +92,7 @@ int main( int argc, char** argv )
   req.spline.segments[0].b[5] = 0.0;
   req.spline.segments[0].b[6] = 0.0;
 
-  req.spline.segments[0].duration = ros::Time(4.0);
+  req.spline.segments[0].duration = ros::Duration(4.0);
 
 
 
@@ -119,7 +119,7 @@ int main( int argc, char** argv )
   req.spline.segments[1].b[5] = 0.0;
   req.spline.segments[1].b[6] = 0.0;
 
-  req.spline.segments[1].duration = ros::Time(4.0);
+  req.spline.segments[1].duration = ros::Duration(4.0);
 
 
   if (ros::service::call("/trajectory_controller/SetSplineTrajectory", req, res))

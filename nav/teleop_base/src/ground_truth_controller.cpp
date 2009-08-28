@@ -128,7 +128,7 @@ public:
     
     // Determine next velocity to command
     tf::Vector3 vel_cmd ;
-    vel_cmd = base_position_pid_.updateControl(xyt_target_, xyt_current, time_elapsed.toSec()) ;
+    vel_cmd = base_position_pid_.updateControl(xyt_target_, xyt_current, time_elapsed) ;
 
     geometry_msgs::Twist base_vel ;
     base_vel.linear.x = vel_cmd.x() ;

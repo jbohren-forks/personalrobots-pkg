@@ -140,12 +140,12 @@ namespace controller
       /*!
        * \brief time corresponding to when update was last called
        */
-      double last_time_;
+      ros::Time last_time_;
 
       /*!
        * \brief timestamp corresponding to when the command received by the node
        */
-      double cmd_received_timestamp_;
+      ros::Time cmd_received_timestamp_;
 
       /*!
        * \brief Input speed command vector represents the desired speed requested by the node. Note that this may differ from the
@@ -296,7 +296,7 @@ namespace controller
       /*!
        * \brief Time interval between state publishing
        */
-      double last_publish_time_;
+      ros::Time last_publish_time_;
 
       /*!
        * \brief minimum tranlational velocity value allowable
@@ -311,7 +311,7 @@ namespace controller
       /*!
        * \brief Publish the state
        */
-      void publishState(double current_time);
+      void publishState(ros::Time current_time);
 
   };
 

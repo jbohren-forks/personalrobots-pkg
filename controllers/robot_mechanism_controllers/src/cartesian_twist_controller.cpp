@@ -159,8 +159,8 @@ void CartesianTwistController::update()
     return;
 
   // get time
-  double time = robot_state_->getTime();
-  double dt = time - last_time_;
+  ros::Time time = robot_state_->getTime();
+  ros::Duration dt = time - last_time_;
   last_time_ = time;
 
   // get the joint positions and velocities

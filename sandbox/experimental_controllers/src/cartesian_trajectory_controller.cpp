@@ -204,8 +204,8 @@ bool CartesianTrajectoryController::starting()
 void CartesianTrajectoryController::update()
 {
   // get time
-  double time = robot_state_->getTime();
-  double dt = time - last_time_;
+  ros::Time time = robot_state_->getTime();
+  ros::Duration dt = time - last_time_;
   last_time_ = time;
 
   // preempt trajectory
@@ -216,7 +216,7 @@ void CartesianTrajectoryController::update()
 
   // if we are moving
   if (is_moving_){
-    time_passed_ += dt;
+    time_passed_ += dt.toSec();
 
     // check tolerance
     for (unsigned int i=0; i<6; i++){

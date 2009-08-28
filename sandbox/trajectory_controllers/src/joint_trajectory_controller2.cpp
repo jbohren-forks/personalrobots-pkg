@@ -127,8 +127,8 @@ void JointTrajectoryController2::update()
 {
   // Checks if all the joints are calibrated.
 
-  double time = robot_->getTime();
-  double dt = time - last_time_;
+  ros::Time time = robot_->getTime();
+  ros::Duration dt = time - last_time_;
   last_time_ = time;
 
   // Is it time to advance to the next trajectory?
@@ -138,7 +138,7 @@ void JointTrajectoryController2::update()
   // Determines which segment of the trajectory to use.  (Not particularly realtime friendly).
   int seg = -1;
   while (seg + 1 < (int)traj.size() &&
-         traj[seg+1].start_time < time)
+         traj[seg+1].start_time < time.toSec())
   {
     ++seg;
   }
@@ -150,7 +150,7 @@ void JointTrajectoryController2::update()
   for (size_t i = 0; i < q.size(); ++i)
   {
     sampleSplineWithTimeBounds(traj[seg].splines[i].coef, traj[seg].duration,
-                               time - traj[seg].start_time,
+                               time.toSec() - traj[seg].start_time,
                                q[i], qd[i], qdd[i]);
   }
 
@@ -189,9 +189,9 @@ void JointTrajectoryController2::update()
 
 void JointTrajectoryController2::commandCB(const trajectory_controllers::TrajectoryConstPtr &msg)
 {
-  double time = last_time_;
+  ros::Time time = last_time_;
   ROS_DEBUG("Figuring out new trajectory at %.3lf, with data from %.3lf",
-            time, msg->header.stamp.toSec());
+            time.toSec(), msg->header.stamp.toSec());
 
   SpecifiedTrajectory new_traj;
 
@@ -206,7 +206,7 @@ void JointTrajectoryController2::commandCB(const trajectory_controllers::Traject
   for (size_t i = 0; i < prev_traj.size(); ++i)
   {
     // If this segment lasts beyond the current time and starts before the new trajectory.
-    if (prev_traj[i].start_time + prev_traj[i].duration > time &&
+    if (prev_traj[i].start_time + prev_traj[i].duration > time.toSec() &&
         prev_traj[i].start_time < msg->header.stamp.toSec())
     {
       new_traj.push_back(prev_traj[i]);

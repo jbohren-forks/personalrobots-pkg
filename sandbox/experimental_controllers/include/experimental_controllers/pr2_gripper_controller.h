@@ -137,12 +137,12 @@ namespace controller
       /*!
        * \brief time corresponding to when update was last called
        */
-      double last_time_;
+      ros::Time last_time_;
 
       /*!
        * \brief time corresponding to last publish
        */
-      double last_published_time_;
+      ros::Time last_published_time_;
 
       /*!
        * \brief rate at which states are published
@@ -152,7 +152,7 @@ namespace controller
       /*!
       * \brief timestamp remembering when the last command was received
       */
-      double cmd_received_timestamp_;
+      ros::Time cmd_received_timestamp_;
 
       /*!
       * \brief amplitude in joint effort values used to break stiction
@@ -192,7 +192,7 @@ namespace controller
       /*!
        * \brief remembers last time it was commanded to close or open
        */
-      double grasp_open_close_timestamp;
+      ros::Time grasp_open_close_timestamp;
 
       /*!
        * \brief remembers last time it was commanded to close or open
@@ -288,7 +288,7 @@ namespace controller
        */
       bool velocity_mode_;
 
-      double last_velocity_time_;
+      ros::Time last_velocity_time_;
 
       ros::CallbackQueue service_queue_;
 

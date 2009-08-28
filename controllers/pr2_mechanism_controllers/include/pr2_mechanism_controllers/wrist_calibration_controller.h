@@ -78,7 +78,7 @@ protected:
 
   mechanism::RobotState *robot_;
   ros::NodeHandle node_;
-  double last_publish_time_;
+  ros::Time last_publish_time_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<std_msgs::Empty> > pub_calibrated_;
 
   double search_velocity_;

@@ -73,12 +73,10 @@ bool DallasController::starting()
 
 void DallasController::update()
 {
-  double time = robot_->getTime();
-  double dt = time - last_time_;
-
+  ros::Time time = robot_->getTime();
 
   Command &command = infuser_.next();
-  if (true || command.received_time <= time + 1.0)
+  if (true || command.received_time <= time + ros::Duration(1.0))
   {
     // Where should the caster be facing?
     double caster_angle = cc_.getSteerPosition();
@@ -113,7 +111,7 @@ void DallasController::command(const geometry_msgs::TwistConstPtr &msg)
   c.received_time = last_time_;
   c.vx = msg->linear.x;
   c.va = msg->angular.z;
-  ROS_ERROR("Command: %.3lf   (%.3lf, %.3lf)", c.received_time, c.vx, c.va);
+  ROS_ERROR("Command: %.3lf   (%.3lf, %.3lf)", c.received_time.toSec(), c.vx, c.va);
   infuser_.set(c);
 }
 

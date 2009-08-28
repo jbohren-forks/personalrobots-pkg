@@ -103,7 +103,7 @@ private:
   controller::JointVelocityController *velocity_controller_;    /**< The velocity controller for the hysteresis test. */
   double velocity_;            /**< Velocity during the test. */
   double max_effort_;          /**< Maximum allowable effort. */
-  double initial_time_;             /**< Start time of the test. */
+  ros::Time initial_time_;             /**< Start time of the test. */
   double initial_position_;
   int count_;
   int loop_count_;

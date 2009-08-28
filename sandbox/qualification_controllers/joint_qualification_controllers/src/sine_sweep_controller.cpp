@@ -65,7 +65,7 @@ joint_state_(NULL), robot_(NULL), sweep_(NULL), data_sent_(false)
   test_data_.arg_name[6] = "Duration";
 
   duration_     = 0.0;
-  initial_time_ = 0;
+  initial_time_ = ros::Time(0);
   count_        = 0;
   done_         = 0;
 }
@@ -167,7 +167,7 @@ bool SineSweepController::starting()
 
 void SineSweepController::update()
 {
-  double time = robot_->getTime();
+  ros::Time time = robot_->getTime();
   // wait until the joint is calibrated if it isn't a wheel
   if(!joint_state_->calibrated_ && joint_state_->joint_->name_.find("wheel_joint") != string::npos)
   {
@@ -175,13 +175,13 @@ void SineSweepController::update()
     return;
   }
 
-  if((time - initial_time_) <= duration_)
+  if((time - initial_time_).toSec() <= duration_)
   {
     joint_state_->commanded_effort_ = sweep_->update(time - initial_time_);
 
     if (count_ < MAX_DATA_POINTS && !done_)
     {
-      test_data_.time[count_] = time;
+      test_data_.time[count_] = time.toSec();
       test_data_.cmd[count_] = joint_state_->commanded_effort_;
       test_data_.effort[count_] = joint_state_->applied_effort_;
       test_data_.position[count_] = joint_state_->position_;

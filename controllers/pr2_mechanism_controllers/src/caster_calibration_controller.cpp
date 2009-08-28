@@ -249,7 +249,7 @@ void CasterCalibrationController::update()
 
     if (pub_calibrated_)
     {
-      if (last_publish_time_ + 0.5 < robot_->getTime())
+      if (last_publish_time_ + ros::Duration(0.5) < robot_->getTime())
       {
         if (pub_calibrated_->trylock())
         {

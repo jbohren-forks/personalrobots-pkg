@@ -208,13 +208,13 @@ void ArmTrajectoryController::update(void)
   {
     trajectory_start_time_ = robot_state_->getTime();
     trajectory_wait_time_ = 0.0;
-    trajectory_end_time_ = joint_trajectory_->getTotalTime()+trajectory_start_time_;
+    trajectory_end_time_ = trajectory_start_time_ + ros::Duration(joint_trajectory_->getTotalTime());
     refresh_rt_vals_ = false;
     trajectory_done_ = false;
   }
   if(arm_controller_lock_.try_lock())
   {
-    sample_time = robot_state_->getTime() - trajectory_start_time_;
+    sample_time = (robot_state_->getTime() - trajectory_start_time_).toSec();
     joint_trajectory_->sample(trajectory_point_,sample_time);
 
 //    ROS_INFO("sample_time: %f", sample_time);
@@ -229,7 +229,7 @@ void ArmTrajectoryController::update(void)
 
     if(robot_state_->getTime() >= trajectory_end_time_ && trajectory_done_ == false)
     {
-      trajectory_wait_time_ = robot_state_->getTime() - trajectory_end_time_;
+      trajectory_wait_time_ = (robot_state_->getTime() - trajectory_end_time_).toSec();
       if(reachedGoalPosition(joint_cmd_rt_))
       {
         trajectory_wait_time_ = 0.0;
@@ -332,7 +332,7 @@ void ArmTrajectoryControllerNode::update()
 
   c_->update();
 //  ROS_INFO("Publishing diagnostics");
-  if((c_->current_time_ - last_diagnostics_publish_time_) > diagnostics_publish_delta_time_)
+  if((c_->current_time_ - last_diagnostics_publish_time_).toSec() > diagnostics_publish_delta_time_)
   {
     publishDiagnostics();
     last_diagnostics_publish_time_ = c_->current_time_;
@@ -347,7 +347,7 @@ void ArmTrajectoryControllerNode::updateTrajectoryQueue(int last_trajectory_fini
     if(current_trajectory_id_ == joint_trajectory_id_.front())
     {
       joint_trajectory_status_[current_trajectory_id_] = last_trajectory_finish_status;
-      joint_trajectory_time_[current_trajectory_id_] = c_->trajectory_end_time_ - c_->trajectory_start_time_;
+      joint_trajectory_time_[current_trajectory_id_] = (c_->trajectory_end_time_ - c_->trajectory_start_time_).toSec();
       joint_trajectory_vector_.erase(joint_trajectory_vector_.begin());
       joint_trajectory_id_.erase(joint_trajectory_id_.begin());
     }
@@ -595,9 +595,9 @@ bool ArmTrajectoryControllerNode::queryJointTrajSrv(experimental_controllers::Tr
   if(current_trajectory_id_ == (int)req.trajectoryid)
   {
     if((int) resp.done == 1)
-      resp.trajectorytime = c_->trajectory_end_time_ - c_->trajectory_start_time_;
+      resp.trajectorytime = (c_->trajectory_end_time_ - c_->trajectory_start_time_).toSec();
     else
-      resp.trajectorytime = c_->current_time_ - c_->trajectory_start_time_;
+      resp.trajectorytime = (c_->current_time_ - c_->trajectory_start_time_).toSec();
   }
   else
   {

@@ -162,7 +162,7 @@ void JointChainConstraintController::computeConstraintTorques()
     return;
   }
 
-  double time = robot_state_->getTime();
+  ros::Time time = robot_state_->getTime();
   double error(0);
   std::list<ConstraintState>::iterator it = constraint_list_.begin();
   for(int i = 0 ; i < list_size_; ++i)

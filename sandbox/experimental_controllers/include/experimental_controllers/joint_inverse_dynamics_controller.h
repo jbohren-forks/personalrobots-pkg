@@ -78,7 +78,7 @@ namespace controller {
     int counter;
     bool publishDiagnostics(int level, const std::string& message);
 
-    double last_time_;
+    ros::Time last_time_;
 
     ros::Publisher pub_pos_desi_, pub_pos_meas_, pub_vel_desi_, pub_vel_meas_;
     ros::Publisher pub_acc_desi_, pub_acc_control_, pub_eff_calculated_, pub_eff_sent_;

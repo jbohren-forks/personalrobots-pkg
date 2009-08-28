@@ -106,7 +106,7 @@ public:
   /*!
    * \brief Get latest time..
    */
-  double getTime();
+  ros::Time getTime();
 
 
   /*!
@@ -126,7 +126,7 @@ private:
   mechanism::Joint* joint_;  /**< Joint we're controlling.> */
   mechanism::JointState* joint_state_;  /**< Joint we're controlling.> */
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller.> */
-  double last_time_;         /**< Last time stamp of update.> */
+  ros::Time last_time_;         /**< Last time stamp of update.> */
   double command_;           /**< Last commanded position.> */
   mechanism::Robot *robot_;  /**< Pointer to robot structure.> */
   mechanism::RobotState *robot_state_;  /**< Pointer to robot structure.> */
@@ -144,7 +144,7 @@ private:
   double relay_height_;/**< Amount of relay input> */
   int successful_cycles_;/**< Number of matching cycles > */
   double crossing_point_;/**< Location of crossover point for relay test> */
-  double cycle_start_time_;/**< Mark time of cycle start> */
+  ros::Time cycle_start_time_;/**< Mark time of cycle start> */
 
   int num_cycles_; /*!<Number of cycles that need to match for autotuner to read as stable>!*/
   double amplitude_tolerance_; /*!<% variation amplitude allowed between successful cycles>!*/

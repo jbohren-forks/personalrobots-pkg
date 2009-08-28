@@ -235,16 +235,14 @@ void LaserScannerTrajController::update()
   // ***** Run the position control loop *****
   double cmd = traj_command_ + tracking_offset_ ;
 
-  double time = robot_->getTime() ;
+  ros::Time time = robot_->getTime();
   double error(0.0) ;
   angles::shortest_angular_distance_with_limits(cmd, joint_state_->position_,
                                                 joint_state_->joint_->joint_limit_min_,
                                                 joint_state_->joint_->joint_limit_max_,
                                                 error) ;
-
-
-  double dt = time - last_time_ ;
-  double d_error = (error-last_error_)/dt ;
+  ros::Duration dt = time - last_time_ ;
+  double d_error = (error-last_error_)/dt.toSec();
   std::vector<double> vin;
   vin.push_back(d_error);
   std::vector<double> vout = vin;
@@ -262,8 +260,8 @@ void LaserScannerTrajController::update()
 
 double LaserScannerTrajController::getCurProfileTime()
 {
-  double time = robot_->getTime() ;
-  double time_from_start = time - traj_start_time_ ;
+  ros::Time time = robot_->getTime();
+  double time_from_start = (time - traj_start_time_).toSec();
   double mod_time = time_from_start - floor(time_from_start/traj_.getTotalTime())*traj_.getTotalTime() ;
   return mod_time ;
 }
@@ -484,8 +482,7 @@ void LaserScannerTrajControllerNode::update()
   if (cur_profile_segment != prev_profile_segment_)
   {
     // Should we be populating header.stamp here? Or, we can simply let ros take care of the timestamp
-    ros::Time cur_time ;
-    cur_time.fromSec(robot_->getTime()) ;
+    ros::Time cur_time(robot_->getTime()) ;
     m_scanner_signal_.header.stamp = cur_time ;
     m_scanner_signal_.signal = cur_profile_segment ;
     need_to_send_msg_ = true ;

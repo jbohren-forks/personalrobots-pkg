@@ -176,7 +176,7 @@ namespace controller
     /*!
     * \brief Stores the last update time and the current update time
     */
-    double last_time_,current_time_;
+    ros::Time last_time_,current_time_;
 
     /*!
     * \brief Matricies used in the computation of the iterative least squares and related functions
@@ -226,7 +226,7 @@ namespace controller
     /*!
     * \brief The last time the odometry information was published
     */
-    double last_publish_time_;
+    ros::Time last_publish_time_;
 
     /*!
     * \brief The time that the odometry is expected to be published next

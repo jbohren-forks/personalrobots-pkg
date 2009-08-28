@@ -92,7 +92,7 @@ private:
   mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
   control_toolbox::SineSweep *sweep_;       /**< Sine sweep. */
   double duration_;                         /**< Duration of the sweep. */
-  double initial_time_;                     /**< Start time of the sweep. */
+  ros::Time initial_time_;                     /**< Start time of the sweep. */
   int count_;
   bool done_;
   

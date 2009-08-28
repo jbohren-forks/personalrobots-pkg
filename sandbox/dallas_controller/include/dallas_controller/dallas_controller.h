@@ -60,14 +60,14 @@ private:
   mechanism::RobotState *robot_;
   ros::NodeHandle node_;
 
-  double last_time_;
+  ros::Time last_time_;
   ros::Subscriber sub_command_;
   void command(const geometry_msgs::TwistConstPtr &msg);
 
   // For pushing commands into realtime atomically
   struct Command {
     double vx, va;
-    double received_time;
+    ros::Time received_time;
   };
   realtime_tools::RealtimeInfuser<Command> infuser_;
 

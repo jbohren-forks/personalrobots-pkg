@@ -148,7 +148,7 @@ void Pr2GripperController::update()
     return;  // motor's not calibrated
   }
 
-  double current_time = robot_state_->getTime();
+  ros::Time current_time = robot_state_->getTime();
   if(new_cmd_available_)
   {
     if(pthread_mutex_trylock(&pr2_gripper_controller_lock_) == 0) //the callback is not writing to grasp_cmd_
@@ -175,7 +175,7 @@ void Pr2GripperController::update()
   }
 
   //check for timeout
-  if((current_time - cmd_received_timestamp_) <= timeout_ || timeout_ == 0.0) //continue with what you were doing
+  if((current_time - cmd_received_timestamp_).toSec() <= timeout_ || timeout_ == 0.0) //continue with what you were doing
   {
     last_commanded_command = parseMessage(grasp_cmd_desired_);
     if(!velocity_mode_)
@@ -189,7 +189,7 @@ void Pr2GripperController::update()
       }
       if(break_stiction_type_.compare("sine") == 0 && fabs(joint_->velocity_) < break_stiction_velocity_ && last_commanded_command != 0.0)
       {
-        joint_controller_.command_ = last_commanded_command + direction*(sin(2.0*M_PI*(current_time - cmd_received_timestamp_)/break_stiction_period_)*break_stiction_amplitude_ + break_stiction_amplitude_);
+        joint_controller_.command_ = last_commanded_command + direction*(sin(2.0*M_PI*(current_time - cmd_received_timestamp_).toSec()/break_stiction_period_)*break_stiction_amplitude_ + break_stiction_amplitude_);
       }
       else if(break_stiction_type_.compare("ramp") == 0 && fabs(joint_->velocity_) < break_stiction_velocity_ && last_commanded_command != 0.0)
       {
@@ -199,11 +199,11 @@ void Pr2GripperController::update()
       {
         joint_controller_.command_ = last_commanded_command;
       }
-      last_velocity_time_ = 0.0;
+      last_velocity_time_ = ros::Time(0.0);
     }
     else
     {
-      if(last_velocity_time_ == 0.0) //it was just in effort mode
+      if(last_velocity_time_ == ros::Time(0.0)) //it was just in effort mode
       {
         if(last_commanded_command >= 0.0)
         {
@@ -213,7 +213,7 @@ void Pr2GripperController::update()
         {
           p_i_d_.setCurrentCmd(-1.0*force_);
         }
-        joint_controller_.command_ = p_i_d_.updatePid(joint_->velocity_ - last_commanded_command, 0.0);
+        joint_controller_.command_ = p_i_d_.updatePid(joint_->velocity_ - last_commanded_command, ros::Duration(0.0));
       }
       else
         joint_controller_.command_ = p_i_d_.updatePid(joint_->velocity_ - last_commanded_command, current_time - last_time_);
@@ -233,7 +233,7 @@ void Pr2GripperController::update()
   }
 
   //Publish state
-  if(current_time > last_published_time_ + 1.0/publish_rate_ && state_publisher_->trylock())
+  if(current_time > last_published_time_ + ros::Duration(1.0/publish_rate_) && state_publisher_->trylock())
   {
     state_publisher_->msg_.joint_commanded_effort = joint_->commanded_effort_;
     state_publisher_->msg_.joint_applied_effort = joint_->applied_effort_;
@@ -266,7 +266,7 @@ bool Pr2GripperController::stopping()
 double Pr2GripperController::rampMove(double start_force, double end_force, double time, double hold)
 {
   double del_force = end_force - start_force;
-  double del_time = robot_state_->getTime() - cmd_received_timestamp_;
+  double del_time = (robot_state_->getTime() - cmd_received_timestamp_).toSec();
   if(del_time > time)
   	return hold;
   return start_force + del_time/time*del_force;
@@ -323,7 +323,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
   else if(closed_loop_grasp_state == open0)
   {
     //check for any timeouts
-    if(grasp_open_close_timestamp + timeout_duration_ < robot_state_->getTime())
+    if(grasp_open_close_timestamp + ros::Duration(timeout_duration_) < robot_state_->getTime())
     {
       ROS_WARN("grasp failed due to a timeout");
       closed_loop_grasp_state = failed;
@@ -350,7 +350,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
 
     if (service_callback_ && closed_loop_trail_ > 0 && joint_->position_ - .01 > service_response_.distance[0]) //if it's outside of the gripper
     {
-      service_response_.time_to_return[closed_loop_trail_ - 1] = robot_state_->getTime() - grasp_open_close_timestamp;
+      service_response_.time_to_return[closed_loop_trail_ - 1] = (robot_state_->getTime() - grasp_open_close_timestamp).toSec();
       //read the gripper pads to zero them
       for(int i = 0; i < num_pressure_pads_front_; i++) //the front pads are 7-21
       {
@@ -369,7 +369,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       return -1.0*default_low_speed_;
     }
     //if the gripper is done opening
-    else if(joint_->velocity_ < stopped_threshold_ && joint_->velocity_ > -1.0*stopped_threshold_ && grasp_open_close_timestamp + .1 < robot_state_->getTime())
+    else if(joint_->velocity_ < stopped_threshold_ && joint_->velocity_ > -1.0*stopped_threshold_ && grasp_open_close_timestamp + ros::Duration(.1) < robot_state_->getTime())
     {
       if(service_callback_ && closed_loop_trail_ > 0)
       {
@@ -480,7 +480,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       return default_effort_;
     }
     //check for any timeouts
-    if(grasp_open_close_timestamp + timeout_duration_ < robot_state_->getTime())
+    if(grasp_open_close_timestamp + ros::Duration(timeout_duration_) < robot_state_->getTime())
     {
       ROS_WARN("grasp failed due to a timeout");
       closed_loop_grasp_state = failed;
@@ -563,8 +563,8 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
     //record time to first steady state info
     if(service_callback && closed_loop_trail_ > 0 && service_response_.time_to_first[closed_loop_trail_-1] < 0.0 && joint_->position_ < service_response_.distance_compressed[0])
     {
-      service_response_.time_to_first[closed_loop_trail_ - 1] = robot_state_->getTime()- grasp_open_close_timestamp;
-      ROS_WARN("Assigning time to first %i to be %f", closed_loop_trail_-1, robot_state_->getTime()- grasp_open_close_timestamp);
+      service_response_.time_to_first[closed_loop_trail_ - 1] = (robot_state_->getTime()- grasp_open_close_timestamp).toSec();
+      ROS_WARN("Assigning time to first %i to be %f", closed_loop_trail_-1, (robot_state_->getTime()- grasp_open_close_timestamp).toSec());
     }
 
     //record final contact info
@@ -605,7 +605,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
           service_response_.fingertip_profile0[i] = pressure_state_.data0[i]-fingertip_sensor_sides_start0_[i];
           service_response_.fingertip_profile1[i] = pressure_state_.data1[i]-fingertip_sensor_sides_start1_[i];
         }
-        service_response_.time[closed_loop_trail_] = robot_state_->getTime()- grasp_open_close_timestamp;
+        service_response_.time[closed_loop_trail_] = (robot_state_->getTime()- grasp_open_close_timestamp).toSec();
         service_response_.force_peak0[closed_loop_trail_] = force_peak0;
         service_response_.force_steady0[closed_loop_trail_] = force_steady0;
         service_response_.force_peak1[closed_loop_trail_] = force_peak1;
@@ -645,7 +645,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
         closed_loop_grasp_state = complete;
       }
     }
-    else if(grasp_open_close_timestamp + timeout_duration_steady_ < robot_state_->getTime())
+    else if(grasp_open_close_timestamp + ros::Duration(timeout_duration_steady_) < robot_state_->getTime())
     {
       ROS_WARN("grasp failed due to a timeout");
       closed_loop_grasp_state = failed;

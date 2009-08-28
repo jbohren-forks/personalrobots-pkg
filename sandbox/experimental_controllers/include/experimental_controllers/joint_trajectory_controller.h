@@ -118,7 +118,7 @@ namespace controller
 
     boost::mutex arm_controller_lock_; /**< Mutex lock for sharing information between services and realtime */
 
-    double last_time_; /**< last time update was called */
+    ros::Time last_time_; /**< last time update was called */
 
     std::vector<std::string> joint_name_; /**< names of joints controlled by this controller */
 
@@ -148,11 +148,11 @@ namespace controller
 
     bool refresh_rt_vals_; /**< Indicates that a new trajectory has been received. */
 
-    double trajectory_start_time_; /**< Start time for the current trajectory */
+    ros::Time trajectory_start_time_; /**< Start time for the current trajectory */
 
-    double trajectory_end_time_;  /**< End time for the current trajectory */
+    ros::Time trajectory_end_time_;  /**< End time for the current trajectory */
 
-    double current_time_; /**< Current time */
+    ros::Time current_time_; /**< Current time */
 
     int num_joints_; /**< Number of joints controlled by this controller */
 
@@ -170,7 +170,7 @@ namespace controller
 
     double max_update_time_; /**< maximum time (over the complete history of the run) taken for the update loop of this controller*/
 
-    double last_traj_req_time_; /**< Last time a trajectory command was received on a topic or service */
+    ros::Time last_traj_req_time_; /**< Last time a trajectory command was received on a topic or service */
 
     double max_allowed_update_time_; /**< Safety behavior: Max allowed time between commands */
 
@@ -294,7 +294,7 @@ namespace controller
      * (a) max_allowed_update_time_ which can be set using a ROS param call, e.g. <param name="max_allowed_update_time" type="double" value="0.1"/>
      * (b) max_allowable_joint_errors_ which can be set individually for each joint using a ROS param call, e.g. <param name="r_shoulder_pan_joint/joint_error_threshold" type="double" value="0.1"/>
      */
-    bool checkWatchDog(double current_time);
+    bool checkWatchDog(ros::Time current_time);
 
     /**
      * @brief Stop the motion of all joints. In addition to setting all desired joint positions to the current position, it also sets velocities for the base to zero
@@ -466,7 +466,7 @@ namespace controller
      */
     double trajectory_wait_timeout_;
 
-    double last_diagnostics_publish_time_; /**< Last time diagnostics infomation was published */
+    ros::Time last_diagnostics_publish_time_; /**< Last time diagnostics infomation was published */
 
     double diagnostics_publish_delta_time_;  /**< Expected rate at which diagnostics information should be published. This can be published using a ROS param call  <param name="diagnostics_publish_delta_time" type="double" value="0.5"/> */
 

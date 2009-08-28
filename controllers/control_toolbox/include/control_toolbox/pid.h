@@ -111,7 +111,7 @@ public:
    * \param p_error  Error since last call (p_state-p_target)
    * \param dt Change in time since last call
    */
-  double updatePid(double p_error, double dt);
+  double updatePid(double p_error, ros::Duration dt);
 
   /*!
    * \brief Initialize PID-gains and integral term limits:[iMax:iMin]-[I1:I2]
@@ -178,7 +178,7 @@ public:
    * \param error_dot d(Error)/dt since last call
    * \param dt Change in time since last call
    */
-  double updatePid(double error, double error_dot, double dt);
+  double updatePid(double error, double error_dot, ros::Duration dt);
 
   Pid &operator =(const Pid& p)
   {

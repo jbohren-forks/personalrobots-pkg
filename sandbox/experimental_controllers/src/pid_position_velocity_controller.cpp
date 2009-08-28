@@ -142,7 +142,7 @@ namespace controller
   {
     assert(robot_ != NULL);
     double error(0),error_dot(0);
-    double time = robot_->getTime();
+    ros::Time time = robot_->getTime();
 
     error_dot = joint_state_->velocity_ - command_dot_;
 
@@ -169,7 +169,7 @@ namespace controller
         controller_state_publisher_->msg_.set_point = command_;
         controller_state_publisher_->msg_.process_value = joint_state_->velocity_;
         controller_state_publisher_->msg_.error = error;
-        controller_state_publisher_->msg_.time_step = dt_;
+        controller_state_publisher_->msg_.time_step = dt_.toSec();
 
         double dummy;
         getGains(controller_state_publisher_->msg_.p,

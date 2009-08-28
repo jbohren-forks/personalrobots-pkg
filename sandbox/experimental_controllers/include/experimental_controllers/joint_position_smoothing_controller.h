@@ -107,7 +107,7 @@ private:
 
   mechanism::RobotState *robot_;              /**< Pointer to robot structure. */
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
-  double last_time_;                          /**< Last time stamp of update. */
+  ros::Time last_time_;                       /**< Last time stamp of update. */
   double command_;                            /**< Last commanded position. */
   double smoothed_error_;
   double smoothing_factor_;

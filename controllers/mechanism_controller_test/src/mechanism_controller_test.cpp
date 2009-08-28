@@ -97,7 +97,7 @@ void controlLoop()
   int count = 0;
   while(ros::ok())
   {
-    hw.hw_->current_time_ = count / 1.0e-3;
+    hw.hw_->current_time_ = ros::Time(count / 1.0e-3);
     mc.update();
     if(count % 1000000 == 0)
       printf("%d seconds simulated \n", count / 1000);

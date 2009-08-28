@@ -80,7 +80,7 @@ protected:
 
   controller::CasterController cc_;
 
-  double last_publish_time_;
+  ros::Time last_publish_time_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<std_msgs::Empty> > pub_calibrated_;
 };
 

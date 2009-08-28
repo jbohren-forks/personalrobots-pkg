@@ -81,7 +81,8 @@ private:
   ros::ServiceServer move_to_srv_, preempt_srv_;
 
   std::string controller_name_;
-  double last_time_, time_started_, time_passed_, max_duration_;
+  ros::Time last_time_, time_started_;
+  double time_passed_, max_duration_;
   bool is_moving_, request_preempt_, exceed_tolerance_;
 
   KDL::Frame pose_begin_, pose_end_, pose_current_;

@@ -250,8 +250,8 @@ void CartesianHybridController::update()
 {
   if (!chain_.allCalibrated(robot_->joint_states_))
     return;
-  double time = robot_->getTime();
-  double dt = time - last_time_;
+  ros::Time time = robot_->getTime();
+  ros::Duration dt = time - last_time_;
   last_time_ = time;
 
   // Measures the current pose and twist
@@ -292,7 +292,7 @@ void CartesianHybridController::update()
       pose_desi_[i] = setpoint_[i];
     else// if (mode_[i] == manipulation_msgs::TaskFrameFormalism::VELOCITY)
     {
-      pose_desi_[i] += setpoint_[i] * dt;
+      pose_desi_[i] += setpoint_[i] * dt.toSec();
     }
     /*
     else

@@ -61,7 +61,7 @@ public:
    * \param actual_pos The [x,y,w] position we're currently at
    * \param elapsed_time The time between our current update and the previous update
    */
-  tf::Vector3 updateControl(const tf::Vector3& commanded_pos, const tf::Vector3& actual_pos, double elapsed_time) ;
+  tf::Vector3 updateControl(const tf::Vector3& commanded_pos, const tf::Vector3& actual_pos, ros::Duration elapsed_time) ;
   
 private:
   control_toolbox::Pid pid_x_ ;                //!< Input: odom x error.   Output: Odom x velocity command

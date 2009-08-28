@@ -88,8 +88,8 @@ namespace pr2_mechanism_controllers
     ros_node_.advertise<diagnostic_msgs::DiagnosticArray> ("/diagnostics", 1) ;
 
     last_diagnostics_publish_time_ = ros::Time::now();
-    current_time_ = ros::Time::now().toSec();
-    last_update_time_ = 0;
+    current_time_ = ros::Time::now();
+    last_update_time_ = ros::Time(0);
     trajectory_start_time_ = current_time_;
     stop_motion_ = true;
     stop_motion_count_ = 0;
@@ -131,7 +131,7 @@ namespace pr2_mechanism_controllers
     this->ros_lock_.lock();
     path_msg_ = path_msg_in_;
     this->ros_lock_.unlock();
-    path_updated_time_ = ros::Time::now().toSec();
+    path_updated_time_ = ros::Time::now();
     new_path_available_ = true;
   }
 
@@ -217,7 +217,7 @@ namespace pr2_mechanism_controllers
         goal_.q_[2] = path_msg_.points[msg_size-1].positions[2];
         stop_motion_ = false;
         trajectory_->setTrajectory(waypoints);
-        trajectory_start_time_ = ros::Time::now().toSec();
+        trajectory_start_time_ = ros::Time::now();
       }
     }
     else
@@ -235,7 +235,7 @@ namespace pr2_mechanism_controllers
     ros::Rate control_rate(controller_frequency_);
     while(1)
     {
-      current_time_ = ros::Time::now().toSec();
+      current_time_ = ros::Time::now();
 
       publishDiagnostics(false);
 
@@ -254,9 +254,9 @@ namespace pr2_mechanism_controllers
         stop_motion_ = true;
       }
 
-      if (current_time_-path_updated_time_ > max_update_time_)
+      if ((current_time_-path_updated_time_).toSec() > max_update_time_)
       {
-        ROS_DEBUG("No path update in %f seconds. Stopping motion.",current_time_-path_updated_time_);
+        ROS_DEBUG("No path update in %f seconds. Stopping motion.", (current_time_-path_updated_time_).toSec());
         stop_motion_ = true;
         control_state_ = "WATCHDOG - MOTION STOPPED";
       }
@@ -339,7 +339,7 @@ namespace pr2_mechanism_controllers
     geometry_msgs::Twist cmd_vel;
     trajectory::Trajectory::TPoint desired_position;
     desired_position.setDimension(dimension_);
-    double sample_time =  current_time_ - trajectory_start_time_;
+    double sample_time = (current_time_ - trajectory_start_time_).toSec();
     trajectory_->sample(desired_position,sample_time);
     double total_time = trajectory_->getTotalTime();
     double theta = current_position_.q_[2];

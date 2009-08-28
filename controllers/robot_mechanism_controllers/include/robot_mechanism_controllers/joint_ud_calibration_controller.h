@@ -67,7 +67,7 @@ protected:
   mechanism::RobotState* robot_;
   ros::NodeHandle node_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<std_msgs::Empty> > pub_calibrated_;
-  double last_publish_time_;
+  ros::Time last_publish_time_;
 
   enum { INITIALIZED, BEGINNING, MOVING_TO_LOW, MOVING_TO_HIGH, CALIBRATED };
   int state_;

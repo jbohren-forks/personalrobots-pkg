@@ -236,8 +236,8 @@ void JointChainSineController::update()
   }
 
   // update the time
-  double time = robot_state_->getTime();
-  double dt = time - last_time_;
+  ros::Time time = robot_state_->getTime();
+  ros::Duration dt = time - last_time_;
 
   // calculate the desired positions and velocities for all joints:
   for (int i=0; i<num_joints_; i++)
@@ -248,7 +248,7 @@ void JointChainSineController::update()
     for (unsigned int j=0; j<sinusoids_[i].size(); j++)
     {
       double tq, tqd, tqdd;
-      tq = sinusoids_[i][j].update(time, tqd, tqdd);
+      tq = sinusoids_[i][j].update(time.toSec(), tqd, tqdd);
       jnt_des_pos_vel_.q(i) += tq;
       jnt_des_pos_vel_.qdot(i) += tqd;
     }

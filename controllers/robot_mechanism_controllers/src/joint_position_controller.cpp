@@ -158,7 +158,7 @@ void JointPositionController::update()
 
   assert(robot_ != NULL);
   double error(0);
-  double time = robot_->getTime();
+  ros::Time time = robot_->getTime();
   assert(joint_state_->joint_);
   dt_= time - last_time_;
 
@@ -192,7 +192,7 @@ void JointPositionController::update()
       controller_state_publisher_->msg_.set_point = command_;
       controller_state_publisher_->msg_.process_value = joint_state_->position_;
       controller_state_publisher_->msg_.error = error;
-      controller_state_publisher_->msg_.time_step = dt_;
+      controller_state_publisher_->msg_.time_step = dt_.toSec();
 
       double dummy;
       getGains(controller_state_publisher_->msg_.p,

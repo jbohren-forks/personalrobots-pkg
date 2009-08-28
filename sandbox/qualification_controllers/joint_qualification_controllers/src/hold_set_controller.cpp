@@ -201,9 +201,9 @@ void HoldSetController::update()
   if (!flex_state_->calibrated_ || !lift_state_->calibrated_)
     return;
 
-  double time = robot_->getTime();
+  ros::Time time = robot_->getTime();
 
-  if (time - initial_time_ > timeout_ && state_ != DONE)
+  if ((time - initial_time_).toSec() > timeout_ && state_ != DONE)
   {
     ROS_ERROR("CounterbalanceTestController timed out during test. Timeout: %f.", timeout_);
     state_ = DONE;
@@ -254,7 +254,7 @@ void HoldSetController::update()
     }
   case SETTLING:
     {
-      if (time - start_time_ > settle_time_)
+      if ((time - start_time_).toSec() > settle_time_)
       {
         state_ = DITHERING;
         start_time_ = time;
@@ -270,20 +270,20 @@ void HoldSetController::update()
       flex_state_->commanded_effort_ += flex_dither_->update();
 
       // Lift
-      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.time.push_back(time - start_time_);
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.time.push_back((time - start_time_).toSec());
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.position.push_back(lift_state_->position_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.velocity.push_back(lift_state_->velocity_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.cmd.push_back(lift_state_->commanded_effort_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.effort.push_back(lift_state_->applied_effort_);
 
       // Flex
-      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.time.push_back(time - start_time_);
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.time.push_back((time - start_time_).toSec());
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.position.push_back(flex_state_->position_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.velocity.push_back(flex_state_->velocity_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.cmd.push_back(flex_state_->commanded_effort_);
       hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.effort.push_back(flex_state_->applied_effort_);
 
-      if (time - start_time_ > dither_time_)
+      if ((time - start_time_).toSec() > dither_time_)
       {
         state_ = STARTING;
       }

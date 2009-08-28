@@ -137,11 +137,11 @@ namespace controller
     // Indicates if goals_ and error_margins_ should be copied into goals_rt_ and error_margins_rt_
     bool refresh_rt_vals_;
 
-    double trajectory_start_time_;
+    ros::Time trajectory_start_time_;
 
-    double trajectory_end_time_;
+    ros::Time trajectory_end_time_;
 
-    double current_time_;
+    ros::Time current_time_;
 
     bool trajectory_done_;
 
@@ -296,7 +296,7 @@ namespace controller
 
     double trajectory_wait_timeout_;
 
-    double last_diagnostics_publish_time_;
+    ros::Time last_diagnostics_publish_time_;
 
     double diagnostics_publish_delta_time_;
 

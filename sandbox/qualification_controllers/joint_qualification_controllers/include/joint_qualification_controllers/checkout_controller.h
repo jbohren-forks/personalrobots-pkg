@@ -105,7 +105,7 @@ public:
 
 private:
   mechanism::RobotState *robot_;          /**< Pointer to robot structure. */
-  double initial_time_;                   /**< Start time of the test. */
+  ros::Time initial_time_;                   /**< Start time of the test. */
  
   double timeout_;
 

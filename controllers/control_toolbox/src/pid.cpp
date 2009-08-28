@@ -138,7 +138,7 @@ bool Pid::init(const ros::NodeHandle &node)
 }
 
 
-double Pid::updatePid(double error, double dt)
+double Pid::updatePid(double error, ros::Duration dt)
 {
   double p_term, d_term, i_term;
   p_error_ = error; //this is pError = pState-pTarget
@@ -155,7 +155,7 @@ double Pid::updatePid(double error, double dt)
     p_term = p_gain_ * p_error_;
 
     // Calculate the integral error
-    i_error_ = i_error_ + dt * p_error_;
+    i_error_ = i_error_ + dt.toSec() * p_error_;
 
     //Calculate integral contribution to command
     i_term = i_gain_ * i_error_;
@@ -173,9 +173,9 @@ double Pid::updatePid(double error, double dt)
     }
 
     // Calculate the derivative error
-    if (dt != 0)
+    if (dt.toSec() != 0)
     {
-      d_error_ = (p_error_ - p_error_last_) / dt;
+      d_error_ = (p_error_ - p_error_last_) / dt.toSec();
       p_error_last_ = p_error_;
     }
     // Calculate derivative contribution to command
@@ -186,7 +186,7 @@ double Pid::updatePid(double error, double dt)
 }
 
 
-double Pid::updatePid(double error, double error_dot, double dt)
+double Pid::updatePid(double error, double error_dot, ros::Duration dt)
 {
   double p_term, d_term, i_term;
   p_error_ = error; //this is pError = pState-pTarget
@@ -203,7 +203,7 @@ double Pid::updatePid(double error, double error_dot, double dt)
     p_term = p_gain_ * p_error_;
 
     // Calculate the integral error
-    i_error_ = i_error_ + dt * p_error_;
+    i_error_ = i_error_ + dt.toSec() * p_error_;
 
     //Calculate integral contribution to command
     i_term = i_gain_ * i_error_;

@@ -123,7 +123,7 @@ void Pr2Odometry::update()
 
 void Pr2Odometry::updateOdometry()
 {
-  double dt = current_time_ - last_time_;
+  double dt = (current_time_ - last_time_).toSec();
   double theta = odom_.z;
   double costh = cos(theta);
   double sinth = sin(theta);
@@ -152,7 +152,7 @@ void Pr2Odometry::getOdometry(geometry_msgs::Point &odom, geometry_msgs::Twist &
 void Pr2Odometry::getOdometryMessage(nav_msgs::Odometry &msg)
 {
   msg.header.frame_id = odom_frame_;
-  msg.header.stamp.fromSec(current_time_);
+  msg.header.stamp = current_time_;
   msg.pose.pose.position.x = odom_.x;
   msg.pose.pose.position.y = odom_.y;
   msg.pose.pose.position.z = 0.0;
@@ -341,7 +341,7 @@ Eigen::MatrixXf Pr2Odometry::findWeightMatrix(Eigen::MatrixXf residual, std::str
 
 void Pr2Odometry::publish()
 {
-  if(fabs(last_publish_time_ - current_time_) < expected_publish_time_)
+  if(fabs((last_publish_time_ - current_time_).toSec()) < expected_publish_time_)
     return;
 
   if(odometry_publisher_->trylock())
@@ -357,7 +357,7 @@ void Pr2Odometry::publish()
     this->getOdometry(x, y, yaw, vx, vy, vyaw);
 
     geometry_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
-    out.header.stamp.fromSec(current_time_);
+    out.header.stamp = current_time_;
     out.header.frame_id =  base_footprint_frame_;
     out.child_frame_id = odom_frame_;
     out.transform.translation.x = -x * cos(yaw) - y * sin(yaw);
@@ -371,7 +371,7 @@ void Pr2Odometry::publish()
     out.transform.rotation.w = quat_trans.w();
 
     geometry_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
-    out2.header.stamp.fromSec(current_time_);
+    out2.header.stamp = current_time_;
     out2.header.frame_id = base_footprint_frame_;
     out2.child_frame_id = base_link_frame_;
     out2.transform.translation.x = 0;

@@ -75,7 +75,7 @@ void Probe::update()
   msg.velocity = joint_->velocity_;
   msg.torque = joint_->commanded_effort_;
   msg.torque_measured = joint_->applied_effort_;
-  msg.time_step = robot_->getTime();
+  msg.time_step = robot_->getTime().toSec();
   pub_probe_.publish(msg);
 }
 

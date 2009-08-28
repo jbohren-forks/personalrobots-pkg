@@ -88,7 +88,7 @@ public:
   mechanism::Chain chain_;
   KDL::Chain kdl_chain_;
   mechanism::RobotState *robot_;
-  double last_time_;
+  ros::Time last_time_;
 
   int initial_mode_;
 

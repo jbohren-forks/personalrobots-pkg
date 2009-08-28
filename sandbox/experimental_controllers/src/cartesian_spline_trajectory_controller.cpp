@@ -130,7 +130,7 @@ bool CartesianSplineTrajectoryController::starting()
 {
   trajectory_id_ = 0;
   spline_rt_ = setCmdToCurrent();
-  spline_time_ = 0;
+  spline_time_ = ros::Duration(0);
   spline_index_= 0;
   spline_num_segments_ = 1;
   new_cmd_available_ = false;
@@ -138,7 +138,7 @@ bool CartesianSplineTrajectoryController::starting()
   spline_done_ = false;
   last_time_ = robot_state_->getTime();
   goal_ = getCommand(spline_rt_.segments.back(), spline_rt_.segments.back().duration.toSec());
-      spline_time_ = spline_rt_.segments.back().duration.toSec();
+      spline_time_ = spline_rt_.segments.back().duration;
   setGoalPose(goal_);
 
   ROS_INFO("Started trajectory controller");
@@ -154,7 +154,7 @@ void CartesianSplineTrajectoryController::update()
     if(pthread_mutex_trylock(&spline_cmd_lock_))
     {
       spline_rt_ = spline_cmd_;
-      spline_time_ = 0.0;
+      spline_time_ = ros::Duration(0.0);
       spline_index_ = 0;
       spline_num_segments_ = spline_rt_.segments.size();
       spline_done_ = false;
@@ -168,9 +168,9 @@ void CartesianSplineTrajectoryController::update()
     }
   }
 
-  if(spline_time_ > (spline_rt_.segments[spline_index_].duration.toSec()))
+  if(spline_time_ > (spline_rt_.segments[spline_index_].duration))
   {
-    spline_time_ -= (spline_rt_.segments[spline_index_].duration.toSec());
+    spline_time_ -= (spline_rt_.segments[spline_index_].duration);
     if(spline_index_ < spline_num_segments_-1)
     {
       spline_index_++;
@@ -183,10 +183,10 @@ void CartesianSplineTrajectoryController::update()
         trajectory_status_ = manipulation_srvs::QuerySplineTraj::Response::State_Done;
       }
       spline_index_ = spline_num_segments_-1;
-      spline_time_ = spline_rt_.segments.back().duration.toSec();
+      spline_time_ = spline_rt_.segments.back().duration;
     }
   }
-  manipulation_msgs::Waypoint joint_cmd = getCommand(spline_rt_.segments[spline_index_],spline_time_);
+  manipulation_msgs::Waypoint joint_cmd = getCommand(spline_rt_.segments[spline_index_],spline_time_.toSec());
 
   setCommand(joint_cmd);
 

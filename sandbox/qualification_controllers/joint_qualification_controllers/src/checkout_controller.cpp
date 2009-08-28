@@ -144,12 +144,12 @@ bool CheckoutController::starting()
 
 void CheckoutController::update()
 {
-  double time = robot_->getTime();
+  ros::Time time = robot_->getTime();
   bool cal = false;
   bool enabled = false;
 
   // Timeout check.
-  if (time - initial_time_ > timeout_ && state_ != ANALYZING && state_ != DONE)
+  if ((time - initial_time_).toSec() > timeout_ && state_ != ANALYZING && state_ != DONE) 
   {
     analysis(0);
     state_ = DONE;
@@ -203,7 +203,7 @@ void CheckoutController::update()
     break;
     }
   case ANALYZING:
-    analysis(time - initial_time_);
+    analysis((time - initial_time_).toSec());
     state_ = DONE;
     break;
   case DONE:

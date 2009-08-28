@@ -49,7 +49,7 @@ JointAutotuner::JointAutotuner()
   // Initialize PID class
   pid_controller_.initPid(0, 0, 0, 0, 0);
   command_ = 0;
-  last_time_ = 0;
+  last_time_ = ros::Time(0);
 }
 
 JointAutotuner::~JointAutotuner()
@@ -63,7 +63,7 @@ void JointAutotuner::init(double p_gain, double i_gain, double d_gain, double wi
 
   robot_ = robot;
   command_= 0;
-  last_time_= time;
+  last_time_.fromSec(time);
   joint_ = joint;
 
   relay_height_ = relay_effort_percent_* joint_->effort_limit_;
@@ -146,7 +146,7 @@ double JointAutotuner::getMeasuredState()
   return joint_state_->position_;
 }
 
-double JointAutotuner::getTime()
+ros::Time JointAutotuner::getTime()
 {
   return robot_state_->getTime();
 }
@@ -156,7 +156,7 @@ void JointAutotuner::update()
   if(tune_velocity_)
   {
     double velocity = joint_state_->velocity_;
-    double time = getTime();
+    ros::Time time = getTime();
     if(current_state_==START)//Read crossing point
       {
         current_state_ = NEGATIVE_PEAK;
@@ -170,7 +170,7 @@ void JointAutotuner::update()
     else if (current_state_==NEGATIVE_PEAK && velocity>0) //Transition to next period
     {
       current_state_ = POSITIVE_PEAK;
-      period_ = time-cycle_start_time_;
+      period_ = (time-cycle_start_time_).toSec();
       amplitude_ = (positive_peak_-negative_peak_)/2; //Record amplitude
 
 
@@ -214,7 +214,7 @@ void JointAutotuner::update()
   else
   {
       double position = joint_state_->position_;
-      double time = getTime();
+      ros::Time time = getTime();
       if(current_state_==START)//Read crossing point
       {
         crossing_point_ = joint_state_->position_;
@@ -228,7 +228,7 @@ void JointAutotuner::update()
       else if (current_state_==NEGATIVE_PEAK && position>crossing_point_) //Transition to next period
       {
       current_state_ = POSITIVE_PEAK;
-      period_ = time-cycle_start_time_;
+      period_ = (time-cycle_start_time_).toSec();
       amplitude_ = (positive_peak_-negative_peak_)/2; //Record amplitude
 
       if( (fabs(amplitude_-last_amplitude_) < amplitude_tolerance_*last_amplitude_) &&(fabs(period_-last_period_)<period_tolerance_*last_period_))//If the two peaks match closely
@@ -338,7 +338,7 @@ bool JointAutotunerNode::getActual(
   experimental_controllers::GetActual::Response &resp)
 {
   resp.command = c_->getMeasuredState();
-  resp.time = c_->getTime();
+  resp.time = c_->getTime().toSec();
   return true;
 }
 

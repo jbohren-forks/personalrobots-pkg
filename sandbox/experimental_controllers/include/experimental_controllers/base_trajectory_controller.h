@@ -92,10 +92,10 @@ namespace pr2_mechanism_controllers
     ros::Node& ros_node_;
     tf::TransformListener& tf_;
     int dimension_;
-    double current_time_;
+    ros::Time current_time_;
     double sample_time_;
-    double last_update_time_;
-    double trajectory_start_time_;
+    ros::Time last_update_time_;
+    ros::Time trajectory_start_time_;
     trajectory::Trajectory *trajectory_;
     bool stop_motion_;
     int stop_motion_count_;
@@ -109,7 +109,7 @@ namespace pr2_mechanism_controllers
     double xy_goal_tolerance_;
 
     boost::mutex ros_lock_;
-    double  path_updated_time_;
+    ros::Time  path_updated_time_;
     double max_update_time_;
 
     geometry_msgs::Twist checkCmd(const geometry_msgs::Twist &cmd);

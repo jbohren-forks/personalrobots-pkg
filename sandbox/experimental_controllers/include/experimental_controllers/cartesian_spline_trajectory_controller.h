@@ -97,7 +97,8 @@ namespace controller {
 
     bool new_cmd_available_, spline_done_;
 
-    double last_time_, spline_time_;
+    ros::Time last_time_;
+    ros::Duration spline_time_;
 
     manipulation_msgs::Waypoint getCommand(const manipulation_msgs::SplineTrajSegment &spline, const double t);
 

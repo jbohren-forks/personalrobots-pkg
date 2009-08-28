@@ -72,7 +72,7 @@ public:
 
 private:
   mechanism::RobotState *robot_;
-  double last_time_;
+  ros::Time last_time_;
   std::vector<mechanism::JointState*> joints_;
   std::vector<control_toolbox::Pid> pids_;
 

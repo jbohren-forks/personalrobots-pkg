@@ -82,7 +82,7 @@ double TriggerController::getTick()
 
 void TriggerController::update()
 {
-  double curtime = robot_->getTime();
+  ros::Time curtime = robot_->getTime();
   double tick = getTick(curtime, config_);
   bool active = false;
 

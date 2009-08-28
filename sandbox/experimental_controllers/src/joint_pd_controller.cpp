@@ -140,7 +140,7 @@ void JointPDController::reset()
 void JointPDController::update()
 {
   double error(0), error_dot(0);
-  double time = robot_->getTime();
+  ros::Time time = robot_->getTime();
 
   if(pthread_mutex_trylock(&joint_pd_controller_lock_) == 0)
   {

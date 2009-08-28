@@ -112,7 +112,7 @@ private:
 
   ros::NodeHandle node_;
   std::string controller_name_, root_name_;
-  double last_time_;
+  ros::Time last_time_;
 
   // robot structure
   mechanism::RobotState *robot_state_;

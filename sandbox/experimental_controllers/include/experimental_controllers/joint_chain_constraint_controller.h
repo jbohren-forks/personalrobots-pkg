@@ -145,7 +145,7 @@ private:
   Eigen::MatrixXf joint_constraint_jacobian_;
   Eigen::MatrixXf joint_constraint_null_space_;
 
-  double last_time_;
+  ros::Time last_time_;
 
   bool initialized_;
 

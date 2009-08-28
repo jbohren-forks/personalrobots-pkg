@@ -114,7 +114,7 @@ private:
   mechanism::RobotState* robot_;
   JointCalibrationController c_;
 
-  double last_publish_time_;
+  ros::Time last_publish_time_;
   realtime_tools::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
 };
 

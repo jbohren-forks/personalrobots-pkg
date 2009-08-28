@@ -33,6 +33,8 @@
  *********************************************************************/
 #pragma once
 
+#include <ros/ros.h>
+
 namespace control_toolbox {
 /***************************************************/
 /*! \class SineSweep
@@ -71,7 +73,7 @@ public:
    *
    * \param dt Change in time since last call
    */
-  double update(double dt);
+  double update(ros::Duration dt);
 
   /*!
    * \brief Intializes everything and calculates the constants for the sweep.
@@ -85,7 +87,7 @@ public:
 
 private:
   double amplitude_;                        /**< Amplitude of the sweep. */
-  double duration_;                         /**< Duration of the sweep. */
+  ros::Duration duration_;                  /**< Duration of the sweep. */
   double start_angular_freq_;               /**< Start angular frequency of the sweep. */
   double end_angular_freq_;                 /**< End angular frequency of the sweep. */
   double K_;                                /**< Constant \f$K\f$. */

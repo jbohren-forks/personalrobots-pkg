@@ -115,7 +115,7 @@ namespace controller
 
     mechanism::RobotState *robot_;             /**< Pointer to robot structure. */
     control_toolbox::Pid pid_controller_;      /**< Internal PID controller. */
-    double last_time_;                         /**< Last time stamp of update. */
+    ros::Time last_time_;                         /**< Last time stamp of update. */
     double command_;                           /**< Last commanded position. */
     double command_dot_;
     double command_t_;                         /**< Last commanded position. */

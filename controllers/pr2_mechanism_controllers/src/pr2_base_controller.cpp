@@ -61,7 +61,7 @@ Pr2BaseController::Pr2BaseController()
 
 //  state_publisher_ = NULL;
 
-  last_publish_time_ = 0.0;
+  last_publish_time_ = ros::Time(0.0);
 
   pthread_mutex_init(&pr2_base_controller_lock_, NULL);
 }
@@ -268,8 +268,8 @@ bool Pr2BaseController::starting()
 void Pr2BaseController::update()
 {
 
-  double current_time = base_kin_.robot_state_->getTime();
-  double dT = std::min<double>(current_time - last_time_, base_kin_.MAX_DT_);
+  ros::Time current_time = base_kin_.robot_state_->getTime();
+  double dT = std::min<double>((current_time - last_time_).toSec(), base_kin_.MAX_DT_);
 
   if(new_cmd_available_)
   {
@@ -283,7 +283,7 @@ void Pr2BaseController::update()
     }
   }
 
-  if((current_time - cmd_received_timestamp_) > timeout_)
+  if((current_time - cmd_received_timestamp_).toSec() > timeout_)
   {
     cmd_vel_.linear.x = 0;
     cmd_vel_.linear.y = 0;
@@ -306,10 +306,10 @@ void Pr2BaseController::update()
 
 }
 
-void Pr2BaseController::publishState(double time)
+void Pr2BaseController::publishState(ros::Time time)
 {
 
-  if(time - last_publish_time_  < state_publish_time_)
+  if((time - last_publish_time_).toSec()  < state_publish_time_)
   {
     return;
   }

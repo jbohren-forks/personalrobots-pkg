@@ -191,7 +191,7 @@ void JointCalibrationControllerNode::update()
 
   if (c_.calibrated())
   {
-    if (last_publish_time_ + 0.5 < robot_->getTime())
+    if (last_publish_time_ + ros::Duration(0.5) < robot_->getTime())
     {
       assert(pub_calibrated_);
       if (pub_calibrated_->trylock())

@@ -110,10 +110,10 @@ private:
   double lift_cmd_, flex_cmd_;
 
 
-  double initial_time_;
+  ros::Time initial_time_;
 
   double settle_time_;
-  double start_time_;
+  ros::Time start_time_;
   double dither_time_;
   double timeout_;
   double lift_min_, lift_max_, lift_delta_;

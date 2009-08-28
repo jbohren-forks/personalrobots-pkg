@@ -72,7 +72,7 @@ HysteresisController::HysteresisController()
   state_         = STOPPED;
   starting_count = 0;
   velocity_      = 0;
-  initial_time_  = 0;
+  initial_time_  = ros::Time(0);
   max_effort_    = 0;
   complete       = false;
   start          = true;
@@ -198,7 +198,7 @@ void HysteresisController::update()
     return;
   }
 
-  double time = robot_->getTime();
+  ros::Time time = robot_->getTime();
   velocity_controller_->update();
 
   if (state_ == STOPPED || state_ == STARTING || state_ == MOVING)
@@ -208,7 +208,7 @@ void HysteresisController::update()
       double cmd;
       velocity_controller_->getCommand(cmd);
 
-      test_data_.time[count_] = time;
+      test_data_.time[count_] = time.toSec();
       test_data_.cmd[count_] = cmd;
       test_data_.effort[count_] = joint_->applied_effort_;
       test_data_.position[count_] = joint_->position_;
@@ -218,7 +218,7 @@ void HysteresisController::update()
   }
 
   // Timeout check.
-  if (time - initial_time_ > timeout_ && state_ != ANALYZING && state_ != DONE)
+  if ((time - initial_time_).toSec() > timeout_ && state_ != ANALYZING && state_ != DONE) 
   {
     state_ = ANALYZING;
     test_data_.arg_value[5] = 0;

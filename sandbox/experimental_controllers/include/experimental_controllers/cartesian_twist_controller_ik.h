@@ -73,7 +73,8 @@ namespace controller {
     ros::NodeHandle node_;
     ros::Subscriber sub_command_;
 
-    double last_time_,ff_trans_,ff_rot_;
+    ros::Time last_time_;
+    double ff_trans_,ff_rot_;
 
     // pid controllers
     std::vector<control_toolbox::Pid> fb_pid_controller_;

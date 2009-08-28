@@ -73,7 +73,7 @@ bool BasePositionPid::initXml(TiXmlElement *config)
   return true ;
 }
 
-tf::Vector3 BasePositionPid::updateControl(const tf::Vector3& commanded_pos, const tf::Vector3& actual_pos, double time_elapsed)
+tf::Vector3 BasePositionPid::updateControl(const tf::Vector3& commanded_pos, const tf::Vector3& actual_pos, ros::Duration time_elapsed)
 {
   double err_x = actual_pos.x() - commanded_pos.x() ;
   double err_y = actual_pos.y() - commanded_pos.y() ;
