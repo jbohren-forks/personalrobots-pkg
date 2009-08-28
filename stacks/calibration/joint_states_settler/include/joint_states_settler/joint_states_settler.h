@@ -40,7 +40,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <calibration_msgs/Interval.h>
-#include <mechanism_msgs/JointStates.h>
+#include <pr2_mechanism_msgs/JointStates.h>
 
 #include <settlerlib/sorted_deque.h>
 
@@ -59,7 +59,7 @@ public:
 
   bool configure(const joint_states_settler::ConfigGoal& goal);
 
-  calibration_msgs::Interval add(const mechanism_msgs::JointStatesConstPtr msg);
+  calibration_msgs::Interval add(const pr2_mechanism_msgs::JointStatesConstPtr msg);
 
 private:
   bool configured_;

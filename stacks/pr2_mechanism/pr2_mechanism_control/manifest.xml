@@ -1,0 +1,36 @@
+<package>
+<description brief="PR2 Mechanism control">
+
+The mechanism control (MC) package provides the infrastructure to
+run controllers in a hard realtime loop. In every cycle of the control
+loop, all controllers loaded into MC will get triggered. The order in in
+which the controllers are triggered is determined by the MC scheduler.
+MC provides ros service calls to spawn/start/stop/kill controllers.
+
+Mechanism control also enforces low level safety limits 
+on the effort/velocity/position of each joint.
+
+</description>
+<author>Eric Berger berger@willowgarage.com, Stuart Glaser, Wim Meeussen</author>
+<license>BSD</license>
+<review status="unreviewed" notes=""/>
+<url>http://pr.willowgarage.com/pr2_mechanism_control</url>
+<depend package="pr2_hardware_interface"/>
+<depend package="pr2_mechanism_model"/>
+<depend package="pr2_controller_interface"/>
+<depend package="pr2_mechanism_msgs" />
+<depend package="realtime_tools" />
+<depend package="roscpp" />
+<depend package="tinyxml"/>
+<depend package="rospy" />
+<depend package="tf" />
+<depend package="actionlib" />
+<depend package="diagnostic_msgs" />
+<depend package="diagnostic_updater" />
+<depend package="pluginlib" />
+<export>
+    <cpp cflags='-I${prefix}/include'
+	 lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_mechanism_control'/>
+</export>
+</package>
+

@@ -39,7 +39,7 @@ namespace calibration_message_filters
 {
 
 #include "boost/shared_ptr.hpp"
-#include "mechanism_msgs/MechanismState.h"
+#include "pr2_mechanism_msgs/MechanismState.h"
 
 /**
  * Output type for the sandwich filter. Stores some message type M,
@@ -51,7 +51,7 @@ template <class M>
 struct StationaryElem
 {
   boost::shared_ptr<const M> data;
-  mechanism_msgs::MechanismStatePtr mech_state;
+  pr2_mechanism_msgs::MechanismStatePtr mech_state;
 };
 
 }

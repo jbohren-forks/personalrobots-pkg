@@ -1,0 +1,13 @@
+<package>
+<description brief="PR2 Hardware Interface">
+</description>
+<author>Eric Berger berger@willowgarage.com</author>
+<license>BSD</license>
+<review status="unreviewed" notes="API review in progress (Eric)"/>
+<depend package="roscpp" />
+<url>http://pr.willowgarage.com/pr2_hardware_interface</url>
+<export>
+  <cpp cflags="-I${prefix}/include"/>
+</export>
+</package>
+

@@ -49,7 +49,7 @@ namespace pr2_calibration_actions
 class RobotPixelsCapture
 {
 public:
-  typedef calibration_message_filters::DeflatedMsg<mechanism_msgs::JointStates> DeflatedJointStates;
+  typedef calibration_message_filters::DeflatedMsg<pr2_mechanism_msgs::JointStates> DeflatedJointStates;
   typedef calibration_message_filters::DeflatedMsg<sensor_msgs::Image> DeflatedImage;
   typedef boost::function<void(const CaptureRobotPixelsResult&)> CompletionCallback;
   typedef boost::function<void(const CaptureRobotPixelsFeedback&)> FeedbackCallback;

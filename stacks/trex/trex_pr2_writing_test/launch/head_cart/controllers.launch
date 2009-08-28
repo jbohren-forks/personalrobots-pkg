@@ -1,15 +1,15 @@
 <launch>
 
 <!-- action interface to switch controllers -->
-  <node pkg="mechanism_control" type="action_runner" output="screen" />
+  <node pkg="pr2_mechanism_control" type="action_runner" output="screen" />
 
 <!-- Laser tilt controller -->
   <param name="laser_tilt_controller/autostart" type="bool" value="false" />
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="--stopped $(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
 
 <!-- Head controller -->
   <include file="$(find pr2_default_controllers)/head_position_controller.launch" />
 
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/head_pan_joint_position_controller.xml $(find pr2_default_controllers)/head_tilt_joint_position_controller.xml $(find pr2_default_controllers)/head_position_controller.xml" output="screen" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/head_pan_joint_position_controller.xml $(find pr2_default_controllers)/head_tilt_joint_position_controller.xml $(find pr2_default_controllers)/head_position_controller.xml" output="screen" />
 
 </launch>

@@ -198,7 +198,7 @@ bool SBPLDoorPlanner::initializePlannerAndEnvironment(const door_msgs::Door &doo
   return true;
 }
 
-void SBPLDoorPlanner::jointsCallback(const mechanism_msgs::JointStatesConstPtr &joint_states)
+void SBPLDoorPlanner::jointsCallback(const pr2_mechanism_msgs::JointStatesConstPtr &joint_states)
 {
   //this is a stupid way of doing things ?
   joint_states_ = *joint_states;

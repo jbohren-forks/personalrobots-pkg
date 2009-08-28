@@ -36,7 +36,7 @@
 
 #include <kdl/tree.hpp>
 #include <ros/ros.h>
-#include <mechanism_msgs/JointStates.h>
+#include <pr2_mechanism_msgs/JointStates.h>
 #include "robot_state_publisher/robot_state_publisher.h"
 #include "robot_state_publisher/joint_state_listener.h"
 

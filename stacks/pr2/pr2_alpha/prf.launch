@@ -117,7 +117,7 @@
   <include file="$(find pr2_alpha)/pr2_monitors.launch" />
 
   <!-- Joint states diagnostics logging -->
-  <node pkg="mechanism_control" type="joints_to_diagnostics.py" machine="realtime" />
+  <node pkg="pr2_mechanism_control" type="joints_to_diagnostics.py" machine="realtime" />
 
   <!-- Plug to chessboard offsets -->
   <group ns="plug_detector">

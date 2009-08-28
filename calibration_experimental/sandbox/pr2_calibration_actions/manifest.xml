@@ -21,7 +21,7 @@
   <depend package="actionlib" />
 
   <!-- mechanism -->
-  <depend package="mechanism_msgs" />
+  <depend package="pr2_mechanism_msgs" />
 
   <!-- calibration -->
   <depend package="calibration_msgs" />

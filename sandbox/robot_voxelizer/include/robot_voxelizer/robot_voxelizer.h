@@ -40,7 +40,7 @@
 #include <planning_environment/models/robot_models.h>
 #include <planning_environment/monitors/kinematic_model_state_monitor.h>
 #include <planning_models/kinematic.h>
-#include <mechanism_msgs/MechanismState.h>
+#include <pr2_mechanism_msgs/MechanismState.h>
 #include "visualization_msgs/Marker.h"
 
 class RobotVoxelizer
@@ -113,7 +113,7 @@ class RobotVoxelizer
 		std::vector< std::pair < std::vector<bodies::Body *>, std::vector<bodies::Body *> > > scg_bodies_;
 		
 		/** \brief Callback function for mechanismState that updates the pose of the bodies. */
-		void jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states);
+		void jointStatesCallback(const pr2_mechanism_msgs::JointStatesConstPtr &joint_states);
 
 		/** \brief Convert from world coordinates to voxel grid coordinates. */
 		void worldToGrid(btVector3 origin, double wx, double wy, double wz, int &gx, int &gy, int &gz) const {

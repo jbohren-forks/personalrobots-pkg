@@ -1,32 +1,32 @@
 <launch>
 
 <!-- action interface to switch controllers -->
-  <node pkg="mechanism_control" type="action_runner" output="screen" />
+  <node pkg="pr2_mechanism_control" type="action_runner" output="screen" />
 
 <!-- Base controller -->
   <param name="base_controller/odom_publish_rate" value="30.0"/>
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" />
 
 <!-- Base odometry -->
 
   <param name="base_odometry/expected_publish_time" value="0.03"/>
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_odometry.xml" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_odometry.xml" />
 
 
 <!-- Laser tilt controller -->
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
 
 <!-- Head controller -->
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
 
 <!-- Torso controller -->
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_vel_controller.xml" output="screen" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_vel_controller.xml" output="screen" />
 
 <!-- Gripper effort controller -->
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_gripper_effort_controller.xml" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_gripper_effort_controller.xml" />
  
 <!-- Gripper position controller -->
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_gripper_position_controller.xml" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_gripper_position_controller.xml" />
 
 <!-- Joint Trajectory controller -->
   <group ns="r_arm_joint_trajectory_controller" clear_params="true">
@@ -41,7 +41,7 @@
     <param name="r_wrist_flex_joint/goal_reached_threshold" value="0.25" type="double" />
     <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.25" type="double" /> 
   </group>
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_joint_trajectory_controller.xml" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_joint_trajectory_controller.xml" />
 
 <!-- Cartesian wrench controller -->
   <group ns="r_arm_cartesian_wrench_controller" clear_params="true">
@@ -178,10 +178,10 @@
   </group>
 
 
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_arm_constraint_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_constraint_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_constraint_cartesian_pose_controller.xml $(find pr2_default_controllers)/r_arm_constraint_cartesian_trajectory_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_tff_controller.xml" output="screen" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_arm_constraint_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_constraint_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_constraint_cartesian_pose_controller.xml $(find pr2_default_controllers)/r_arm_constraint_cartesian_trajectory_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_tff_controller.xml" output="screen" />
 
 
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_arm_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_pose_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_trajectory_controller.xml" output="screen" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_arm_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_pose_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_trajectory_controller.xml" output="screen" />
 
 
 <!-- Cartesian Hybrid Controller --> 
@@ -221,6 +221,6 @@
     <param name="twist_filter" command="$(find plug_in)/make_lowpass.m twist_filter 0.1 " />
     <param name="saturated_velocity" value="-0.5" />
   </group>
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find plug_in)/integration/r_arm_hybrid_controller.xml"/>
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="--stopped $(find plug_in)/integration/r_arm_hybrid_controller.xml"/>
 
 </launch>

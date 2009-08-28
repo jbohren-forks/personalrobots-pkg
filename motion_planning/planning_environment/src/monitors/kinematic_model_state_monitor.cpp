@@ -124,7 +124,7 @@ void planning_environment::KinematicModelStateMonitor::stopStateMonitor(void)
     stateMonitorStarted_ = false;
 }
 
-void planning_environment::KinematicModelStateMonitor::jointStateCallback(const mechanism_msgs::JointStatesConstPtr &jointState)
+void planning_environment::KinematicModelStateMonitor::jointStateCallback(const pr2_mechanism_msgs::JointStatesConstPtr &jointState)
 {
     bool change = !haveJointState_;
 

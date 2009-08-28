@@ -6,7 +6,7 @@
   <depend package="kdl" />
   <depend package="phase_space" />
   <depend package="geometry_msgs" />
-  <depend package="mechanism_msgs" />
+  <depend package="pr2_mechanism_msgs" />
   <depend package="mocap_msgs" />
   <depend package="std_msgs" />
   <depend package="topic_synchronizer" />

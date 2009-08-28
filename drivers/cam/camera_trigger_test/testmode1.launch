@@ -2,7 +2,7 @@
   <!--node machine="xenomai_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x /robot_description"/-->
   <node pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x $(find camera_trigger_test)/test_configuration.xml" output="screen"/>
   
-  <node pkg="mechanism_control" type="spawner.py" args="$(find camera_trigger_test)/test_controllers.xml" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find camera_trigger_test)/test_controllers.xml" />
 
   <group ns="forearm">
     <param name="ext_trigger" type="bool" value="True"/>

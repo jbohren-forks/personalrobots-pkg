@@ -60,7 +60,7 @@
 #include <motion_planning_msgs/KinematicPath.h>
 #include <motion_planning_msgs/KinematicState.h>
 #include <motion_planning_msgs/PoseConstraint.h>
-#include <mechanism_msgs/MechanismState.h>
+#include <pr2_mechanism_msgs/MechanismState.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -183,9 +183,9 @@ class SBPLArmPlannerNode
 
       mapping_msgs::CollisionMap sbpl_collision_map_;
 
-      mechanism_msgs::MechanismState mechanism_state_;
+      pr2_mechanism_msgs::MechanismState mechanism_state_;
 			
-			mechanism_msgs::JointStates joint_states_;
+			pr2_mechanism_msgs::JointStates joint_states_;
 			
 			tf::MessageNotifier<sensor_msgs::PointCloud>  *point_cloud_notifier_;
 			
@@ -265,7 +265,7 @@ class SBPLArmPlannerNode
 
       void pointCloudCallback(const sensor_msgs::PointCloudConstPtr &point_cloud);
 
-			void jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states);
+			void jointStatesCallback(const pr2_mechanism_msgs::JointStatesConstPtr &joint_states);
 					
       void createOccupancyGrid();
 

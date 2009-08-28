@@ -9,7 +9,7 @@
   <node pkg="gazebo_tools" type="urdf2factory" args="door_description" respawn="false" output="screen" /> <!-- load default arm controller -->
 
   <!-- load door controllers -->
-  <node pkg="mechanism_control" type="spawner.py" args="$(find door_demos_gazebo)/door_defs/door_controllers.xml" respawn="false" output="screen" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find door_demos_gazebo)/door_defs/door_controllers.xml" respawn="false" output="screen" />
   <node pkg="door_demos_gazebo" type="set_door.py" output="screen"/>
 </launch>
 

@@ -48,7 +48,7 @@
 #include "experimental_controllers/CartesianHybridState.h"
 
 // Srvs
-#include <mechanism_msgs/SwitchController.h>
+#include <pr2_mechanism_msgs/SwitchController.h>
 
 //TF
 #include <tf/transform_listener.h>

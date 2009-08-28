@@ -22,7 +22,7 @@
   </node>
 
   <!-- Joint states diagnostics logging -->
-  <node pkg="mechanism_control" type="joints_to_diagnostics.py" machine="realtime" />
+  <node pkg="pr2_mechanism_control" type="joints_to_diagnostics.py" machine="realtime" />
 
   <include file="$(find pr2_head_cart)/cart_sensors.launch" />
   <include file="$(find pr2_head_cart)/cart_monitors.launch" />

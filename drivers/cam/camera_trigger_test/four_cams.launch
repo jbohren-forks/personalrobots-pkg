@@ -77,7 +77,7 @@
   <node machine="realtime" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x $(find camera_trigger_test)/test_configuration.xml"/>
   
   <!-- Spwns the controllers -->
-  <node name="spawner" pkg="mechanism_control" type="spawner.py" output="screen" args="trig_controller led_controller" />
+  <node name="spawner" pkg="pr2_mechanism_control" type="spawner.py" output="screen" args="trig_controller led_controller" />
   <group ns="trig_controller">
     <param name="type" type="string" value="TriggerController" />
     <param name="actuator" type="string" value="trig_controller" />

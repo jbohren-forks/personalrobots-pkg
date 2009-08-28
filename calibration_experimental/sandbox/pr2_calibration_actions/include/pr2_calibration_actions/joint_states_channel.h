@@ -47,7 +47,7 @@
 #include "pr2_calibration_actions/JointStatesChannelConfig.h"
 #include "pr2_calibration_actions/JointStatesChannelResult.h"
 #include "pr2_calibration_actions/ChannelFeedback.h"
-#include "mechanism_msgs/JointStates.h"
+#include "pr2_mechanism_msgs/JointStates.h"
 
 namespace pr2_calibration_actions
 {
@@ -55,7 +55,7 @@ namespace pr2_calibration_actions
 class JointStatesChannel : public GenericChannel
 {
 public:
-  typedef calibration_message_filters::DeflatedMsg<mechanism_msgs::JointStates> DeflatedJointStates;
+  typedef calibration_message_filters::DeflatedMsg<pr2_mechanism_msgs::JointStates> DeflatedJointStates;
   typedef boost::function <void(const DeflatedJointStates&)> StationaryCallback;
   JointStatesChannel(const JointStatesChannelConfig& config, StationaryCallback cb = NULL);
 
@@ -75,7 +75,7 @@ private:
   StationaryCallback stationary_callback_;
   calibration_message_filters::JointStatesDeflater deflater_;
 
-  void jointStatesCallback(const mechanism_msgs::JointStatesConstPtr& msg);
+  void jointStatesCallback(const pr2_mechanism_msgs::JointStatesConstPtr& msg);
 };
 
 

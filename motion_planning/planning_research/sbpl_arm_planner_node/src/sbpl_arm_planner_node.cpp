@@ -436,7 +436,7 @@ void SBPLArmPlannerNode::updateMapFromPointCloud(const sensor_msgs::PointCloudCo
   }
 }
 
-void SBPLArmPlannerNode::jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states)
+void SBPLArmPlannerNode::jointStatesCallback(const pr2_mechanism_msgs::JointStatesConstPtr &joint_states)
 {
 	joint_states_ = *joint_states;
 }

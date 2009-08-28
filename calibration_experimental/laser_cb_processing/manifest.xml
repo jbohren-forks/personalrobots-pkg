@@ -23,8 +23,8 @@
   <depend package="dense_laser_assembler" />
 
   <!-- mechanism -->
-  <depend package="mechanism_model" />
-  <depend package="hardware_interface" />
+  <depend package="pr2_mechanism_model" />
+  <depend package="pr2_hardware_interface" />
 
 </package>
 

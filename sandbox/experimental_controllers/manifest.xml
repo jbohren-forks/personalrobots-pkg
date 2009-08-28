@@ -9,9 +9,10 @@
 
   <depend package="kdl_parser"/>
   <depend package="rospy"/>
-  <depend package="controller_interface" />
-  <depend package="mechanism_model" />
-  <depend package="mechanism_control" />
+  <depend package="pr2_controller_interface" />
+  <depend package="pr2_mechanism_msgs" />
+  <depend package="pr2_mechanism_model" />
+  <depend package="pr2_mechanism_control" />
   <depend package="pluginlib" />
   <depend package="control_toolbox" />
   <depend package="tinyxml" />
@@ -39,7 +40,7 @@
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
 	 lflags="-Wl,-rpath,${prefix}/lib/ -L${prefix}/lib -lexperimental_controllers" />
-   <controller_interface plugin="${prefix}/controller_plugins.xml" />
+   <pr2_controller_interface plugin="${prefix}/controller_plugins.xml" />
   </export>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
   <rosdep name="libtool"/>

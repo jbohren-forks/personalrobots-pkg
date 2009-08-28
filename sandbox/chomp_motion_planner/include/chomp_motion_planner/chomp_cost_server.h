@@ -43,7 +43,7 @@
 #include <chomp_motion_planner/chomp_collision_space.h>
 #include <boost/thread/mutex.hpp>
 #include <kdl/jntarray.hpp>
-#include <mechanism_msgs/MechanismState.h>
+#include <pr2_mechanism_msgs/MechanismState.h>
 #include <visualization_msgs/MarkerArray.h>
 
 namespace chomp
@@ -63,7 +63,7 @@ public:
   int run();
   bool getChompCollisionCost(chomp_motion_planner::GetChompCollisionCost::Request& request, chomp_motion_planner::GetChompCollisionCost::Response& response);
 
-  void mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr& mech_state);
+  void mechanismStateCallback(const pr2_mechanism_msgs::MechanismStateConstPtr& mech_state);
 
 private:
 
@@ -76,7 +76,7 @@ private:
   ChompCollisionSpace chomp_collision_space_;
   boost::mutex mechanism_state_mutex_;
 
-  mechanism_msgs::MechanismState mechanism_state_;
+  pr2_mechanism_msgs::MechanismState mechanism_state_;
 
   void fillDefaultJointArray(KDL::JntArray& jnt_array);
 };

@@ -36,7 +36,7 @@
 
 #include <joint_states_settler/ConfigGoal.h>
 #include <joint_states_settler/joint_states_settler.h>
-#include <mechanism_msgs/JointStates.h>
+#include <pr2_mechanism_msgs/JointStates.h>
 
 using namespace std;
 using namespace joint_states_settler;
@@ -79,7 +79,7 @@ vector<calibration_msgs::Interval> addToSettler(JointStatesSettler& settler, uns
 
   for (unsigned int i=0; i<N; i++)
   {
-    mechanism_msgs::JointStatesPtr msg(new mechanism_msgs::JointStates);
+    pr2_mechanism_msgs::JointStatesPtr msg(new pr2_mechanism_msgs::JointStates);
     msg->header.stamp = ros::Time(times[i][time_channel], 0);
 
     msg->joints.resize(C);

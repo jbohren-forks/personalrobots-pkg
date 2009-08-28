@@ -36,7 +36,7 @@
 
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
-#include "mechanism_msgs/MechanismState.h"
+#include "pr2_mechanism_msgs/MechanismState.h"
 #include "mocap_msgs/MocapSnapshot.h"
 
 #include "topic_synchronizer/topic_synchronizer.h"
@@ -79,8 +79,8 @@ public:
   TopicSynchronizer<SensorKinematicsGrabber> sync_ ;
 
   // Mechanism State Messages
-  mechanism_msgs::MechanismState mech_state_ ;
-  mechanism_msgs::MechanismState safe_mech_state_ ;
+  pr2_mechanism_msgs::MechanismState mech_state_ ;
+  pr2_mechanism_msgs::MechanismState safe_mech_state_ ;
   boost::mutex mech_state_lock_ ;
 
   // Empty message used for callbacks

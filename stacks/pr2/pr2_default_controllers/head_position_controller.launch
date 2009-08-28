@@ -1,4 +1,4 @@
 <launch>
   <rosparam file="$(find pr2_default_controllers)/head_position_controller.yaml" command="load"/>
-  <node pkg="mechanism_control" type="spawner.py" args="head_controller" output="screen" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="head_controller" output="screen" />
 </launch>

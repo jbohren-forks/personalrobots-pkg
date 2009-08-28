@@ -9,8 +9,8 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/dallas_controller</url>
   
-  <depend package="controller_interface" />
-  <depend package="mechanism_control" />
+  <depend package="pr2_controller_interface" />
+  <depend package="pr2_mechanism_control" />
   <depend package="pr2_mechanism_controllers" />
   <depend package="geometry_msgs" />
   <depend package="pluginlib" />

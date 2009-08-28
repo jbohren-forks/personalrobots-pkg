@@ -13,7 +13,7 @@
 <depend package="eigen"/>
 <depend package="angles"/>
 <depend package="tf_conversions"/>
-<depend package="mechanism_model"/>
+<depend package="pr2_mechanism_model"/>
 <depend package="manipulation_srvs"/>
 <depend package="manipulation_msgs"/>
 <depend package="chomp_motion_planner"/>

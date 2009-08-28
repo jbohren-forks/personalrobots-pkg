@@ -39,7 +39,7 @@
 
 #include "calibration_message_filters/stationary_elem.h"
 #include "calibration_message_filters/joint_tolerance.h"
-#include "mechanism_msgs/MechanismState.h"
+#include "pr2_mechanism_msgs/MechanismState.h"
 
 namespace calibration_message_filters
 {
@@ -53,7 +53,7 @@ template <class M>
 class StationaryFilter
 {
 public:
-  typedef boost::shared_ptr< SandwichElem<M, mechanism_msgs::JointStates> > SandConstPtr;   // Shared pointer to the sandwich elem
+  typedef boost::shared_ptr< SandwichElem<M, pr2_mechanism_msgs::JointStates> > SandConstPtr;   // Shared pointer to the sandwich elem
   typedef boost::function<void(const StationaryElem<M>&)> Callback;
   typedef boost::signal<Callback> Signal;
 

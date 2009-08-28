@@ -41,7 +41,7 @@
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
-#include <mechanism_msgs/JointStates.h>
+#include <pr2_mechanism_msgs/JointStates.h>
 #include <mapping_msgs/AttachedObject.h>
 #include <boost/bind.hpp>
 #include <vector>
@@ -191,7 +191,7 @@ namespace planning_environment
     protected:
 
 	void setupRSM(void);
-	void jointStateCallback(const mechanism_msgs::JointStatesConstPtr &jointState);
+	void jointStateCallback(const pr2_mechanism_msgs::JointStatesConstPtr &jointState);
 	void attachObjectCallback(const mapping_msgs::AttachedObjectConstPtr &attachedObject);
 	virtual bool attachObject(const mapping_msgs::AttachedObjectConstPtr &attachedObject);
 

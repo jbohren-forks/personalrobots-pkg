@@ -9,7 +9,7 @@
   <depend package="message_filters" />
 
   <!-- mechanism -->
-  <depend package="mechanism_msgs" />
+  <depend package="pr2_mechanism_msgs" />
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcalibration_message_filters" />

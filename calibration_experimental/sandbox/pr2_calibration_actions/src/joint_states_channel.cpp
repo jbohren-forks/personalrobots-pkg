@@ -76,7 +76,7 @@ void JointStatesChannel::registerStationaryCallback(StationaryCallback cb)
   stationary_callback_ = cb;
 }
 
-void JointStatesChannel::jointStatesCallback(const mechanism_msgs::JointStatesConstPtr& msg)
+void JointStatesChannel::jointStatesCallback(const pr2_mechanism_msgs::JointStatesConstPtr& msg)
 {
   DeflatedJointStates deflated;
   deflater_.deflate(msg, deflated);

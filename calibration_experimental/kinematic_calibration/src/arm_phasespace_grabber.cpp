@@ -37,7 +37,7 @@
 #include "ros/node.h"
 #include "ros/node_handle.h"
 #include "boost/thread/mutex.hpp"
-#include "mechanism_msgs/MechanismState.h"
+#include "pr2_mechanism_msgs/MechanismState.h"
 #include "mocap_msgs/MocapSnapshot.h"
 #include "robot_kinematics/robot_kinematics.h"
 
@@ -279,7 +279,7 @@ public:
   {
     // Grab mechanism state and put it in a local copy
     mech_lock_.lock() ;
-    mechanism_msgs::MechanismState mech_state = safe_mech_state_ ;
+    pr2_mechanism_msgs::MechanismState mech_state = safe_mech_state_ ;
     mech_lock_.unlock() ;
 
     angles.resize(names.size()) ;
@@ -313,12 +313,12 @@ public:
 
 private:
     mocap_msgs::MocapSnapshot snapshot_ ;
-  mechanism_msgs::MechanismState mech_state_ ;
+  pr2_mechanism_msgs::MechanismState mech_state_ ;
 
     mocap_msgs::MocapSnapshot safe_snapshot_ ;
   int marker_id_ ;
 
-  mechanism_msgs::MechanismState safe_mech_state_ ;
+  pr2_mechanism_msgs::MechanismState safe_mech_state_ ;
 
   boost::mutex mech_lock_ ;
   boost::mutex snapshot_lock_ ;

@@ -1,7 +1,7 @@
 <launch>
 
   <rosparam command="load" file="$(find texas)/dallas_base_controller.yaml" ns="pr2_base_controller"/>
-  <node pkg="mechanism_control" type="spawner.py" args="pr2_base_controller" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="pr2_base_controller" />
 
   <!-- Swapping walk and run.  Run (Caps) is now super slow -->
   <param name="walk_vel" value="0.4" />

@@ -98,7 +98,7 @@ void CaptureHandLED::ledCallback(const calibration_msgs::ImagePointStampedConstP
   checkStationary();
 }
 
-void CaptureHandLED::jointStatesCallback(const mechanism_msgs::JointStatesConstPtr& joint_states)
+void CaptureHandLED::jointStatesCallback(const pr2_mechanism_msgs::JointStatesConstPtr& joint_states)
 {
   DeflatedJointStatesPtr deflated_ptr(new DeflatedJointStates);
   joint_states_deflater_.deflate(joint_states, *deflated_ptr);

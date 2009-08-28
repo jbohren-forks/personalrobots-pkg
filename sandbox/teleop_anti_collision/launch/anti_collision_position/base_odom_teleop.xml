@@ -5,9 +5,9 @@
 <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
 <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_base_odometry" />
 
-<node pkg="mechanism_control" type="spawner.py" args="pr2_base_controller" output="screen"/>
-<node pkg="mechanism_control" type="spawner.py" args="pr2_base_odometry" output="screen"/>
- <node pkg="mechanism_control" type="spawner.py" args="torso_lift_vel_controller" output="screen" />
+<node pkg="pr2_mechanism_control" type="spawner.py" args="pr2_base_controller" output="screen"/>
+<node pkg="pr2_mechanism_control" type="spawner.py" args="pr2_base_odometry" output="screen"/>
+ <node pkg="pr2_mechanism_control" type="spawner.py" args="torso_lift_vel_controller" output="screen" />
  
  <include file="$(find robot_pose_ekf)/robot_pose_ekf.launch" />
  

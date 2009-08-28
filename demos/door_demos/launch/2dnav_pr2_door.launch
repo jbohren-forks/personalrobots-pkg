@@ -5,8 +5,8 @@
 
     <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
-    <!-- node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/laser_tilt_controller.xml" />
+    <!-- node pkg="pr2_mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" />
+    <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/laser_tilt_controller.xml" />
     <node pkg="pr2_mechanism_controllers" type="send_periodic_cmd_srv.py" args="laser_tilt_controller linear 2 .75 .30" />-->
 
     <!-- Filter for tilt laser shadowing/veiling -->

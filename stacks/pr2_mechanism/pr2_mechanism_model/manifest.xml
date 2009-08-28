@@ -1,0 +1,19 @@
+<package>
+<description brief="PR2 Mechanism model">
+</description>
+<author>Eric Berger berger@willowgarage.com</author>
+<license>BSD</license>
+<review status="unreviewed" notes="API review in progress (Eric)"/>
+<depend package="roscpp" />
+<depend package="pr2_hardware_interface" />
+<depend package="tinyxml" />
+<depend package="urdf" />
+<depend package="kdl_parser" />
+<depend package="pluginlib" />
+<depend package="angles" />
+<url>http://pr.willowgarage.com/pr2_mechanism_model</url>
+<export>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lpr2_mechanism_model -Wl,-rpath,${prefix}/lib"/>
+  <pr2_mechanism_model plugin="${prefix}/transmission_plugins.xml" />
+</export>
+</package>

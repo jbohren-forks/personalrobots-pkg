@@ -48,7 +48,7 @@ void JointStatesDeflater::setDeflationJointNames(std::vector<std::string> joint_
   mapping_.resize(joint_names_.size());
 }
 
-void JointStatesDeflater::deflate(const mechanism_msgs::JointStatesConstPtr& joint_states, DeflatedJointStates& deflated_elem)
+void JointStatesDeflater::deflate(const pr2_mechanism_msgs::JointStatesConstPtr& joint_states, DeflatedJointStates& deflated_elem)
 {
   if (mapping_.size() != joint_names_.size())
     updateMapping(*joint_states);
@@ -71,7 +71,7 @@ void JointStatesDeflater::deflate(const mechanism_msgs::JointStatesConstPtr& joi
   }
 }
 
-void JointStatesDeflater::updateMapping(const mechanism_msgs::JointStates& joint_states)
+void JointStatesDeflater::updateMapping(const pr2_mechanism_msgs::JointStates& joint_states)
 {
   ROS_DEBUG("Updating the JointStates mapping");
 

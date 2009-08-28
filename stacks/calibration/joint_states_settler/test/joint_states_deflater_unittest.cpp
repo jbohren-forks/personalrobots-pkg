@@ -37,7 +37,7 @@
 
 using namespace std;
 using namespace joint_states_settler;
-using namespace mechanism_msgs;
+using namespace pr2_mechanism_msgs;
 
 static const double eps = 1e-10;
 

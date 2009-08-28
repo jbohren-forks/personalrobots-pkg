@@ -100,7 +100,7 @@ bool HeadServoingController::init(mechanism::RobotState *robot_state, const ros:
 
 
   // subscribe to head commands
-  sub_command_ = node_.subscribe<mechanism_msgs::JointStates>("command", 1, &HeadServoingController::command, this);
+  sub_command_ = node_.subscribe<pr2_mechanism_msgs::JointStates>("command", 1, &HeadServoingController::command, this);
 
   point_head_notifier_.reset(new MessageNotifier<geometry_msgs::PointStamped>(tf_,
                                                                        boost::bind(&HeadServoingController::pointHead, this, _1),
@@ -135,7 +135,7 @@ void HeadServoingController::update()
   head_tilt_controller_.update();
 }
 
-void HeadServoingController::command(const mechanism_msgs::JointStatesConstPtr& command_msg)
+void HeadServoingController::command(const pr2_mechanism_msgs::JointStatesConstPtr& command_msg)
 {
 
   assert(command_msg->joints.size() == 2);

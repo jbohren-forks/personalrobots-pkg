@@ -6,9 +6,9 @@
   <review status="unreviewed" notes=""/>
   <depend package="kdl_parser"/>
   <depend package="rospy"/>
-  <depend package="controller_interface" />
-  <depend package="mechanism_model" />
-  <depend package="mechanism_control" />
+  <depend package="pr2_controller_interface" />
+  <depend package="pr2_mechanism_model" />
+  <depend package="pr2_mechanism_control" />
   <depend package="control_toolbox" />
   <depend package="realtime_tools" />
   <depend package="roscpp" />
@@ -25,7 +25,7 @@
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
 	 lflags="-Wl,-rpath,${prefix}/lib/ -L${prefix}/lib -lrobot_mechanism_controllers" />
-    <controller_interface plugin="${prefix}/controller_plugins.xml" />
+    <pr2_controller_interface plugin="${prefix}/controller_plugins.xml" />
   </export>
   <rosdep name="libtool"/>
 </package>

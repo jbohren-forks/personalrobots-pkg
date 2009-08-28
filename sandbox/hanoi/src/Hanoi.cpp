@@ -1,5 +1,5 @@
-#include <mechanism_msgs/JointStates.h>
-#include <mechanism_msgs/JointState.h>
+#include <pr2_mechanism_msgs/JointStates.h>
+#include <pr2_mechanism_msgs/JointState.h>
 
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/point.h>
@@ -26,7 +26,7 @@ Hanoi::Hanoi(ros::NodeHandle &nh)
   // Subscribe to the blobs topic
   blobSubscriber_ = nodeHandle_.subscribe("blobs", 100, &Hanoi::BlobCB, this);
 
-  headPublisher_ = nodeHandle_.advertise<mechanism_msgs::JointStates>("pan_tilt", 1, true);
+  headPublisher_ = nodeHandle_.advertise<pr2_mechanism_msgs::JointStates>("pan_tilt", 1, true);
 
   // Create the publisher for cylinder data
   cylinderPublisher_ = nodeHandle_.advertise<hanoi::Cylinders>("cylinders", 1);
@@ -57,8 +57,8 @@ Hanoi::~Hanoi()
 // Pan and tilt the head
 void Hanoi::CommandHead(float pan, float tilt)
 {
-  mechanism_msgs::JointStates jointStatesMsg;
-  mechanism_msgs::JointState panJoint, tiltJoint;
+  pr2_mechanism_msgs::JointStates jointStatesMsg;
+  pr2_mechanism_msgs::JointState panJoint, tiltJoint;
 
   panJoint.name = "head_pan_joint";
   panJoint.position = pan;

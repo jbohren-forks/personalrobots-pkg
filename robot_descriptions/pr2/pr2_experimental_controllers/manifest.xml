@@ -13,7 +13,7 @@
   <depend package="pr2_mechanism_controllers"/>
   <depend package="robot_mechanism_controllers"/>
   <depend package="experimental_controllers"/>
-  <depend package="mechanism_control"/>
-  <depend package="mechanism_model"/>
+  <depend package="pr2_mechanism_control"/>
+  <depend package="pr2_mechanism_model"/>
   <depend package="manipulation_msgs"/>
 </package>

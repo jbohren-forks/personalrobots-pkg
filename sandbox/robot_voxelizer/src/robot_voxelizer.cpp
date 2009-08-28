@@ -201,7 +201,7 @@ void RobotVoxelizer::getVoxelsInSCG(int group, int subgroup, std::vector<btVecto
 	monitor_->getKinematicModel()->unlock();
 }
 
-void RobotVoxelizer::jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states)
+void RobotVoxelizer::jointStatesCallback(const pr2_mechanism_msgs::JointStatesConstPtr &joint_states)
 {
 // 	updateSelfCollisionBodies();
 

@@ -21,7 +21,7 @@
   <depend package="voxel3d" />
   <depend package="tf" />
   <depend package="distance_field" />
-
+  <depend package="pr2_mechanism_msgs" />
  <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp  -I${prefix}/msg/cpp"/>
   </export>

@@ -9,7 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/trajectory_controllers</url>
 
-  <depend package="controller_interface" />
+  <depend package="pr2_controller_interface" />
   <depend package="pluginlib" />
   <depend package="robot_mechanism_controllers" />
   <depend package="spline_smoother" />

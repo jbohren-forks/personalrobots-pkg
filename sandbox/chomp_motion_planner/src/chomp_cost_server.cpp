@@ -159,7 +159,7 @@ namespace chomp
     return true;
   }
 
-  void ChompCostServer::mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr& mech_state)
+  void ChompCostServer::mechanismStateCallback(const pr2_mechanism_msgs::MechanismStateConstPtr& mech_state)
   {
     if (mechanism_state_mutex_.try_lock())
     {

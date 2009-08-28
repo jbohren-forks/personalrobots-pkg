@@ -45,8 +45,8 @@
 #include <ros/time.h>
 #include "tf/transform_listener.h"
 
-#include "mechanism_msgs/JointState.h"
-#include "mechanism_msgs/JointStates.h"
+#include "pr2_mechanism_msgs/JointState.h"
+#include "pr2_mechanism_msgs/JointStates.h"
 
 #define TORSO_TOPIC "/torso_lift_controller/set_command"
 #define HEAD_TOPIC "/head_controller/command"
@@ -157,7 +157,7 @@ class TeleopGoalProjection
       if(torso_dn_button != 0)
         torso_pub_ = node_handle_.advertise<std_msgs::Float64> (TORSO_TOPIC, 1);
       if(head_button != 0)
-        head_pub_ = node_handle_.advertise<mechanism_msgs::JointStates> (HEAD_TOPIC, 1);
+        head_pub_ = node_handle_.advertise<pr2_mechanism_msgs::JointStates> (HEAD_TOPIC, 1);
       goal_pub_ = node_handle_.advertise<geometry_msgs::PoseStamped> ("/goal", 1);
       joy_sub_ = node_handle_.subscribe("joy",1,&TeleopGoalProjection::joy_cb,this);
       ROS_DEBUG("done with ctor\n");
@@ -285,8 +285,8 @@ class TeleopGoalProjection
           // Head
           if(head_button != 0)
           {
-	    mechanism_msgs::JointState joint_cmd ;
-	    mechanism_msgs::JointStates joint_cmds;
+	    pr2_mechanism_msgs::JointState joint_cmd ;
+	    pr2_mechanism_msgs::JointStates joint_cmds;
 
 	    joint_cmd.name ="head_pan_joint";
 	    joint_cmd.position = req_pan;
@@ -347,8 +347,8 @@ class TeleopGoalProjection
             // Publish head
             if(head_button != 0)
             {
-	      mechanism_msgs::JointState joint_cmd ;
-	      mechanism_msgs::JointStates joint_cmds;
+	      pr2_mechanism_msgs::JointState joint_cmd ;
+	      pr2_mechanism_msgs::JointStates joint_cmds;
 
 	      joint_cmd.name ="head_pan_joint";
 	      joint_cmd.position = req_pan;

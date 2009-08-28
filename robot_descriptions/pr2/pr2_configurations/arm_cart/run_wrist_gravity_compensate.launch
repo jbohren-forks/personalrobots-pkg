@@ -2,6 +2,6 @@
 
 <!-- Arm trajectory controller -->
 
-  <node pkg="mechanism_control" type="spawner.py" args="$(find arm_cart)/controllers_gravity_compensate.xml" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find arm_cart)/controllers_gravity_compensate.xml" />
 
 </launch>

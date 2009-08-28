@@ -38,16 +38,16 @@
 #include <pr2_robot_actions/SwitchControllers.h>
 #include <pr2_robot_actions/SwitchControllersState.h>
 
-#include <mechanism_msgs/SwitchControllerAction.h>
+#include <pr2_mechanism_msgs/SwitchControllerAction.h>
 #include <actionlib/client/action_client.h>
 #include <action_translator/action_translator.h>
 #include <robot_actions/action_runner.h>
 #include <boost/thread.hpp>
 
 
-mechanism_msgs::SwitchControllerGoal fromOldGoal(const pr2_robot_actions::SwitchControllers& old_goal)
+pr2_mechanism_msgs::SwitchControllerGoal fromOldGoal(const pr2_robot_actions::SwitchControllers& old_goal)
 {
-  mechanism_msgs::SwitchControllerGoal new_goal;
+  pr2_mechanism_msgs::SwitchControllerGoal new_goal;
   new_goal.start_controllers = old_goal.start_controllers;
   new_goal.stop_controllers = old_goal.stop_controllers;
   return new_goal;
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "move_base_action_translator");
 
   ros::NodeHandle n;
-  action_translator::ActionTranslator<mechanism_msgs::SwitchControllerAction, pr2_robot_actions::SwitchControllers, std_msgs::Empty>
+  action_translator::ActionTranslator<pr2_mechanism_msgs::SwitchControllerAction, pr2_robot_actions::SwitchControllers, std_msgs::Empty>
     translator("switch_controller", "switch_controllers", &fromOldGoal, NULL, NULL);
 
   robot_actions::ActionRunner runner(10.0);

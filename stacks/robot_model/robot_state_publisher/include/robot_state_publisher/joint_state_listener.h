@@ -39,14 +39,14 @@
 
 #include <kdl/tree.hpp>
 #include <ros/ros.h>
-#include <mechanism_msgs/JointStates.h>
+#include <pr2_mechanism_msgs/JointStates.h>
 #include "robot_state_publisher/robot_state_publisher.h"
 
 using namespace std;
 using namespace ros;
 using namespace KDL;
 
-typedef boost::shared_ptr<mechanism_msgs::JointStates const> JointStateConstPtr;
+typedef boost::shared_ptr<pr2_mechanism_msgs::JointStates const> JointStateConstPtr;
 
 namespace robot_state_publisher{
 

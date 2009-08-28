@@ -5,7 +5,7 @@
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki</url>
   <depend package="amcl"/>
-  <depend package="mechanism_control"/>
+  <depend package="pr2_mechanism_control"/>
   <depend package="robot_pose_ekf"/>
   <depend package="teleop_base"/>
   <depend package="semantic_point_annotator"/>

@@ -35,7 +35,7 @@
 #ifndef JOINT_STATES_SETTLER_DEFLATED_JOINT_STATES_H_
 #define JOINT_STATES_SETTLER_DEFLATED_JOINT_STATES_H_
 
-#include <mechanism_msgs/JointStates.h>
+#include <pr2_mechanism_msgs/JointStates.h>
 #include <settlerlib/deflated.h>
 
 namespace joint_states_settler
@@ -44,7 +44,7 @@ namespace joint_states_settler
 class DeflatedJointStates : public settlerlib::Deflated
 {
 public:
-  mechanism_msgs::JointStatesConstPtr msg_;
+  pr2_mechanism_msgs::JointStatesConstPtr msg_;
 };
 
 }

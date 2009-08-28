@@ -4,10 +4,10 @@
   
   <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
   <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_base_odometry" />
-  <node pkg="mechanism_control" type="spawner.py" args="pr2_base_controller pr2_base_odometry" output="screen"/>
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="pr2_base_controller pr2_base_odometry" output="screen"/>
   
   <rosparam file="$(find pr2_default_controllers)/pr2_joint_velocity_controllers.yaml" command="load" />
-  <node pkg="mechanism_control" type="spawner.py" args="torso_lift_velocity_controller" output="screen" />
+  <node pkg="pr2_mechanism_control" type="spawner.py" args="torso_lift_velocity_controller" output="screen" />
   
   <include file="$(find pr2_default_controllers)/head_position_controller.launch" />
   

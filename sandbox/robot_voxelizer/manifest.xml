@@ -9,7 +9,7 @@
 		<depend package="bullet" />
     <depend package="planning_models" />
 		<depend package="visualization_msgs" />
-		<depend package="mechanism_msgs" />
+		<depend package="pr2_mechanism_msgs" />
   <url></url>
 
   <export>
