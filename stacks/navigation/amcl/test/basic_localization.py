@@ -24,11 +24,11 @@ class TestBasicLocalization(unittest.TestCase):
 
   def tf_cb(self, msg):
     for t in msg.transforms:
-      if t.parent_id == '/map':
+      if t.header.frame_id == '/map':
         self.tf = t.transform
-        #print 'Curr:\t %16.6f %16.6f' % (self.tf.translation.x, self.tf.translation.y)
-        #print 'Target:\t %16.6f %16.6f' % (self.target_x, self.target_y)
-        #print 'Diff:\t %16.6f %16.6f' % (abs(self.tf.translation.x-self.target_x),abs(self.tf.translation.y - self.target_y))
+        print 'Curr:\t %16.6f %16.6f' % (self.tf.translation.x, self.tf.translation.y)
+        print 'Target:\t %16.6f %16.6f' % (self.target_x, self.target_y)
+        print 'Diff:\t %16.6f %16.6f' % (abs(self.tf.translation.x-self.target_x),abs(self.tf.translation.y - self.target_y))
 
   def test_basic_localization(self):
     global_localization = int(sys.argv[1])
