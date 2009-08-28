@@ -46,4 +46,5 @@ rosbuild_add_rostest(test/switch_controllers/sim/pr2.test)
 rosbuild_add_rostest(test/drive_open_drive/sim/pr2.test)
 rosbuild_add_rostest(test/plug_in/sim/pr2.test)
 rosbuild_add_rostest(test/m2_lite/sim/pr2.test)
+rosbuild_add_rostest(test/m2/sim/pr2.test)
 
