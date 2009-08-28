@@ -1,6 +1,6 @@
 <launch>
   <!-- Feed the images from disk.  -->
-  <node pkg="prosilica_cam" type="fake_poll_node"
+  <node pkg="prosilica_camera" type="fake_poll_node"
         args="--roi $(find outlet_detection)/test/outlets_2009_05_20_part1"
         output="screen"/>
   <!-- Run the detector -->

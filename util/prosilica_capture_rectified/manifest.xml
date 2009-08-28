@@ -13,7 +13,7 @@
   <depend package="opencv_latest"/>
   <depend package="sensor_msgs"/>
   <depend package="tf"/>
-  <depend package="prosilica_cam"/>
+  <depend package="prosilica_camera"/>
   <depend package="eigen"/>
   <depend package="point_cloud_mapping"/>
   <depend package="joy"/>

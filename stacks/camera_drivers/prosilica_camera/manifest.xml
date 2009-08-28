@@ -15,5 +15,5 @@
   <export>
     <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lprosilica" cflags="-I${prefix}/include -I${prefix}/srv/cpp"/>
   </export>
-  <url>http://www.ros.org/wiki/prosilica_cam</url>
+  <url>http://www.ros.org/wiki/prosilica_camera</url>
 </package>

@@ -9,7 +9,7 @@
   <depend package="opencv_latest"/>
   <depend package="sensor_msgs"/>
   <depend package="geometry_msgs"/>
-  <depend package="prosilica_cam"/>
+  <depend package="prosilica_camera"/>
   <depend package="rospy"/>
   <depend package="rostest"/>
   <depend package="star_detector"/>

@@ -1,6 +1,6 @@
 #include "outlet_detection/tracker_base.h"
 #include <geometry_msgs/PoseStamped.h>
-#include <prosilica_cam/CameraInfo.h>
+#include <prosilica_camera/CameraInfo.h>
 #include <boost/bind.hpp>
 #include <unistd.h> // getpid
 
@@ -217,8 +217,8 @@ void TrackerBase::setRoiToTargetFrame()
   // Try to get calibration parameters
   if (!K_) {
     if (waitForService(cam_info_service_)) {
-      prosilica_cam::CameraInfo::Request cam_req;
-      prosilica_cam::CameraInfo::Response cam_rsp;
+      prosilica_camera::CameraInfo::Request cam_req;
+      prosilica_camera::CameraInfo::Response cam_rsp;
       if (ros::service::call(cam_info_service_, cam_req, cam_rsp)) {
         cam_info_ = cam_rsp.cam_info;
         processCameraInfo();

@@ -39,7 +39,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <opencv_latest/CvBridge.h>
-#include <prosilica_cam/PolledImage.h>
+#include <prosilica_camera/PolledImage.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
@@ -88,8 +88,8 @@ protected:
   ros::Publisher marker_pub_;
   boost::scoped_ptr<boost::thread> active_thread_;
 
-  prosilica_cam::PolledImage::Request req_;
-  prosilica_cam::PolledImage::Response res_;
+  prosilica_camera::PolledImage::Request req_;
+  prosilica_camera::PolledImage::Response res_;
   std::string image_service_;
   std::string cam_info_service_;
   sensor_msgs::Image &img_;

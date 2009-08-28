@@ -7,8 +7,8 @@
     <param name="gain_auto" type="str" value="Manual"/>
     <param name="gain" type="int" value="0"/>
   </group>
-  <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" respawn="false" output="screen"/>
-  <node name="prosilica_view" pkg="prosilica_cam" type="prosilica_view" respawn="false" output="screen">
+  <node name="prosilica" pkg="prosilica_camera" type="prosilica_node" respawn="false" output="screen"/>
+  <node name="prosilica_view" pkg="prosilica_camera" type="prosilica_view" respawn="false" output="screen">
     <!--remap from="Image" to="/prosilica/image"/-->
     <remap from="Image" to="/prosilica/image_rect"/>
   </node>

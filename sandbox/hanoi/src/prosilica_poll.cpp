@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "prosilica_cam/PolledImage.h"
+#include "prosilica_camera/PolledImage.h"
 
 // NOTE: res must be global! CvBridge assumes it can just point
 //       to the pixel data in the image message.

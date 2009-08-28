@@ -2,8 +2,8 @@
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/fill_image.h"
-#include "prosilica_cam/PolledImage.h"
-#include "prosilica_cam/CameraInfo.h"
+#include "prosilica_camera/PolledImage.h"
+#include "prosilica_camera/CameraInfo.h"
 
 #include <cv.h>
 #include <cvwimage.h>
@@ -63,16 +63,16 @@ public:
     cvReleaseMat(&D_);
   }
 
-  bool camInfo(prosilica_cam::CameraInfo::Request &req,
-               prosilica_cam::CameraInfo::Response &rsp)
+  bool camInfo(prosilica_camera::CameraInfo::Request &req,
+               prosilica_camera::CameraInfo::Response &rsp)
   {
     memcpy((char*)(&rsp.cam_info.D[0]), (char*)(D_->data.db), 5*sizeof(double));
     memcpy((char*)(&rsp.cam_info.K[0]), (char*)(K_->data.db), 9*sizeof(double));
     return true;
   }
 
-  bool grab(prosilica_cam::PolledImage::Request &req,
-            prosilica_cam::PolledImage::Response &res)
+  bool grab(prosilica_camera::PolledImage::Request &req,
+            prosilica_camera::PolledImage::Response &res)
   {
     if (current_iter_ == end_iter_) {
       ros::Node::instance()->unadvertiseService("/prosilica/poll");

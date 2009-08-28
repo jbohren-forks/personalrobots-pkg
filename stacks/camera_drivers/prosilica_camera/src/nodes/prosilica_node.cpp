@@ -55,8 +55,8 @@
 
 #include "prosilica/prosilica.h"
 #include "prosilica/rolling_sum.h"
-#include "prosilica_cam/PolledImage.h"
-#include "prosilica_cam/CameraInfo.h"
+#include "prosilica_camera/PolledImage.h"
+#include "prosilica_camera/CameraInfo.h"
 
 class ProsilicaNode
 {
@@ -448,8 +448,8 @@ public:
     return true;
   }
 
-  bool camInfoService(prosilica_cam::CameraInfo::Request &req,
-                      prosilica_cam::CameraInfo::Response &res)
+  bool camInfoService(prosilica_camera::CameraInfo::Request &req,
+                      prosilica_camera::CameraInfo::Response &res)
   {
     res.cam_info = cam_info_;
     res.cam_info.header.stamp = ros::Time::now();
@@ -457,8 +457,8 @@ public:
     return true;
   }
 
-  bool triggeredGrab(prosilica_cam::PolledImage::Request &req,
-                     prosilica_cam::PolledImage::Response &res)
+  bool triggeredGrab(prosilica_camera::PolledImage::Request &req,
+                     prosilica_camera::PolledImage::Response &res)
   {
     if (mode_ != prosilica::Triggered)
       return false;

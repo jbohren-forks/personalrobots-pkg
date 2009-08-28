@@ -46,7 +46,7 @@
 #include <tf/transform_listener.h>
 
 #include "joy/Joy.h"
-#include "prosilica_cam/PolledImage.h"
+#include "prosilica_camera/PolledImage.h"
 
 #include <point_cloud_mapping/cloud_io.h>
 #include <point_cloud_mapping/geometry/angles.h>
@@ -74,8 +74,8 @@ class ProsilicaCapture {
 	IplImage* image;
 	IplImage* rectified;
 
-	prosilica_cam::PolledImage::Request req;
-	prosilica_cam::PolledImage::Response res;
+	prosilica_camera::PolledImage::Request req;
+	prosilica_camera::PolledImage::Response res;
 
 	unsigned int index;
 
