@@ -1,11 +1,12 @@
 <package>
-<description brief='Basic Filters'>
+<description brief='A standardized filter interface'>
 
-A library to provide a generic base class for filters as well as 
-implementations of commonly used filters.  
+This library provides a standardized interface for processing data as a sequence 
+of filters.  This package contains a base class upon which to build specific implementations
+as well as an interface which dynamically loads filters based on runtime parameters.  
 
 </description>
-<author>Tully Foote/tfoote@willowgarage.com, Melonee Wise/mwise@willowgarage.com</author>
+<author>Tully Foote/tfoote@willowgarage.com</author>
 <license>BSD</license>
 <review status="API conditionally cleared" notes=""/>
 <url>http://pr.willowgarage.com</url>
