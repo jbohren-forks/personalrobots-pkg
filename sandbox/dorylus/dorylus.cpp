@@ -625,55 +625,70 @@ void sigint(int none) {
 }
 
 void Dorylus::relearnResponses(DorylusDataset& dd) {
-  cout << "This doesn't work yet." << endl;
-  return;
 
   assert(dd.nClasses_ == nClasses_);
   useDataset(&dd);
   vector<object*>& objs = dd_->objs_;
   cout << "Objective before response relearning: " << classify(dd) << endl;
 
+  save("tmp.d");
+
   for(size_t t=0; t<pwcs_.size(); ++t) {
     weak_classifier& wc = *pwcs_[t];
     assert(wc.id == (int)t);
 
-    for(size_t c=0; c<nClasses_; ++c) {
-      wc.numerators(c) = 0;
-      wc.denominators(c) = 0;
-      wc.vals(c) = 0;
-    }
+    VectorXd numerators = VectorXd::Zero(nClasses_);
+    VectorXd denominators = VectorXd::Zero(nClasses_);
+    
+//     for(size_t c=0; c<nClasses_; ++c) {
+//       wc.numerators(c) = 0;
+//       wc.denominators(c) = 0;
+//       wc.vals(c) = 0;
+//     }
 
     // -- Find which training examples fall in the hypersphere and increment numerators, denominators, responses, and utility.
+    vector<size_t> inside;
+    inside.reserve(objs.size());
     for(size_t m=0; m<objs.size(); ++m) {
 
       // -- If no descriptor of this type, ignore.
-      if(objs[m]->features.count(wc.descriptor) == 0)
+      if(objs[m]->features.count(wc.descriptor) == 0) {
+	cout << "Ignoring " << wc.descriptor << endl;
 	continue;
+      }
 
       // -- If not in the hypersphere, ignore.
       if(euc(wc.center, *objs[m]->features[wc.descriptor]) > wc.theta) 
 	continue;
 
+      inside.push_back(m);
+
       for(size_t c=0; c<nClasses_; ++c) {
 	double weight = exp(log_weights_(c,m));
-	wc.numerators(c) += weight * dd_->ymc_(c,m);
-	wc.denominators(c) += weight;
-	if(wc.denominators(c) == 0)
-	  wc.vals(c) = 0;
-	else
-	  wc.vals(c) = wc.numerators(c) / wc.denominators(c);
+	numerators(c) += weight * dd_->ymc_(c,m);
+	denominators(c) += weight;
 	
 
 	// Total weight of training examples in hypersphere (from *all* datasets, not just this one) which have ymc={1, -1}
 // 	double sum_weights_pos = (wc.denominators(c) + wc.numerators(c)) / 2;
 // 	double sum_weights_neg = (wc.denominators(c) - wc.numerators(c)) / 2;
 
-// 	wc.utility += ((1-exp(-wc.vals(c))) * sum_weights_pos + (1-exp(wc.vals(c))) * sum_weights_neg) / (nClasses_ * objs.size());
-
-	// -- Update the weights for each training example.
-	log_weights_(c,m) += -dd_->ymc_(c,m) * wc.vals(c);
+// 	wc.utility += ((1-exp(-wc.vals(c))) * sum_weights_pos + (1-exp(wc.vals(c))) * sum_weights_neg) / (nClasses_ * objs.size());	
       }
+    }
 
+    // -- Set the response values for this weak classifier.
+    for(size_t c=0; c<nClasses_; ++c) {
+      if(denominators(c) == 0)
+	wc.vals(c) = 0;
+      else
+	wc.vals(c) = numerators(c) / denominators(c);
+
+      // -- Update the weights for each training example inside the hypersphere.
+      for(size_t m=0; m<inside.size(); ++m) {
+	size_t idx = inside[m];
+	log_weights_(c,idx) += -dd_->ymc_(c,idx) * wc.vals(c);
+      }
     }
   }
   cout << "Objective after response updating: " << computeObjective() << endl;
