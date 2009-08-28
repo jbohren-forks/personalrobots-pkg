@@ -46,7 +46,6 @@ void spinThread()
   ros::spin();
 }
 
-
 int main (int argc, char **argv)
 {
   ros::init(argc, argv, "test_averaging"); 
