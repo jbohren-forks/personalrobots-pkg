@@ -40,6 +40,7 @@
 
 Videre_no_STOC is a driver for communicating with the Videre stereocameras.
 It is intended to be identical to communicating with two other cameras.
+The STOC (STereo On Chip) features are turned off.
 
 <hr>
 
@@ -49,9 +50,9 @@ Subscribes to (name/type):
 - @b "videre/check_params" : std_msgs/Empty : signal to recheck all of the parameters
 
 Publishes to (name : type : description):
-- @b "left/image" : sensor_msgs/Image : Left unprocessed image
+- @b "left/image_raw" : sensor_msgs/Image : Left unprocessed image
 - @b "left/camera_info" : sensor_msgs/CameraInfo : Left camera information message
-- @b "right/image" : sensor_msgs/Image : Right unprocessed image
+- @b "right/image_raw" : sensor_msgs/Image : Right unprocessed image
 - @b "right/camera_info" : sensor_msgs/CameraInfo : Right camera information message
 
 <hr>
@@ -222,8 +223,8 @@ public:
       stcam_->setProcMode(videre_mode);
       stcam_->setCompanding(true);
 
-      left_img_pub_ = left_nh_.advertise<sensor_msgs::Image>("image", 1);
-      right_img_pub_ = right_nh_.advertise<sensor_msgs::Image>("image", 1);
+      left_img_pub_ = left_nh_.advertise<sensor_msgs::Image>("image_raw", 1);
+      right_img_pub_ = right_nh_.advertise<sensor_msgs::Image>("image_raw", 1);
       left_info_pub_ = left_nh_.advertise<sensor_msgs::CameraInfo>("camera_info", 1);
       right_info_pub_ = right_nh_.advertise<sensor_msgs::CameraInfo>("camera_info", 1);
 
