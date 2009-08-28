@@ -33,7 +33,9 @@ Hanoi::Hanoi(ros::NodeHandle &nh)
 
   cloudSubscriber_ = nodeHandle_.subscribe("cloud_data",1,&Hanoi::CloudCB,this);
 
+  ros::service::waitForService("/auto_arm_cmd_server");
   moveArmService_ = nodeHandle_.serviceClient<move_arm_tools::ArmCtrlCmd::Request, move_arm_tools::ArmCtrlCmd::Response> ("/auto_arm_cmd_server");
+
 
   // Get the point cloud
   /*tf::MessageNotifier<sensor_msgs::PointCloud> *message_notifier = 
@@ -41,8 +43,8 @@ Hanoi::Hanoi(ros::NodeHandle &nh)
        boost::bind(&Hanoi::CloudCB,this,_1), "cloud_data", parameter_frame_, 1);
        */
 
-  this->CommandArm(0.5, 0, 0.5, 0, 0 ,0);
-  this->CommandHead(0, 0.5);
+  this->CommandArm(0.5, 0.0, 0.8, 0, 0 ,0);
+  this->CommandHead(0.0, 0.4);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +84,7 @@ void Hanoi::CommandArm(float x, float y, float z,
 
   btQuaternion quat(yaw, pitch, roll);
 
-  cmd << "plan " << x << " " << y << " " << z << " " 
+  cmd << "move " << x << " " << y << " " << z << " " 
     << quat.getX() << " " << quat.getY() << " " << quat.getZ() 
     << " " << quat.getW();
 
