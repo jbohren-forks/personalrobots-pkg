@@ -111,7 +111,7 @@ Recharger::Inactive{
  * If a goal does not succeed then we should regenerate it for later. 
  */
 M2Goals::Inactive{
-  if(status != SUCCESS){
+  if(status == PREEMPTED || status == ABORTED){
     met_by(Active p);
     before (Active g);
     g.outlet_id == p.outlet_id;
