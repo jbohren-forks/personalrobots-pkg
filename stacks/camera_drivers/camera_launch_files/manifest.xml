@@ -7,7 +7,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://www.ros.org/wiki/camera_launch_files</url>
-  <depend package="forearm_cam"/>
+  <depend package="wge100_camera"/>
   <depend package="prosilica_camera"/>
   <depend package="dcam"/>
   <depend package="stereo_image_proc"/>

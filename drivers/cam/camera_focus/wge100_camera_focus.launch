@@ -12,7 +12,7 @@
     <param name="gain" type="int" value="64" />
     <param name="exposure" type="double" value="0.020" />
   </group>
-  <node name="forearm" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  <node name="forearm" pkg="wge100_camera" type="forearm_node" respawn="false" output="screen"/>
   <node name="forearm_focus" pkg="camera_focus" type="focus" respawn="false" output="screen">
     <remap from="image" to="forearm/image_raw"/>
     <param name="startx" type="int" value="160"/>

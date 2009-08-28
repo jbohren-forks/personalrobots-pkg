@@ -7,7 +7,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/camera_focus</url>
-  <depend package="forearm_cam"/>
+  <depend package="wge100_camera"/>
   <depend package="dcam"/>
   <rosdepend name="gnuplot"/>
 </package>

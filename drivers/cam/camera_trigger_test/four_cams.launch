@@ -12,7 +12,7 @@
     <param name="auto_exposure" type="bool" value="False" />
     <param name="exposure" type="double" value="0.0001" />
   </group>
-  <node name="fc1" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  <node name="fc1" pkg="wge100_camera" type="forearm_node" respawn="false" output="screen"/>
 
   <group ns="fc2">
     <param name="camera_url" type="str" value="serial://13"/>
@@ -27,7 +27,7 @@
     <param name="auto_exposure" type="bool" value="False" />
     <param name="exposure" type="double" value="0.0001" />
   </group>
-  <node name="fc2" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  <node name="fc2" pkg="wge100_camera" type="forearm_node" respawn="false" output="screen"/>
   
   <group ns="fc3">
     <param name="camera_url" type="str" value="serial://14"/>
@@ -42,7 +42,7 @@
     <param name="auto_exposure" type="bool" value="False" />
     <param name="exposure" type="double" value="0.0001" />
   </group>
-  <node name="fc3" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  <node name="fc3" pkg="wge100_camera" type="forearm_node" respawn="false" output="screen"/>
   
   <group ns="fc4">
     <param name="camera_url" type="str" value="serial://15"/>
@@ -57,7 +57,7 @@
     <param name="auto_exposure" type="bool" value="False" />
     <param name="exposure" type="double" value="0.0001" />
   </group>
-  <node name="fc4" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  <node name="fc4" pkg="wge100_camera" type="forearm_node" respawn="false" output="screen"/>
   
   <!--node name="fp1" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
     <remap from="camera" to="fc1"/>

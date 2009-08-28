@@ -96,14 +96,14 @@
 
 
 <!-- Forearm Camera -->
-  <node machine="three" name="forearm_cam_r" pkg="forearm_cam" type="forearm_node" respawn="true" output="screen">
+  <node machine="three" name="wge100_camera_r" pkg="wge100_camera" type="forearm_node" respawn="true" output="screen">
     <param name="camera_url" type="str" value="name://forearm_r"/>
     <param name="video_mode" type="str" value="640x480x30" />
     <param name="auto_exposure" type="bool" value="True" />
     <param name="exposure" type="double" value="0" />
     <param name="auto_gain" type="bool" value="True" />
     <param name="gain" type="int" value="32" />
-    <param name="frame_id" type="str" value="r_forearm_cam_optical_frame" />
+    <param name="frame_id" type="str" value="r_wge100_camera_optical_frame" />
     <param name="ext_trig" type="bool" value="False" />
     <param name="trig_controller" type="str" value="" />
     <param name="trig_rate" type="double" value="30" />

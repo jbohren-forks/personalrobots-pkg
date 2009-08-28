@@ -13,7 +13,7 @@
     <param name="do_colorize" type="bool" value="True"/>
     <param name="do_rectify" type="bool" value="False"/>
   </group>
-  <node name="forearm" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  <node name="forearm" pkg="wge100_camera" type="forearm_node" respawn="false" output="screen"/>
   <!--node name="forearm_proc" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
     <remap from="camera" to="forearm"/>
   </node-->

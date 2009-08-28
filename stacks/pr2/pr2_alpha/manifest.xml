@@ -27,7 +27,7 @@
   <depend package="robot_pose_ekf"/>
   <depend package="sound_play"/>
   <depend package="joint_calibration_monitor" />
-  <depend package="forearm_cam" />
+  <depend package="wge100_camera" />
   <depend package="robot_state_publisher" />
   <depend package="prosilica_camera" />
   <depend package="teleop_pr2" />

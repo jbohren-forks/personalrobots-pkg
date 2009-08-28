@@ -1,7 +1,7 @@
 #! /usr/bin/gnuplot
 set terminal gif
 set output "data/mode1out.gif"
-set title "/forearm_cam/image_raw delay"
+set title "/wge100_camera/image_raw delay"
 set xlabel "time (s)"  
 set ylabel "intensity (A.U.)
 set y2tics 

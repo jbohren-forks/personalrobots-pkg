@@ -1,7 +1,7 @@
 <launch>
-  <include file="$(find pr2_alpha)/prf_forearm_cam_config.launch"/>
-  <node name="forearm_cam_r" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  <include file="$(find pr2_alpha)/prf_wge100_camera_config.launch"/>
+  <node name="wge100_camera_r" pkg="wge100_camera" type="forearm_node" respawn="false" output="screen"/>
   <node name="forearm_proc_r" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
-    <remap from="camera" to="forearm_cam_r"/>
+    <remap from="camera" to="wge100_camera_r"/>
   </node>
 </launch>

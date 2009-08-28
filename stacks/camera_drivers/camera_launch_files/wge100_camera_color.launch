@@ -1,0 +1,19 @@
+<!-- 
+This launch file runs processes images form the wge100_camera_demo.launch file 
+in the wge100_camera package into color/rectified images. 
+
+You also need to run the wge100_camera_demo.launch file to get any output as
+this launch file does not start the camera.
+-->
+
+<launch>
+  <!--include file="$(find wge100_camera)/wge100_camera_demo.launch" /-->
+
+  <group ns="wge100_camera_demo">
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+  </group>
+  <node name="forearm_proc" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
+    <remap from="camera" to="wge100_camera_demo"/>
+  </node>
+</launch>
