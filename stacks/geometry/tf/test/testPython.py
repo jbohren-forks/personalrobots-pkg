@@ -71,14 +71,14 @@ class TestPython(unittest.TestCase):
         self.expect_exception(lambda: t.lookupTransform("MANDALAY", "JUPITER", rospy.Time()), tf.error)
 
     def test_smoke(self):
-        t = tf.Transformer(True, rospy.Duration(10.0))
+        t = tf.Transformer(True, rospy.Duration().from_seconds(10.0))
         self.common(t)
 
     def test_subclass(self):
         class TransformerSubclass(tf.Transformer):
             def extra(self):
               return 77
-        t = TransformerSubclass(True, rospy.Duration(10.0))
+        t = TransformerSubclass(True, rospy.Duration.from_seconds(10.0))
         self.assert_(t.extra() == 77)
         self.common(t)
         self.assert_(t.extra() == 77)
