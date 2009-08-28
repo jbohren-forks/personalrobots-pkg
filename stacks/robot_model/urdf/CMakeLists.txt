@@ -30,7 +30,7 @@ rosbuild_add_boost_directories()
 rosbuild_add_executable(parse_test test/parse_test.cpp)
 target_link_libraries(parse_test ${PROJECT_NAME})
 
-rosbuild_add_executable(test_parser test/test_robot_model_parser.cpp)
+rosbuild_add_executable(test_parser EXCLUDE_FROM_ALL test/test_robot_model_parser.cpp)
 rosbuild_add_gtest_build_flags(test_parser)
 target_link_libraries(test_parser ${PROJECT_NAME})
 rosbuild_add_rostest(${PROJECT_SOURCE_DIR}/test/test_robot_model_parser.launch)

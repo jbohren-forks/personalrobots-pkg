@@ -38,6 +38,10 @@
 #include <gtest/gtest.h>
 #include "urdf/model.h"
 
+// Including ros, just to be able to call ros::init(), to remove unwanted
+// args from command-line.
+#include <ros/ros.h>
+
 using namespace urdf;
 
 int g_argc;
@@ -66,13 +70,13 @@ protected:
 
 TEST_F(TestParser, test)
 {
-  for (int i=1; i<g_argc-1; i++){
+  for (int i=1; i<g_argc; i++){
     printf("\n\nprocessing file %d : %s\n",i,g_argv[i]);
     TiXmlDocument robot_model_xml;
     robot_model_xml.LoadFile(g_argv[i]);
     TiXmlElement *robot_xml = robot_model_xml.FirstChildElement("robot");
     ASSERT_TRUE(robot_xml != NULL);
-    if (i == g_argc-2)
+    if (i == g_argc-1)
       ASSERT_TRUE(robot.initXml(robot_xml));
     else
       ASSERT_FALSE(robot.initXml(robot_xml));
@@ -85,6 +89,8 @@ TEST_F(TestParser, test)
 
 int main(int argc, char** argv)
 {
+  // Calling ros::init(), just to remove unwanted args from command-line.
+  ros::init(argc, argv, "test", ros::init_options::AnonymousName);
   testing::InitGoogleTest(&argc, argv);
   g_argc = argc;
   g_argv = argv;
