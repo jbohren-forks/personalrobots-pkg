@@ -1,0 +1,44 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+
+<!-- controllers-->
+  <include file="$(find milestone2_actions)/config/controllers.xml" />
+
+
+<!-- perception-->
+  <include file="$(find doors_planner_core)/launch/perception_planner.xml" />
+
+
+<!-- navigation-->
+  <include file="$(find doors_planner_core)/launch/navigation_planner.xml" />
+
+
+<!-- door domain -->
+  <include file="$(find door_handle_detector)/launch/door_handle_detector.xml" />  
+  <include file="$(find doors_planner_core)/launch/door_actions.xml" />  
+
+<!-- Safety -->
+  <node machine="four" pkg="safety_core" type="run_tuck_arms" output="screen" respawn="true" />
+
+
+<!-- joystick -->
+  <param name="axis_vx" value="3" type="int"/>
+  <param name="axis_vy" value="2" type="int"/>
+  <param name="axis_vw" value="0" type="int"/>
+  <param name="pan" value="4" type="int"/>
+  <param name="tilt" value="5" type="int"/>
+  <param name="max_vw" value="1.0" />
+  <param name="max_vx" value="1.0" />
+  <param name="max_vy" value="1.0" />
+  <param name="deadman_button" value="4" type="int"/>
+  <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" respawn="true" machine="four" />
+
+
+<!-- robot pose ekf-->
+  <include file="$(find robot_pose_ekf)/robot_pose_ekf.launch" />
+
+
+  <node pkg="tf" machine="two" type="change_notifier"/>
+
+</launch>

@@ -1,0 +1,4 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+  <include file="$(find doors_planner_core)/launch/milestone2_planner.launch" />
+</launch>

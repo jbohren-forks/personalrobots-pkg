@@ -1,9 +1,9 @@
 <package>
   <description>
-    The highlevel controllers for the door domain
+    Door planning
   </description>
 
-  <author>Wim Meeussen</author>
+  <author>Sachin Chitta, Wim Meeussen</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com</url>
   <review status="experimental" notes="beta"/>
@@ -37,6 +37,8 @@
   <depend package="move_base"/>
   <depend package="move_base_msgs"/>
   <depend package="actionlib"/>
+
+  <depend package="sbpl_door_planner_action"/>
 
  <export>
     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib "/>

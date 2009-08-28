@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="doors_planner_core" type="action_runner_planner" output="screen" />
+</launch>
