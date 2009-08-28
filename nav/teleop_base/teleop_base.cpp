@@ -36,6 +36,8 @@
 #include "joy/Joy.h"
 #include "geometry_msgs/Twist.h"
 
+using namespace std;
+
 class TeleopBase 
 {
    public:
@@ -144,6 +146,12 @@ class TeleopBase
          else
             req_vw = 0.0;
 
+         // Enforce max/mins for velocity
+         // Joystick should be [-1, 1], but it might not be
+         req_vx = max(min(req_vx, vx), -vx);
+         req_vy = max(min(req_vy, vy), -vy);
+         req_vw = max(min(req_vw, vw), -vw);
+         
       }
 
       void send_cmd_vel()
