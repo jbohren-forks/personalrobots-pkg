@@ -27,7 +27,7 @@
   
 <!-- Safety -->
   <node machine="four" pkg="safety_core" type="run_detect_plug_on_base" respawn="false" />
-  <node machine="four" pkg="safety_core" type="run_tuck_arms" respawn="true" />
+  <node machine="four" pkg="safety_core" type="run_tuck_arms" respawn="false" />
 
 
 <!-- joystick -->
@@ -47,7 +47,7 @@
   <param name="torso_up_button" value="3" type="int" />
   <param name="joy_msg_timeout" value="100.0"/>
   <param name="deadman_button" value="4" type="int"/>
-  <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" respawn="true" machine="four"/>
+  <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" respawn="false" machine="four"/>
 
 
 <!-- Robot pose ekf -->

@@ -5,8 +5,8 @@
   <param name="light2"      textfile="$(find gazebo_worlds)/objects/light2.model" />
 
   <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="xml2factory" args="light" respawn="false" output="screen" />
-  <node pkg="gazebo_plugin" type="xml2factory" args="light2" respawn="false" output="screen" />
+  <node pkg="gazebo_plugin" type="xml2factory" args="light" respawn="false" />
+  <node pkg="gazebo_plugin" type="xml2factory" args="light2" respawn="false" />
   
 </launch>
 
