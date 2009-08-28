@@ -1,0 +1,10 @@
+
+<launch>
+    <node pkg="tabletop_objects" name="model_tracker" type="model_tracker" respawn="false" output="screen">
+        <remap from="stereo" to="narrow_stereo" />
+        <param name="display" type="bool" value="true" />
+        <param name="template_path"  value="$(find tabletop_objects)/meshes" />
+    </node>
+
+</launch>
+

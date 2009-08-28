@@ -2,7 +2,7 @@
 <launch>
 
  <node pkg="tabletop_objects" name="publish_scene" type="publish_scene" respawn="false" output="screen"/>
- <node pkg="tabletop_objects" type="publish_stereo_data.py" respawn="false" output="screen"/>
+ <node pkg="tabletop_objects" name="publish_scene_gui" type="publish_stereo_data.py" respawn="false" output="screen"/>
 
 </launch>
 

@@ -342,7 +342,6 @@ private:
 //	          return false;
 //	        }
 //			tf_.transformPose(target_frame_, grasp_pose, grasp_pose);
-			ROS_INFO("FindObjectPoses: Service returning");
 		}
 		return true;
 	}
@@ -1343,16 +1342,10 @@ public:
 		ROS_INFO_STREAM("Starting thread " << boost::this_thread::get_id());
 		ros::NodeHandle n;
 
-		ros::Duration d(0.1);
-		static int i=0;
+		ros::Rate r(10);
 		while (n.ok()) {
 			service_queue_.callAvailable();
-			d.sleep();
-			if (i==30) {
-				i=0;
-				ROS_INFO("service thread spinning");
-			}
-			ROS_INFO("service thread spinning");
+			r.sleep();
 		}
 	}
 
