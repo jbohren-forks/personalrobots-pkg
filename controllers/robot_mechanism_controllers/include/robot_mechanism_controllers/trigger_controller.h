@@ -40,6 +40,9 @@
 #include <mechanism_model/robot.h>
 #include <robot_mechanism_controllers/SetWaveform.h>
 #include "hardware_interface/hardware_interface.h"
+#include <realtime_tools/realtime_publisher.h>
+#include <roslib/Header.h>
+#include <boost/scoped_ptr.hpp>
 
 /** @class TriggerController
   * @brief Allows periodic triggering of cameras through the digital output
@@ -232,6 +235,11 @@ private:
   ros::ServiceServer set_waveform_handle_;
   ros::NodeHandle node_handle_;
   
+  boost::scoped_ptr<
+    realtime_tools::RealtimePublisher<
+      roslib::Header> > rising_edge_pub_, falling_edge_pub_;
+  int last_out_;
+
   // Configuration of controller.
   trigger_configuration config_;
   std::string actuator_name_;

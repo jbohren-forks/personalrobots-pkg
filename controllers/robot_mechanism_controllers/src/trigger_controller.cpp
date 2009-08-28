@@ -82,7 +82,8 @@ double TriggerController::getTick()
 
 void TriggerController::update()
 {
-  double tick = getTick();
+  double curtime = robot_->getTime();
+  double tick = getTick(curtime, config_);
   bool active = false;
 
   if (config_.running)
@@ -104,9 +105,37 @@ void TriggerController::update()
   //if (actuator_command_->digital_out_ && !(active ^ config_.active_low))
   //    ROS_DEBUG("digital out falling at time %f", robot_->getTime());
 
+  if (actuator_command_->digital_out_ != last_out_)
+    ROS_WARN("Contention on digital output %s. Is %i, expected %i.", actuator_name_.c_str(), actuator_command_->digital_out_, last_out_);
+  
   actuator_command_->digital_out_ = active ^ config_.active_low;
 
-  // ROS_INFO("digital out: %i (%s)", actuator_command_->digital_out_, actuator_name_.c_str());
+  if (last_out_ && !actuator_command_->digital_out_)
+  {
+    if (falling_edge_pub_ && falling_edge_pub_->trylock())
+    {
+      falling_edge_pub_->msg_.stamp = ros::Time(curtime);
+      falling_edge_pub_->unlockAndPublish();
+      ROS_DEBUG("Published rising edge from %s", actuator_name_.c_str());
+    }
+    else
+      ROS_WARN("Unable to publish on falling edge of TriggerController %s.", actuator_name_.c_str());
+  }
+  else if (!last_out_ && actuator_command_->digital_out_)
+  {
+    if (rising_edge_pub_ && rising_edge_pub_->trylock())
+    {
+      rising_edge_pub_->msg_.stamp = ros::Time(curtime);
+      rising_edge_pub_->unlockAndPublish();
+      ROS_DEBUG("Published falling edge from %s", actuator_name_.c_str());
+    }
+    else
+      ROS_WARN("Unable to publish on rising edge of TriggerController %s.", actuator_name_.c_str());
+  }
+  
+  //  ROS_INFO("digital out: %i (%s) %i", actuator_command_->digital_out_, actuator_name_.c_str(), last_out_);
+
+  last_out_ = actuator_command_->digital_out_;
 
   prev_tick_ = tick;
 }
@@ -140,26 +169,31 @@ bool TriggerController::init(mechanism::RobotState *robot, const ros::NodeHandle
   }
 
   actuator_command_ = &actuator->command_;
+  actuator_command_->digital_out_ = 0;
+  last_out_ = 0;
 
   // Get the startup configuration (pulsed or constant)
 
-  config_.rep_rate =  1;
-  config_.phase = 0;
-  config_.running = false;
-  config_.active_low = false;
-  config_.pulsed = true;
-  config_.duty_cycle = .5;
-
-  n.getParam("rep_rate", config_.rep_rate);
-  n.getParam("phase", config_.phase);
-  n.getParam("duty_cycle", config_.duty_cycle);
-  n.getParam("active_low", config_.active_low);
-  n.getParam("running", config_.running);
-  n.getParam("pulsed", config_.pulsed);
+#define bparam(name, var, val) \
+  {\
+    bool tmp;\
+    n.param(name, tmp, val);\
+    var = tmp;\
+  }
+  n.param("rep_rate", config_.rep_rate, 1.);
+  n.param("phase", config_.phase, 0.);
+  n.param("duty_cycle", config_.duty_cycle, .5);
+  bparam("active_low", config_.active_low, false);
+  bparam("running", config_.running, false);
+  bparam("pulsed", config_.pulsed, true);
+#undef bparam
 
   prev_tick_ = getTick();
 
   set_waveform_handle_ = node_handle_.advertiseService("set_waveform", &TriggerController::setWaveformSrv, this);
+
+  rising_edge_pub_.reset(new realtime_tools::RealtimePublisher<roslib::Header>(n, "rising_edge_timestamps", 10));
+  falling_edge_pub_.reset(new realtime_tools::RealtimePublisher<roslib::Header>(n, "falling_edge_timestamps", 10));
 
   ROS_DEBUG("TriggerController::init completed successfully"
       " rr=%f ph=%f al=%i r=%i p=%i dc=%f.",
