@@ -52,7 +52,6 @@ using namespace std;
 namespace controller
 {
 
-ROS_REGISTER_CONTROLLER(JointChainSineController)
 
 JointChainSineController::JointChainSineController():
   robot_state_(NULL),

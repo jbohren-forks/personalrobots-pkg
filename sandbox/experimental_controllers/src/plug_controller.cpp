@@ -48,7 +48,6 @@ using namespace KDL;
 
 namespace controller {
 
-ROS_REGISTER_CONTROLLER(PlugController)
 
 PlugController::PlugController() :
   outlet_pt_(1, 0, 0),
@@ -348,8 +347,6 @@ void PlugController::setToolOffset(const tf::Transform &tool_offset)
 }
 
 
-
-ROS_REGISTER_CONTROLLER(PlugControllerNode)
 
 
 PlugControllerNode::PlugControllerNode()

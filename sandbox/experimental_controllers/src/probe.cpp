@@ -32,7 +32,6 @@
 
 namespace controller {
 
-ROS_REGISTER_CONTROLLER(Probe)
 
 Probe::Probe()
   : robot_(NULL), joint_(NULL)

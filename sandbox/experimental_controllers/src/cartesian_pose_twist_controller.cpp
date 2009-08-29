@@ -47,7 +47,6 @@ using namespace std;
 
 namespace controller {
 
-ROS_REGISTER_CONTROLLER(CartesianPoseTwistController)
 
 CartesianPoseTwistController::CartesianPoseTwistController()
 : robot_state_(NULL),

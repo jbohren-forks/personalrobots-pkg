@@ -47,7 +47,6 @@ using namespace KDL;
 
 namespace controller {
 
-ROS_REGISTER_CONTROLLER(EndeffectorConstraintController)
 
 EndeffectorConstraintController::EndeffectorConstraintController()
 : jnt_to_jac_solver_(NULL),
@@ -327,8 +326,6 @@ void EndeffectorConstraintController::computeConstraintNullSpace()
 }
 
 
-
-ROS_REGISTER_CONTROLLER(EndeffectorConstraintControllerNode)
 
 
 EndeffectorConstraintControllerNode::EndeffectorConstraintControllerNode()

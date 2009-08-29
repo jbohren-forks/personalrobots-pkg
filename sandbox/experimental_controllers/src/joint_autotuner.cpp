@@ -37,7 +37,6 @@
 using namespace std;
 using namespace controller;
 #define POSITION 1
-ROS_REGISTER_CONTROLLER(JointAutotuner)
 
 JointAutotuner::JointAutotuner()
 {
@@ -306,7 +305,6 @@ void JointAutotuner::writeGainValues(double period, double amplitude, double rel
 
 /*
 
-ROS_REGISTER_CONTROLLER(JointAutotunerNode)
 JointAutotunerNode::JointAutotunerNode()
 {
   std::cout<<"Created autotuner\n";

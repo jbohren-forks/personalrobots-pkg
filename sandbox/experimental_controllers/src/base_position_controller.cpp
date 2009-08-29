@@ -37,7 +37,6 @@
 using namespace pr2_mechanism_controllers ;
 using namespace std ;
 
-ROS_REGISTER_CONTROLLER(BasePositionControllerNode)
 
 BasePositionControllerNode::BasePositionControllerNode() : node_(ros::Node::instance()), tf_(*node_)
 {

@@ -50,7 +50,6 @@ PLUGINLIB_REGISTER_CLASS(CartesianTrajectoryController, controller::CartesianTra
 
 namespace controller {
 
-ROS_REGISTER_CONTROLLER(CartesianTrajectoryController)
 
 CartesianTrajectoryController::CartesianTrajectoryController()
 : jnt_to_pose_solver_(NULL),

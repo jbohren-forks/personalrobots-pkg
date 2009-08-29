@@ -39,7 +39,6 @@
 using namespace controller;
 using namespace std;
 
-ROS_REGISTER_CONTROLLER(CartesianSplineTrajectoryController);
 
 CartesianSplineTrajectoryController::CartesianSplineTrajectoryController():num_joints_(0),num_controllers_(0)
 {

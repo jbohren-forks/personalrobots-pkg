@@ -154,7 +154,4 @@ private:
 
 };
 
-
-// @ TODO: remove macro call from controllers
-#define ROS_REGISTER_CONTROLLER(c)
 }

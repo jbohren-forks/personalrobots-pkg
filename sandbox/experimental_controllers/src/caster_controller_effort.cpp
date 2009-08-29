@@ -128,8 +128,6 @@ void CasterControllerEffort::update()
 
 
 
-ROS_REGISTER_CONTROLLER(CasterControllerEffortNode);
-
 CasterControllerEffortNode::CasterControllerEffortNode()
 {
 }

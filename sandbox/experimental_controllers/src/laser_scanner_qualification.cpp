@@ -48,7 +48,6 @@
 using namespace std;
 using namespace controller;
 //#define DEBUG 1
-ROS_REGISTER_CONTROLLER(LaserScannerQualification)
 
 LaserScannerQualification::LaserScannerQualification()
 {
@@ -267,7 +266,6 @@ void LaserScannerQualification::printStatus(LaserScannerQualification::TestStatu
   std::cout<<"\n";
 }
 
-ROS_REGISTER_CONTROLLER(LaserScannerQualificationNode)
 LaserScannerQualificationNode::LaserScannerQualificationNode()
 {
   c_ = new LaserScannerQualification();

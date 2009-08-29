@@ -38,7 +38,6 @@
 using namespace std;
 using namespace controller;
 
-ROS_REGISTER_CONTROLLER(JointBlindCalibrationController)
 
 JointBlindCalibrationController::JointBlindCalibrationController()
 : state_(INITIALIZED), joint_(NULL)
@@ -188,8 +187,6 @@ void JointBlindCalibrationController::update()
   vc_.update();
 }
 
-
-ROS_REGISTER_CONTROLLER(JointBlindCalibrationControllerNode)
 
 JointBlindCalibrationControllerNode::JointBlindCalibrationControllerNode()
 {

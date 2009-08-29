@@ -153,7 +153,6 @@ void CasterCalibrationControllerEffort::update()
 }
 
 
-ROS_REGISTER_CONTROLLER(CasterCalibrationControllerEffortNode)
 
 CasterCalibrationControllerEffortNode::CasterCalibrationControllerEffortNode()
 : last_publish_time_(0), pub_calibrated_(NULL)

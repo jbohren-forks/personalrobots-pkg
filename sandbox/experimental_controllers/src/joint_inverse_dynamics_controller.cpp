@@ -47,7 +47,6 @@ using namespace ros;
 namespace controller {
 
 
-ROS_REGISTER_CONTROLLER(JointInverseDynamicsController);
 
 JointInverseDynamicsController::JointInverseDynamicsController()
   :robot_state_(NULL),

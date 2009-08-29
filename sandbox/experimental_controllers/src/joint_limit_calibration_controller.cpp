@@ -178,7 +178,6 @@ void JointLimitCalibrationController::update()
 }
 
 
-ROS_REGISTER_CONTROLLER(JointLimitCalibrationControllerNode)
 
 JointLimitCalibrationControllerNode::JointLimitCalibrationControllerNode()
 : robot_(NULL), last_publish_time_(0)

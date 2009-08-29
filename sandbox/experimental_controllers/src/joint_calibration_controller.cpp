@@ -38,7 +38,6 @@
 using namespace std;
 using namespace controller;
 
-//ROS_REGISTER_CONTROLLER(JointCalibrationController)
 
 JointCalibrationController::JointCalibrationController()
   : state_(INITIALIZED), actuator_(NULL), joint_(NULL), transmission_(NULL)
@@ -165,7 +164,6 @@ void JointCalibrationController::update()
 }
 
 
-ROS_REGISTER_CONTROLLER(JointCalibrationControllerNode)
 
 JointCalibrationControllerNode::JointCalibrationControllerNode()
 : robot_(NULL), last_publish_time_(0), pub_calibrated_(NULL)
