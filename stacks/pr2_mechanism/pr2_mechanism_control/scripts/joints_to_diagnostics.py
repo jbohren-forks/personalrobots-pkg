@@ -26,10 +26,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import roslib; roslib.load_manifest('mechanism_control')
+import roslib; roslib.load_manifest('pr2_mechanism_control')
 import rospy
 
-from mechanism_msgs.msg import JointStates
+from pr2_mechanism_msgs.msg import JointStates
 from diagnostic_msgs.msg import *
 
 def joint_to_diag(js):
