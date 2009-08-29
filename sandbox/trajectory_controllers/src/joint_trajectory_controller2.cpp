@@ -41,7 +41,6 @@ PLUGINLIB_REGISTER_CLASS(JointTrajectoryController2, controller::JointTrajectory
 
 namespace controller {
 
-ROS_REGISTER_CONTROLLER(JointTrajectoryController2)
 
 JointTrajectoryController2::JointTrajectoryController2()
 : robot_(NULL)
