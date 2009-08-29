@@ -95,8 +95,8 @@
   </group>
 
 <!-- Forearm Camera -->
-  <include file="$(find pr2_alpha)/prf_wge100_camera_config.launch"/>
-  <node machine="three" name="wge100_camera_r" pkg="wge100_camera" type="forearm_node" respawn="false" output="screen"/>
+  <include file="$(find pr2_alpha)/prf_forearm_cam_config.launch"/>
+  <node machine="three" name="forearm_camera_r" pkg="wge100_camera" type="wge100_camera_node" respawn="false" output="screen"/>
 
 <!-- Sound  -->
   <node pkg="sound_play" type="soundplay_node.py" machine="four" />

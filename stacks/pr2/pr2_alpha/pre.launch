@@ -63,7 +63,7 @@
   <node machine="realtime" pkg="imu_node" type="imu_node" name="imu_node" output="screen"/>
 
 <!-- Forearm Cameras -->
-  <node machine="two" name="wge100_camera_r" pkg="wge100_camera" type="forearm_node" respawn="false" output="screen">
+  <node machine="two" name="forearm_camera_r" pkg="wge100_camera" type="wge100_camera_node" respawn="false" output="screen">
     <param name="camera_url" type="str" value="name://forearm_r"/>
     <param name="video_mode" type="str" value="640x480x30" />
     <param name="auto_exposure" type="bool" value="True" />
@@ -77,7 +77,7 @@
     <param name="trig_phase" type="int" value="0" />
   </node>
   
-  <node machine="two" name="wge100_camera_l" pkg="wge100_camera" type="forearm_node" respawn="false" output="screen">
+  <node machine="two" name="forearm_camera_l" pkg="wge100_camera" type="wge100_camera_node" respawn="false" output="screen">
     <param name="camera_url" type="str" value="name://forearm_l"/>
     <param name="video_mode" type="str" value="640x480x30" />
     <param name="auto_exposure" type="bool" value="True" />

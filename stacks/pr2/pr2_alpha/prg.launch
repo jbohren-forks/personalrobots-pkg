@@ -96,7 +96,7 @@
 
 
 <!-- Forearm Camera -->
-  <node machine="three" name="wge100_camera_r" pkg="wge100_camera" type="forearm_node" respawn="true" output="screen">
+  <node machine="three" name="forearm_camera_r" pkg="wge100_camera" type="wge100_camera_node" respawn="true" output="screen">
     <param name="camera_url" type="str" value="name://forearm_r"/>
     <param name="video_mode" type="str" value="640x480x30" />
     <param name="auto_exposure" type="bool" value="True" />

@@ -1,5 +1,5 @@
 <launch>
-  <group ns="wge100_camera_r">
+  <group ns="forearm_camera_r">
     <param name="camera_url" type="str" value="serial://3@10.68.0.68"/>
     <param name="video_mode" type="str" value="640x480x30"/>
     <param name="frame_id" type="str" value="r_wge100_camera_optical_frame"/>
