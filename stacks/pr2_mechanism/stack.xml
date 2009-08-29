@@ -7,8 +7,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/pr2_mechanism</url>
   
-
-  <!--depend stack="util"/--> <!-- realtime_tools --> 
   <depend stack="geometry"/> <!-- kdl, tf, bullet, angles --> 
   <depend stack="common"/> <!-- tinyxml, actionlib --> 
   <depend stack="ros"/> <!-- gtest, roscpp, rospy, rosconsole, std_msgs --> 
