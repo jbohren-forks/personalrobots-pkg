@@ -9,8 +9,6 @@
   <depend package="pr2_hardware_interface" />
   <depend package="pr2_mechanism_control" />
   <depend package="rostest" />
-  <depend package="hardware_interface" />
-  <depend package="mechanism_control" />
 
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
