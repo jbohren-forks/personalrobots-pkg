@@ -319,7 +319,7 @@ class DoorDatabase
 
       if(different_angle && (int) db.angles.size() < min_angles_per_door_)
       {
-        db.door.weight = (double)db.angles.size/(double) min_angles_per_door_;
+        db.door.weight = (double)db.angles.size()/(double) min_angles_per_door_;
         if(db.angles.size() == 1)
         {
           //check the hinge point
