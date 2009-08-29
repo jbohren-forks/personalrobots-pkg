@@ -40,7 +40,7 @@ import rospy
 import os
 
 from manipulation_msgs.msg import JointTraj, JointTrajPoint
-from mechanism_control import mechanism
+from pr2_mechanism_control import mechanism
 from robot_mechanism_controllers.srv import *
 
 import sys
