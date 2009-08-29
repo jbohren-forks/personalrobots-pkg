@@ -8,7 +8,7 @@
   <param name="action_name" value="move_base" />
 </node>
 
-<node pkg="move_base" type="move_base" name="move_base" output="screen" machine="four">
+<node pkg="move_base" type="move_base" name="move_base" machine="four">
   <remap from="odom" to="pr2_odometry/odom" />
 
   <param name="controller_frequency" value="10.0" />

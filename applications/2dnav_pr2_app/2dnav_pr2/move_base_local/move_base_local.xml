@@ -8,7 +8,7 @@
   <param name="action_name" value="move_base_local" />
 </node>
 
-<node pkg="move_base" type="move_base" respawn="false" name="move_base_local" output="screen" machine="three">
+<node pkg="move_base" type="move_base" respawn="false" name="move_base_local" machine="three">
   <remap from="odom" to="base/odom" />
   <param name="controller_frequency" value="10.0" />
 
