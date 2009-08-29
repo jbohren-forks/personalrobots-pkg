@@ -36,7 +36,7 @@
 
 #include <ros/node.h>
 
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 
 #include <manipulation_msgs/Waypoint.h>
 

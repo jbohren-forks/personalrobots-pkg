@@ -35,7 +35,7 @@
 // Original version: Melonee Wise <mwise@willowgarage.com>
 
 #include <experimental_controllers/head_servoing_controller.h>
-#include <mechanism_control/mechanism_control.h>
+#include <pr2_mechanism_control/mechanism_control.h>
 #include <cmath>
 #include <angles/angles.h>
 #include "pluginlib/class_list_macros.h"

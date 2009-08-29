@@ -33,7 +33,7 @@
 
 #include "experimental_controllers/cartesian_tff_controller.h"
 #include <algorithm>
-#include <mechanism_control/mechanism_control.h>
+#include <pr2_mechanism_control/mechanism_control.h>
 #include <kdl/chainfksolvervel_recursive.hpp>
 #include "pluginlib/class_list_macros.h"
 

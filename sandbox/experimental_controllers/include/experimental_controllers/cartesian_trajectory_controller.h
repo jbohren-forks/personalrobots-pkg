@@ -43,7 +43,7 @@
 #include <tf/message_notifier.h>
 #include <ros/node.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 #include <robot_mechanism_controllers/cartesian_pose_controller.h>
 #include <deprecated_srvs/MoveToPose.h>
 #include <std_srvs/Empty.h>

@@ -44,8 +44,8 @@
 
 #include "ros/node_handle.h"
 
-#include "controller_interface/controller.h"
-#include "mechanism_model/robot.h"
+#include "pr2_controller_interface/controller.h"
+#include "pr2_mechanism_model/robot.h"
 #include "control_toolbox/pid.h"
 #include "robot_mechanism_controllers/joint_velocity_controller.h"
 #include "std_msgs/Float64.h"

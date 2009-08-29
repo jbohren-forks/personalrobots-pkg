@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <mechanism_model/joint.h>
+#include <pr2_mechanism_model/joint.h>
 #include <map>
 #include <string>
 #include <vector>

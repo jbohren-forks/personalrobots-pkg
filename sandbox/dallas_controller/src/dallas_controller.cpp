@@ -29,7 +29,7 @@
 
 #include "dallas_controller/dallas_controller.h"
 #include "pluginlib/class_list_macros.h"
-#include "controller_interface/controller.h"
+#include "pr2_controller_interface/controller.h"
 #include <angles/angles.h>
 
 

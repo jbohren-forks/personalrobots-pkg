@@ -29,7 +29,7 @@
 
 // Author: Stuart Glaser, Wim Meeussen
 
-#include "mechanism_model/chain.h"
+#include "pr2_mechanism_model/chain.h"
 
 namespace mechanism {
 

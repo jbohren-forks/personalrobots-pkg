@@ -35,7 +35,7 @@
 #pragma once
 
 #include "ros/node_handle.h"
-#include "mechanism_model/robot.h"
+#include "pr2_mechanism_model/robot.h"
 #include "robot_mechanism_controllers/joint_velocity_controller.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/Empty.h"

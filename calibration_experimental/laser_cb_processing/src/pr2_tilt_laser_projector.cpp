@@ -35,10 +35,10 @@
 #include "ros/node_handle.h"
 #include "sensor_msgs/PointCloud.h"
 
-#include "mechanism_model/robot.h"
-#include "mechanism_model/chain.h"
+#include "pr2_mechanism_model/robot.h"
+#include "pr2_mechanism_model/chain.h"
 #include "tinyxml/tinyxml.h"
-#include "hardware_interface/hardware_interface.h"
+#include "pr2_hardware_interface/hardware_interface.h"
 
 #include "kdl/chainfksolverpos_recursive.hpp"
 

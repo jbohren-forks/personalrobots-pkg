@@ -1,7 +1,7 @@
 #include <rtt/TaskContext.hpp>
 #include <rtt/Ports.hpp>
 
-#include <mechanism_control/mechanism_control.h>
+#include <pr2_mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
 #include <ocl/ComponentLoader.hpp>
 

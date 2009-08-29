@@ -28,7 +28,7 @@
  */
 
 
-#include <mechanism_model/robot.h>
+#include <pr2_mechanism_model/robot.h>
 #include <pluginlib/class_list_macros.h>
 
 PLUGINLIB_REGISTER_CLASS(NonlinearTransmission, 

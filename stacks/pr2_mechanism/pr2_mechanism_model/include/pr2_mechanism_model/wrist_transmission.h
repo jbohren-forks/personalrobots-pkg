@@ -32,27 +32,52 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 /*
- * Author: Stuart Glaser
+ * Author: Melonee Wise
+
+   example xml:
+    <robot name="wrist_trans">
+      <joint name="right_wrist_flex_joint" type="revolute">
+        <limit min="-0.157" max="2.409" effort="5" velocity="5" />
+        <axis xyz="0 0 1" />
+      </joint>
+
+      <joint name="right_wrist_roll_joint" type="continuous">
+        <limit min="0.0" max="0.0" effort="5" velocity="5" />
+        <axis xyz="0 0 1" />
+      </joint>
+
+      <transmission type="WristTransmission" name="wrist_trans">
+        <rightActuator name="right_wrist_r_motor"/>
+        <leftActuator name="right_wrist_l_motor"/>
+        <flexJoint name="wrist_right_flex_joint" mechanicalReduction="60.17"/>
+        <rollJoint name="wrist_right_roll_joint" mechanicalReduction="60.17"/>
+      </transmission>
+    </robot>
  */
-#ifndef SIMPLE_TRANSMISSION_H
-#define SIMPLE_TRANSMISSION_H
+#ifndef WRIST_TRANSMISSION_H
+#define WRIST_TRANSMISSION_H
 
 #include <tinyxml/tinyxml.h>
-#include "mechanism_model/transmission.h"
-#include "mechanism_model/joint.h"
-#include "hardware_interface/hardware_interface.h"
+#include "pr2_mechanism_model/transmission.h"
+#include "pr2_mechanism_model/joint.h"
+#include "pr2_hardware_interface/hardware_interface.h"
 
 namespace mechanism {
 
-class SimpleTransmission : public Transmission
+class WristTransmission : public Transmission
 {
 public:
-  SimpleTransmission() {}
-  ~SimpleTransmission() {}
+  WristTransmission() {}
+  ~WristTransmission() {}
 
   bool initXml(TiXmlElement *config, Robot *robot);
 
-  double mechanical_reduction_;
+  std::vector<double> mechanical_reduction_;
+
+  // Describes the order of the actuators and the joints in the arrays
+  // of names and of those passed to propagate*
+  enum { RIGHT_MOTOR, LEFT_MOTOR };
+  enum { FLEX_JOINT, ROLL_JOINT };
 
   void propagatePosition(std::vector<Actuator*>&, std::vector<JointState*>&);
   void propagatePositionBackwards(std::vector<JointState*>&, std::vector<Actuator*>&);

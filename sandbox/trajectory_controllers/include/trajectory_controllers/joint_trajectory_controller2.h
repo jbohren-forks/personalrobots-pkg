@@ -50,8 +50,8 @@
 #include <boost/thread/recursive_mutex.hpp>
 #include <ros/node_handle.h>
 #include <control_toolbox/pid.h>
-#include <mechanism_control/recorder.h>
-#include <controller_interface/controller.h>
+#include <pr2_mechanism_control/recorder.h>
+#include <pr2_controller_interface/controller.h>
 #include <realtime_tools/realtime_infuser.h>
 
 #include "trajectory_controllers/Trajectory.h"

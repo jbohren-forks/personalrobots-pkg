@@ -37,7 +37,7 @@ roslib.load_manifest('pr2_mechanism_control')
 
 import rospy, sys
 import os.path
-from mechanism_control import mechanism
+from pr2_mechanism_control import mechanism
 from pr2_mechanism_msgs.srv import SpawnController, KillController, SwitchController
 
 from xml.dom.minidom import parse, parseString

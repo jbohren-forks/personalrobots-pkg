@@ -53,7 +53,6 @@ namespace dynamics_estimation
 
 DynamicsEstimationNode::DynamicsEstimationNode():
   use_bag_file_(false),
-  hardware_interface_(0),
   finished_data_collection_(false)
 {
 

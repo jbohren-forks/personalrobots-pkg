@@ -43,8 +43,8 @@
 #include <kdl/chainiksolver.hpp>
 #include <ros/node.h>
 #include <geometry_msgs/Twist.h>
-#include <controller_interface/controller.h>
-#include <mechanism_model/chain.h>
+#include <pr2_controller_interface/controller.h>
+#include <pr2_mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
 #include <control_toolbox/pid.h>
 #include <experimental_controllers/joint_inverse_dynamics_controller.h>

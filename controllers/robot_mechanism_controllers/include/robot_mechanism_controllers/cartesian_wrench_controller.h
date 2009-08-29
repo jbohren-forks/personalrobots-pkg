@@ -60,8 +60,8 @@
 #include <kdl/chainjnttojacsolver.hpp>
 #include <ros/node_handle.h>
 #include <geometry_msgs/Wrench.h>
-#include <controller_interface/controller.h>
-#include <mechanism_model/chain.h>
+#include <pr2_controller_interface/controller.h>
+#include <pr2_mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <boost/scoped_ptr.hpp>

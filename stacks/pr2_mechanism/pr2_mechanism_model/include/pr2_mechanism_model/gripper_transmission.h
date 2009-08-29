@@ -46,8 +46,8 @@
 
 #include <vector>
 #include "tinyxml/tinyxml.h"
-#include "mechanism_model/transmission.h"
-#include "mechanism_model/robot.h"
+#include "pr2_mechanism_model/transmission.h"
+#include "pr2_mechanism_model/robot.h"
 
 namespace mechanism {
 

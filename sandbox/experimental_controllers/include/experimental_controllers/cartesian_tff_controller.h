@@ -41,7 +41,7 @@
 #include <ros/node.h>
 #include <manipulation_msgs/TaskFrameFormalism.h>
 #include <geometry_msgs/Twist.h>
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 #include <tf/transform_datatypes.h>
 #include <control_toolbox/pid.h>
 #include <boost/scoped_ptr.hpp>

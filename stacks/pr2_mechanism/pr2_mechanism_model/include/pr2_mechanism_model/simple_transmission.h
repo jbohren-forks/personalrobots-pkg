@@ -34,47 +34,30 @@
 /*
  * Author: Stuart Glaser
  */
-#ifndef TRANSMISSION_H
-#define TRANSMISSION_H
+#ifndef SIMPLE_TRANSMISSION_H
+#define SIMPLE_TRANSMISSION_H
 
 #include <tinyxml/tinyxml.h>
-#include "mechanism_model/joint.h"
-#include "hardware_interface/hardware_interface.h"
+#include "pr2_mechanism_model/transmission.h"
+#include "pr2_mechanism_model/joint.h"
+#include "pr2_hardware_interface/hardware_interface.h"
 
 namespace mechanism {
 
-class Robot;
-
-class Transmission
+class SimpleTransmission : public Transmission
 {
 public:
-  Transmission() {}
-  virtual ~Transmission() {}
+  SimpleTransmission() {}
+  ~SimpleTransmission() {}
 
-  // Initializes the transmission from XML data
-  virtual bool initXml(TiXmlElement *config, Robot *robot) = 0;
+  bool initXml(TiXmlElement *config, Robot *robot);
 
-  // Uses encoder data to fill out joint position and velocities
-  virtual void propagatePosition(std::vector<Actuator*>&, std::vector<JointState*>&) = 0;
+  double mechanical_reduction_;
 
-  // Uses the joint position to fill out the actuator's encoder.
-  virtual void propagatePositionBackwards(std::vector<JointState*>&, std::vector<Actuator*>&) = 0;
-
-  // Uses commanded joint efforts to fill out commanded motor currents
-  virtual void propagateEffort(std::vector<JointState*>&, std::vector<Actuator*>&) = 0;
-
-  // Uses the actuator's commanded effort to fill out the torque on
-  // the joint.
-  virtual void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&) = 0;
-
-  std::string name_;
-
-  // Specifies the names of the actuators and joints that this
-  // transmission uses.  In the propagate* methods, the order of
-  // actuators and joints in the parameters matches the order in
-  // actuator_names_ and in joint_names_.
-  std::vector<std::string> actuator_names_;
-  std::vector<std::string> joint_names_;
+  void propagatePosition(std::vector<Actuator*>&, std::vector<JointState*>&);
+  void propagatePositionBackwards(std::vector<JointState*>&, std::vector<Actuator*>&);
+  void propagateEffort(std::vector<JointState*>&, std::vector<Actuator*>&);
+  void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&);
 };
 
 } // namespace mechanism

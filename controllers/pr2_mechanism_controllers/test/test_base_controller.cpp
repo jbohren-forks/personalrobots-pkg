@@ -1,7 +1,7 @@
 
 #include <pr2_mechanism_controllers/base_controller.h>
 #include <hardware_interface/hardware_interface.h>
-#include <mechanism_model/robot.h>
+#include <pr2_mechanism_model/robot.h>
 #include <urdf/parser.h>
 #include <ros/node.h>
 

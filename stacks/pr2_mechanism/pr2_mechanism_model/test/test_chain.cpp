@@ -30,8 +30,8 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include <boost/scoped_ptr.hpp>
-#include "mechanism_model/robot.h"
-#include "mechanism_model/chain.h"
+#include "pr2_mechanism_model/robot.h"
+#include "pr2_mechanism_model/chain.h"
 #include <kdl/chainfksolverpos_recursive.hpp>
 
 using namespace mechanism;

@@ -36,7 +36,7 @@
 
 #include <vector>
 #include "boost/scoped_ptr.hpp"
-#include "mechanism_model/chain.h"
+#include "pr2_mechanism_model/chain.h"
 #include "kdl/chain.hpp"
 #include "kdl/frames.hpp"
 #include "kdl/chainfksolver.hpp"
@@ -44,7 +44,7 @@
 #include "ros/node.h"
 #include "geometry_msgs/Wrench.h"
 #include "misc_utils/subscription_guard.h"
-#include "controller_interface/controller.h"
+#include "pr2_controller_interface/controller.h"
 #include "tf/transform_datatypes.h"
 #include "misc_utils/advertised_service_guard.h"
 #include "joy/Joy.h"

@@ -36,11 +36,11 @@
  * Author: Stuart Glaser
  */
 
-#include "mechanism_model/link.h"
+#include "pr2_mechanism_model/link.h"
 #include <map>
 #include <string>
 #include <memory>
-#include "mechanism_model/robot.h"
+#include "pr2_mechanism_model/robot.h"
 #include "urdf/parser.h"
 
 

@@ -6,7 +6,9 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/pr2_controller_interface</url>
+
   <depend package="roscpp"/>
+  <depend package="pr2_mechanism_model"/>
 
   <export>
     <cpp cflags='-I${prefix}/include'

@@ -50,9 +50,9 @@
 #include <map>
 #include <string>
 #include <kdl/tree.hpp>
-#include "mechanism_model/joint.h"
-#include "mechanism_model/transmission.h"
-#include "hardware_interface/hardware_interface.h"
+#include "pr2_mechanism_model/joint.h"
+#include "pr2_mechanism_model/transmission.h"
+#include "pr2_hardware_interface/hardware_interface.h"
 
 class TiXmlElement;
 

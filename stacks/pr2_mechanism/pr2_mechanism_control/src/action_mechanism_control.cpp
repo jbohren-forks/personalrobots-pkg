@@ -33,7 +33,7 @@
  *********************************************************************/
 
 
-#include "mechanism_control/action_mechanism_control.h"
+#include "pr2_mechanism_control/action_mechanism_control.h"
 
 
 using namespace ros;
@@ -87,7 +87,7 @@ void ActionMechanismControl::execute(const SwitchControllerGoalConstPtr& switch_
 
 int main(int argc, char** argv)
 {
-  ros::init(argc,argv,"mechanism_control_action_container");
+  ros::init(argc,argv,"pr2_mechanism_control_action_container");
 
   mechanism_control::ActionMechanismControl act;
 

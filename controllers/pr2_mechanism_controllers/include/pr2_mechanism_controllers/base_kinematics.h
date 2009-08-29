@@ -38,8 +38,8 @@
 #ifndef PR2_BASE_KINEMATICS_H
 #define PR2_BASE_KINEMATICS_H
 
-#include <mechanism_model/robot.h>
-#include <controller_interface/controller.h>
+#include <pr2_mechanism_model/robot.h>
+#include <pr2_controller_interface/controller.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Point.h>
 #include <control_toolbox/filters.h>

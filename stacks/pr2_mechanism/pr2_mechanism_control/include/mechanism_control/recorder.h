@@ -36,7 +36,7 @@
 #include <boost/thread/thread.hpp>
 
 #include "ros/node_handle.h"
-#include "mechanism_model/robot.h"
+#include "pr2_mechanism_model/robot.h"
 
 #include "pr2_mechanism_msgs/BufferedData.h"
 

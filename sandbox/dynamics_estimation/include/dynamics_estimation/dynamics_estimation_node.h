@@ -41,9 +41,8 @@
 #include <pr2_mechanism_msgs/MechanismState.h>
 #include <vector>
 #include <dynamics_estimation/trajectory_point.h>
-#include <mechanism_model/robot.h>
-#include <mechanism_model/chain.h>
-#include <hardware_interface/hardware_interface.h>
+#include <pr2_mechanism_model/robot.h>
+#include <pr2_mechanism_model/chain.h>
 #include <kdl/chain.hpp>
 #include <Eigen/Core>
 
@@ -96,7 +95,6 @@ private:
   std::string bag_file_;                                /**< Bag file to load trajectory data from */
   bool use_bag_file_;                                   /**< Should I load data from a bag file or listen to mechanism_state? */
 
-  HardwareInterface hardware_interface_;                /**< Hardware interface, for creating the mechanism_chain_ */
   mechanism::Chain mechanism_chain_;                    /**< Mechanism chain */
   KDL::Chain kdl_chain_;                                /**< KDL chain */
   int num_joints_;                                      /**< Number of actuated joints */

@@ -37,7 +37,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/accumulators/accumulators.hpp>

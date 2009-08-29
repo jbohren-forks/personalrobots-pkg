@@ -5,7 +5,7 @@ import roslib, time
 roslib.load_manifest('pr2_mechanism_control')
 
 import rospy, sys
-from mechanism_control import mechanism
+from pr2_mechanism_control import mechanism
 from pr2_mechanism_msgs.msg import MechanismState
 
 

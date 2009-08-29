@@ -34,7 +34,7 @@
 
 
 #include <algorithm>
-#include <mechanism_control/mechanism_control.h>
+#include <pr2_mechanism_control/mechanism_control.h>
 #include "kdl/chainfksolverpos_recursive.hpp"
 #include "experimental_controllers/cartesian_pose_twist_controller.h"
 #include "kdl/chainfksolvervel_recursive.hpp"

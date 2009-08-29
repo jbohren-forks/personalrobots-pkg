@@ -36,7 +36,7 @@
 
 #include <vector>
 #include "boost/scoped_ptr.hpp"
-#include "mechanism_model/chain.h"
+#include "pr2_mechanism_model/chain.h"
 #include "kdl/chain.hpp"
 #include "kdl/frames.hpp"
 #include "kdl/chainfksolver.hpp"
@@ -49,7 +49,7 @@
 #include "robot_srvs/SetPoseStamped.h"
 #include "control_toolbox/pid.h"
 #include "misc_utils/subscription_guard.h"
-#include "controller_interface/controller.h"
+#include "pr2_controller_interface/controller.h"
 #include "tf/transform_datatypes.h"
 #include "tf/transform_listener.h"
 #include "misc_utils/advertised_service_guard.h"

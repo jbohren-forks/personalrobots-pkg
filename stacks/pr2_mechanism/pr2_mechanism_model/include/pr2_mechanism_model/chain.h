@@ -32,7 +32,7 @@
 #ifndef MECHANISM_MODEL_CHAIN_H
 #define MECHANISM_MODEL_CHAIN_H
 
-#include "mechanism_model/robot.h"
+#include "pr2_mechanism_model/robot.h"
 #include <kdl/chain.hpp>
 #include <kdl/jntarray.hpp>
 #include <kdl/jntarrayvel.hpp>

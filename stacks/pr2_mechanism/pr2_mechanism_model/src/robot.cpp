@@ -31,8 +31,8 @@
  * Author: Stuart Glaser, Wim Meeussen
  */
 
-#include "mechanism_model/robot.h"
-#include "mechanism_model/transmission.h"
+#include "pr2_mechanism_model/robot.h"
+#include "pr2_mechanism_model/transmission.h"
 #include <tinyxml/tinyxml.h>
 #include <kdl_parser/dom_parser.hpp>
 #include <urdf/model.h>

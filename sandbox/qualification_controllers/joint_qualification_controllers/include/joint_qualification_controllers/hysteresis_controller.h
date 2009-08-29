@@ -49,7 +49,7 @@
 #include <math.h>
 #include <joint_qualification_controllers/TestData.h>
 #include <realtime_tools/realtime_srv_call.h>
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 #include <boost/scoped_ptr.hpp>
 

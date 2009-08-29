@@ -77,7 +77,7 @@
 #include <ros/node.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <boost/scoped_ptr.hpp>
 #include "robot_mechanism_controllers/cartesian_twist_controller.h"

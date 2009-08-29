@@ -45,7 +45,7 @@
 
 #include "robot_mechanism_controllers/joint_velocity_controller.h"
 #include "realtime_tools/realtime_publisher.h"
-#include "mechanism_model/wrist_transmission.h"
+#include "pr2_mechanism_model/wrist_transmission.h"
 #include "std_msgs/Empty.h"
 
 namespace controller {

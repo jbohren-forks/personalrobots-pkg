@@ -58,10 +58,10 @@
 #ifndef JOINT_CHAIN_SINE_CONTROLLER_H_
 #define JOINT_CHAIN_SINE_CONTROLLER_H_
 
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 #include <kdl/chain.hpp>
 #include <kdl/chainfksolver.hpp>
-#include <mechanism_model/chain.h>
+#include <pr2_mechanism_model/chain.h>
 #include <string>
 #include <vector>
 #include <control_toolbox/sinusoid.h>

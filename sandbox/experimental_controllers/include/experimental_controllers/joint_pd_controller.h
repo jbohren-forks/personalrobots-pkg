@@ -56,7 +56,7 @@
 #include <control_toolbox/pid.h>
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"
-#include <mechanism_model/robot.h>
+#include <pr2_mechanism_model/robot.h>
 
 // Services
 #include <experimental_controllers/SetPDCommand.h>

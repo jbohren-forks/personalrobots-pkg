@@ -34,8 +34,8 @@
 #include <fcntl.h>
 
 #include <ros/node_handle.h>
-#include <mechanism_controller_test/null_hardware.h>
-#include <mechanism_control/mechanism_control.h>
+#include <pr2_mechanism_controller_test/null_hardware.h>
+#include <pr2_mechanism_control/mechanism_control.h>
 
 
 static struct

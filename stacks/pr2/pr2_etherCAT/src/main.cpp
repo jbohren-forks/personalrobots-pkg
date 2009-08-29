@@ -43,7 +43,7 @@
 #include <fcntl.h>
 
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
-#include <mechanism_control/mechanism_control.h>
+#include <pr2_mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
 
 #include <ros/ros.h>

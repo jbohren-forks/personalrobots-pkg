@@ -28,7 +28,7 @@
  * Author: Wim Meeussen
  */
 
-#include "mechanism_control/scheduler.h"
+#include "pr2_mechanism_control/scheduler.h"
 
 using namespace std;
 

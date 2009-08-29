@@ -32,57 +32,49 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 /*
- * Author: Melonee Wise
-
-   example xml:
-    <robot name="wrist_trans">
-      <joint name="right_wrist_flex_joint" type="revolute">
-        <limit min="-0.157" max="2.409" effort="5" velocity="5" />
-        <axis xyz="0 0 1" />
-      </joint>
-
-      <joint name="right_wrist_roll_joint" type="continuous">
-        <limit min="0.0" max="0.0" effort="5" velocity="5" />
-        <axis xyz="0 0 1" />
-      </joint>
-
-      <transmission type="WristTransmission" name="wrist_trans">
-        <rightActuator name="right_wrist_r_motor"/>
-        <leftActuator name="right_wrist_l_motor"/>
-        <flexJoint name="wrist_right_flex_joint" mechanicalReduction="60.17"/>
-        <rollJoint name="wrist_right_roll_joint" mechanicalReduction="60.17"/>
-      </transmission>
-    </robot>
+ * Author: Stuart Glaser
  */
-#ifndef WRIST_TRANSMISSION_H
-#define WRIST_TRANSMISSION_H
+#ifndef TRANSMISSION_H
+#define TRANSMISSION_H
 
 #include <tinyxml/tinyxml.h>
-#include "mechanism_model/transmission.h"
-#include "mechanism_model/joint.h"
-#include "hardware_interface/hardware_interface.h"
+#include "pr2_mechanism_model/joint.h"
+#include "pr2_hardware_interface/hardware_interface.h"
 
 namespace mechanism {
 
-class WristTransmission : public Transmission
+class Robot;
+
+class Transmission
 {
 public:
-  WristTransmission() {}
-  ~WristTransmission() {}
+  Transmission() {}
+  virtual ~Transmission() {}
 
-  bool initXml(TiXmlElement *config, Robot *robot);
+  // Initializes the transmission from XML data
+  virtual bool initXml(TiXmlElement *config, Robot *robot) = 0;
 
-  std::vector<double> mechanical_reduction_;
+  // Uses encoder data to fill out joint position and velocities
+  virtual void propagatePosition(std::vector<Actuator*>&, std::vector<JointState*>&) = 0;
 
-  // Describes the order of the actuators and the joints in the arrays
-  // of names and of those passed to propagate*
-  enum { RIGHT_MOTOR, LEFT_MOTOR };
-  enum { FLEX_JOINT, ROLL_JOINT };
+  // Uses the joint position to fill out the actuator's encoder.
+  virtual void propagatePositionBackwards(std::vector<JointState*>&, std::vector<Actuator*>&) = 0;
 
-  void propagatePosition(std::vector<Actuator*>&, std::vector<JointState*>&);
-  void propagatePositionBackwards(std::vector<JointState*>&, std::vector<Actuator*>&);
-  void propagateEffort(std::vector<JointState*>&, std::vector<Actuator*>&);
-  void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&);
+  // Uses commanded joint efforts to fill out commanded motor currents
+  virtual void propagateEffort(std::vector<JointState*>&, std::vector<Actuator*>&) = 0;
+
+  // Uses the actuator's commanded effort to fill out the torque on
+  // the joint.
+  virtual void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&) = 0;
+
+  std::string name_;
+
+  // Specifies the names of the actuators and joints that this
+  // transmission uses.  In the propagate* methods, the order of
+  // actuators and joints in the parameters matches the order in
+  // actuator_names_ and in joint_names_.
+  std::vector<std::string> actuator_names_;
+  std::vector<std::string> joint_names_;
 };
 
 } // namespace mechanism

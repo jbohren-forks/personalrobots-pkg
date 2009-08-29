@@ -43,8 +43,8 @@
 /***************************************************/
 
 #include <ros/node_handle.h>
-#include <mechanism_model/robot.h>
-#include "controller_interface/controller_provider.h"
+#include <pr2_mechanism_model/robot.h>
+#include "pr2_controller_interface/controller_provider.h"
 
 
 namespace controller

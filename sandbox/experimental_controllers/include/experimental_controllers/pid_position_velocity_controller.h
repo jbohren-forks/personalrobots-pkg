@@ -64,7 +64,7 @@
 #include <ros/node_handle.h>
 #include <boost/scoped_ptr.hpp>
 
-#include "controller_interface/controller.h"
+#include "pr2_controller_interface/controller.h"
 #include "control_toolbox/pid.h"
 #include "control_toolbox/pid_gains_setter.h"
 #include "misc_utils/advertised_service_guard.h"

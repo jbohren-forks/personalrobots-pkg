@@ -37,13 +37,13 @@
 #include <vector>
 #include "ros/ros.h"
 #include "roslib/Time.h"
-#include "mechanism_control/controller_spec.h"
+#include "pr2_mechanism_control/controller_spec.h"
 #include <tinyxml/tinyxml.h>
-#include <hardware_interface/hardware_interface.h>
-#include <mechanism_model/robot.h>
+#include <pr2_hardware_interface/hardware_interface.h>
+#include <pr2_mechanism_model/robot.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <ros/node.h>
-#include <controller_interface/controller_provider.h>
+#include <pr2_controller_interface/controller_provider.h>
 #include "pluginlib/class_loader.h"
 #include <pr2_mechanism_msgs/ListControllerTypes.h>
 #include <pr2_mechanism_msgs/ListControllers.h>

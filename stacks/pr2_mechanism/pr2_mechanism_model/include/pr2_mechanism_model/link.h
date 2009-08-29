@@ -34,7 +34,7 @@
 #ifndef MECHANISM_LINK_H
 #define MECHANISM_LINK_H
 
-#include "mechanism_model/joint.h"
+#include "pr2_mechanism_model/joint.h"
 #include <vector>
 #include "boost/scoped_ptr.hpp"
 #include "tf/transform_datatypes.h"

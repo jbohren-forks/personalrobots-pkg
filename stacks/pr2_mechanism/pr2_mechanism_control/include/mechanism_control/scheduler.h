@@ -34,7 +34,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "mechanism_control/controller_spec.h"
+#include "pr2_mechanism_control/controller_spec.h"
 
 bool scheduleControllers(const std::vector<ControllerSpec>& c, std::vector<size_t>& schedule);
 

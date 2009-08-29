@@ -67,7 +67,7 @@
 #include <kdl/frames.hpp>
 #include <ros/node.h>
 #include <geometry_msgs/Twist.h>
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 #include <tf/transform_datatypes.h>
 #include <robot_mechanism_controllers/cartesian_wrench_controller.h>
 #include <control_toolbox/pid.h>

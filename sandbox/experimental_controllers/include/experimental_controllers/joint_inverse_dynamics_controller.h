@@ -46,8 +46,8 @@
 
 #include <ros/node.h>
 #include <std_msgs/Float64MultiArray.h>
-#include <controller_interface/controller.h>
-#include <mechanism_model/chain.h>
+#include <pr2_controller_interface/controller.h>
+#include <pr2_mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
 #include <realtime_tools/realtime_publisher.h>

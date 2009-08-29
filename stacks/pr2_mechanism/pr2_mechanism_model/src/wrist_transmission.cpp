@@ -36,8 +36,8 @@
  */
 #include <math.h>
 #include <pluginlib/class_list_macros.h>
-#include "mechanism_model/robot.h"
-#include "mechanism_model/wrist_transmission.h"
+#include "pr2_mechanism_model/robot.h"
+#include "pr2_mechanism_model/wrist_transmission.h"
 
 using namespace mechanism;
 

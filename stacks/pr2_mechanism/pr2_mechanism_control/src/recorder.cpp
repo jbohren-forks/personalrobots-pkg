@@ -29,7 +29,7 @@
 
 // Author: Stuart Glaser
 
-#include "mechanism_control/recorder.h"
+#include "pr2_mechanism_control/recorder.h"
 
 namespace mechanism {
 

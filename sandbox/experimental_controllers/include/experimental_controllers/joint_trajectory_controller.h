@@ -37,7 +37,7 @@
 #include <ros/node.h>
 #include <boost/thread/mutex.hpp>
 
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 #include <experimental_controllers/joint_pd_controller.h>
 
 // Services

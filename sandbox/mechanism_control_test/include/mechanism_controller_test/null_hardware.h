@@ -1,7 +1,7 @@
 #ifndef NULL_HARDWARE_H
 #define NULL_HARDWARE_H
 
-#include <hardware_interface/hardware_interface.h>
+#include <pr2_hardware_interface/hardware_interface.h>
 #include <tinyxml/tinyxml.h>
 
 class NullHardware

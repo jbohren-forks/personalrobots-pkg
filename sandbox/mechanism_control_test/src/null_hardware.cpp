@@ -1,4 +1,4 @@
-#include <mechanism_controller_test/null_hardware.h>
+#include <pr2_mechanism_controller_test/null_hardware.h>
 
 NullHardware::NullHardware(){
   hw_ = new HardwareInterface(0);

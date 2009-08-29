@@ -36,10 +36,9 @@
 #define TRIGGER_CONTROLLER_H
 
 #include <ros/node.h>
-#include <controller_interface/controller.h>
-#include <mechanism_model/robot.h>
+#include <pr2_controller_interface/controller.h>
+#include <pr2_mechanism_model/robot.h>
 #include <robot_mechanism_controllers/SetWaveform.h>
-#include "hardware_interface/hardware_interface.h"
 #include <realtime_tools/realtime_publisher.h>
 #include <roslib/Header.h>
 #include <boost/scoped_ptr.hpp>

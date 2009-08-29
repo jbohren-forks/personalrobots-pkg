@@ -31,7 +31,7 @@
  * Author: Stuart Glaser
  */
 
-#include "mechanism_model/gripper_transmission.h"
+#include "pr2_mechanism_model/gripper_transmission.h"
 #include <pluginlib/class_list_macros.h>
 #include <algorithm>
 #include <numeric>

@@ -32,10 +32,10 @@
 
 #include "ros/node.h"
 #include "boost/scoped_ptr.hpp"
-#include "controller_interface/controller.h"
+#include "pr2_controller_interface/controller.h"
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
-#include "mechanism_model/chain.h"
+#include "pr2_mechanism_model/chain.h"
 #include "control_toolbox/pid.h"
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>

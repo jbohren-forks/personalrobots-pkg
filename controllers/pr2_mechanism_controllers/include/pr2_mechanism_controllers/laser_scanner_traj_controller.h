@@ -36,7 +36,7 @@
 
 #include <ros/node.h>
 
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 #include <control_toolbox/pid.h>
 //#include <robot_mechanism_controllers/joint_position_smoothing_controller.h>
 

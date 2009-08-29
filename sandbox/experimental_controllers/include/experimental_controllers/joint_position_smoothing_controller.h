@@ -53,7 +53,7 @@
 
 #include <ros/node.h>
 
-#include <controller_interface/controller.h>
+#include <pr2_controller_interface/controller.h>
 #include <control_toolbox/pid.h>
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"

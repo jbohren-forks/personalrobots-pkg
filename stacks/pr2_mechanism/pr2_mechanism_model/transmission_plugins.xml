@@ -1,4 +1,4 @@
-<library path="lib/libmechanism_model">
+<library path="lib/libpr2_mechanism_model">
   <class name="NonlinearTransmission" type="mechanism::NonlinearTransmission" base_class_type="mechanism::Transmission">
   <description>
   This is a rectangle plugin
