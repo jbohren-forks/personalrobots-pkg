@@ -54,7 +54,6 @@
 #include <pr2_mechanism_msgs/JointStates.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
 
-typedef controller::Controller* (*ControllerAllocator)();
 
 namespace controller{
 
