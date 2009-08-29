@@ -49,14 +49,14 @@
 #include <ros/console.h>
 #include <ros/time.h>
 
-#include <forearm_cam/ipcam_packet.h>
-#include <forearm_cam/host_netutil.h>
-#include <forearm_cam/fcamlib.h>
+#include <wge100_camera/ipcam_packet.h>
+#include <wge100_camera/host_netutil.h>
+#include <wge100_camera/fcamlib.h>
 
-class ForearmCameraSimulator
+class WGE100Simulator
 {
 public:
-  ForearmCameraSimulator(uint32_t serial) : serial_no_(serial)
+  WGE100Simulator(uint32_t serial) : serial_no_(serial)
   {                      
     in_addr in_addr;
     in_addr.s_addr = 0;
@@ -71,7 +71,7 @@ public:
       imager_register_flags_[i] = IMAGER_REGISTER_UNSUPPORTED;
     imager_register_flags_[0x7F] &= ~IMAGER_REGISTER_UNSUPPORTED;
     
-    signal(SIGTERM, ForearmCameraSimulator::setExiting);
+    signal(SIGTERM, WGE100Simulator::setExiting);
     reset();
   }
 
@@ -89,7 +89,7 @@ public:
     return 0;
   }
 
-  ~ForearmCameraSimulator()
+  ~WGE100Simulator()
   {
     if (socket_ != -1)
       close(socket_);
@@ -356,10 +356,10 @@ sendto(socket_, &rsp, sizeof(rsp), 0, \
     bzero(rsp.mac, sizeof(rsp.mac)); 
     rsp.product_id = htonl(CONFIG_PRODUCT_ID); 
     rsp.ser_no = htonl(serial_no_); 
-    strncpy(rsp.product_name, "Forearm_camera_simulator.", sizeof(rsp.product_name)); 
+    strncpy(rsp.product_name, "WGE100_camera_simulator.", sizeof(rsp.product_name)); 
     rsp.hw_version = htonl(0x2041); 
     rsp.fw_version = htonl(0x0112); 
-    strncpy(rsp.camera_name, "Forearm_camera_simulator.", sizeof(rsp.camera_name)); 
+    strncpy(rsp.camera_name, "WGE100_camera_simulator.", sizeof(rsp.camera_name)); 
     SEND_RSP;
   }
 
@@ -391,11 +391,11 @@ sendto(socket_, &rsp, sizeof(rsp), 0, \
   }
 };
 
-volatile bool ForearmCameraSimulator::exiting_ = false;
+volatile bool WGE100Simulator::exiting_ = false;
 
 int main(int argc, char **argv)
 {
-  ForearmCameraSimulator fcamsim(12345);
+  WGE100Simulator fcamsim(12345);
   return fcamsim.run();
 }
 
