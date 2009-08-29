@@ -47,7 +47,7 @@ import getopt
 roslib.load_manifest('mechanism_bringup')
 import rospy
 from std_msgs.msg import *
-from mechanism_msgs.srv import SpawnController, KillController, SwitchController, SwitchControllerRequest
+from pr2_mechanism_msgs.srv import SpawnController, KillController, SwitchController, SwitchControllerRequest
 from imu_node.srv import GetBoolStatus
 
 from robot_mechanism_controllers.srv import *
