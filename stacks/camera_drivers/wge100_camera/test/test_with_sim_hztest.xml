@@ -5,7 +5,7 @@
 
   <!-- hztest to make sure images are coming out -->
   <test test-name="hztest" pkg="rostest" type="hztest" name="hztest">
-    <param name="topic" value="/forearm/image_raw" />  
+    <param name="topic" value="/wge100/image_raw" />  
     <param name="hz" value="10" />
     <param name="hzerror" value="5.5" />
     <param name="test_duration" value="3.0" />

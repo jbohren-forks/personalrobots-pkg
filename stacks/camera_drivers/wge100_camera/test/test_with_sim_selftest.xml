@@ -5,7 +5,7 @@
 
   <!-- Self-test test -->
   <test test-name="selftest" pkg="self_test" type="selftest_rostest" name="selftest">
-    <param name="node_to_test" type="string" value="forearm" />
+    <param name="node_to_test" type="string" value="wge100" />
     <param name="delay" type="double" value="2" />
   </test>
 
