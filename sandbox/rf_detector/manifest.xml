@@ -1,13 +1,13 @@
 <package>
   <description brief="rf_detector">
 
-     rf_detector
+     rf_detector stands for random forest detector. This detector first uses a random forest to build a multi-class discriminative codebook. Then it use the codeword of each image patch to vote for the object center. Finally, mean-shift mode finding is used to search for the existence of the object. Currently it works for mice, staplers, and mugs.
 
   </description>
   <author>Min Sun</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/rf_detector</url>
+  <url>http://ros.org/wiki/rf_detector</url>
   <depend package="roscpp"/>
   <depend package="opencv_latest"/>
   <depend package="topic_synchronizer2"/>
