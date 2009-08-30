@@ -44,7 +44,7 @@ import time
 import rospy, rostest
 from nav_msgs.msg import *
 
-TEST_DURATION = 1000.0
+TEST_DURATION = 600.0
 TARGET_X = 30.2362773529
 TARGET_Y = 25.8055882619
 TARGET_Z = 0.0454657205029
@@ -102,7 +102,7 @@ class TestDoorNoExecutive(unittest.TestCase):
         timeout_t = start + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:
             time.sleep(0.1)
-	rospy.core.logerr("THIS IS THE TEST TIME:" + str(time.time() - start))
+	#rospy.core.logerr("THIS IS THE TEST TIME:" + str(time.time() - start))
         time.sleep(2.0)
         self.assert_(self.success)
         
