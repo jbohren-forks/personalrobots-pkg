@@ -285,6 +285,9 @@ namespace planning_models
 	    /** \brief The dimension of the group */
 	    unsigned int              dimension;
 
+	    /** \brief The bounds for the state corresponding to the group */
+	    std::vector<double>       stateBounds;
+	    
 	    /** \brief An array containing the index in the global state for each dimension of the state of the group */
 	    std::vector<unsigned int> stateIndex;
 	    
@@ -372,6 +375,11 @@ namespace planning_models
 	/** \brief Get the dimension of the entire model */
 	unsigned int getDimension(void) const;
 	
+	/** \brief Get the state bounds constructed for this
+	    model. Component i of the state space has bounds (min,
+	    max) at index positions (2*i, 2*i+1)*/
+	const std::vector<double> &getStateBounds(void) const;
+	
 	/** \brief Provide interface to a lock. Use carefully! */
 	void lock(void);
 	
@@ -407,6 +415,15 @@ namespace planning_models
 	/** \brief The root joint */
 	Joint                                            *root_;
 	
+	/** \brief List of floating joints, maintained for convenience */
+	std::vector<std::string>                          floatingJoints_;
+
+	/** \brief List of planar joints, maintained for convenience */
+	std::vector<std::string>                          planarJoints_;
+	
+	/** \brief The bounds in the form (min, max) for every component of the state */
+	std::vector<double>                               stateBounds_;
+	
 	/** \brief The dimension of the model */
 	unsigned int                                      dimension_;
 	
@@ -417,7 +434,7 @@ namespace planning_models
 	
 	void buildGroups(const std::map< std::string, std::vector<std::string> > &groups);
 	Joint* buildRecursive(Link *parent, const urdf::Link *link);
-	Joint* constructJoint(const urdf::Joint *urdfJoint);
+	Joint* constructJoint(const urdf::Joint *urdfJoint, std::vector<double> &bounds);
 	Link*  constructLink(const urdf::Link *urdfLink);
 	shapes::Shape* constructShape(const urdf::Geometry *geom);
 	

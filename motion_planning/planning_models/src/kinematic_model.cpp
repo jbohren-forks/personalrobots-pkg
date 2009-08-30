@@ -45,6 +45,8 @@
 planning_models::KinematicModel::KinematicModel(const urdf::Model &model, const std::map< std::string, std::vector<std::string> > &groups)
 {    
     dimension_ = 0;
+    modelName_ = model.getName();
+    
     if (model.getRoot())
     {
 	root_ = buildRecursive(NULL, model.getRoot().get());
@@ -73,6 +75,11 @@ const std::string& planning_models::KinematicModel::getName(void) const
 unsigned int planning_models::KinematicModel::getDimension(void) const
 {
     return dimension_;
+}
+
+const std::vector<double> &planning_models::KinematicModel::getStateBounds(void) const
+{
+    return stateBounds_;
 }
 
 const btTransform& planning_models::KinematicModel::getRootTransform(void) const
@@ -124,7 +131,9 @@ void planning_models::KinematicModel::buildGroups(const std::map< std::string, s
 
 planning_models::KinematicModel::Joint* planning_models::KinematicModel::buildRecursive(Link *parent, const urdf::Link *link)
 {
-    Joint *joint = constructJoint(link->parent_joint.get());
+    ROS_INFO("%s", link->name.c_str());
+    
+    Joint *joint = constructJoint(link->parent_joint.get(), stateBounds_);
     joint->stateIndex = dimension_;
     jointMap_[joint->name] = joint;
     jointList_.push_back(joint);
@@ -135,13 +144,19 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::buildRe
     linkMap_[joint->after->name] = joint->after;
     joint->after->before = joint;
     
+    if (dynamic_cast<FloatingJoint*>(joint))
+	floatingJoints_.push_back(joint->name);
+    if (dynamic_cast<PlanarJoint*>(joint))
+	planarJoints_.push_back(joint->name);
+    
     for (unsigned int i = 0 ; link->child_links.size() ; ++i)
 	joint->after->after.push_back(buildRecursive(joint->after, link->child_links[i].get()));
     
     return joint;
 }
 
-planning_models::KinematicModel::Joint* planning_models::KinematicModel::constructJoint(const urdf::Joint *urdfJoint)
+planning_models::KinematicModel::Joint* planning_models::KinematicModel::constructJoint(const urdf::Joint *urdfJoint,
+											std::vector<double> &bounds)
 {
     planning_models::KinematicModel::Joint *result = NULL;
     
@@ -157,6 +172,8 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::constru
 	    j->lowLimit = urdfJoint->safety->soft_lower_limit;
 	    j->continuous = false;
 	    j->axis.setValue(urdfJoint->axis.x, urdfJoint->axis.y, urdfJoint->axis.z);
+	    bounds.push_back(j->lowLimit);
+	    bounds.push_back(j->hiLimit);
 	    result = j;
 	}
 	break;
@@ -167,6 +184,8 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::constru
 	    j->lowLimit = -M_PI;
 	    j->continuous = true;
 	    j->axis.setValue(urdfJoint->axis.x, urdfJoint->axis.y, urdfJoint->axis.z);
+	    bounds.push_back(j->lowLimit);
+	    bounds.push_back(j->hiLimit);
 	    result = j;
 	}
 	break;
@@ -177,14 +196,20 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::constru
 	    j->hiLimit = urdfJoint->safety->soft_upper_limit;
 	    j->lowLimit = urdfJoint->safety->soft_lower_limit;
 	    j->axis.setValue(urdfJoint->axis.x, urdfJoint->axis.y, urdfJoint->axis.z);
+	    bounds.push_back(j->lowLimit);
+	    bounds.push_back(j->hiLimit);
 	    result = j;
 	}
 	break;
     case urdf::Joint::FLOATING:
 	result = new FloatingJoint(this);
+	bounds.insert(bounds.end(), 14, 0.0);
 	break;
     case urdf::Joint::PLANAR:
 	result = new PlanarJoint(this);
+	bounds.insert(bounds.end(), 4, 0.0);
+	bounds.push_back(-M_PI);
+	bounds.push_back(M_PI);
 	break;
     case urdf::Joint::FIXED:
 	result = new FixedJoint(this);
@@ -421,12 +446,66 @@ void planning_models::KinematicModel::getJointNames(std::vector<std::string> &jo
 
 void planning_models::KinematicModel::printModelInfo(std::ostream &out) const
 {
+    out << "Complete model state dimension = " << dimension_ << std::endl;
+    
+    std::ios_base::fmtflags old_flags = out.flags();    
+    out.setf(std::ios::fixed, std::ios::floatfield);
+    std::streamsize old_prec = out.precision();
+    out.precision(5);
+    out << "State bounds: ";
+    for (unsigned int i = 0 ; i < dimension_ ; ++i)
+	out << "[" << stateBounds_[2 * i] << ", " << stateBounds_[2 * i + 1] << "] ";
+    out << std::endl;
+    out.precision(old_prec);    
+    out.flags(old_flags);
+        
+    out << "Floating joints : ";
+    for (unsigned int i = 0 ; i < floatingJoints_.size() ; ++i)
+	out << floatingJoints_[i] << " ";
+    out << std::endl;
+    
+    out << "Planar joints : ";
+    for (unsigned int i = 0 ; i < planarJoints_.size() ; ++i)
+	out << planarJoints_[i] << " ";
+    out << std::endl;
+    
+    out << "Available groups: ";
+    std::vector<std::string> l;
+    getGroupNames(l);
+    for (unsigned int i = 0 ; i < l.size() ; ++i)
+	out << l[i] << " ";
+    out << std::endl;
+    
+    for (unsigned int i = 0 ; i < l.size() ; ++i)
+    {
+	const JointGroup *g = getGroup(l[i]);
+	out << "Group " << l[i] << " has " << g->jointRoots.size() << " roots: ";
+	for (unsigned int j = 0 ; j < g->jointRoots.size() ; ++j)
+	    out << g->jointRoots[j]->name << " ";
+	out << std::endl;
+	out << "The state components for this group are: ";
+	for (unsigned int j = 0 ; j < g->stateIndex.size() ; ++j)
+	    out << g->stateIndex[j] << " ";
+	out << std::endl;
+    }
 }
 
 void planning_models::KinematicModel::printLinkPoses(std::ostream &out) const
 {
+    out << "Link poses:" << std::endl;
+    std::vector<const Link*> links;
+    getLinks(links);
+    for (unsigned int i = 0 ; i < links.size() ; ++i)
+    {
+	out << links[i]->name << std::endl;
+	const btVector3 &v = links[i]->globalTrans.getOrigin();
+	out << "  origin: " << v.x() << ", " << v.y() << ", " << v.z() << std::endl;
+	const btQuaternion &q = links[i]->globalTrans.getRotation();
+	out << "  quaternion: " << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << std::endl;
+	out << std::endl;
+    }    
 }
-    
+
 /* ------------------------ Joint ------------------------ */
 
 planning_models::KinematicModel::Joint::Joint(KinematicModel *model) : owner(model), usedParams(0), stateIndex(0), before(NULL), after(NULL)
@@ -531,6 +610,7 @@ planning_models::KinematicModel::JointGroup::JointGroup(KinematicModel *model, c
     
     std::vector<const Joint*> allJoints;
     owner->getJoints(allJoints);
+    std::vector<double> allBounds = owner->getStateBounds();
     
     for (unsigned int i = 0 ; i < joints.size() ; ++i)
     {
@@ -545,7 +625,12 @@ planning_models::KinematicModel::JointGroup::JointGroup(KinematicModel *model, c
 	    if (allJoints[j]->name == joints[i]->name)
 	    {
 		for (unsigned int k = 0 ; k < joints[i]->usedParams ; ++k)
-		    stateIndex.push_back(globalStateIndex + k);
+		{
+		    unsigned int si = globalStateIndex + k;
+		    stateIndex.push_back(si);
+		    stateBounds.push_back(allBounds[2 * si]);
+		    stateBounds.push_back(allBounds[2 * si + 1]);
+		}
 		found = true;
 		break;
 	    }
