@@ -98,9 +98,11 @@ class TestDoorNoExecutive(unittest.TestCase):
         print "LINK\n"
         rospy.Subscriber("/base_pose_ground_truth", Odometry, self.positionInput)
         rospy.init_node(NAME, anonymous=True)
-        timeout_t = time.time() + TEST_DURATION
+	start = time.time()
+        timeout_t = start + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:
             time.sleep(0.1)
+	rospy.core.logerr("THIS IS THE TEST TIME:" + str(time.time() - start))
         time.sleep(2.0)
         self.assert_(self.success)
         
