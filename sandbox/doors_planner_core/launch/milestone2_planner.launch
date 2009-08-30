@@ -19,7 +19,8 @@
   <include file="$(find doors_planner_core)/launch/door_actions.xml" />  
 
 <!-- Safety -->
-  <node machine="four" pkg="safety_core" type="run_tuck_arms" output="screen" respawn="true" />
+  <node machine="four" pkg="safety_core" type="run_detect_plug_on_base" respawn="false" />
+  <node machine="four" pkg="safety_core" type="run_tuck_arms" respawn="false" />
 
 
 <!-- joystick -->
@@ -40,5 +41,7 @@
 
 
   <node pkg="tf" machine="two" type="change_notifier"/>
+
+
 
 </launch>

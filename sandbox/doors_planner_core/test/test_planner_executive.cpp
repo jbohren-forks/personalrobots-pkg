@@ -369,11 +369,11 @@ class DoorPlannerExecutive
       int max_num_attempts = 5;
       switchlist_.start_controllers.clear();  
       switchlist_.stop_controllers.clear();
-      if(door_open_direction == door_msgs::DoorCmd::PULL)
+/*      if(door_open_direction == door_msgs::DoorCmd::PULL)
       {
         switchlist_.start_controllers.push_back("laser_tilt_controller");
       }
-
+*/
       switchlist_.start_controllers.push_back("head_controller");
       switchlist_.start_controllers.push_back("head_pan_joint_position_controller");
       switchlist_.start_controllers.push_back("head_tilt_joint_position_controller");
@@ -470,7 +470,8 @@ class DoorPlannerExecutive
       nav_cmd.profile = "blended_linear";
       nav_cmd.pos.resize(3);
       nav_cmd.time.resize(3);
-
+      nav_cmd.max_rate = 5.0;
+      nav_cmd.max_accel = 5.0;
       nav_cmd.pos[0] = 1.2;
       nav_cmd.pos[1] = -0.7;
       nav_cmd.pos[2] = 1.2;
@@ -678,7 +679,7 @@ class DoorPlannerExecutive
       if(!doorOpenDirection(door, robot_position, door_open_direction))
         return false;
       door_msgs::Door tmp_door;
-      if(door_open_direction == door_msgs::DoorCmd::PUSH)
+      if(door_open_direction == door_msgs::DoorCmd::PUSH || door_open_direction == door_msgs::DoorCmd::PULL)
       {
         if(!detectDoor(door,tmp_door))
         {
@@ -837,9 +838,9 @@ int main (int argc, char **argv)
   door.travel_dir.x = -1.0;
   door.travel_dir.y = 0.0;
   door.travel_dir.z = 0.0;
-//  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-  door.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
-  door.hinge = door_msgs::Door::HINGE_P2;
+  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+//  door.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
+  door.hinge = door_msgs::Door::HINGE_P1;
   door.header.frame_id = "base_footprint";
 
   DoorPlannerExecutive dpe;

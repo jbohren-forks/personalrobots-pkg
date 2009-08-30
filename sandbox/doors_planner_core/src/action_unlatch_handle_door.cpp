@@ -66,7 +66,7 @@ UnlatchHandleActionDoor::~UnlatchHandleActionDoor()
 robot_actions::ResultStatus UnlatchHandleActionDoor::execute(const door_msgs::DoorCmd& goal_cmd, door_msgs::Door& feedback)
 { 
   ROS_INFO("execute");
-  node_.param("~action_duration_after_first_door_move",time_door_move_,0.1);
+  node_.param("~action_duration_after_first_door_move",time_door_move_,0.5);
   ROS_INFO("Setting time for push/pull after first door move to %f",time_door_move_);
   // default feedback
   door_msgs::Door goal = goal_cmd.door;
