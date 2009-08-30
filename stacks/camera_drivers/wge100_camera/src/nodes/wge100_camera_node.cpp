@@ -269,7 +269,7 @@ public:
       config_.video_mode = "640x480x30";
     }
   
-    /// @todo add a check that width_ and height_ are set in cam_info in test bench
+    /// @todo add a check that width_ and height_ are set in camera_info in test bench
     width_ = MT9VModes[video_mode_].width;
     height_ = MT9VModes[video_mode_].height;
     imager_freq_ = MT9VModes[video_mode_].fps;
@@ -874,7 +874,7 @@ public:
         diagnostic_,
         diagnostic_updater::FrequencyStatusParam(&driver_.desired_freq_, &driver_.desired_freq_, 0.05), 
         diagnostic_updater::TimeStampStatusParam()),
-    cam_info_pub_(ros::Publisher(), 
+    camera_info_pub_(ros::Publisher(), 
         diagnostic_,
         diagnostic_updater::FrequencyStatusParam(&driver_.desired_freq_, &driver_.desired_freq_, 0.05), 
         diagnostic_updater::TimeStampStatusParam()),
@@ -887,9 +887,9 @@ public:
 private:  
   // Publications
   diagnostic_updater::DiagnosedPublisher<sensor_msgs::Image> cam_pub_;
-  diagnostic_updater::DiagnosedPublisher<sensor_msgs::CameraInfo> cam_info_pub_;
+  diagnostic_updater::DiagnosedPublisher<sensor_msgs::CameraInfo> camera_info_pub_;
   sensor_msgs::Image image_;
-  sensor_msgs::CameraInfo cam_info_;
+  sensor_msgs::CameraInfo camera_info_;
   
   // Calibration
   bool calibrated_;
@@ -902,8 +902,8 @@ private:
     image_.header.stamp = t;
     cam_pub_.publish(image_);
     if (calibrated_) {
-      cam_info_.header.stamp = t;
-      cam_info_pub_.publish(cam_info_);
+      camera_info_.header.stamp = t;
+      camera_info_pub_.publish(camera_info_);
     }
 
     return 0;
@@ -914,18 +914,18 @@ private:
     ROS_DEBUG("WGE100CameraNode::reconfigureHook called at level %x", level);
     if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_CLOSE) == level)
     {
-      cam_info_.width = driver_.width_;
-      cam_info_.height = driver_.height_;
+      camera_info_.width = driver_.width_;
+      camera_info_.height = driver_.height_;
       image_.header.frame_id = driver_.config_.frame_id;
-      cam_info_.header.frame_id = driver_.config_.frame_id;
+      camera_info_.header.frame_id = driver_.config_.frame_id;
     }
   }
 
   void postOpenHook()
   {
     // Try to load camera intrinsics from flash memory
-    calibrated_ = driver_.loadIntrinsics(&cam_info_.K[0], &cam_info_.D[0],
-        &cam_info_.R[0], &cam_info_.P[0]);
+    calibrated_ = driver_.loadIntrinsics(&camera_info_.K[0], &camera_info_.D[0],
+        &camera_info_.R[0], &camera_info_.P[0]);
     if (calibrated_)
       ROS_INFO("Loaded intrinsics from camera");
     else
@@ -933,9 +933,9 @@ private:
 
     // Receive frames through callback
     if (calibrated_)
-      cam_info_pub_.set_publisher(node_handle_.advertise<sensor_msgs::CameraInfo>("~cam_info", 1));
+      camera_info_pub_.set_publisher(node_handle_.advertise<sensor_msgs::CameraInfo>("~camera_info", 1));
     else
-      cam_info_pub_.set_publisher(ros::Publisher());
+      camera_info_pub_.set_publisher(ros::Publisher());
   }
 
   virtual void addDiagnostics()
