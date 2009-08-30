@@ -1,13 +1,13 @@
 <package>
   <description brief="image_publisher">
 
-     image_publisher provides facilities for transmitting images efficiently over a bandwidth-limited network connection.
+     image_publisher provides facilities for transmitting images efficiently over a bandwidth-limited network connection. These facilities publish low-bandwidth versions of a raw image on parallel topics.
 
   </description>
   <author>Patrick Mihelich/ mihelich@willowgarage.com</author>
   <license>BSD</license>
   <review status="proposal cleared" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/image_publisher</url>
+  <url>http://ros.org/wiki/image_publisher</url>
 
   <depend package="roscpp"/>
   <depend package="sensor_msgs"/>
