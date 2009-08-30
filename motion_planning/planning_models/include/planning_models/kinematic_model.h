@@ -380,6 +380,12 @@ namespace planning_models
 	    max) at index positions (2*i, 2*i+1)*/
 	const std::vector<double> &getStateBounds(void) const;
 	
+	/** \brief Return a list of names of joints that are planar */
+	const std::vector<std::string> &getPlanarJoints(void) const;
+
+	/** \brief Return a list of names of joints that are floating */
+	const std::vector<std::string> &getFloatingJoints(void) const;
+	
 	/** \brief Provide interface to a lock. Use carefully! */
 	void lock(void);
 	
@@ -390,7 +396,7 @@ namespace planning_models
 	void printModelInfo(std::ostream &out = std::cout) const;
 
 	/** \brief Print the pose of every link */
-	void printLinkPoses(std::ostream &out = std::cout) const;
+	void printTransforms(std::ostream &out = std::cout) const;
 	
     private:
 	
@@ -437,6 +443,7 @@ namespace planning_models
 	Joint* constructJoint(const urdf::Joint *urdfJoint, std::vector<double> &bounds);
 	Link*  constructLink(const urdf::Link *urdfLink);
 	shapes::Shape* constructShape(const urdf::Geometry *geom);
+	void printTransform(const std::string &st, const btTransform &t, std::ostream &out = std::cout) const;
 	
     };
 

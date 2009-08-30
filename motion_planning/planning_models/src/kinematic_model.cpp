@@ -46,16 +46,35 @@ planning_models::KinematicModel::KinematicModel(const urdf::Model &model, const 
 {    
     dimension_ = 0;
     modelName_ = model.getName();
+    rootTransform_.setIdentity();
     
     if (model.getRoot())
     {
-	root_ = buildRecursive(NULL, model.getRoot().get());
-	buildGroups(groups);
+	const urdf::Link *root = model.getRoot().get();
+	
+	if (root->name == "world")
+	{
+	    if (root->child_links.empty())
+	    {
+		root = NULL;
+		ROS_ERROR("No links connected to the world");
+	    }
+	    else
+		root = root->child_links[0].get();
+	    if (root->child_links.size() > 1)
+		ROS_WARN("More than one link connected to the world. Only considering the first one");
+	}
+	
+	if (root)
+	{
+	    root_ = buildRecursive(NULL, root);
+	    buildGroups(groups);
+	}
     }
     else
     {
 	root_ = NULL;
-	ROS_WARN("No root found");
+	ROS_WARN("No root link found");
     }
 }
 
@@ -92,6 +111,16 @@ void planning_models::KinematicModel::setRootTransform(const btTransform &transf
     rootTransform_ = transform;
 }
 
+const std::vector<std::string> &planning_models::KinematicModel::getFloatingJoints(void) const
+{
+    return floatingJoints_;
+}
+
+const std::vector<std::string> &planning_models::KinematicModel::getPlanarJoints(void) const
+{
+    return planarJoints_;
+}
+
 void planning_models::KinematicModel::lock(void)
 {
     lock_.lock();
@@ -100,6 +129,22 @@ void planning_models::KinematicModel::lock(void)
 void planning_models::KinematicModel::unlock(void)
 {
     lock_.unlock();
+}
+
+void planning_models::KinematicModel::defaultState(void)
+{
+    if (dimension_ <= 0)
+	return;
+    
+    double params[dimension_];
+    for (unsigned int i = 0 ; i < dimension_ ; ++i)
+    {
+	if (stateBounds_[2 * i] <= 0.0 && stateBounds_[2 * i + 1] >= 0.0)
+	    params[i] = 0.0;
+	else
+	    params[i] = (stateBounds_[2 * i] + stateBounds_[2 * i + 1]) / 2.0;
+    }
+    computeTransforms(params);
 }
 
 void planning_models::KinematicModel::buildGroups(const std::map< std::string, std::vector<std::string> > &groups)
@@ -141,6 +186,8 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::buildRe
     dimension_ += joint->usedParams;
     joint->before = parent;
     joint->after = constructLink(link);
+    if (parent == NULL)
+	joint->after->constTrans.setIdentity();
     linkMap_[joint->after->name] = joint->after;
     joint->after->before = joint;
     
@@ -265,6 +312,7 @@ shapes::Shape* planning_models::KinematicModel::constructShape(const urdf::Geome
 	    urdf::Vector3 dim = dynamic_cast<const urdf::Box*>(geom)->dim;
 	    result = new shapes::Box(dim.x, dim.y, dim.z);
 	}
+	break;
     case urdf::Geometry::CYLINDER:
 	result = new shapes::Cylinder(dynamic_cast<const urdf::Cylinder*>(geom)->radius,
 				      dynamic_cast<const urdf::Cylinder*>(geom)->length);
@@ -490,19 +538,32 @@ void planning_models::KinematicModel::printModelInfo(std::ostream &out) const
     }
 }
 
-void planning_models::KinematicModel::printLinkPoses(std::ostream &out) const
+void planning_models::KinematicModel::printTransform(const std::string &st, const btTransform &t, std::ostream &out) const
 {
+    out << st << std::endl;
+    const btVector3 &v = t.getOrigin();
+    out << "  origin: " << v.x() << ", " << v.y() << ", " << v.z() << std::endl;
+    const btQuaternion &q = t.getRotation();
+    out << "  quaternion: " << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << std::endl;
+}
+
+void planning_models::KinematicModel::printTransforms(std::ostream &out) const
+{
+    out << "Joint transforms:" << std::endl;
+    std::vector<const Joint*> joints;
+    getJoints(joints);
+    for (unsigned int i = 0 ; i < joints.size() ; ++i)
+    {
+	printTransform(joints[i]->name, joints[i]->varTrans);
+	out << std::endl;	
+    }
     out << "Link poses:" << std::endl;
     std::vector<const Link*> links;
     getLinks(links);
     for (unsigned int i = 0 ; i < links.size() ; ++i)
     {
-	out << links[i]->name << std::endl;
-	const btVector3 &v = links[i]->globalTrans.getOrigin();
-	out << "  origin: " << v.x() << ", " << v.y() << ", " << v.z() << std::endl;
-	const btQuaternion &q = links[i]->globalTrans.getRotation();
-	out << "  quaternion: " << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << std::endl;
-	out << std::endl;
+	printTransform(links[i]->name, links[i]->globalTrans);
+	out << std::endl;	
     }    
 }
 
@@ -569,11 +630,11 @@ planning_models::KinematicModel::Link::~Link(void)
 
 
 void planning_models::KinematicModel::Link::computeTransform(void)
-{    
+{
     globalTransFwd.mult(before->before ? before->before->globalTransFwd : owner->getRootTransform(), constTrans);
     globalTransFwd *= before->varTrans;    
     globalTrans.mult(globalTransFwd, constGeomTrans);
-        
+
     for (unsigned int i = 0 ; i < attachedBodies.size() ; ++i)
 	attachedBodies[i]->computeTransform();
 }
