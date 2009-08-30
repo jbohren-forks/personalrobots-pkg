@@ -1,0 +1,23 @@
+<stack name="trex" version="0.1.0">
+  <description brief="trex">
+
+     trex
+
+  </description>
+  <author>Maintained by Conor McGann</author>
+  <license>BSD,NOSA</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/trex</url>
+  <depend stack="geometry"/> <!-- kdl, tf --> 
+  <depend stack="world_models"/> <!-- topological_map --> 
+  <depend stack="pr2_mechanism"/> <!-- pr2_mechanism_msgs --> 
+  <depend stack="2dnav_pr2_app"/> <!-- 2dnav_pr2 --> 
+  <depend stack="common_msgs"/> <!-- geometry_msgs --> 
+  <depend stack="laser_pipeline"/> <!-- point_cloud_assembler --> 
+  <depend stack="sandbox"/> <!-- move_base_client, pr2_robot_actions --> 
+  <depend stack="pr2_common"/> <!-- pr2_msgs --> 
+  <depend stack="ros"/> <!-- rosconsole, std_msgs, roscpp --> 
+  <depend stack="navigation"/> <!-- move_base --> 
+  <depend stack="highlevel"/> <!-- plugs_functions, plugs_msgs, door_functions, door_msgs, writing_core, safety_core --> 
+
+</stack>
