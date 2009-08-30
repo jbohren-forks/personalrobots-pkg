@@ -624,14 +624,15 @@ void sigint(int none) {
   g_int = true;
 }
 
-void Dorylus::relearnResponses(DorylusDataset& dd) {
+//! Relearn the responses for all weak classifiers using a new dataset.  Weak classifier utilities will be 
+//! recomputed for this dataset, and those with utility less than min_util will be thrown out.
+void Dorylus::relearnResponses(DorylusDataset& dd, double min_util, int max_wcs) {
 
   assert(dd.nClasses_ == nClasses_);
   useDataset(&dd);
   vector<object*>& objs = dd_->objs_;
   cout << "Objective before response relearning: " << classify(dd) << endl;
 
-  save("tmp.d");
 
   for(size_t t=0; t<pwcs_.size(); ++t) {
     weak_classifier& wc = *pwcs_[t];
@@ -640,15 +641,11 @@ void Dorylus::relearnResponses(DorylusDataset& dd) {
     VectorXd numerators = VectorXd::Zero(nClasses_);
     VectorXd denominators = VectorXd::Zero(nClasses_);
     
-//     for(size_t c=0; c<nClasses_; ++c) {
-//       wc.numerators(c) = 0;
-//       wc.denominators(c) = 0;
-//       wc.vals(c) = 0;
-//     }
-
     // -- Find which training examples fall in the hypersphere and increment numerators, denominators, responses, and utility.
     vector<size_t> inside;
     inside.reserve(objs.size());
+    VectorXd sum_weights_pos = VectorXd::Zero(nClasses_);
+    VectorXd sum_weights_neg = VectorXd::Zero(nClasses_);
     for(size_t m=0; m<objs.size(); ++m) {
 
       // -- If no descriptor of this type, ignore.
@@ -667,13 +664,6 @@ void Dorylus::relearnResponses(DorylusDataset& dd) {
 	double weight = exp(log_weights_(c,m));
 	numerators(c) += weight * dd_->ymc_(c,m);
 	denominators(c) += weight;
-	
-
-	// Total weight of training examples in hypersphere (from *all* datasets, not just this one) which have ymc={1, -1}
-// 	double sum_weights_pos = (wc.denominators(c) + wc.numerators(c)) / 2;
-// 	double sum_weights_neg = (wc.denominators(c) - wc.numerators(c)) / 2;
-
-// 	wc.utility += ((1-exp(-wc.vals(c))) * sum_weights_pos + (1-exp(wc.vals(c))) * sum_weights_neg) / (nClasses_ * objs.size());	
       }
     }
 
@@ -690,9 +680,103 @@ void Dorylus::relearnResponses(DorylusDataset& dd) {
 	log_weights_(c,idx) += -dd_->ymc_(c,idx) * wc.vals(c);
       }
     }
+
+    // -- Compute the utility.
+    wc.utility = 0;
+    for(size_t c=0; c<nClasses_; ++c) {
+      for(size_t m=0; m<inside.size(); ++m) { 
+	size_t idx = inside[m];
+	if(dd_->ymc_(c,idx) == 1) 
+	  sum_weights_pos(c) += exp(log_weights_(c,idx));
+	else if(dd_->ymc_(c,idx) == -1) 
+	  sum_weights_neg(c) += exp(log_weights_(c,idx));
+	else {
+	  cout << "ymc must be in -1, +1" << endl;
+	  assert(0);
+	}
+      }
+
+      wc.utility += (exp(wc.vals(c)) - 1) * sum_weights_pos(c);
+      wc.utility += (exp(-wc.vals(c)) - 1) * sum_weights_neg(c);
+    }
+
   }
-  cout << "Objective after response updating: " << computeObjective() << endl;
-  cout << "Objective after response updating: " << classify(dd) << endl;
+
+  double objective = classify(dd);
+  cout << "Objective after response relearning: " << objective << endl;
+//  cout << "Objective after response updating: " << computeObjective() << endl;
+
+  // -- Pruning.
+  if(min_util > 0) { 
+    cout << "WARNING: Minimum utility pruning is not yet implemented." << endl;
+  }
+  if(max_wcs > 0) {
+    vector< pair<double, int> > util_idx(pwcs_.size());
+    for(size_t t=0; t<pwcs_.size(); ++t) {
+      util_idx[t].first = pwcs_[t]->utility;
+      util_idx[t].second = t;
+    }
+    greater< pair<double, int> > emacs = greater< pair<double, int> >();
+    sort(util_idx.begin(), util_idx.end(), emacs); //Descending.
+
+    cout << "Pruning " << pwcs_.size() - max_wcs << " weak classifiers." << endl;
+//    double min_util_in_classifier = util_idx.back().first;
+
+//    cout << status() << endl;
+
+//     map<string, vector<weak_classifier*> >::iterator it;
+//     for(it=battery_.begin(); it != battery_.end(); it++) {
+//       //cout << it->first << endl;
+//       vector<weak_classifier*> wcs = it->second;
+//       for(size_t j=0; j<wcs.size(); ++j)
+// 	cout << displayWeakClassifier(*wcs[j]) << endl;
+//     }
+
+
+    // -- Make new pwcs_ and battery_.
+    vector<weak_classifier*> pwcs_new;
+    map<string, vector<weak_classifier*> > battery_new;
+    pwcs_new.reserve(max_wcs);
+    for(size_t t=0; t<pwcs_.size(); ++t) {
+      if((int)t < max_wcs) { 
+	//cout << "keeping wc " << util_idx[t].second << " with util " << util_idx[t].first << endl;
+	weak_classifier* pwc = pwcs_[util_idx[t].second];
+	pwc->id = t;
+
+	pwcs_new.push_back(pwc);
+	battery_new[pwc->descriptor].push_back(pwc);
+      }
+      else {
+	//cout << "deleting wc " << util_idx[t].second << " with util " << util_idx[t].first << endl;
+	delete pwcs_[util_idx[t].second];
+      }
+    }
+
+
+    pwcs_ = pwcs_new;
+    battery_ = battery_new;
+
+
+	 
+    double objective_after_pruning = classify(dd);
+//    cout << "same: " << objective_after_pruning - objective << " " << min_util_in_classifier << endl;
+    cout << "Objective after pruning: " << objective_after_pruning << endl;    	 
+    cout << status() << endl;
+
+
+//     for(it=battery_.begin(); it != battery_.end(); it++) {
+//       //cout << it->first << endl;
+//       vector<weak_classifier*> wcs = it->second;
+//       for(size_t j=0; j<wcs.size(); ++j)
+// 	cout << displayWeakClassifier(*wcs[j]) << endl;
+//     }
+
+
+    //cout << "Relearning responses." << endl;
+    //    relearnResponses(dd); // TODO: Should instead be able to decrement log_weights_ for those pruned, then recompute responses without redoing euc distances.
+  }
+
+
 }
 
 void Dorylus::resumeTraining(int num_candidates, int max_secs, int max_wcs, double min_util, void (*debugHook)(weak_classifier)) {

@@ -186,7 +186,7 @@ class Dorylus {
   //! Continues training a classifier, possibly on a new dataset.
   void resumeTraining(int num_candidates, int max_secs, int max_wcs, double min_util, void (*debugHook)(weak_classifier)=NULL);
   //! Relearns the weak classifier responses on a new labeled dataset
-  void relearnResponses(DorylusDataset& dd);
+  void relearnResponses(DorylusDataset& dd, double min_util=0, int max_wcs=0);
   //! Sets log_weights_, classes_, nClasses_, and dd_.
   void useDataset(DorylusDataset *dd);
   bool save(std::string filename, std::string *user_data_str=NULL);

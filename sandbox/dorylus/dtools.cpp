@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
       return 1;
     }
     
-    d.relearnResponses(dd);
+    d.relearnResponses(dd, 0, max_wcs);
     d.save(argv[4]);
   }
 
@@ -145,6 +145,7 @@ int main(int argc, char** argv) {
     cout << endl;
 
     cout << argv[0] << " --relearnResponses DATASET OLD_CLASSIFIER NEW_CLASSIFIER_SAVENAME" << endl;
+    cout << "   MAX_WCS=x is the max number of weak classifiers to allow in the final classifier: the rest will be pruned by utility. Default infinite." << endl;
     cout << endl;
 
     cout << argv[0] << " --resumeTraining DATASET OLD_CLASSIFIER NEW_CLASSIFIER_SAVENAME" << endl;
