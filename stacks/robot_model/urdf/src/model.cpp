@@ -258,7 +258,7 @@ bool Model::initTree(std::map<std::string, std::string> &parent_link_tree)
       }
       else
       {
-        ROS_WARN("    parent link '%s' is a special case, adding fake link.", parent_link_name.c_str());
+        ROS_DEBUG("    parent link '%s' is a special case, adding fake link.", parent_link_name.c_str());
         boost::shared_ptr<Link> link;
         link.reset(new Link);
         link->name = "world";
