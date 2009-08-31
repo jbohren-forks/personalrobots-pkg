@@ -12,7 +12,7 @@
   <include file="$(find pr2_gazebo)/controllers/pr2_tilt_laser_controller.launch"/>
 
   <!-- Test for publication of 'odom' topic. -->
-  <test test-name="hztest_test_rostime" pkg="rostest" type="hztest" time-limit="50" name="rostime_test">
+  <test test-name="hztest_test_rostime" pkg="test_pr2_mechanism_controllers_gazebo" type="hztest" time-limit="50" name="rostime_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (odom_test vs. scan_test). -->
     <param name="topic" value="/time" />

@@ -13,7 +13,7 @@
 
   <!-- Run hztest -->
   <!-- Test for publication of 'base_pose_ground_truth' topic. -->
-  <test test-name="hztest_test_base_pose_ground_truth" pkg="rostest" type="hztest" time-limit="50" name="base_pose_ground_truth_test">
+  <test test-name="hztest_test_base_pose_ground_truth" pkg="test_pr2_mechanism_controllers_gazebo" type="hztest" time-limit="50" name="base_pose_ground_truth_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (base_pose_ground_truth_test vs. scan_test). -->
     <param name="topic" value="/base_pose_ground_truth" />
@@ -23,7 +23,7 @@
     <param name="check_intervals" value="false" />
   </test>
   <!-- Test for publication of 'mechanism_state' topic. -->
-  <test test-name="hztest_test_mechanism_state" pkg="rostest" type="hztest" time-limit="50" name="mechanism_state_test">
+  <test test-name="hztest_test_mechanism_state" pkg="test_pr2_mechanism_controllers_gazebo" type="hztest" time-limit="50" name="mechanism_state_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (mechanism_state_test vs. scan_test). -->
     <param name="topic" value="/mechanism_state" />
@@ -33,7 +33,7 @@
     <param name="check_intervals" value="false" />
   </test>
   <!-- Test for publication of 'tf_message' topic. -->
-  <test test-name="hztest_test_tf_message" pkg="rostest" type="hztest" time-limit="50" name="tf_message_test">
+  <test test-name="hztest_test_tf_message" pkg="test_pr2_mechanism_controllers_gazebo" type="hztest" time-limit="50" name="tf_message_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (tf_message_test vs. scan_test). -->
     <param name="topic" value="/tf_message" />

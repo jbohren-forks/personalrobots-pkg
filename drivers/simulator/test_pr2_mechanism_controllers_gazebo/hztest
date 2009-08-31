@@ -38,7 +38,7 @@
 ##          for a duration of TARGET_DURATION seconds
 
 PKG = 'test_pr2_mechanism_controllers_gazebo'
-NAME = 'my_hztest'
+NAME = 'hztest'
 
 import math
 import roslib
@@ -52,8 +52,8 @@ from std_msgs.msg import *
 from tf.msg import tfMessage
 from pr2_mechanism_msgs.msg import MechanismState
 
-MIN_MSGS        = 100
-TEST_TIMEOUT    = 100000000000.0
+MIN_MSGS        = 1
+TEST_TIMEOUT    = 90.0
 
 class MyHzTest(unittest.TestCase):
     def __init__(self, *args):
@@ -65,6 +65,13 @@ class MyHzTest(unittest.TestCase):
         self.started = False
         self.start_time = 0
         self.end_time = 0
+        self.finished = False
+
+        #some default values
+        self.topic_name = '';
+        self.hz_target = 10;
+        self.hz_tol = 1;
+        self.test_duration = 0;
 
     def Input(self, msg):
         self.count += 1;
@@ -74,20 +81,37 @@ class MyHzTest(unittest.TestCase):
           print " got first message at: ",self.start_time, " sec"
           self.started = True
 
-        if self.count >= MIN_MSGS:
-          self.end_time = rospy.get_rostime().to_seconds()
-          print " passed minimum ",self.count," messages at ",self.count / (self.end_time - self.start_time), " Hz"
+        self.end_time = rospy.get_rostime().to_seconds()
+
+        if (self.end_time - self.start_time) > self.test_duration:
+          self.finished = True
+
+        if (self.end_time - self.start_time) > 0.0:
+          cur_hz = self.count / (self.end_time - self.start_time)
+        else:
+          cur_hz = 0
+
+        if abs(cur_hz - self.hz_target) < self.hz_tol:
           self.success = True
-        #else:
-          #print " got ",self.count," messages at ",self.count / (rospy.get_rostime().to_seconds() - self.start_time), " Hz"
+        else:
+          self.success = False
+
+        #if self.finished:
+        #  print " got ",self.count," messages at ",self.count / (rospy.get_rostime().to_seconds() - self.start_time), " Hz"
 
     def test_hz(self):
         print "LNK\n"
-        #rospy.Subscriber("/tf_message", tfMessage, self.Input)
-        rospy.Subscriber("/mechanism_state", MechanismState, self.Input)
         rospy.init_node(NAME, anonymous=True)
-        timeout_t = time.time() + TEST_TIMEOUT
-        while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
+
+        self.topic_name = rospy.get_param('~topic','mechanism_state');
+        self.hz_target = rospy.get_param('~hz',100);
+        self.hz_tol = rospy.get_param('~hzerror',1);
+        self.test_duration = rospy.get_param('~test_duration',1);
+
+        rospy.Subscriber(self.topic_name, rospy.AnyMsg, self.Input)
+
+        timeout_t = time.time() + self.test_duration + TEST_TIMEOUT
+        while not rospy.is_shutdown() and not self.success and not self.finished and time.time() < timeout_t:
             time.sleep(1.0)
 
         self.assert_(self.success)
