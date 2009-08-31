@@ -1,6 +1,6 @@
 rospack_add_executable(ost ost.cpp stereogui.cpp calwin.cpp lodepng.cpp ostpng.cpp)
 rospack_add_executable(v3d v3d.cpp)
 rospack_add_compile_flags(ost -msse3)
-target_link_libraries(ost dcam imwin fltk fltk_gl glut)
+target_link_libraries(ost dcam imageproc stereoproc imwin fltk fltk_gl glut)
 target_link_libraries(v3d imwin fltk fltk_gl glut)
 rospack_add_compile_flags(v3d -msse3)

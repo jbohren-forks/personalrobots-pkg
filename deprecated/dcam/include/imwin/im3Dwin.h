@@ -63,7 +63,7 @@
 #include "FL/gl.h"
 #include <GL/glut.h>
 #include <GL/glu.h>
-#include "image.h"
+#include "stereoimage.h"
 
 
 using namespace std;

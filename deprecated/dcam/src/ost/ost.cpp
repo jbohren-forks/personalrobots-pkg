@@ -111,7 +111,7 @@ StereoData stImdata;		// real data
 bool isRefresh;			// refresh the current stereo image display
 
 // plane object and parameters
-FindPlanes planeObj;
+//FindPlanes planeObj;
 float planeParams[4];
 float planeThresh = 0.01;	// 1 cm inlier threshold
 
@@ -456,6 +456,7 @@ main(int argc, char **argv)	// no arguments
 	      isPlanar = false;
 	      if (isPlanar)
 		{
+#if 0
 		  int n,nn;
 		  tt0 = get_ms();
 		  // get first largest plane
@@ -470,6 +471,7 @@ main(int argc, char **argv)	// no arguments
 //		  printf("Planar time: %d ms\n", (int)(tt1-tt0));
 		  printf("Found plane %f %f %f %f with %d/%d inliers\n", 
 			 planeParams[0], planeParams[1], planeParams[2], planeParams[3], n, nn);
+#endif
 		}
 
 	      // check for 3D window

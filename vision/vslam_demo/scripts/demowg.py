@@ -134,7 +134,7 @@ class Demo:
                              scavenge = False,
                              position_keypoint_thresh = 0.3,
                              angle_keypoint_thresh = 10*pi/180,
-                             inlier_thresh = 100,
+                             inlier_thresh = 80,
                              sba=None,
                              num_ransac_iters=500,
                              inlier_error_threshold = 3.0)

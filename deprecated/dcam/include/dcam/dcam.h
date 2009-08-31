@@ -37,7 +37,7 @@
 
 #include <stdexcept>
 #include "dc1394/dc1394.h"
-#include "image.h"
+#include "stereoimage.h"
 
 // Pixel raw modes
 // Videre stereo:

@@ -60,6 +60,7 @@ PyObject *pgiterate(PyObject *self, PyObject *args)
     }
     Py_DECREF(fi);
     TreePoseGraph3::EdgeSet* eset=to->affectedEdges(vset);
+    flag = true;
     to->iterate(eset, flag);
   }
 

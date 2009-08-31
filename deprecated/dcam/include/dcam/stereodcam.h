@@ -44,7 +44,6 @@
 //
 
 #include <stdexcept>
-#include "image.h"
 #include "dcam.h"
 
 typedef enum
