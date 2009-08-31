@@ -1,0 +1,5 @@
+<launch>
+   <node pkg="robot_self_filter" type="find_bottle" respawn="true" output="screen">
+     <remap from="cloud_in" to="full_cloud_annotated" />
+   </node>
+</launch>
