@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include <planning_models/kinematic_model.h>
+#include <planning_models/kinematic_state.h>
 #include <gtest/gtest.h>
 #include <sstream>
 #include <ctype.h>
@@ -289,26 +290,15 @@ TEST(FK, OneRobot)
 	"  </visual>"
 	"</link>"
 	"</robot>";
-
+    
     static const std::string MODEL2_INFO = 
-	"Number of robots = 1\n"
 	"Complete model state dimension = 5\n"
-	"State bounds: [0.00000, 0.00000] [0.00000, 0.00000] [-3.14159, 3.14159] [-3.14159, 3.14159] [0.01000, 0.38600] \n"
-	"Parameter index:\n"
-	"base_link_joint = 0\n"
-	"link_a_joint = 3\n"
-	"link_c_joint = 4\n"
-	"Parameter name:\n"
-	"0 = base_link_joint\n"
-	"1 = base_link_joint\n"
-	"2 = base_link_joint\n"
-	"3 = link_a_joint\n"
-	"4 = link_c_joint\n"
-	"Floating joints at: \n"
-	"Planar joints at: 0 base_link_joint \n"
+	"State bounds: [0.00000, 0.00000] [0.00000, 0.00000] [-3.14159, 3.14159] [-3.14159, 3.14159] [0.00000, 0.08900] \n"
+	"Floating joints : \n"
+	"Planar joints : base_joint \n"
 	"Available groups: base \n"
-	"Group base with ID 0 has 1 roots: base_link_joint \n"
-	"The state components for this group are: 0 1 2 3 4 base_link_joint base_link_joint base_link_joint link_a_joint link_c_joint \n";
+	"Group base has 1 roots: base_joint \n"
+	"The state components for this group are: 0 1 2 3 4 \n";
 
     urdf::Model urdfModel;
     urdfModel.initString(MODEL2);
@@ -329,8 +319,7 @@ TEST(FK, OneRobot)
     
     std::stringstream ss1;
     model->printModelInfo(ss1);
-    //    EXPECT_TRUE(sameStringIgnoringWS(MODEL2_INFO, ss1.str()));
-    ROS_INFO("'%s'", ss1.str().c_str());
+    EXPECT_TRUE(sameStringIgnoringWS(MODEL2_INFO, ss1.str()));
     
     // make sure applying the state works for the entire robot
     model->printTransforms(ss1);
@@ -341,7 +330,7 @@ TEST(FK, OneRobot)
     model->printModelInfo(ss2);
     model->printTransforms(ss2);
     
-    //    EXPECT_EQ(ss1.str(), ss2.str());
+    EXPECT_EQ(ss1.str(), ss2.str());
     
     EXPECT_NEAR(1.0, model->getLink("base_link")->globalTrans.getOrigin().x(), 1e-5);
     EXPECT_NEAR(1.0, model->getLink("base_link")->globalTrans.getOrigin().y(), 1e-5);
@@ -375,22 +364,21 @@ TEST(FK, OneRobot)
     EXPECT_NEAR(0.0, model->getLink("link_c")->globalTrans.getRotation().z(), 1e-5);
     EXPECT_NEAR(1.0, model->getLink("link_c")->globalTrans.getRotation().w(), 1e-5);
 
-    /*
-    planning_models::StateParams *sp = model->newStateParams();
+    planning_models::KinematicState *sp = new planning_models::KinematicState(model);
     EXPECT_FALSE(sp->seenAll());
 
     double tmpParam[3];
     tmpParam[0] = 0.1;
-    sp->setParamsJoint(tmpParam, "link_a_joint");
+    sp->setParamsJoint(tmpParam, "joint_a");
     EXPECT_FALSE(sp->seenAll());
-    EXPECT_TRUE(sp->seenJoint("link_a_joint"));
+    EXPECT_TRUE(sp->seenJoint("joint_a"));
 
     tmpParam[0] = -1.0;    
-    sp->setParamsJoint(tmpParam, "link_c_joint");
+    sp->setParamsJoint(tmpParam, "joint_c");
     EXPECT_FALSE(sp->seenAll());
     
     tmpParam[0] = 0.5; tmpParam[1] = 0.4; tmpParam[2] = 1.1;
-    sp->setParamsJoint(tmpParam, "base_link_joint");
+    sp->setParamsJoint(tmpParam, "base_joint");
     EXPECT_TRUE(sp->seenAll());
     
     EXPECT_EQ(0.5, sp->getParams()[0]);
@@ -399,11 +387,10 @@ TEST(FK, OneRobot)
     EXPECT_EQ(0.1, sp->getParams()[3]);
     EXPECT_EQ(-1.0, sp->getParams()[4]);
     
-    planning_models::StateParams sp_copy = *sp;
+    planning_models::KinematicState sp_copy = *sp;
     EXPECT_TRUE(sp_copy == *sp);
     
     delete sp;
-    */
     delete model;
 }
 

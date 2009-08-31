@@ -703,9 +703,7 @@ planning_models::KinematicModel::JointGroup::JointGroup(KinematicModel *model, c
     jointIndex.resize(joints.size());
     dimension = 0;
     
-    std::vector<const Joint*> allJoints;
-    owner->getJoints(allJoints);
-    std::vector<double> allBounds = owner->getStateBounds();
+    const std::vector<double> &allBounds = owner->getStateBounds();
     
     for (unsigned int i = 0 ; i < joints.size() ; ++i)
     {
@@ -713,24 +711,14 @@ planning_models::KinematicModel::JointGroup::JointGroup(KinematicModel *model, c
 	jointIndex[i] = dimension;
 	dimension += joints[i]->usedParams;
 	jointMap_[jointNames[i]] = i;
-	
-	unsigned int globalStateIndex = 0;
-	bool found = false;
-	for (unsigned int j = 0 ; j < allJoints.size() ; ++j)
-	    if (allJoints[j]->name == joints[i]->name)
-	    {
-		for (unsigned int k = 0 ; k < joints[i]->usedParams ; ++k)
-		{
-		    unsigned int si = globalStateIndex + k;
-		    stateIndex.push_back(si);
-		    stateBounds.push_back(allBounds[2 * si]);
-		    stateBounds.push_back(allBounds[2 * si + 1]);
-		}
-		found = true;
-		break;
-	    }
-	if (!found)
-	    ROS_FATAL("Group joint not in kinematic model");
+
+	for (unsigned int k = 0 ; k < joints[i]->usedParams ; ++k)
+	{
+	    const unsigned int si = joints[i]->stateIndex + k;
+	    stateIndex.push_back(si);
+	    stateBounds.push_back(allBounds[2 * si]);
+	    stateBounds.push_back(allBounds[2 * si + 1]);
+	}
     }
     
     for (unsigned int i = 0 ; i < joints.size() ; ++i)
