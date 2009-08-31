@@ -84,7 +84,7 @@ class MoveArmWindow(gtk.Window):
       goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.3;
       goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.35;
       goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.3;
-      goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.3;    
+      goal.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.3;
       goal.goal.goal_constraints.pose_constraint[0].orientation_importance = 0.01;
 
       pub_position_arm.publish(goal);
@@ -121,14 +121,20 @@ class MoveArmWindow(gtk.Window):
       new_z = String()
       if(len(self.delta_x.get_text()) == 0):
         new_x = self.bottle_x.get_text()
+      elif(len(self.bottle_x.get_text()) == 0):
+        new_x = self.delta_x.get_text()
       else:
         new_x = str(float(self.bottle_x.get_text()) + float(self.delta_x.get_text()))
       if(len(self.delta_y.get_text()) == 0):
         new_y = self.bottle_y.get_text()
+      elif(len(self.bottle_y.get_text()) == 0):
+        new_y = self.delta_y.get_text()
       else:
         new_y = str(float(self.bottle_y.get_text()) + float(self.delta_y.get_text()))
       if(len(self.delta_z.get_text()) == 0):
- 	      new_z = self.bottle_z.get_text()
+        new_z = self.bottle_z.get_text()
+      elif(len(self.bottle_z.get_text()) == 0):
+        new_z = self.delta_z.get_text()
       else:
         new_z = str(float(self.bottle_z.get_text()) + float(self.delta_z.get_text()))
       cmd = "move " + new_x + " " + new_y + " " + new_z
@@ -151,7 +157,7 @@ class MoveArmWindow(gtk.Window):
 
   def __init__(self):
     super(MoveArmWindow,self).__init__()
-    self.set_title("MoveArm")
+    self.set_title("Arm Commander 2000")
     self.set_position(gtk.WIN_POS_CENTER)
 
     vbox = gtk.VBox(False, 8)
@@ -161,10 +167,17 @@ class MoveArmWindow(gtk.Window):
     self.allowed_time = 40
 
     ################################################
-    frame = gtk.Frame("Arm Command Tool: ")
+    frame = gtk.Frame("use at your own risk: ")
     table = gtk.Table(5,10,homogeneous=False)
     row = 0
 
+    label = gtk.Label("*MoveArm: offers continuous collision detection even after the arm starts moving.\n*IK & Move: Runs IK to get a solution and provides no collision checking.\n*Plan & Move: plans with collision checking but no collision checking after the arm starts moving.\n NOTE: Right now delta can only be used relative to a position sent to MoveArm.")
+    halign = gtk.Alignment(1,0.5,0,0.5)
+    halign.add(label)
+
+    table.attach(halign, 0,5,row,row+1, gtk.FILL, gtk.FILL,0,0)
+    row = row+1
+		
     #######################
     label = gtk.Label("goal frame: ")
     base_button = gtk.Button("base link")
@@ -180,7 +193,7 @@ class MoveArmWindow(gtk.Window):
 
     row = row+1
     #######################
-    label = gtk.Label("MoveArm Pose Constraint (x,y,z): ")
+    label = gtk.Label("MoveArm (x,y,z): ")
     self.bottle_x = gtk.Entry()
     self.bottle_y = gtk.Entry()
     self.bottle_z = gtk.Entry()
@@ -204,7 +217,7 @@ class MoveArmWindow(gtk.Window):
     row = row+1
     #######################
 				
-    delta_label = gtk.Label("MoveIK deltaXYZ: ")
+    delta_label = gtk.Label("Run IK & Move to deltaXYZ: ")
     self.delta_x = gtk.Entry()
     self.delta_y = gtk.Entry()
     self.delta_z = gtk.Entry()
@@ -227,7 +240,7 @@ class MoveArmWindow(gtk.Window):
 
     row = row+1
     #######################
-    do_label = gtk.Label("MoveIK Pose Constraint (x,y,z): ")
+    do_label = gtk.Label("Run IK & Move (x,y,z): ")
     self.poseIK_x = gtk.Entry()
     self.poseIK_y = gtk.Entry()
     self.poseIK_z = gtk.Entry()
@@ -250,10 +263,7 @@ class MoveArmWindow(gtk.Window):
 
     row = row+1
     #######################
-    label = gtk.Label("Run Planner without MoveArm:")
-    halign = gtk.Alignment(1,0.5,0,0.5)
-    halign.add(label)
-    do_label = gtk.Label("(x,y,z): ")
+    do_label = gtk.Label("Plan & Move (x,y,z): ")
     self.posePlan_x = gtk.Entry()
     self.posePlan_y = gtk.Entry()
     self.posePlan_z = gtk.Entry()
