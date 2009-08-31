@@ -62,6 +62,6 @@ test: trex
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex test; fi
 
 clean:
-	rm -rf PLASMA plasma TREX trex EUROPA logs include installed
+	rm -rf PLASMA plasma TREX trex EUROPA logs include installed ~/trex_core_build
 
 wipe: clean
