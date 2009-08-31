@@ -15,7 +15,7 @@
 #    
 #}
 
-cd `rospack find trex`
+cd `rospack find trex_core`
 
 rm -r include 2> /dev/null
 mkdir include
@@ -27,7 +27,7 @@ PACKAGES="TREX PLASMA"
 
 
 for PACKAGE in $PACKAGES; do
-    cd `rospack find trex`/$PACKAGE
+    cd `rospack find trex_core`/$PACKAGE
     mkdir $INCLUDE_DIR/$PACKAGE
     DIRS=`find \`pwd\` -type d`
     mkdir -p include

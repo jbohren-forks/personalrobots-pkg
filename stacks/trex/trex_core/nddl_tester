@@ -2,7 +2,7 @@
 
 
 START=`pwd`
-cd `rospack find trex`
+cd `rospack find trex_core`
 pwd
 . devConfig
 cd $START

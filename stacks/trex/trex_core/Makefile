@@ -25,10 +25,10 @@ includes: trex plasma
 # GET plasma
 PLASMA_REVISION=5634
 plasma:
-	@if [ -n "`svn info PLASMA | grep 'http://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch http://europa-pso.googlecode.com/svn/PLASMA/trunk && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; cd `rospack find trex` && ./touch_nddl3.sh ; fi ;
-	@if [ -n "`svn info PLASMA | grep 'https://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch https://europa-pso.googlecode.com/svn/PLASMA/trunk && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; cd `rospack find trex` && ./touch_nddl3.sh ; fi ;
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r $(PLASMA_REVISION) http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; ./copyIncludes.sh ; cd `rospack find trex` && ./touch_nddl3.sh ; fi ;
-	@if [ ! -n "`svn info PLASMA | grep 'Revision: $(PLASMA_REVISION)'`" ]; then cd PLASMA && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; cd `rospack find trex` && ./touch_nddl3.sh ; fi;
+	@if [ -n "`svn info PLASMA | grep 'http://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch http://europa-pso.googlecode.com/svn/PLASMA/trunk && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; cd `rospack find trex_core` && ./touch_nddl3.sh ; fi ;
+	@if [ -n "`svn info PLASMA | grep 'https://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch https://europa-pso.googlecode.com/svn/PLASMA/trunk && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; cd `rospack find trex_core` && ./touch_nddl3.sh ; fi ;
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r $(PLASMA_REVISION) http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; ./copyIncludes.sh ; cd `rospack find trex_core` && ./touch_nddl3.sh ; fi ;
+	@if [ ! -n "`svn info PLASMA | grep 'Revision: $(PLASMA_REVISION)'`" ]; then cd PLASMA && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; cd `rospack find trex_core` && ./touch_nddl3.sh ; fi;
 
 #install the patch
 #patch-PLASMA: PLASMA
