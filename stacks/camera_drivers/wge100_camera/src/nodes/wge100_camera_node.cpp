@@ -358,13 +358,13 @@ public:
              camera_.serial, camera_.ip_str, camera_.ifName, camera_.cam_name, camera_.ip_str, camera_.ifName);
       
     // We are going to receive the video on this host, so we need our own MAC address
-    if ( wgEthGetLocalMac(camera_.ifName, &localMac_) != 0 ) {
+    if ( wge100EthGetLocalMac(camera_.ifName, &localMac_) != 0 ) {
       ROS_FATAL("Unable to get local MAC address for interface %s", camera_.ifName);
       return;
     }
 
     // We also need our local IP address
-    if ( wgIpGetLocalAddr(camera_.ifName, &localIp_) != 0) {
+    if ( wge100IpGetLocalAddr(camera_.ifName, &localIp_) != 0) {
       ROS_FATAL("Unable to get local IP address for interface %s", camera_.ifName);
       return;
     }
@@ -607,7 +607,7 @@ private:
       if ( wge100StopVid(camera_) != 0)
         ROS_ERROR("Video Stop error");*/
     
-end_image_thread:
+//end_image_thread:
     state_ = OPENED; // FIXME This should be done with a held lock.
     ROS_DEBUG("Image thread exiting.");
   }

@@ -60,7 +60,7 @@ public:
   {                      
     in_addr in_addr;
     in_addr.s_addr = 0;
-    socket_ = wgSocketCreate(&in_addr, WG_CAMCMD_PORT);
+    socket_ = wge100SocketCreate(&in_addr, WG_CAMCMD_PORT);
     if (socket_ == -1)
     {
       ROS_ERROR("Error creating/binding socket: %s", strerror(errno));
