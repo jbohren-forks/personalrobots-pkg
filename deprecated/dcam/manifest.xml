@@ -4,7 +4,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <export>
-    <cpp cflags="-g -I${prefix}/include" lflags="-L${prefix}/lib -ldcam"/>
+    <cpp cflags="-g -I${prefix}/include" lflags="-L${prefix}/lib -ldcam -limageproc -lstereoproc"/>
   </export>
   <depend package="libdc1394v2"/>
   <depend package="opencv_latest"/>
