@@ -22,5 +22,4 @@ rospack_add_openmp_flags(find_bottle)
 #rospack_add_openmp_flags(find_trash)
 #target_link_libraries(find_trash find_bottles)
 
-genmsg()
 gensrv()
