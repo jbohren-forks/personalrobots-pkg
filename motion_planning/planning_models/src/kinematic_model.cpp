@@ -91,7 +91,7 @@ const std::string& planning_models::KinematicModel::getName(void) const
     return modelName_;
 }
 
-inline unsigned int planning_models::KinematicModel::getDimension(void) const
+unsigned int planning_models::KinematicModel::getDimension(void) const
 {
     return dimension_;
 }
@@ -101,12 +101,12 @@ const std::vector<double> &planning_models::KinematicModel::getStateBounds(void)
     return stateBounds_;
 }
 
-inline const btTransform& planning_models::KinematicModel::getRootTransform(void) const
+const btTransform& planning_models::KinematicModel::getRootTransform(void) const
 {
     return rootTransform_;
 }
 
-inline void planning_models::KinematicModel::setRootTransform(const btTransform &transform)
+void planning_models::KinematicModel::setRootTransform(const btTransform &transform)
 {
     rootTransform_ = transform;
 }
@@ -121,12 +121,12 @@ const std::vector<std::string> &planning_models::KinematicModel::getPlanarJoints
     return planarJoints_;
 }
 
-inline void planning_models::KinematicModel::lock(void)
+void planning_models::KinematicModel::lock(void)
 {
     lock_.lock();
 }
 
-inline void planning_models::KinematicModel::unlock(void)
+void planning_models::KinematicModel::unlock(void)
 {
     lock_.unlock();
 }
@@ -663,7 +663,7 @@ planning_models::KinematicModel::Link::~Link(void)
 }
 
 
-inline void planning_models::KinematicModel::Link::computeTransform(void)
+void planning_models::KinematicModel::Link::computeTransform(void)
 {
     globalTransFwd.mult(before->before ? before->before->globalTransFwd : owner->getRootTransform(), constTrans);
     globalTransFwd *= before->varTrans;    
@@ -686,7 +686,7 @@ planning_models::KinematicModel::AttachedBody::~AttachedBody(void)
 	delete shape;
 }
 
-inline void planning_models::KinematicModel::AttachedBody::computeTransform(void)
+void planning_models::KinematicModel::AttachedBody::computeTransform(void)
 {
     globalTrans = owner->globalTrans * attachTrans;
 }
