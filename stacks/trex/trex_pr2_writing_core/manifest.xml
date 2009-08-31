@@ -6,8 +6,6 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="trex_pr2" />
-  <depend package="trex_ros" />
-  <depend package="trex_core" />
 
   <export>
     <nddl iflags="-I${prefix}/nddl -I${prefix}"/>
