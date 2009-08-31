@@ -46,7 +46,7 @@
 
 #include <wge100_camera/ipcam_packet.h>
 #include <wge100_camera/host_netutil.h>
-#include <wge100_camera/fcamlib.h>
+#include <wge100_camera/wge100lib.h>
   
 uint16_t checksum(uint16_t *data)
 {
@@ -61,7 +61,7 @@ int read_name(IpCamList *camera)
   uint8_t namebuff[FLASH_PAGE_SIZE];
   IdentityFlashPage *id = (IdentityFlashPage *) &namebuff;
 
-  if(fcamReliableFlashRead(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
+  if(wge100ReliableFlashRead(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
   {
     fprintf(stderr, "Flash read error. Aborting.\n");
     return -2;
@@ -103,7 +103,7 @@ int write_name(IpCamList *camera, char *name, char *new_ip)
   id->cam_addr = cam_ip.s_addr;
   id->checksum = checksum((uint16_t *) namebuff);
 
-  if (fcamReliableFlashWrite(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
+  if (wge100ReliableFlashWrite(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
   {    
     fprintf(stderr, "Flash write error. The camera name is an undetermined state.\n");
     return -2;
@@ -111,7 +111,7 @@ int write_name(IpCamList *camera, char *name, char *new_ip)
   
   fprintf(stderr, "Success! Restarting camera, should take about 10 seconds to come back up after this.\n");
 
-  fcamReset(camera);
+  wge100Reset(camera);
 
   return 0;
 }
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
   // Find the camera matching the URL
   IpCamList camera;
   const char *errmsg;
-  int outval = fcamFindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
+  int outval = wge100FindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
   if (outval)
   {
     fprintf(stderr, "Matching URL %s : %s\n", camera_url, errmsg);
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
   }
 
   // Configure the camera with its IP address, wait up to 500ms for completion
-  outval = fcamConfigure(&camera, camera.ip_str, SEC_TO_USEC(0.5));
+  outval = wge100Configure(&camera, camera.ip_str, SEC_TO_USEC(0.5));
   if (outval != 0) {
     if (outval == ERR_CONFIG_ARPFAIL) {
       fprintf(stderr, "Unable to create ARP entry (are you root?), continuing anyway\n");

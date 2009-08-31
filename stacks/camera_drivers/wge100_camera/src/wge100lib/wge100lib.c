@@ -1,4 +1,4 @@
-#include "wge100_camera/fcamlib.h"
+#include "wge100_camera/wge100lib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,8 +36,8 @@ const struct MT9VMode MT9VModes[MT9V_NUM_MODES] = {
  *
  * @return	Returns the the library as an integer 0x0000MMNN, where MM = Major version and NN = Minor version
  */
-int fcamlibVersion() {
-	return FCAMLIB_VERSION;
+int wge100libVersion() {
+	return WGE100LIB_VERSION;
 }
 
 
@@ -71,7 +71,7 @@ any://[@camera_ip][#local_interface]
  * @return Returns 0 if a camera was found, -1 and sets errmsg if an error occurred.
  */
 
-int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const char **errmsg)
+int wge100FindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const char **errmsg)
 {
   static const char *badprefix = "Bad URL prefix, expected name://, serial:// or any://.";
   static const char *multiaddress = "Multiple @-prefixed camera addresses found.";
@@ -99,7 +99,7 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   IpCamList camList;
   IpCamList *curEntry;
   
-  fcamCamListInit(&camList); // Must happen before any potential failures.
+  wge100CamListInit(&camList); // Must happen before any potential failures.
 
   if (errmsg)
     *errmsg = illegalcase; // If we return an error
@@ -185,7 +185,7 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   // Build up a list of cameras. Only ones that are on the specified
   // interface (if specified), and that can reply from the specified
   // address (if specified) will end up in the list.
-  if (fcamDiscover(interface, &camList, address, wait_us) == -1)
+  if (wge100Discover(interface, &camList, address, wait_us) == -1)
   {
     if (errmsg)
       *errmsg = discoverfailed;
@@ -245,13 +245,13 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   }
 
 bailout:
-  fcamCamListDelAll(&camList);
+  wge100CamListDelAll(&camList);
   free(copy);
   return retval;
 }
 
 /**
- * Waits for a FCAM StatusPacket on the specified socket for a specified duration.
+ * Waits for a WGE100 StatusPacket on the specified socket for a specified duration.
  *
  * The Status type and code will be reported back to the called via the 'type' & 'code'
  * arguments. If the timeout expires before a valid status packet is received, then
@@ -264,11 +264,11 @@ bailout:
  *
  * @return Returns 0 if no system errors occured. -1 with errno set otherwise.
  */
-int fcamStatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
-	if( wgWaitForPacket(&s, 1, PKTT_STATUS, sizeof(PacketStatus), &wait_us) != -1 && (wait_us != 0) ) {
+int wge100StatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
+	if( wge100WaitForPacket(&s, 1, PKTT_STATUS, sizeof(PacketStatus), &wait_us) != -1 && (wait_us != 0) ) {
 		PacketStatus sPkt;
 		if( recvfrom( s, &sPkt, sizeof(PacketStatus), 0, NULL, NULL )  == -1 ) {
-			perror("fcamStatusWait unable to receive from socket");
+			perror("wge100StatusWait unable to receive from socket");
 			*type = PKT_STATUST_ERROR;
 			*code = PKT_ERROR_SYSERR;
 			return -1;
@@ -285,7 +285,7 @@ int fcamStatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
 }
 
 
-static int fcamDiscoverSend(const char *ifName, const char *ipAddress, unsigned wait_us)
+static int wge100DiscoverSend(const char *ifName, const char *ipAddress, unsigned wait_us)
 {
 	// Create and initialize a new Discover packet
 	PacketDiscover dPkt;
@@ -296,7 +296,7 @@ static int fcamDiscoverSend(const char *ifName, const char *ipAddress, unsigned 
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(ifName, &dPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(ifName, &dPkt.hdr.reply_to);
 	if(s == -1) {
 		//perror("Unable to create socket\n");
 		return -1;
@@ -315,17 +315,17 @@ static int fcamDiscoverSend(const char *ifName, const char *ipAddress, unsigned 
   {
     struct in_addr localip;
     struct in_addr netmask;
-    wgIpGetLocalAddr(ifName, &localip);
-    wgIpGetLocalNetmask(ifName, &netmask);
+    wge100IpGetLocalAddr(ifName, &localip);
+    wge100IpGetLocalNetmask(ifName, &netmask);
     dPkt.ip_addr = localip.s_addr ^ netmask.s_addr ^ ~0;
   }
 
-	if( wgSendUDPBcast(s, ifName, &dPkt,sizeof(dPkt)) == -1) {
+	if( wge100SendUDPBcast(s, ifName, &dPkt,sizeof(dPkt)) == -1) {
 		perror("Unable to send broadcast\n");
 	}
 
 	// For the old API
-  if( wgSendUDPBcast(s, ifName, &dPkt,sizeof(dPkt)-sizeof(dPkt.ip_addr)) == -1) {
+  if( wge100SendUDPBcast(s, ifName, &dPkt,sizeof(dPkt)-sizeof(dPkt.ip_addr)) == -1) {
 		perror("Unable to send broadcast\n");
 	}
 
@@ -333,7 +333,7 @@ static int fcamDiscoverSend(const char *ifName, const char *ipAddress, unsigned 
 }
 
 /**
- * Discovers all FCAM cameras that are connected to the 'ifName' ethernet interface and
+ * Discovers all WGE100 cameras that are connected to the 'ifName' ethernet interface and
  * adds new ones to the 'ipCamList' list.
  *
  * @param ifName 		The ethernet interface name to use. Null terminated string (e.g., "eth0"). Empty means to query all interfaces.
@@ -343,7 +343,7 @@ static int fcamDiscoverSend(const char *ifName, const char *ipAddress, unsigned 
  * @return	Returns -1 with errno set for system call errors. Otherwise returns number of new
  * 			cameras found.
  */
-int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress, unsigned wait_us) {
+int wge100Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress, unsigned wait_us) {
   int retval = -1;
   int *s = NULL; // Sockets to receive from
   int numif = 1;
@@ -399,7 +399,7 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 
   for (nums = 0; nums < numif; nums++)
   {
-    s[nums] = fcamDiscoverSend(ifNames[nums], ipAddress, wait_us);
+    s[nums] = wge100DiscoverSend(ifNames[nums], ipAddress, wait_us);
     if (s[nums] == -1)
     {
       //fprintf(stderr, "Removing interface %s.\n", ifNames[nums]);
@@ -415,7 +415,7 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 
 	do {
 		// Wait in the loop for replies. wait_us is updated each time through the loop.
-    int curs = wgWaitForPacket(s, nums, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - sizeof(IPAddress), &wait_us);
+    int curs = wge100WaitForPacket(s, nums, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - sizeof(IPAddress), &wait_us);
 		if( curs != -1  && wait_us != 0 ) {
 			// We've received an Announce packet, so pull it out of the receive queue
 			PacketAnnounce aPkt;
@@ -426,7 +426,7 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 
 			packet_len = recvfrom( s[curs], &aPkt, sizeof(PacketAnnounce), 0, (struct sockaddr *) &fromaddr, &fromlen);
       if(packet_len == -1 ) {
-				perror("wgDiscover unable to receive from socket");
+				perror("wge100Discover unable to receive from socket");
         goto err;
 			}
 
@@ -447,7 +447,7 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 				perror("Malloc failed");
         goto err;
       }
-			fcamCamListInit( tmpListItem );
+			wge100CamListInit( tmpListItem );
 
 			// Initialize the new list item's data fields (byte order corrected)
       tmpListItem->hw_version = ntohl(aPkt.hw_version);
@@ -464,10 +464,10 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 			tmpListItem->status = CamStatusDiscovered;
 			char pcb_rev = 0x0A + (0x0000000F & ntohl(aPkt.hw_version));
 			int hdl_rev = 0x00000FFF & (ntohl(aPkt.hw_version)>>4);
-		  snprintf(tmpListItem->hwinfo, FCAM_CAMINFO_LEN, "PCB rev %X : HDL rev %3X : FW rev %3X", pcb_rev, hdl_rev, ntohl(aPkt.fw_version));
+		  snprintf(tmpListItem->hwinfo, WGE100_CAMINFO_LEN, "PCB rev %X : HDL rev %3X : FW rev %3X", pcb_rev, hdl_rev, ntohl(aPkt.fw_version));
 
 			// If this camera is already in the list, we don't want to add another copy
-			if( fcamCamListAdd( ipCamList, tmpListItem ) == CAMLIST_ADD_DUP) {
+			if( wge100CamListAdd( ipCamList, tmpListItem ) == CAMLIST_ADD_DUP) {
 				free(tmpListItem);
 			} else {
 				debug("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n", aPkt.mac[0], aPkt.mac[1], aPkt.mac[2], aPkt.mac[3], aPkt.mac[4], aPkt.mac[5]);
@@ -505,7 +505,7 @@ err:
  * 					the host system could not update its arp table. This is normally because
  * 					the library is not running as root.
  */
-int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
+int wge100Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
 	// Create and initialize a new Configure packet
 	PacketConfigure cPkt;
 
@@ -522,9 +522,9 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &cPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &cPkt.hdr.reply_to);
 	if(s == -1) {
-		perror("fcamConfigure socket creation failed");
+		perror("wge100Configure socket creation failed");
 		return -1;
 	}
 	
@@ -534,7 +534,7 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
     debug("No ipAddress, using %x\n", camInfo->ip);
     cPkt.ip_addr = camInfo->ip;
     
-    if(wgSendUDP(s, &camInfo->ip, &cPkt, sizeof(cPkt)) == -1) {
+    if(wge100SendUDP(s, &camInfo->ip, &cPkt, sizeof(cPkt)) == -1) {
       debug("Unable to send packet\n");
       close(s);
       return -1;
@@ -548,7 +548,7 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
     debug("Using ipAddress %s -> %x iface %s\n", ipAddress, cPkt.ip_addr, camInfo->ifName);
     
     debug("Sending broadcast discover packet.\n");
-    if(wgSendUDPBcast(s, camInfo->ifName, &cPkt, sizeof(cPkt)) == -1) {
+    if(wge100SendUDPBcast(s, camInfo->ifName, &cPkt, sizeof(cPkt)) == -1) {
       debug("Unable to send broadcast\n");
       close(s);
       return -1;
@@ -558,7 +558,7 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 	// 'Connect' insures we will only receive datagram replies from the camera's new IP
 	IPAddress camIP = cPkt.ip_addr;
   debug("Connecting to %x.\n", camIP);
-	if( wgSocketConnect(s, &camIP) ) {
+	if( wge100SocketConnect(s, &camIP) ) {
     debug("Unable to connect\n");
     close(s);
 		return -1;
@@ -566,11 +566,11 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 
 	// Wait up to wait_us for a valid packet to be received on s
 	do {
-		if( wgWaitForPacket(&s, 1, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - sizeof(IPAddress), &wait_us) != -1  && (wait_us != 0) ) {
+		if( wge100WaitForPacket(&s, 1, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - sizeof(IPAddress), &wait_us) != -1  && (wait_us != 0) ) {
 			PacketAnnounce aPkt;
 
 			if( recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, NULL, NULL )  == -1 ) {
-				perror("wgDiscover unable to receive from socket");
+				perror("wge100Discover unable to receive from socket");
         close(s);
 				return -1;
 			}
@@ -580,7 +580,7 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 				camInfo->status = CamStatusConfigured;
 				memcpy(&camInfo->ip, &cPkt.ip_addr, sizeof(IPAddress));
 				// Add the IP/MAC mapping to the system ARP table
-				if( wgArpAdd(camInfo) ) {
+				if( wge100ArpAdd(camInfo) ) {
 					close(s);
 					return ERR_CONFIG_ARPFAIL;
 				}
@@ -611,7 +611,7 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
  * 			Returns 0 for success
  * 			Returns 1 for protocol failures (timeout, etc)
  */
-int fcamStartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipAddress, uint16_t port ) {
+int wge100StartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipAddress, uint16_t port ) {
 	PacketVidStart vPkt;
 
 	// Initialize the packet
@@ -632,23 +632,23 @@ int fcamStartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ip
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &vPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &vPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
   
-	if(wgSendUDP(s, &camInfo->ip, &vPkt, sizeof(vPkt)) == -1) {
+	if(wge100SendUDP(s, &camInfo->ip, &vPkt, sizeof(vPkt)) == -1) {
     goto err_out;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     goto err_out;
 	}
 
 	// Wait for a status reply
 	uint32_t type, code;
-	if( fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code ) == -1) {
+	if( wge100StatusWait( s, STD_REPLY_TIMEOUT, &type, &code ) == -1) {
     goto err_out;
   }
 
@@ -656,7 +656,7 @@ int fcamStartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ip
 	if(type == PKT_STATUST_OK) {
 		return 0;
 	} else {
-		debug("Error: wgStatusWait returned status %d, code %d\n", type, code);
+		debug("Error: wge100StatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
 
@@ -673,7 +673,7 @@ err_out:
  * 			Returns -1 with errno set for system errors
  * 			Returns 1 for protocol errors
  */
-int fcamStopVid( const IpCamList *camInfo ) {
+int wge100StopVid( const IpCamList *camInfo ) {
 	PacketVidStop vPkt;
 
 	// Initialize the packet
@@ -684,22 +684,22 @@ int fcamStopVid( const IpCamList *camInfo ) {
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &vPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &vPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &vPkt, sizeof(vPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &vPkt, sizeof(vPkt)) == -1 ) {
     goto err_out;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) == -1) {
+	if( wge100SocketConnect(s, &camInfo->ip) == -1) {
     goto err_out;
 	}
 
 	uint32_t type, code;
-	if(fcamStatusWait( s, STOP_REPLY_TIMEOUT, &type, &code ) == -1) {
+	if(wge100StatusWait( s, STOP_REPLY_TIMEOUT, &type, &code ) == -1) {
     goto err_out;
 	}
 
@@ -707,7 +707,7 @@ int fcamStopVid( const IpCamList *camInfo ) {
 	if(type == PKT_STATUST_OK) {
 		return 0;
 	} else {
-		debug("Error: fcamStatusWait returned status %d, code %d\n", type, code);
+		debug("Error: wge100StatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
 
@@ -723,7 +723,7 @@ err_out:
  * @return 	Returns 0 for success
  * 			Returns -1 for system errors
  */
-int fcamReconfigureFPGA( IpCamList *camInfo ) {
+int wge100ReconfigureFPGA( IpCamList *camInfo ) {
 	PacketReconfigureFPGA gPkt;
 
 	// Initialize the packet
@@ -734,12 +734,12 @@ int fcamReconfigureFPGA( IpCamList *camInfo ) {
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &gPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &gPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &gPkt, sizeof(gPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &gPkt, sizeof(gPkt)) == -1 ) {
 	  close(s);
     return -1;
 	}
@@ -761,7 +761,7 @@ int fcamReconfigureFPGA( IpCamList *camInfo ) {
  * @return 	Returns 0 for success
  * 			Returns -1 for system errors
  */
-int fcamReset( IpCamList *camInfo ) {
+int wge100Reset( IpCamList *camInfo ) {
 	PacketReset gPkt;
 
 	// Initialize the packet
@@ -772,12 +772,12 @@ int fcamReset( IpCamList *camInfo ) {
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &gPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &gPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &gPkt, sizeof(gPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &gPkt, sizeof(gPkt)) == -1 ) {
 	  close(s);
     return -1;
 	}
@@ -805,7 +805,7 @@ int fcamReset( IpCamList *camInfo ) {
  *
  * @return Returns 0 for success, -1 for system error, or 1 for protocol error.
  */
-int fcamGetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
+int wge100GetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
 	PacketTimeRequest gPkt;
 
 	// Initialize the packet
@@ -816,25 +816,25 @@ int fcamGetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &gPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &gPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &gPkt, sizeof(gPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &gPkt, sizeof(gPkt)) == -1 ) {
     close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     close(s);
 		return -1;
 	}
 
 	uint32_t wait_us = STD_REPLY_TIMEOUT;
 	do {
-		if( wgWaitForPacket(&s, 1, PKTT_TIMEREPLY, sizeof(PacketTimer), &wait_us) != -1 && (wait_us != 0) ) {
+		if( wge100WaitForPacket(&s, 1, PKTT_TIMEREPLY, sizeof(PacketTimer), &wait_us) != -1 && (wait_us != 0) ) {
 			PacketTimer tPkt;
 			if( recvfrom( s, &tPkt, sizeof(PacketTimer), 0, NULL, NULL )  == -1 ) {
 				perror("GetTime unable to receive from socket");
@@ -879,7 +879,7 @@ int fcamGetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
  *
  */
 
-int fcamReliableFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataOut, int *retries ) {
+int wge100ReliableFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataOut, int *retries ) {
   int retval = -2;
 
   int counter = 10;
@@ -888,7 +888,7 @@ int fcamReliableFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *
     retries = &counter;
   for (; *retries > 0; (*retries)--)
   {
-    retval = fcamFlashRead( camInfo, address, pageDataOut );
+    retval = wge100FlashRead( camInfo, address, pageDataOut );
 
     if (!retval)
       return 0;
@@ -913,7 +913,7 @@ int fcamReliableFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *
  *
  */
 
-int fcamFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataOut ) {
+int wge100FlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataOut ) {
 	PacketFlashRequest rPkt;
 
 	// Initialize the packet
@@ -931,26 +931,26 @@ int fcamFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageData
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &rPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &rPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
     close(s);
 		return -1;
 	}
 
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     close(s);
 		return -1;
 	}
 
 	uint32_t wait_us = STD_REPLY_TIMEOUT;
 	do {
-		if( wgWaitForPacket(&s, 1, PKTT_FLASHDATA, sizeof(PacketFlashPayload), &wait_us) != -1 && (wait_us != 0) ) {
+		if( wge100WaitForPacket(&s, 1, PKTT_FLASHDATA, sizeof(PacketFlashPayload), &wait_us) != -1 && (wait_us != 0) ) {
 			PacketFlashPayload fPkt;
 			if( recvfrom( s, &fPkt, sizeof(PacketFlashPayload), 0, NULL, NULL )  == -1 ) {
 				perror("GetTime unable to receive from socket");
@@ -987,7 +987,7 @@ int fcamFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageData
  *
  */
 
-int fcamReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pageDataIn, int *retries ) {
+int wge100ReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pageDataIn, int *retries ) {
   uint8_t buffer[FLASH_PAGE_SIZE];
   int retval = -2;
   int counter = 10;
@@ -997,7 +997,7 @@ int fcamReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const ui
 
   for (; *retries > 0; (*retries)--)
   {
-    retval = fcamFlashWrite( camInfo, address, pageDataIn );
+    retval = wge100FlashWrite( camInfo, address, pageDataIn );
     if (retval)
     {
       debug("Failed write, retries left: %i.", *retries);
@@ -1005,7 +1005,7 @@ int fcamReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const ui
       continue;
     }
     
-    retval = fcamReliableFlashRead( camInfo, address, buffer, retries );
+    retval = wge100ReliableFlashRead( camInfo, address, buffer, retries );
     if (retval)
     {
       debug("Failed compare read.");
@@ -1037,7 +1037,7 @@ int fcamReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const ui
  * 			Returns 1 for protocol error
  *
  */
-int fcamFlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pageDataIn ) {
+int wge100FlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pageDataIn ) {
 	PacketFlashPayload rPkt;
 
 	// Initialize the packet
@@ -1056,31 +1056,31 @@ int fcamFlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *p
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &rPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &rPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
     close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     close(s);
 		return -1;
 	}
 
 	// Wait for response - once we get an OK, we're clear to send the next page.
 	uint32_t type, code;
-	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	wge100StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
 		return 0;
 	} else {
-		debug("Error: wgStatusWait returned status %d, code %d\n", type, code);
+		debug("Error: wge100StatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
 }
@@ -1095,7 +1095,7 @@ int fcamFlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *p
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int fcamTriggerControl( const IpCamList *camInfo, uint32_t triggerType ) {
+int wge100TriggerControl( const IpCamList *camInfo, uint32_t triggerType ) {
 	PacketTrigControl tPkt;
 
 	// Initialize the packet
@@ -1112,31 +1112,31 @@ int fcamTriggerControl( const IpCamList *camInfo, uint32_t triggerType ) {
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &tPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &tPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &tPkt, sizeof(tPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &tPkt, sizeof(tPkt)) == -1 ) {
     close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     close(s);
 		return -1;
 	}
 
 	// Wait for response
 	uint32_t type, code;
-	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	wge100StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
 		return 0;
 	} else {
-		debug("Error: wgStatusWait returned status %d, code %d\n", type, code);
+		debug("Error: wge100StatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
 }
@@ -1154,7 +1154,7 @@ int fcamTriggerControl( const IpCamList *camInfo, uint32_t triggerType ) {
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int fcamConfigureBoard( const IpCamList *camInfo, uint32_t serial, MACAddress *mac ) {
+int wge100ConfigureBoard( const IpCamList *camInfo, uint32_t serial, MACAddress *mac ) {
 	PacketSysConfig sPkt;
 
 	// Initialize the packet
@@ -1169,30 +1169,30 @@ int fcamConfigureBoard( const IpCamList *camInfo, uint32_t serial, MACAddress *m
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &sPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &sPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &sPkt, sizeof(sPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &sPkt, sizeof(sPkt)) == -1 ) {
     close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     close(s);
 		return -1;
 	}
 	// Wait for response
 	uint32_t type, code;
-	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	wge100StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
 		return 0;
 	} else {
-		debug("Error: wgStatusWait returned status %d, code %d\n", type, code);
+		debug("Error: wge100StatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
 }
@@ -1212,7 +1212,7 @@ int fcamConfigureBoard( const IpCamList *camInfo, uint32_t serial, MACAddress *m
  * 			Returns 1 for protocol error
  */
 
-int fcamReliableSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data, int *retries ) {
+int wge100ReliableSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data, int *retries ) {
   uint16_t readbackdata;
   int retval = -2;
   int counter = 10;
@@ -1222,11 +1222,11 @@ int fcamReliableSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t dat
 
   for (; *retries > 0; (*retries)--)
   {
-    retval = fcamSensorWrite( camInfo, reg, data );
+    retval = wge100SensorWrite( camInfo, reg, data );
     if (retval)
       continue;
 
-    retval = fcamReliableSensorRead( camInfo, reg, &readbackdata, retries );
+    retval = wge100ReliableSensorRead( camInfo, reg, &readbackdata, retries );
     if (retval)
       continue;
 
@@ -1251,7 +1251,7 @@ int fcamReliableSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t dat
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int fcamSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data ) {
+int wge100SensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data ) {
 	PacketSensorData sPkt;
 
 	// Initialize the packet
@@ -1265,31 +1265,31 @@ int fcamSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data ) {
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &sPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &sPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &sPkt, sizeof(sPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &sPkt, sizeof(sPkt)) == -1 ) {
     close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     close(s);
 		return -1;
 	}
 
 	// Wait for response
 	uint32_t type, code;
-	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	wge100StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
 		return 0;
 	} else {
-		debug("Error: wgStatusWait returned status %d, code %d\n", type, code);
+		debug("Error: wge100StatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
 }
@@ -1309,7 +1309,7 @@ int fcamSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data ) {
  * 			Returns 1 for protocol error
  */
 
-int fcamReliableSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data, int *retries ) {
+int wge100ReliableSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data, int *retries ) {
   int retval = -2;
 
   int counter = 10;
@@ -1318,7 +1318,7 @@ int fcamReliableSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *dat
     retries = &counter;
   for (; *retries > 0; (*retries)--)
   {
-    retval = fcamSensorRead( camInfo, reg, data );
+    retval = wge100SensorRead( camInfo, reg, data );
 
     if (!retval)
       return 0;
@@ -1338,7 +1338,7 @@ int fcamReliableSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *dat
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int fcamSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data ) {
+int wge100SensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data ) {
 	PacketSensorRequest rPkt;
 
 	// Initialize the packet
@@ -1350,25 +1350,25 @@ int fcamSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data ) {
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &rPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &rPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
     close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     close(s);
 		return -1;
 	}
 
 	uint32_t wait_us = STD_REPLY_TIMEOUT;
 	do {
-		if( wgWaitForPacket(&s, 1, PKTT_SENSORDATA, sizeof(PacketSensorData), &wait_us) != -1 && (wait_us != 0) ) {
+		if( wge100WaitForPacket(&s, 1, PKTT_SENSORDATA, sizeof(PacketSensorData), &wait_us) != -1 && (wait_us != 0) ) {
 			PacketSensorData sPkt;
 			if( recvfrom( s, &sPkt, sizeof(PacketSensorData), 0, NULL, NULL )  == -1 ) {
 				perror("SensorRead unable to receive from socket");
@@ -1398,7 +1398,7 @@ int fcamSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data ) {
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int fcamSensorSelect( const IpCamList *camInfo, uint8_t index, uint32_t reg ) {
+int wge100SensorSelect( const IpCamList *camInfo, uint8_t index, uint32_t reg ) {
 	PacketSensorSelect sPkt;
 
 	// Initialize the packet
@@ -1412,31 +1412,31 @@ int fcamSensorSelect( const IpCamList *camInfo, uint8_t index, uint32_t reg ) {
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &sPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &sPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &sPkt, sizeof(sPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &sPkt, sizeof(sPkt)) == -1 ) {
     close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     close(s);
 		return -1;
 	}
 
 	// Wait for response
 	uint32_t type, code;
-	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	wge100StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
 		return 0;
 	} else {
-		debug("Error: wgStatusWait returned status %d, code %d\n", type, code);
+		debug("Error: wge100StatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
 }
@@ -1451,7 +1451,7 @@ int fcamSensorSelect( const IpCamList *camInfo, uint8_t index, uint32_t reg ) {
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int fcamImagerModeSelect( const IpCamList *camInfo, uint32_t mode ) {
+int wge100ImagerModeSelect( const IpCamList *camInfo, uint32_t mode ) {
 	PacketImagerMode mPkt;
 
 	// Initialize the packet
@@ -1465,31 +1465,31 @@ int fcamImagerModeSelect( const IpCamList *camInfo, uint32_t mode ) {
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &mPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &mPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &mPkt, sizeof(mPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &mPkt, sizeof(mPkt)) == -1 ) {
     close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     close(s);
 		return -1;
 	}
 
 	// Wait for response
 	uint32_t type, code;
-	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	wge100StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
 		return 0;
 	} else {
-		debug("Error: wgStatusWait returned status %d, code %d\n", type, code);
+		debug("Error: wge100StatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
 }
@@ -1508,7 +1508,7 @@ int fcamImagerModeSelect( const IpCamList *camInfo, uint32_t mode ) {
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int fcamImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t vertical ) {
+int wge100ImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t vertical ) {
 	PacketImagerSetRes rPkt;
 
 	// Initialize the packet
@@ -1523,31 +1523,31 @@ int fcamImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t ve
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
 	 */
-	int s = wgCmdSocketCreate(camInfo->ifName, &rPkt.hdr.reply_to);
+	int s = wge100CmdSocketCreate(camInfo->ifName, &rPkt.hdr.reply_to);
 	if( s == -1 ) {
 		return -1;
 	}
 
-	if(	wgSendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
+	if(	wge100SendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
     close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
-	if( wgSocketConnect(s, &camInfo->ip) ) {
+	if( wge100SocketConnect(s, &camInfo->ip) ) {
     close(s);
 		return -1;
 	}
 
 	// Wait for response
 	uint32_t type, code;
-	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	wge100StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
 		return 0;
 	} else {
-		debug("Error: wgStatusWait returned status %d, code %d\n", type, code);
+		debug("Error: wge100StatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
 }
@@ -1555,7 +1555,7 @@ int fcamImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t ve
 #define MAX_HORIZ_RESOLUTION 752
 #define LINE_NUMBER_MASK 0x3FF
 
-int fcamVidReceiveSocket( int s, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
+int wge100VidReceiveSocket( int s, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
 	/*
 	 * The default receive buffer size on a 32-bit Linux machine is only 128kB.
 	 * At a burst data rate of ~ 82.6Mbit/s in the 640x480 @30fps, this buffer will fill in ~12.6ms.
@@ -1622,7 +1622,7 @@ int fcamVidReceiveSocket( int s, size_t height, size_t width, FrameHandler frame
 	PacketEOF *eof = NULL;
 
   // Information structure to pass to the frame handler.
-  fcamFrameInfo frameInfo;
+  wge100FrameInfo frameInfo;
   
   frameInfo.width = width;
   frameInfo.height = height;
@@ -1667,7 +1667,7 @@ int fcamVidReceiveSocket( int s, size_t height, size_t width, FrameHandler frame
         FD_SET(s, &set);
         
         if( select(s+1, &set, NULL, NULL, &readtimeout) == -1 ) {
-          perror("fcamVidReceive select failed");
+          perror("wge100VidReceive select failed");
           close(s);
           return -1;
         }
@@ -1686,7 +1686,7 @@ int fcamVidReceiveSocket( int s, size_t height, size_t width, FrameHandler frame
         break;
       
       if( recvfrom( s, vPkt, sizeof(HeaderVideoLine)+width, 0, (struct sockaddr *) &fromaddr, &fromaddrlen )  == -1 ) {
-				perror("fcamVidReceive unable to receive from socket");
+				perror("wge100VidReceive unable to receive from socket");
 				break;
 			}
 				
@@ -1803,26 +1803,26 @@ int fcamVidReceiveSocket( int s, size_t height, size_t width, FrameHandler frame
 	return 0;
 }
 
-int fcamVidReceive( const char *ifName, uint16_t port, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
+int wge100VidReceive( const char *ifName, uint16_t port, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
 	struct in_addr host_addr;
-	wgIpGetLocalAddr( ifName, &host_addr );
+	wge100IpGetLocalAddr( ifName, &host_addr );
 
 	if( frameHandler == NULL ) {
 		debug("Invalid frame handler, aborting.\n");
 		return 1;
 	}
 
-	debug("fcamVidReceive ready to receive on %s (%s:%u)\n", ifName, inet_ntoa(host_addr), port);
+	debug("wge100VidReceive ready to receive on %s (%s:%u)\n", ifName, inet_ntoa(host_addr), port);
 
-	int s = wgSocketCreate( &host_addr, port );
+	int s = wge100SocketCreate( &host_addr, port );
 	if( s == -1 ) {
 		return -1;
 	}
 
-  return fcamVidReceiveSocket( s, height, width, frameHandler, userData);
+  return wge100VidReceiveSocket( s, height, width, frameHandler, userData);
 }
 
-int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
+int wge100VidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
   struct sockaddr localMac;
   struct in_addr localIp;
   struct sockaddr localPort;
@@ -1831,12 +1831,12 @@ int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHan
   int retval;
   int port;
 
-  if ( wgIpGetLocalAddr(camera->ifName, &localIp) != 0) {
+  if ( wge100IpGetLocalAddr(camera->ifName, &localIp) != 0) {
     fprintf(stderr, "Unable to get local IP address for interface %s", camera->ifName);
     return -1;
   }
     
-  if ( wgEthGetLocalMac(camera->ifName, &localMac) != 0 ) {
+  if ( wge100EthGetLocalMac(camera->ifName, &localMac) != 0 ) {
     fprintf(stderr, "Unable to get local MAC address for interface %s", camera->ifName);
     return -1;
   }
@@ -1846,7 +1846,7 @@ int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHan
 		return 1;
 	}
 
-  s = wgSocketCreate( &localIp, 0 );
+  s = wge100SocketCreate( &localIp, 0 );
 	if( s == -1 ) {
 		return -1;
 	}
@@ -1862,19 +1862,19 @@ int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHan
   port = ntohs(((struct sockaddr_in *)&localPort)->sin_port);
 //  fprintf(stderr, "Streaming to port %i.\n", port);
 
-  debug("fcamVidReceiveAuto ready to receive on %s (%s:%u)\n", camera->ifName, inet_ntoa(localIp), port);
+  debug("wge100VidReceiveAuto ready to receive on %s (%s:%u)\n", camera->ifName, inet_ntoa(localIp), port);
 
-  if ( fcamStartVid( camera, (uint8_t *)&(localMac.sa_data[0]), inet_ntoa(localIp), port) != 0 ) 
+  if ( wge100StartVid( camera, (uint8_t *)&(localMac.sa_data[0]), inet_ntoa(localIp), port) != 0 ) 
   {
     debug("Could not start camera streaming.");
     close (s);
     return -1;
   }
 
-  retval = fcamVidReceiveSocket( s, height, width, frameHandler, userData);
+  retval = wge100VidReceiveSocket( s, height, width, frameHandler, userData);
       
   close(s);
-  fcamStopVid(camera);
+  wge100StopVid(camera);
   return retval;
 }
 

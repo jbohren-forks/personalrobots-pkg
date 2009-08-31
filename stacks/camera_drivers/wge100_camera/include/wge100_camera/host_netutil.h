@@ -12,21 +12,21 @@
 extern "C" {
 #endif
 
-int wgEthGetLocalMac(const char *ifName, struct sockaddr *macAddr);
-int wgIpGetLocalNetmask(const char *ifName, struct in_addr *bcast);
-int wgIpGetLocalBcast(const char *ifName, struct in_addr *bcast);
-int wgIpGetLocalAddr(const char *ifName, struct in_addr *addr);
+int wge100EthGetLocalMac(const char *ifName, struct sockaddr *macAddr);
+int wge100IpGetLocalNetmask(const char *ifName, struct in_addr *bcast);
+int wge100IpGetLocalBcast(const char *ifName, struct in_addr *bcast);
+int wge100IpGetLocalAddr(const char *ifName, struct in_addr *addr);
 
-int wgCmdSocketCreate(const char *ifName, NetHost *localHost);
-int wgSocketCreate(const struct in_addr *addr, uint16_t port);
-int wgSocketConnect(int s, const IPAddress *ip);
-int wgSendUDP(int s, const IPAddress *ip, const void *data, size_t dataSize);
-int wgSendUDPBcast(int s, const char *ifName, const void *data, size_t dataSize);
+int wge100CmdSocketCreate(const char *ifName, NetHost *localHost);
+int wge100SocketCreate(const struct in_addr *addr, uint16_t port);
+int wge100SocketConnect(int s, const IPAddress *ip);
+int wge100SendUDP(int s, const IPAddress *ip, const void *data, size_t dataSize);
+int wge100SendUDPBcast(int s, const char *ifName, const void *data, size_t dataSize);
 
-int wgArpAdd(IpCamList *camInfo);
-int wgArpDel(IpCamList *camInfo);
+int wge100ArpAdd(IpCamList *camInfo);
+int wge100ArpDel(IpCamList *camInfo);
 
-int wgWaitForPacket( int *s, int nums, uint32_t type, size_t pktLen, uint32_t *wait_us );
+int wge100WaitForPacket( int *s, int nums, uint32_t type, size_t pktLen, uint32_t *wait_us );
 
 #define SEC_TO_USEC(sec) (1000*1000*sec)
 

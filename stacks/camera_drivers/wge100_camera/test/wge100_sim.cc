@@ -51,7 +51,7 @@
 
 #include <wge100_camera/ipcam_packet.h>
 #include <wge100_camera/host_netutil.h>
-#include <wge100_camera/fcamlib.h>
+#include <wge100_camera/wge100lib.h>
 
 class WGE100Simulator
 {
@@ -395,7 +395,7 @@ volatile bool WGE100Simulator::exiting_ = false;
 
 int main(int argc, char **argv)
 {
-  WGE100Simulator fcamsim(12345);
-  return fcamsim.run();
+  WGE100Simulator wge100sim(12345);
+  return wge100sim.run();
 }
 

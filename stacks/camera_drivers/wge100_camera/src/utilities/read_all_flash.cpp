@@ -1,4 +1,4 @@
-#include "wge100_camera/fcamlib.h"
+#include "wge100_camera/wge100lib.h"
 #include "wge100_camera/host_netutil.h"
 #include <string.h>
 #include <cstdio>
@@ -17,7 +17,7 @@ int main(int argc, char** argv)
   // Find the camera matching the URL
   IpCamList camera;
   const char *errmsg;
-  int outval = fcamFindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
+  int outval = wge100FindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
   if (outval)
   {
     fprintf(stderr, "Matching URL %s : %s\n", camera_url, errmsg);
@@ -25,7 +25,7 @@ int main(int argc, char** argv)
   }
 
   // Configure the camera with its IP address, wait up to 500ms for completion
-  int retval = fcamConfigure(&camera, camera.ip_str, SEC_TO_USEC(0.5));
+  int retval = wge100Configure(&camera, camera.ip_str, SEC_TO_USEC(0.5));
   if (retval != 0) {
     if (retval == ERR_CONFIG_ARPFAIL) {
       fprintf(stderr, "Unable to create ARP entry (are you root?), continuing anyway\n");
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
       fprintf(stderr, ".");
       fflush(stderr);
     }
-    if (fcamReliableFlashRead(&camera, i, buffer, &retries) != 0) {
+    if (wge100ReliableFlashRead(&camera, i, buffer, &retries) != 0) {
       fprintf(stderr, "Flash read error\n");
       return -1;
     }

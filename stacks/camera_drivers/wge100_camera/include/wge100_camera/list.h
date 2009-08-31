@@ -250,7 +250,7 @@ static inline void list_splice_init(struct list_head *list,
 
 typedef enum { CamStatusDiscovered, CamStatusConfigured, CamStatusVideo, CamStatusError, CamStatusMissing } IpCamStatus;
 
-#define FCAM_CAMINFO_LEN 100
+#define WGE100_CAMINFO_LEN 100
 
 typedef struct {
 	uint32_t serial;
@@ -280,18 +280,18 @@ typedef struct {
 
 	struct list_head list;
 
-  char hwinfo[FCAM_CAMINFO_LEN];
+  char hwinfo[WGE100_CAMINFO_LEN];
 
   char cam_name[CAMERA_NAME_LEN];
 } IpCamList;
 
-int fcamCamListInit( IpCamList *ipCamList );
-int fcamCamListAdd( IpCamList *ipCamList, IpCamList *newItem);
-int fcamCamListFind( IpCamList *ipCamList, uint32_t serial);
-int fcamCamListNumEntries( const IpCamList *ipCamList );
-IpCamList *fcamCamListGetEntry( const IpCamList *ipCamList, int index );
-int fcamCamListDelEntry( IpCamList *ipCamList, int index );
-void fcamCamListDelAll( IpCamList *ipCamList );
+int wge100CamListInit( IpCamList *ipCamList );
+int wge100CamListAdd( IpCamList *ipCamList, IpCamList *newItem);
+int wge100CamListFind( IpCamList *ipCamList, uint32_t serial);
+int wge100CamListNumEntries( const IpCamList *ipCamList );
+IpCamList *wge100CamListGetEntry( const IpCamList *ipCamList, int index );
+int wge100CamListDelEntry( IpCamList *ipCamList, int index );
+void wge100CamListDelAll( IpCamList *ipCamList );
 
 #define CAMLIST_ADD_OK 	0
 #define CAMLIST_ADD_DUP 1

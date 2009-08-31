@@ -64,7 +64,7 @@
 #include <driver_base/driver_node.h>
 #include <camera_calibration_parsers/parse.h>
 
-#include "wge100_camera/fcamlib.h"
+#include "wge100_camera/wge100lib.h"
 #include "wge100_camera/host_netutil.h"
 #include "wge100_camera/mt9v.h"
 
@@ -247,7 +247,7 @@ public:
     misfire_blank_ = 0;
     
     // Create a new IpCamList to hold the camera list
-//    fcamCamListInit(&camList);
+//    wge100CamListInit(&camList);
     
     // Clear statistics
     last_camera_ok_time_ = 0;
@@ -295,7 +295,7 @@ public:
 
   ~WGE100CameraDriver()
   {
-//    fcamCamListDelAll(&camList);
+//    wge100CamListDelAll(&camList);
     close();
   }
 
@@ -330,19 +330,19 @@ public:
     { // Haven't heard from the camera in a while, redo discovery.
       ROS_DEBUG("Redoing discovery.");
       const char *errmsg;
-      int findResult = fcamFindByUrl(config_.camera_url.c_str(), &camera_, SEC_TO_USEC(0.2), &errmsg);
+      int findResult = wge100FindByUrl(config_.camera_url.c_str(), &camera_, SEC_TO_USEC(0.2), &errmsg);
 
       if (findResult)
       {
         ROS_ERROR("Matching URL %s : %s", config_.camera_url.c_str(), errmsg);
         return;
       }
-      retval = fcamConfigure(&camera_, camera_.ip_str, SEC_TO_USEC(0.5));
+      retval = wge100Configure(&camera_, camera_.ip_str, SEC_TO_USEC(0.5));
     }
     else
-      retval = fcamConfigure(&camera_, NULL, SEC_TO_USEC(0.5));
+      retval = wge100Configure(&camera_, NULL, SEC_TO_USEC(0.5));
 
-    retval = fcamConfigure(&camera_, camera_.ip_str, SEC_TO_USEC(0.5));
+    retval = wge100Configure(&camera_, camera_.ip_str, SEC_TO_USEC(0.5));
     if (retval != 0) {
       if (retval == ERR_CONFIG_ARPFAIL) {
         ROS_WARN("Unable to create ARP entry (are you root?), continuing anyway");
@@ -370,7 +370,7 @@ public:
     }
       
     // Select trigger mode.
-    if ( fcamTriggerControl( &camera_, config_.ext_trig ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
+    if ( wge100TriggerControl( &camera_, config_.ext_trig ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
       ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", camera_.ip_str, camera_.ifName);
       return;
     }
@@ -401,7 +401,7 @@ public:
     }
 
     // Select a video mode
-    if ( fcamImagerModeSelect( &camera_, video_mode_ ) != 0) {
+    if ( wge100ImagerModeSelect( &camera_, video_mode_ ) != 0) {
       ROS_FATAL("Mode select error");
       //node_handle_.shutdown();
       return;
@@ -409,33 +409,33 @@ public:
 
     int bin_size = width_ > 320 ? 1 : 2;
     // Set horizontal blanking
-    if ( fcamReliableSensorWrite( &camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank * bin_size, NULL ) != 0)
+    if ( wge100ReliableSensorWrite( &camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank * bin_size, NULL ) != 0)
     {
       ROS_WARN("Error setting horizontal blanking.");
     }
 
-    if ( fcamReliableSensorWrite( &camera_, MT9V_REG_VERTICAL_BLANKING, MT9VModes[video_mode_].vblank, NULL) != 0)
+    if ( wge100ReliableSensorWrite( &camera_, MT9V_REG_VERTICAL_BLANKING, MT9VModes[video_mode_].vblank, NULL) != 0)
     {
       ROS_WARN("Error setting vertical blanking.");
     }
 
     /*
     // Set maximum course shutter width
-    if ( fcamReliableSensorWrite( camera_, 0xBD, 240, NULL ) != 0) {
+    if ( wge100ReliableSensorWrite( camera_, 0xBD, 240, NULL ) != 0) {
       ROS_FATAL("Sensor write error");
       node_handle_.shutdown();
       return;
     }
     */
 
-    if (fcamReliableSensorWrite(&camera_, MT9V_REG_AGC_AEC_ENABLE, config_.auto_gain * 2 + config_.auto_exposure, NULL) != 0)
+    if (wge100ReliableSensorWrite(&camera_, MT9V_REG_AGC_AEC_ENABLE, config_.auto_gain * 2 + config_.auto_exposure, NULL) != 0)
     {
       ROS_WARN("Error setting AGC/AEC mode. Exposure and gain may be incorrect.");
     }
 
     if (!config_.auto_gain)
     {
-      if ( fcamReliableSensorWrite( &camera_, MT9V_REG_ANALOG_GAIN, config_.gain, NULL) != 0)
+      if ( wge100ReliableSensorWrite( &camera_, MT9V_REG_ANALOG_GAIN, config_.gain, NULL) != 0)
       {
         ROS_WARN("Error setting analog gain.");
       }
@@ -453,7 +453,7 @@ public:
       if (explines > 32767) /// @TODO warning here?
         explines = 32767;
       ROS_DEBUG("Setting exposure lines to %i.", explines);
-      if ( fcamReliableSensorWrite( &camera_, MT9V_REG_TOTAL_SHUTTER_WIDTH, explines, NULL) != 0)
+      if ( wge100ReliableSensorWrite( &camera_, MT9V_REG_TOTAL_SHUTTER_WIDTH, explines, NULL) != 0)
       {
         ROS_WARN("Error setting exposure.");
       }
@@ -504,7 +504,7 @@ public:
   
   int setTestMode(uint16_t mode, diagnostic_updater::DiagnosticStatusWrapper &status)
   {
-    if ( fcamReliableSensorWrite( &camera_, 0x7F, mode, NULL ) != 0) {
+    if ( wge100ReliableSensorWrite( &camera_, 0x7F, mode, NULL ) != 0) {
       status.summary(2, "Could not set imager into test mode.");
       status.add("Writing imager test mode", "Fail");
       return 1;
@@ -516,7 +516,7 @@ public:
 
     usleep(100000);
     uint16_t inmode;
-    if ( fcamReliableSensorRead( &camera_, 0x7F, &inmode, NULL ) != 0) {
+    if ( wge100ReliableSensorRead( &camera_, 0x7F, &inmode, NULL ) != 0) {
       status.summary(2, "Could not read imager mode back.");
       status.add("Reading imager test mode", "Fail");
       return 1;
@@ -541,7 +541,7 @@ public:
 
   std::string getID()
   {
-    return (boost::format("FCAM%05u") % camera_.serial).str();
+    return (boost::format("WGE100_%05u") % camera_.serial).str();
   }
 
 private:
@@ -566,7 +566,7 @@ private:
     frameTimeFilter_.reset_filter();
     ROS_INFO("Camera streaming.");
   
-/*    if ( fcamStartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]), inet_ntoa(localIp_), port) != 0 ) 
+/*    if ( wge100StartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]), inet_ntoa(localIp_), port) != 0 ) 
     {
       ROS_FATAL("Could not start camera streaming.");
       boost::mutex::scoped_lock lock(mutex_);
@@ -574,9 +574,9 @@ private:
       return;
     }
     // Receive video
-    fcamVidReceive(camera_.ifName, port, height_, width_, &WGE100CameraDriver::frameHandler, this);*/
+    wge100VidReceive(camera_.ifName, port, height_, width_, &WGE100CameraDriver::frameHandler, this);*/
     
-    fcamVidReceiveAuto( &camera_, height_, width_, &WGE100CameraDriver::frameHandler, this);
+    wge100VidReceiveAuto( &camera_, height_, width_, &WGE100CameraDriver::frameHandler, this);
     
     /*// Stop Triggering
     if (!trig_controller_cmd_.empty())
@@ -600,11 +600,11 @@ private:
       state_ = OPENED;
       ROS_ERROR("Image thread exited unexpectedly.");
       
-      if ( fcamStopVid(camera_) == 0 )
+      if ( wge100StopVid(camera_) == 0 )
         ROS_ERROR("Video should have been stopped"); /// @todo get rid of this once things have stabilized.
     }
     else // Exited expectedly.
-      if ( fcamStopVid(camera_) != 0)
+      if ( wge100StopVid(camera_) != 0)
         ROS_ERROR("Video Stop error");*/
     
 end_image_thread:
@@ -717,7 +717,7 @@ end_image_thread:
 //    ROS_INFO("Frame #%u time %f ofs %f ms delta %f Hz %f", eofInfo->header.frame_number, imageTime, 1000 * (imageTime - firstFrameTime - 1. / (29.5/* * 0.9999767*/) * (eofInfo->header.frame_number - 100)), imageTime - lastImageTime, 1. / (imageTime - lastImageTime));
 //    lastImageTime = imageTime;
   
-  int frameHandler(fcamFrameInfo *frame_info)
+  int frameHandler(wge100FrameInfo *frame_info)
   {
     boost::mutex::scoped_lock(diagnostics_lock_);
     
@@ -797,7 +797,7 @@ end_image_thread:
     return 0;
   }
 
-  static int frameHandler(fcamFrameInfo *frameInfo, void *userData)
+  static int frameHandler(wge100FrameInfo *frameInfo, void *userData)
   {
     WGE100CameraDriver &fa_node = *(WGE100CameraDriver*)userData;
     return fa_node.frameHandler(frameInfo);
@@ -816,8 +816,8 @@ end_image_thread:
     // Retrieve contents of user memory
     std::string calbuff(2 * FLASH_PAGE_SIZE, 0);
 
-    if(fcamReliableFlashRead(&camera_, FLASH_CALIBRATION_PAGENO, (uint8_t *) &calbuff[0], NULL) != 0 ||
-        fcamReliableFlashRead(&camera_, FLASH_CALIBRATION_PAGENO+1, (uint8_t *) &calbuff[FLASH_PAGE_SIZE], NULL) != 0)
+    if(wge100ReliableFlashRead(&camera_, FLASH_CALIBRATION_PAGENO, (uint8_t *) &calbuff[0], NULL) != 0 ||
+        wge100ReliableFlashRead(&camera_, FLASH_CALIBRATION_PAGENO+1, (uint8_t *) &calbuff[FLASH_PAGE_SIZE], NULL) != 0)
     {
       ROS_ERROR("Error reading camera intrinsics.\n");
       return false;
@@ -853,7 +853,7 @@ end_image_thread:
       mac[i] = req.mac[i];
     ROS_INFO("board_config called s/n #%i, and MAC %02x:%02x:%02x:%02x:%02x:%02x.", req.serial, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     stop();
-    rsp.success = !fcamConfigureBoard( &camera_, req.serial, &mac);
+    rsp.success = !wge100ConfigureBoard( &camera_, req.serial, &mac);
 
     if (rsp.success)
       ROS_INFO("board_config succeeded.");

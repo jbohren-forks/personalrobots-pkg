@@ -42,14 +42,14 @@
 
 #include <net/if.h>
 
-#include "wge100_camera/fcamlib.h"
+#include "wge100_camera/wge100lib.h"
 #include "wge100_camera/host_netutil.h"
 
 int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
 {
   // Create a new IpCamList to hold the camera list
   IpCamList camList;
-  fcamCamListInit(&camList);
+  wge100CamListInit(&camList);
 
   // Set anti-spoofing filter off on camera interface. Needed to prevent
   // the first reply from the camera from being filtered out.
@@ -63,21 +63,21 @@ int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
 //  }
 
   // Discover any connected cameras, wait for 0.5 second for replies
-  if( fcamDiscover(if_name.c_str(), &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
+  if( wge100Discover(if_name.c_str(), &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
     if (verbose)
       fprintf(stderr, "Discover error on interface %s.\n", if_name.c_str());
     return -1;
   }
 
-  if (fcamCamListNumEntries(&camList) == 0) {
+  if (wge100CamListNumEntries(&camList) == 0) {
     if (verbose)
       fprintf(stderr, "No cameras found on interface %s\n", if_name.c_str());
     return 0;
   }
 
-  for (int i = 0; i < fcamCamListNumEntries(&camList); i++)
+  for (int i = 0; i < wge100CamListNumEntries(&camList); i++)
   {
-    IpCamList *camera = fcamCamListGetEntry(&camList, i);
+    IpCamList *camera = wge100CamListGetEntry(&camList, i);
     uint8_t *mac = camera->mac;
     uint8_t *ip = (uint8_t *) &camera->ip;
     char pcb_rev = 0x0A + (0x0000000F & camera->hw_version);

@@ -1,4 +1,4 @@
-#include "wge100_camera/fcamlib.h"
+#include "wge100_camera/wge100lib.h"
 #include "wge100_camera/host_netutil.h"
 #include <string.h>
 #include <cstdio>
@@ -11,7 +11,7 @@ int sensorread(IpCamList *camera, uint8_t reg)
 {
   uint16_t val;
 
-  if ( fcamReliableSensorRead( camera, reg, &val, NULL ) != 0) {
+  if ( wge100ReliableSensorRead( camera, reg, &val, NULL ) != 0) {
     fprintf(stderr, "Could not get register.\n");
     return -1;
   }
@@ -21,7 +21,7 @@ int sensorread(IpCamList *camera, uint8_t reg)
 
 int sensorwrite(IpCamList *camera, uint8_t reg, uint16_t val)
 {
-  if ( fcamReliableSensorWrite( camera, reg, val, NULL ) != 0) {
+  if ( wge100ReliableSensorWrite( camera, reg, val, NULL ) != 0) {
     fprintf(stderr, "Could not set register.\n");
     return -1;
   }
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
   // Find the camera matching the URL
   IpCamList camera;
   const char *errmsg;
-  int outval = fcamFindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
+  int outval = wge100FindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
   if (outval)
   {
     fprintf(stderr, "Matching URL %s : %s\n", camera_url, errmsg);

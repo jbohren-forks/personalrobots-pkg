@@ -24,14 +24,14 @@
  *
  * @return	Returns 0 for success, -1 with errno set for failure.
  */
-int wgArpAdd(IpCamList *camInfo) {
+int wge100ArpAdd(IpCamList *camInfo) {
 	// Create new permanent mapping in the system ARP table
 	struct arpreq arp;
 	int s;
 
 	// Create a dummy socket
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
-		perror("fcamArpAdd can't create socket");
+		perror("wge100ArpAdd can't create socket");
 		return -1;
 	}
 
@@ -51,6 +51,7 @@ int wgArpAdd(IpCamList *camInfo) {
 
 	if( ioctl(s, SIOCSARP, &arp) == -1 ) {
 		//perror("Warning, was unable to create ARP entry (are you root?)");
+    close(s);
 		return -1;
 	} else {
 		debug("Camera %u successfully configured\n", camInfo->serial);
@@ -69,14 +70,14 @@ int wgArpAdd(IpCamList *camInfo) {
  *
  * @return	Returns 0 for success, -1 with errno set for failure.
  */
-int wgArpDel(IpCamList *camInfo) {
+int wge100ArpDel(IpCamList *camInfo) {
 	// Create new permanent mapping in the system ARP table
 	struct arpreq arp;
 	int s;
 
 	// Create a dummy socket
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
-		perror("fcamArpDel can't create socket");
+		perror("wge100ArpDel can't create socket");
 		return -1;
 	}
 
@@ -97,7 +98,8 @@ int wgArpDel(IpCamList *camInfo) {
 	// Make the request to the kernel
 	if( ioctl(s, SIOCDARP, &arp) == -1 ) {
 		perror("Warning, was unable to remove ARP entry");
-		return -1;
+		close(s);
+    return -1;
 	} else {
 		debug("Camera %u successfully removed from ARP table\n", camInfo->serial);
 	}
@@ -115,13 +117,13 @@ int wgArpDel(IpCamList *camInfo) {
  *
  * @return Returns 0 if successful, -1 with errno set otherwise
  */
-int wgEthGetLocalMac(const char *ifName, struct sockaddr *macAddr) {
+int wge100EthGetLocalMac(const char *ifName, struct sockaddr *macAddr) {
 	struct ifreq ifr;
 	int s;
 
 	// Create a dummy socket
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
-		perror("wgEthGetLocalMac can't create socket");
+		perror("wge100EthGetLocalMac can't create socket");
 		return -1;
 	}
 
@@ -131,7 +133,7 @@ int wgEthGetLocalMac(const char *ifName, struct sockaddr *macAddr) {
 
 	// Use socket ioctl to retrieve the HW (MAC) address of this interface
 	if( ioctl(s, SIOCGIFHWADDR, &ifr) == -1 ) {
-		perror("wgEthGetLocalMac ioctl failed");
+		perror("wge100EthGetLocalMac ioctl failed");
     close(s);
 		return -1;
 	}
@@ -153,13 +155,13 @@ int wgEthGetLocalMac(const char *ifName, struct sockaddr *macAddr) {
  *
  * @return Returns 0 if successful, -1 with errno set otherwise
  */
-int wgIpGetLocalBcast(const char *ifName, struct in_addr *bcast) {
+int wge100IpGetLocalBcast(const char *ifName, struct in_addr *bcast) {
 	struct ifreq ifr;
 	int s;
 
 	// Create a dummy socket
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
-		perror("wgIpGetLocalBcast can't create socket");
+		perror("wge100IpGetLocalBcast can't create socket");
 		return -1;
 	}
 
@@ -169,7 +171,7 @@ int wgIpGetLocalBcast(const char *ifName, struct in_addr *bcast) {
 
 	// Use socket ioctl to get broadcast address for this interface
 	if( ioctl(s,SIOCGIFBRDADDR , &ifr) == -1 ) {
-		//perror("wgIpGetLocalBcast ioctl failed");
+		//perror("wge100IpGetLocalBcast ioctl failed");
 		close(s);
     return -1;
 	}
@@ -191,13 +193,13 @@ int wgIpGetLocalBcast(const char *ifName, struct in_addr *bcast) {
  *
  * @return Returns 0 if successful, -1 with errno set otherwise
  */
-int wgIpGetLocalAddr(const char *ifName, struct in_addr *addr) {
+int wge100IpGetLocalAddr(const char *ifName, struct in_addr *addr) {
 	struct ifreq ifr;
 	int s;
 
 	// Create a dummy socket
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
-		perror("wgIpGetLocalAddr can't create socket");
+		perror("wge100IpGetLocalAddr can't create socket");
 		return -1;
 	}
 
@@ -207,7 +209,7 @@ int wgIpGetLocalAddr(const char *ifName, struct in_addr *addr) {
 
 	// Use socket ioctl to get the IP address for this interface
 	if( ioctl(s,SIOCGIFADDR , &ifr) == -1 ) {
-		//perror("wgIpGetLocalAddr ioctl failed");
+		//perror("wge100IpGetLocalAddr ioctl failed");
 		close(s);
     return -1;
 	}
@@ -229,13 +231,13 @@ int wgIpGetLocalAddr(const char *ifName, struct in_addr *addr) {
  *
  * @return Returns 0 if successful, -1 with errno set otherwise
  */
-int wgIpGetLocalNetmask(const char *ifName, struct in_addr *addr) {
+int wge100IpGetLocalNetmask(const char *ifName, struct in_addr *addr) {
 	struct ifreq ifr;
 	int s;
 
 	// Create a dummy socket
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
-		perror("wgIpGetLocalAddr can't create socket");
+		perror("wge100IpGetLocalAddr can't create socket");
     return -1;
 	}
 
@@ -245,7 +247,7 @@ int wgIpGetLocalNetmask(const char *ifName, struct in_addr *addr) {
 
 	// Use socket ioctl to get the netmask for this interface
 	if( ioctl(s,SIOCGIFNETMASK , &ifr) == -1 ) {
-		//perror("wgIpGetLocalNetmask ioctl failed");
+		//perror("wge100IpGetLocalNetmask ioctl failed");
 		close(s);
     return -1;
 	}
@@ -266,12 +268,12 @@ int wgIpGetLocalNetmask(const char *ifName, struct in_addr *addr) {
  *
  * @return Returns the bound socket if successful, -1 with errno set otherwise
  */
-int wgSocketCreate(const struct in_addr *addr, uint16_t port) {
+int wge100SocketCreate(const struct in_addr *addr, uint16_t port) {
 
 	// Create a UDP socket for communicating with the network
 	int s;
 	if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1 ) {
-		perror("wgSocketCreate can't create socket");
+		perror("wge100SocketCreate can't create socket");
 		return -1;
 	}
 
@@ -285,7 +287,7 @@ int wgSocketCreate(const struct in_addr *addr, uint16_t port) {
 
 	// Bind the socket to the requested port
 	if( bind(s, (struct sockaddr *)&si_host, sizeof(si_host)) == -1 ) {
-		//perror("wgSocketCreate unable to bind");
+		//perror("wge100SocketCreate unable to bind");
 		close(s);
     return -1;
 	}
@@ -295,7 +297,7 @@ int wgSocketCreate(const struct in_addr *addr, uint16_t port) {
 	// users to set this flag, but Linux does.
 	int flags = 1;
 	if( setsockopt(s, SOL_SOCKET,SO_BROADCAST, &flags, sizeof(flags)) == -1) {
-		perror("wgSocketCreate unable to set broadcast socket option");
+		perror("wge100SocketCreate unable to set broadcast socket option");
 		close(s);
     return -1;
 	}
@@ -313,7 +315,7 @@ int wgSocketCreate(const struct in_addr *addr, uint16_t port) {
  *
  * @return 		Returns the result from the connect() system call.
  */
-int wgSocketConnect(int s, const IPAddress *ip) {
+int wge100SocketConnect(int s, const IPAddress *ip) {
 
 	struct sockaddr_in camIP;
 
@@ -347,15 +349,15 @@ int wgSocketConnect(int s, const IPAddress *ip) {
  * @param localHost Optional pointer to a structure to receive the local host (MAC/IP/Port) information
  * @return Returns the socket if successful, -1 otherwise
  */
-int wgCmdSocketCreate(const char *ifName, NetHost *localHost) {
+int wge100CmdSocketCreate(const char *ifName, NetHost *localHost) {
 	// Identify the IP address of the requested interface
 	struct in_addr host_addr;
-	wgIpGetLocalAddr(ifName, &host_addr);
+	wge100IpGetLocalAddr(ifName, &host_addr);
 
 	// Create & bind a new listening socket, s
 	// We specify a port of 0 to have bind choose an available host port
 	int s;
-	if( (s=wgSocketCreate(&host_addr, 0)) == -1 ) {
+	if( (s=wge100SocketCreate(&host_addr, 0)) == -1 ) {
 		//perror("Unable to create socket");
 		return -1;
 	}
@@ -364,13 +366,13 @@ int wgCmdSocketCreate(const char *ifName, NetHost *localHost) {
 		struct sockaddr_in socketAddr;
 		socklen_t socketAddrSize = sizeof(socketAddr);
 		if( getsockname(s, (struct sockaddr *)&socketAddr, &socketAddrSize) == -1) {
-			perror("wgSocketToNetHost Could not get socket name");
+			perror("wge100SocketToNetHost Could not get socket name");
       close(s);
 			return -1;
 		}
 
 		struct sockaddr macAddr;
-		if( wgEthGetLocalMac(ifName, &macAddr) == -1) {
+		if( wge100EthGetLocalMac(ifName, &macAddr) == -1) {
       close(s);
 			return -1;
 		}
@@ -395,7 +397,7 @@ int wgCmdSocketCreate(const char *ifName, NetHost *localHost) {
  * @return Returns 0 if successful. -1 with errno set otherwise.
  * Caller is responsible for closing the socket when finished.
  */
-int wgSendUDP(int s, const IPAddress *ip, const void *data, size_t dataSize) {
+int wge100SendUDP(int s, const IPAddress *ip, const void *data, size_t dataSize) {
 	// Create and initialize a sockaddr_in structure to hold remote port & IP
 	struct sockaddr_in si_cam;
 	memset( (uint8_t *)&si_cam, 0, sizeof(si_cam) );
@@ -405,7 +407,7 @@ int wgSendUDP(int s, const IPAddress *ip, const void *data, size_t dataSize) {
 
 	// Send the datagram
 	if( sendto(s, data, dataSize, 0, (struct sockaddr*)&si_cam, sizeof(si_cam)) == -1 ) {
-		perror("wgSendUDP unable to send packet");
+		perror("wge100SendUDP unable to send packet");
 		close(s);
 		return -1;
 	}
@@ -413,7 +415,7 @@ int wgSendUDP(int s, const IPAddress *ip, const void *data, size_t dataSize) {
 }
 
 /**
- * Utility function that wraps wgSendUDP to send a packet to the broadcast address on the
+ * Utility function that wraps wge100SendUDP to send a packet to the broadcast address on the
  * specified interface.
  *
  * @param s 		Bound socket to send on
@@ -424,28 +426,28 @@ int wgSendUDP(int s, const IPAddress *ip, const void *data, size_t dataSize) {
  * @return Returns 0 if successful. -1 with errno set otherwise.
  * Caller is responsible for closing the socket when finished.
  */
-int wgSendUDPBcast(int s, const char *ifName, const void *data, size_t dataSize) {
+int wge100SendUDPBcast(int s, const char *ifName, const void *data, size_t dataSize) {
 	// Identify the broadcast address on the specified interface
 	struct in_addr bcastIP;
-	wgIpGetLocalBcast(ifName, &bcastIP);
+	wge100IpGetLocalBcast(ifName, &bcastIP);
 
-	// Use wgSendUDP to send the broadcast packet
-	return wgSendUDP(s, &bcastIP.s_addr, data, dataSize);
+	// Use wge100SendUDP to send the broadcast packet
+	return wge100SendUDP(s, &bcastIP.s_addr, data, dataSize);
 }
 
 
 /**
- * Waits for a specified amount of time for a FCAM packet that matches the specified
+ * Waits for a specified amount of time for a WGE100 packet that matches the specified
  * length and type criteria.
  *
  *	On return, the wait_us argument is updated to reflect the amount of time still remaining
- *	in the original timeout. This can be useful when calling wgWaitForPacket() in a loop.
+ *	in the original timeout. This can be useful when calling wge100WaitForPacket() in a loop.
  *
  * @param s		The datagram sockets to listen on. It must be opened, bound, and connected.
  * @param nums The number of sockets to listen on.
- * @param type	The FCAM packet type to listen for. Packets that do not match this type will
+ * @param type	The WGE100 packet type to listen for. Packets that do not match this type will
  * 				be discarded
- * @param pktLen The length of FCAM packet to listen for. Packets that do not match this length
+ * @param pktLen The length of WGE100 packet to listen for. Packets that do not match this length
  * 				will be discarded.
  * @param wait_us The duration of time to wait before timing out. Is adjusted upon return to
  * 					reflect actual time remaning on the timeout.
@@ -453,7 +455,7 @@ int wgSendUDPBcast(int s, const char *ifName, const void *data, size_t dataSize)
  * @return Returns -1 with errno set for system call failures, index of socket that is ready 
  *       otherwise. If wait_us is set to zero, then the wait has timed out.
  */
-int wgWaitForPacket( int *s, int nums, uint32_t type, size_t pktLen, uint32_t *wait_us ) {
+int wge100WaitForPacket( int *s, int nums, uint32_t type, size_t pktLen, uint32_t *wait_us ) {
   int i;
 	// Convert wait_us argument into a struct timeval
 	struct timeval timeout;
@@ -487,7 +489,7 @@ int wgWaitForPacket( int *s, int nums, uint32_t type, size_t pktLen, uint32_t *w
 
 		// Wait for either a packet to be received or for timeout
 		if( select(maxs+1, &set, NULL, NULL, &looptimeout) == -1 ) {
-			perror("wgWaitForPacket select failed");
+			perror("wge100WaitForPacket select failed");
 			return -1;
 		}
 
@@ -498,7 +500,7 @@ int wgWaitForPacket( int *s, int nums, uint32_t type, size_t pktLen, uint32_t *w
   			int r;
   			// Inspect the packet in the buffer without removing it
   			if( (r=recvfrom( s[i], &gPkt, sizeof(PacketGeneric), MSG_PEEK|MSG_TRUNC, NULL, NULL ))  == -1 ) {
-  				perror("wgWaitForPacket unable to receive from socket");
+  				perror("wge100WaitForPacket unable to receive from socket");
   				return -1;
   			}
   
@@ -511,7 +513,7 @@ int wgWaitForPacket( int *s, int nums, uint32_t type, size_t pktLen, uint32_t *w
   				debug("Dropping packet with magic #%08X, type 0x%02X (looking for 0x%02X), length %d (looking for %d)\n", ntohl(gPkt.magic_no), ntohl(gPkt.type), type, r, pktLen);
   				// Pull it out of the buffer (we used MSG_PEEK before, so it's still in there)
   				if( recvfrom( s[i], &gPkt, sizeof(PacketGeneric), 0, NULL, NULL ) == -1 ) {
-  					perror("wgWaitForPacket unable to receive from socket");
+  					perror("wge100WaitForPacket unable to receive from socket");
   					return -1;
   				}
   			} else {	// The packet appears to be valid and correct

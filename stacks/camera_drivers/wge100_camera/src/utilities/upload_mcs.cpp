@@ -46,7 +46,7 @@
 
 #include <wge100_camera/ipcam_packet.h>
 #include <wge100_camera/host_netutil.h>
-#include <wge100_camera/fcamlib.h>
+#include <wge100_camera/wge100lib.h>
 
 #include <boost/format.hpp>
   
@@ -224,7 +224,7 @@ int write_flash(char *camera_url)
   IpCamList camera;
   const char *errmsg;
   
-  int outval = fcamFindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
+  int outval = wge100FindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
   if (outval)
   {
     fprintf(stderr, "Matching URL %s : %s\n", camera_url, errmsg);
@@ -232,7 +232,7 @@ int write_flash(char *camera_url)
   }
 
   // Configure the camera with its IP address, wait up to 500ms for completion
-  int retval = fcamConfigure(&camera, camera.ip_str, SEC_TO_USEC(0.5));
+  int retval = wge100Configure(&camera, camera.ip_str, SEC_TO_USEC(0.5));
   if (retval != 0) {
     if (retval == ERR_CONFIG_ARPFAIL) {
       fprintf(stderr, "Unable to create ARP entry (are you root?), continuing anyway\n");
@@ -242,7 +242,7 @@ int write_flash(char *camera_url)
     }
   }
 
-  if ( fcamTriggerControl( &camera, TRIG_STATE_INTERNAL ) != 0) {
+  if ( wge100TriggerControl( &camera, TRIG_STATE_INTERNAL ) != 0) {
     fprintf(stderr, "Could not communicate with camera after configuring IP. Is ARP set? Is %s accessible from %s?\n", camera.ip_str, camera.ifName);
     return -1;
   }
@@ -270,7 +270,7 @@ int write_flash(char *camera_url)
     int startretries = 10;
     int retries = startretries;
 
-    if (fcamReliableFlashWrite(&camera, page, (uint8_t *) firmware + addr, &retries) != 0)
+    if (wge100ReliableFlashWrite(&camera, page, (uint8_t *) firmware + addr, &retries) != 0)
     {
       fprintf(stderr, "\nFlash write error on page %i.\n", page);
       fprintf(stderr, "If you reset the camera it will probably not come up.\n");
@@ -298,7 +298,7 @@ int write_flash(char *camera_url)
       fflush(stderr);
     }
 
-    if (fcamReliableFlashRead(&camera, page, (uint8_t *) buff, NULL) != 0)
+    if (wge100ReliableFlashRead(&camera, page, (uint8_t *) buff, NULL) != 0)
     {
       fprintf(stderr, "\nFlash read error on page %i.\n", page);
       fprintf(stderr, "If you reset the camera it will probably not come up.\n");
@@ -318,7 +318,7 @@ int write_flash(char *camera_url)
   
   fprintf(stderr, "Success! Restarting camera, should take about 10 seconds to come back up after this.\n");
 
-  fcamReconfigureFPGA(&camera);
+  wge100ReconfigureFPGA(&camera);
 
   return 0;
 }
