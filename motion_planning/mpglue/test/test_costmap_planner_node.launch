@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="mpglue" type="costmap_planner_node" />
+  <test test-name="test_costmap_planner_node" pkg="mpglue" type="test_costmap_planner_node" />
+</launch>

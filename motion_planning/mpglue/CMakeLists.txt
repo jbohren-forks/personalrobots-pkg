@@ -57,5 +57,4 @@ target_link_libraries (bin/costmap_planner_node mpglue)
 rospack_add_executable(bin/test_costmap_planner_node src/test_costmap_planner_node.cpp)
 rosbuild_add_gtest_build_flags(bin/test_costmap_planner_node)
 target_link_libraries (bin/test_costmap_planner_node mpglue)
-# TODO: call rosbuild_add_rostest() with an appropriate rostest file, #2550
-#rosbuild_add_rostest(test/foo.launch)
+rosbuild_add_rostest(test/test_costmap_planner_node.launch)
