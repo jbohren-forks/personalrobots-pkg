@@ -35,9 +35,11 @@ BoxTracker::BoxTracker() :
 {
   nh.param("~visualize_obs", show_obs, true);
   nh.param("~visualize_tracks", show_tracks, true);
+  nh.param("~merge_tracks", merge_tracks, true);
   nh.param("~verbose", verbose, true);
 
   nh.param("~timeout", timeout, 20.0);
+  nh.param("~scaling", params.scaling, 1.00);
 
   nh.param("~translation_tolerance", params.translation_tolerance, 0.20);
   nh.param("~rotation_tolerance", params.rotation_tolerance, M_PI/8);
@@ -111,8 +113,11 @@ void BoxTracker::syncCallback()
   }
 
   ///observations = observations[0].listAmbiguity();
+  if(merge_tracks)
+	  mergeTracks();
 
-  removeOldTracks(ros::Duration(timeout));
+  if(timeout>=0)
+	  removeOldTracks(ros::Duration(timeout));
   if(show_obs) {
     visualizeObservations();
   }
@@ -149,7 +154,7 @@ void BoxTracker::sendTracks() {
 void BoxTracker::removeOldLines() {
   LineVector lines;
   for(int l = newLines; l<oldLines; l++) {
-      visualizeLines(visualization_pub, observations_msg->header.frame_id, lines,
+      visualizeLines(visualization_pub, observations_msg->header, lines,
                      l,0,0,0);
   }
   oldLines = newLines;
@@ -159,7 +164,7 @@ void BoxTracker::removeOldLines() {
 void BoxTracker::visualizeObservations() {
   for(size_t i=0; i<observations.size(); i++) {
 //    cout << "drawing line "<<newLines << endl;
-    visualizeLines(visualization_pub, observations_msg->header.frame_id, observations[i].visualize(),
+    visualizeLines(visualization_pub, observations_msg->header, observations[i].visualize(),
                    newLines++,show_tracks?HSV_to_RGB(0.0 * i,0.0,1.0):0x00ff00);
   }
 }
@@ -170,17 +175,50 @@ void BoxTracker::visualizeTracks() {
 //    cout << "tracks[j].obs_history.rbegin()->stamp="<<(long)tracks[j].obs_history.rbegin()->stamp.toSec() << endl;
 //    if( observations_msg->header.stamp > tracks[j].obs_history.rbegin()->stamp + ros::Duration(1.00) ) continue;
     for(size_t i=0; i<tracks[j].obs_history.size(); i++) {
-        visualizeLines(visualization_pub, observations_msg->header.frame_id, tracks[j].obs_history[i].visualize(),
+        visualizeLines(visualization_pub, observations_msg->header, tracks[j].obs_history[i].visualize(),
                        newLines++,
                        HSV_to_RGB(
                           j/(double)tracks.size(),
-                          MIN(1.0, 0.2*tracks[j].obs_history.size() ),
-                          1.0
+                          j % 2==0?0.5:1.0,
+                          (j/2) % 2==0?0.5:1.0
                           //((i+3)/((double)tracks[j].obs_history.size()+3))
 //                          1.0
                           ));
     }
   }
+}
+
+void BoxTracker::mergeTracks() {
+	cout << "tracks "<< tracks.size()<< endl;
+	for(size_t i=0; i<tracks.size(); i++) {
+		for(size_t m=0; m<tracks[i].obs_history.size();m++) {
+			std::vector<btBoxObservation> ambiguity = tracks[i].obs_history[m].listAmbiguity();
+			for(size_t a=0;a<ambiguity.size();a++) {
+				size_t j=i+1;
+				while( j < tracks.size() ) {
+					bool merge=false;
+					for(size_t k=0; k<tracks[j].obs_history.size();k++) {
+						if( tracks[j].withinTolerance( ambiguity[a] ) ) {
+							merge=true;
+							break;
+						}
+					}
+					if(merge) {
+						cout << "merging tracks "<<i<<" and "<<j << endl;
+						for(size_t n=0;n<tracks[j].obs_history.size();n++) {
+							tracks[i].obs_history.push_back(
+									tracks[j].obs_history[n].getAmbiguity(-a)
+									);
+						}
+						tracks.erase(tracks.begin() + j);
+					} else {
+						j++;
+					}
+				}
+			}
+		}
+	}
+//	cout << "after merging: tracks "<< tracks.size()<< endl;
 }
 
 

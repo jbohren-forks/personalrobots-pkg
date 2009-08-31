@@ -46,6 +46,9 @@ public:
   int n_seeds_per_plane_;
   double point_plane_distance_; // maximally allowed point-to-plane distance
 
+  double cost_pix_in_front;
+  double cost_pix_unknown;
+
   bool show_colorized_planes;
   bool show_convex_hulls;
   bool show_lines;
@@ -76,6 +79,7 @@ public:
   double RP[16];
   double P[16];
   IplImage* pixDebug;
+  IplImage* pixPlane;
   IplImage* pixOccupied;
   IplImage* pixFree;
   IplImage* pixUnknown;
@@ -153,13 +157,13 @@ public:
   void visualizeRectangles3d(std::vector<CornerCandidate> &corner, int id = 0);
   void visualizeRectangles2d(std::vector<CornerCandidate> &corner,CvScalar col);
   void visualizeRectangle2d(CornerCandidate &corner, CvScalar col);
-  void findRectangles(std::vector<CornerCandidate> &corner, IplImage* pixDist);
+  void findRectangles(std::vector<CornerCandidate> &corner);
   std::vector<CornerCandidate> filterRectanglesBySupport2d(std::vector<CornerCandidate> &corner, IplImage* pixOccupied,
                                                            double min_support = 0.8);
   std::vector<CornerCandidate> filterRectanglesBySupport3d(std::vector<CornerCandidate> &corner,
                                                            const sensor_msgs::PointCloud& cloud,
                                                            std::vector<int> & plane_indices, double min_support = 0.8);
-  void initializeRectangle(CornerCandidate &corner, IplImage* pixDist);
+  void initializeRectangle(CornerCandidate &corner);
 };
 
 }

@@ -212,8 +212,8 @@ double CornerCandidate::computeDistance2(IplImage* pixOccupied)
     }
   }
 
-  int count = 0;
-  int sum = 0;
+  double count = 0;
+  double sum = 0;
   std::map<int, std::map<int, bool> >::iterator i;
   for (i = rect.begin(); i != rect.end(); i++)
   {
@@ -222,11 +222,13 @@ double CornerCandidate::computeDistance2(IplImage* pixOccupied)
     int y2 = i->second.rbegin()->first;
     for (int y = y1; y <= y2; y++)
     {
-      if (pixOccupied->imageData[y * pixOccupied->widthStep + x * pixOccupied->nChannels] != 0)
-        sum++;
+//      if (pixOccupied->imageData[y * pixOccupied->widthStep + x * pixOccupied->nChannels] != 0)
+//        sum++;
+    	sum = sum + ((uchar*)pixOccupied->imageData)[y * pixOccupied->widthStep + x * pixOccupied->nChannels]/255.0;
     }
-    count += y2 - y1 + 1;
+    count = count + y2 - y1 + 1;
   }
+//  cout << "sum = "<<sum<<" count="<<count<<endl;
   return -pow((double)sum,1.2)/(double)count;
 }
 

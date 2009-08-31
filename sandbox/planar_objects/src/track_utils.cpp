@@ -64,48 +64,63 @@ LineVector btBoxObservation::visualize() {
   return(lines);
 }
 
+
+
 std::vector<btBoxObservation> btBoxObservation::listAmbiguity() {
-  std::vector<btBoxObservation> allCorners;
+    std::vector<btBoxObservation> allCorners;
+	for(int i=0;i<8;i++) {
+		allCorners.push_back(getAmbiguity(i));
+	}
+	return(allCorners);
+}
+
+btBoxObservation btBoxObservation::getAmbiguity(int num) {
   btBoxObservation alt = *this;
-
-  alt.w = w; alt.h = h;
-  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(0,0,0));
-  allCorners.push_back(alt);
-
-  alt.w = w; alt.h = h;
-  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),2 * M_PI/2),btVector3(w,h,0));
-  allCorners.push_back(alt);
-
-  alt.w = h; alt.h = w;
-  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),1 * M_PI/2),btVector3(w,0,0));
-  allCorners.push_back(alt);
-
-  alt.w = h; alt.h = w;
-  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),3 * M_PI/2),btVector3(0,h,0));
-  allCorners.push_back(alt);
-
   btTransform tfinv = tf *
       btTransform(btQuaternion(btVector3(1,1,0),2 * M_PI/2),btVector3(0,0,0));
 
-  alt.w = h; alt.h = w;
-  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(0,0,0));
-  allCorners.push_back(alt);
-
-  alt.w = h; alt.h = w;
-  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),2 * M_PI/2),btVector3(h,w,0));
-  allCorners.push_back(alt);
-
-  alt.w = w; alt.h = h;
-  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),1 * M_PI/2),btVector3(h,0,0));
-  allCorners.push_back(alt);
-
-  alt.w = w; alt.h = h;
-  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),3 * M_PI/2),btVector3(0,w,0));
-  allCorners.push_back(alt);
-
-// cout << "ambiguities:"<<allCorners.size()<<endl;
-
-  return(allCorners);
+  switch(num) {
+  case 0:
+		  alt.w = w; alt.h = h;
+		  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(0,0,0));
+		  break;
+  case 1:
+  case -1:
+		  alt.w = w; alt.h = h;
+		  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),2 * M_PI/2),btVector3(w,h,0));
+		  break;
+  case 2:
+  case -3:
+		  alt.w = h; alt.h = w;
+		  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),1 * M_PI/2),btVector3(w,0,0));
+		  break;
+  case 3:
+  case -2:
+		  alt.w = h; alt.h = w;
+		  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),3 * M_PI/2),btVector3(0,h,0));
+		  break;
+  case 4:
+  case -4:
+		  alt.w = h; alt.h = w;
+		  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(0,0,0));
+		  break;
+  case 5:
+  case -5:
+		  alt.w = h; alt.h = w;
+		  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),2 * M_PI/2),btVector3(h,w,0));
+		  break;
+  case 6:
+  case -7:
+		  alt.w = w; alt.h = h;
+		  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),1 * M_PI/2),btVector3(h,0,0));
+		  break;
+  case 7:
+  case -6:
+		  alt.w = w; alt.h = h;
+		  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),3 * M_PI/2),btVector3(0,w,0));
+		  break;
+  }
+  return(alt);
 }
 
 BoxObservation btBoxObservation::getBoxObservation() {

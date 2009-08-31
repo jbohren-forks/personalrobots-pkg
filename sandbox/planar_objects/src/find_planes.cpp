@@ -189,9 +189,8 @@ void findPlanes(const sensor_msgs::PointCloud& cloud, int n_planes_max, double s
 
 void createPlaneImage(const sensor_msgs::PointCloud& cloud, std::vector<int> &inliers,
                                    std::vector<double> &plane_coeff,
-                                   IplImage *pixOccupied,IplImage *pixFree,IplImage *pixUnknown)
+                                   IplImage *pixOccupied,IplImage *pixFree,IplImage *pixUnknown,IplImage *pixPlane, int PIX_INFRONT_PLANE, int PIX_UNKNOWN)
 {
-
   int x_chann=-1;
   int y_chann=-1;
   for(size_t i=0;i<cloud.channels.size();i++) {
@@ -206,6 +205,7 @@ void createPlaneImage(const sensor_msgs::PointCloud& cloud, std::vector<int> &in
 //  cvSetZero(pixOccupied);
 //  cvSetZero(pixFree);
   cvSet(pixUnknown,cvRealScalar(255) );
+  cvSet(pixPlane,cvRealScalar( PIX_UNKNOWN ) );
 
   for (size_t i = 0; i < cloud.get_points_size(); i++)
   {
@@ -218,7 +218,9 @@ void createPlaneImage(const sensor_msgs::PointCloud& cloud, std::vector<int> &in
     if( behindPlane ) {
       ((uchar *)(pixFree->imageData + y*pixFree->widthStep))[x] = 255;
       ((uchar *)(pixUnknown->imageData + y*pixUnknown->widthStep))[x] = 0;
+      ((uchar *)(pixPlane->imageData + y*pixPlane->widthStep))[x] = PIX_BEHIND_PLANE ;
     } else {
+        ((uchar *)(pixPlane->imageData + y*pixPlane->widthStep))[x] = PIX_INFRONT_PLANE ;
     }
   }
 
@@ -230,6 +232,7 @@ void createPlaneImage(const sensor_msgs::PointCloud& cloud, std::vector<int> &in
     ((uchar *)(pixOccupied->imageData + y*pixOccupied->widthStep))[x] = 255;
     ((uchar *)(pixFree->imageData + y*pixFree->widthStep))[x] = 0;
     ((uchar *)(pixUnknown->imageData + y*pixUnknown->widthStep))[x] = 0;
+    ((uchar *)(pixPlane->imageData + y*pixPlane->widthStep))[x] = PIX_IN_PLANE ;
   }
 }
 

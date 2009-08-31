@@ -37,6 +37,7 @@ public:
   // PARAMETERS
   bool show_obs;
   bool show_tracks;
+  bool merge_tracks;
   bool verbose;
   TrackParameters params;
   double timeout;
@@ -63,6 +64,7 @@ public:
   void removeOldLines();
   void removeOldTracks(ros::Duration timeout = ros::Duration(5.00) );
   void sendTracks();
+  void mergeTracks();
 };
 
 }

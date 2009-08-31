@@ -38,9 +38,12 @@ namespace planar_objects
 BoxDetector::BoxDetector() :
   sync_(&BoxDetector::syncCallback, this)
 {
-	  nh_.param("~n_planes_max", n_planes_max_, 5);
-	  nh_.param("~n_seeds_per_plane", n_seeds_per_plane_, 5);
+  nh_.param("~n_planes_max", n_planes_max_, 5);
+  nh_.param("~n_seeds_per_plane", n_seeds_per_plane_, 5);
   nh_.param("~point_plane_distance", point_plane_distance_, 0.01);
+
+  nh_.param("~cost_pix_in_front", cost_pix_in_front, 0.1);
+  nh_.param("~cost_pix_unknown", cost_pix_unknown, 0.2);
 
   nh_.param("~show_colorized_planes", show_colorized_planes, true);
   nh_.param("~show_convex_hulls", show_convex_hulls, false);
@@ -52,7 +55,7 @@ BoxDetector::BoxDetector() :
   nh_.param("~save_images_matching", save_images_matching, false);
 
   nh_.param("~verbose", verbose, false);
-  nh_.param("~scaling", scaling, 6.00);
+  nh_.param("~scaling", scaling, 1.00);
 
   nh_.param("~select_frontplane", select_frontplane, -1);
 //  cout << "select_frontplane="<<select_frontplane<<endl;
@@ -68,7 +71,7 @@ BoxDetector::BoxDetector() :
 
   int cvWindows = 0;
   if(show_images) {
-    CVWINDOW("left");
+	    CVWINDOW("left");
     CVWINDOW("disparity");
     CVWINDOW("debug");
   }
@@ -79,6 +82,7 @@ BoxDetector::BoxDetector() :
     CVWINDOW("distance");
     CVWINDOW("free");
     CVWINDOW("unknown");
+    CVWINDOW("plane");
 
     CVWINDOW("canny");
     CVWINDOW("free-dilated");
@@ -251,6 +255,7 @@ void BoxDetector::syncCallback()
   pixOccupied = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
   pixFree = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
   pixUnknown = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  pixPlane = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
   pixDist = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
   pixDebug = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
   cvCvtColor(lbridge_.toIpl(), pixDebug, CV_GRAY2BGR);
@@ -275,20 +280,22 @@ void BoxDetector::syncCallback()
     cvSetZero(pixOccupied);
     cvSetZero(pixFree);
     cvSetZero(pixUnknown);
+    cvSetZero(pixPlane);
     cvSetZero(pixDist);
     //  int frontplane=1;
     createPlaneImage(*cloud_, plane_indices[frontplane], plane_coeff[frontplane], pixOccupied, pixFree,
-                                  pixUnknown);
+                                  pixUnknown,pixPlane,(int)((1-cost_pix_in_front)*255),(int)((1-cost_pix_unknown)*255));
     cvShowImage("occupied", pixOccupied);
     cvShowImage("free", pixFree);
     cvShowImage("unknown", pixUnknown);
+    cvShowImage("plane", pixPlane);
 
     current_plane = frontplane;
 
     std::vector<CornerCandidate> corner;
     findCornerCandidates(pixOccupied, pixFree, pixUnknown, pixDist, plane_coeff[frontplane], plane_indices[frontplane],corner, frontplane * 1000);
 
-    findRectangles(corner, pixOccupied);
+    findRectangles(corner);
 
     corner = filterRectanglesBySupport2d(corner, pixOccupied, min_precision);
     corner = filterRectanglesBySupport3d(corner, *cloud_, plane_indices[frontplane], min_recall);
@@ -353,6 +360,7 @@ void BoxDetector::syncCallback()
   cvReleaseImage(&pixOccupied);
   cvReleaseImage(&pixFree);
   cvReleaseImage(&pixUnknown);
+  cvReleaseImage(&pixPlane);
   cvShowImage("debug", pixDebug);
   cvReleaseImage(&pixDebug);
 
@@ -457,7 +465,7 @@ void BoxDetector::visualizeRectangle2d(CornerCandidate &corner,CvScalar col)
   }
 }
 
-void BoxDetector::findRectangles(std::vector<CornerCandidate> &corner, IplImage* pixDist)
+void BoxDetector::findRectangles(std::vector<CornerCandidate> &corner)
 {
   IplImage* pixSave;
   if(save_images_matching) {
@@ -476,7 +484,7 @@ void BoxDetector::findRectangles(std::vector<CornerCandidate> &corner, IplImage*
 
   for (size_t i = 0; i < corner.size(); i++)
   {
-    initializeRectangle(corner[i], pixDist);
+    initializeRectangle(corner[i]);
 
     CvScalar col;
     if( (corner[i].computeSupport2d(pixOccupied) >= min_precision)
@@ -501,7 +509,7 @@ void BoxDetector::findRectangles(std::vector<CornerCandidate> &corner, IplImage*
   }
 }
 
-void BoxDetector::initializeRectangle(CornerCandidate &corner, IplImage* pixDist)
+void BoxDetector::initializeRectangle(CornerCandidate &corner)
 {
   corner.w = 0.2*scaling;
   corner.h = 0.2*scaling;
@@ -509,10 +517,10 @@ void BoxDetector::initializeRectangle(CornerCandidate &corner, IplImage* pixDist
   for (int i = 0; i < 20; i++)
   {
     for(int c=0;c<2;c++) {
-      corner.optimizeWidth2(pixDist, -0.05*scaling,+0.05*scaling, 5,c);
-      corner.optimizeHeight2(pixDist, -0.05*scaling,+0.05*scaling, 5,c);
+      corner.optimizeWidth2(pixPlane, -0.05*scaling,+0.05*scaling, 5,c);
+      corner.optimizeHeight2(pixPlane, -0.05*scaling,+0.05*scaling, 5,c);
     }
-    corner.optimizePhi(pixDist, -M_PI / (16), +M_PI / (16), 5);
+    corner.optimizePhi(pixPlane, -M_PI / (16), +M_PI / (16), 5);
     visualizeRectangle2d(corner,CV_RGB(255-3*i,255-3*i,255-3*i));
 
     if(save_images_matching) {

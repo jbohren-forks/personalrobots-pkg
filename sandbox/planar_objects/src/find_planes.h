@@ -21,6 +21,9 @@
 namespace planar_objects
 {
 
+const int PIX_BEHIND_PLANE = 0;
+const int PIX_IN_PLANE = 255;
+
 void filterByZBounds(const sensor_msgs::PointCloud& pc, double zmin, double zmax, sensor_msgs::PointCloud& filtered_pc,
                      sensor_msgs::PointCloud& filtered_outside);
 void getPointIndicesInZBounds(const sensor_msgs::PointCloud &points, double z_min, double z_max,
@@ -38,7 +41,7 @@ void findPlanes(const sensor_msgs::PointCloud& cloud, int n_planes_max, double s
                 std::vector<std::vector<double> >& plane_coeff, sensor_msgs::PointCloud& outside);
 
 void createPlaneImage(const sensor_msgs::PointCloud& cloud, std::vector<int> &inliers, std::vector<double> &plane_coeff,
-                      IplImage *pixOccupied,IplImage *pixFree,IplImage *pixUnknown );
+                      IplImage *pixOccupied,IplImage *pixFree,IplImage *pixUnknown,IplImage *pixPlane,int PIX_INFRONT_PLANE=220, int PIX_UNKNOWN=200 );
 
 }
 

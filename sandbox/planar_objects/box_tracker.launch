@@ -3,12 +3,14 @@
       <param name="visualize_obs" type="bool" value="true"/>
       <param name="visualize_tracks" type="bool" value="true"/>
       <param name="verbose" type="bool" value="true"/>
+      <param name="merge_tracks" type="bool" value="true"/>
+      <param name="scaling" type="double" value="1.00"/>
 
-      <param name="timeout" value="20.0"/>
+      <param name="timeout" value="-1"/>
 
       <param name="translation_tolerance" type="double" value="0.20"/>
       <param name="rotation_tolerance" type="double" value="0.3"/>
-      <param name="size_tolerance" type="double" value="0.03"/>
+      <param name="size_tolerance" type="double" value="0.05"/>
 
     </node>
 </launch>

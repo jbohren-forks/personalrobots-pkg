@@ -36,6 +36,7 @@ public:
   btBoxObservation(const BoxObservation &obs , const ros::Time stamp );
   void setObservation(const BoxObservation &obs , const ros::Time stamp );
   std::vector<btBoxObservation> listAmbiguity();
+  btBoxObservation getAmbiguity(int num=0);
   LineVector visualize();
   BoxObservation getBoxObservation();
 };
@@ -45,6 +46,7 @@ public:
   double translation_tolerance;
   double rotation_tolerance;
   double size_tolerance;
+  double scaling;
 };
 
 class btBoxTrack {
