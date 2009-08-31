@@ -1,4 +1,9 @@
 #include "TREX.nddl"
+#include "common/nav.nddl"
+
+class WorldObject {
+  WorldObject(){}
+};
 
 class MoveObject extends Behavior {
   predicate Active{

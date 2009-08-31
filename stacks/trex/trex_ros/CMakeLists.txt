@@ -11,8 +11,6 @@ find_ros_package(trex_ros)
 include(${trex_ros_PACKAGE_PATH}/trex_build.cmake)
 create_nddl_config()
 
-
-
 set(TREX_FILES src/adapters.cpp
                src/main.cpp
                src/ros_reactor.cpp

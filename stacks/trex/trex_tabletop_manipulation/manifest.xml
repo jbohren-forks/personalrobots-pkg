@@ -5,4 +5,11 @@
   <review status="unreviewed" notes=""/>
   <depend package="trex_pr2" />
 
+  <export>
+    <nddl iflags="-I${prefix}/nddl  -I${prefix}"/>
+    <cpp cflags=" -I${prefix}/include"
+	 lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib"  />
+    <trex_libs libs="trex_pr2"/>
+  </export>
+
 </package>

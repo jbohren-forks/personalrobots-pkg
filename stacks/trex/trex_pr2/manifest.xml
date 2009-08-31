@@ -3,7 +3,6 @@
   <author>Conor McGann</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <depend package="trex" />
   <depend package="roscpp"/>
   <depend package="rosconsole"/>
   <depend package="topological_map" />
