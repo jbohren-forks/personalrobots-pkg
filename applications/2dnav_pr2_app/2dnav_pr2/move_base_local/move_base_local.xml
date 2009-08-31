@@ -9,7 +9,7 @@
 </node>
 
 <node pkg="move_base" type="move_base" respawn="false" name="move_base_local" machine="three">
-  <remap from="odom" to="base/odom" />
+  <remap from="odom" to="pr2_odometry/odom" />
   <param name="controller_frequency" value="10.0" />
 
   <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
