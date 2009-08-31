@@ -182,6 +182,232 @@ TEST(LoadingAndFK, SimpleRobot)
     delete model;    
 }
 
+
+TEST(FK, OneRobot)
+{
+    static const std::string MODEL2 = 
+	"<?xml version=\"1.0\" ?>" 
+	"<robot name=\"one_robot\">"
+	"<joint name=\"base_joint\" type=\"planar\">"
+	"  <parent link=\"world\"/>"
+	"  <child link=\"base_link\"/>"
+	"  <origin rpy=\" 0.0 -0.2 0 \" xyz=\"1 0 0 \"/>"
+	"</joint>"
+	"<link name=\"base_link\">"
+	"  <inertial>"
+	"    <mass value=\"2.81\"/>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0.0 0.0 .0\"/>"
+	"    <inertia ixx=\"0.1\" ixy=\"-0.2\" ixz=\"0.5\" iyy=\"-.09\" iyz=\"1\" izz=\"0.101\"/>"
+	"  </inertial>"
+	"  <collision name=\"my_collision\">"
+	"    <origin rpy=\"0 0 0\" xyz=\"0 0 0\"/>"
+	"    <geometry>"
+	"      <box size=\"1 2 1\" />"
+	"    </geometry>"
+	"  </collision>"
+	"  <visual>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0.0 0 0\"/>"
+	"    <geometry>"
+	"      <box size=\"1 2 1\" />"
+	"    </geometry>"
+	"  </visual>"
+	"</link>"
+	"<joint name=\"joint_a\" type=\"continuous\">"
+	"   <axis xyz=\"0 0 1\"/>"
+	"   <parent link=\"base_link\"/>"
+	"   <child link=\"link_a\"/>"
+	"   <origin rpy=\" 0.0 0 0 \" xyz=\"0.0 0 0 \"/>"
+	"</joint>"
+	"<link name=\"link_a\">"
+	"  <inertial>"
+	"    <mass value=\"1.0\"/>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0.0 0.0 .0\"/>"
+	"    <inertia ixx=\"0.1\" ixy=\"-0.2\" ixz=\"0.5\" iyy=\"-.09\" iyz=\"1\" izz=\"0.101\"/>"
+	"  </inertial>"
+	"  <collision>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0 0 0\"/>"
+	"    <geometry>"
+	"      <box size=\"1 2 1\" />"
+	"    </geometry>"
+	"  </collision>"
+	"  <visual>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0.0 0 0\"/>"
+	"    <geometry>"
+	"      <box size=\"1 2 1\" />"
+	"    </geometry>"
+	"  </visual>"
+	"</link>"
+	"<joint name=\"joint_b\" type=\"fixed\">"
+	"  <parent link=\"link_a\"/>"
+	"  <child link=\"link_b\"/>"
+	"  <origin rpy=\" 0.0 -0.42 0 \" xyz=\"0.0 0.5 0 \"/>"
+	"</joint>"
+	"<link name=\"link_b\">"
+	"  <inertial>"
+	"    <mass value=\"1.0\"/>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0.0 0.0 .0\"/>"
+	"    <inertia ixx=\"0.1\" ixy=\"-0.2\" ixz=\"0.5\" iyy=\"-.09\" iyz=\"1\" izz=\"0.101\"/>"
+	"  </inertial>"
+	"  <collision>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0 0 0\"/>"
+	"    <geometry>"
+	"      <box size=\"1 2 1\" />"
+	"    </geometry>"
+	"  </collision>"
+	"  <visual>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0.0 0 0\"/>"
+	"    <geometry>"
+	"      <box size=\"1 2 1\" />"
+	"    </geometry>"
+	"  </visual>"
+	"</link>"
+	"  <joint name=\"joint_c\" type=\"prismatic\">"
+	"    <axis xyz=\"1 0 0\"/>"
+	"    <limit effort=\"100.0\" lower=\"0.0\" upper=\"0.09\" velocity=\"0.2\"/>"
+	"    <safety_controller k_position=\"20.0\" k_velocity=\"500.0\" soft_lower_limit=\"0.0\" soft_upper_limit=\"0.089\"/>"
+	"    <parent link=\"link_b\"/>"
+	"    <child link=\"link_c\"/>"
+	"    <origin rpy=\" 0.0 0.42 0.0 \" xyz=\"0.0 -0.1 0 \"/>"
+	"  </joint>"
+	"<link name=\"link_c\">"
+	"  <inertial>"
+	"    <mass value=\"1.0\"/>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0.0 0 .0\"/>"
+	"    <inertia ixx=\"0.1\" ixy=\"-0.2\" ixz=\"0.5\" iyy=\"-.09\" iyz=\"1\" izz=\"0.101\"/>"
+	"  </inertial>"
+	"  <collision>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0 0 0\"/>"
+	"    <geometry>"
+	"      <box size=\"1 2 1\" />"
+	"    </geometry>"
+	"  </collision>"
+	"  <visual>"
+	"    <origin rpy=\"0 0 0\" xyz=\"0.0 0 0\"/>"
+	"    <geometry>"
+	"      <box size=\"1 2 1\" />"
+	"    </geometry>"
+	"  </visual>"
+	"</link>"
+	"</robot>";
+
+    static const std::string MODEL2_INFO = 
+	"Number of robots = 1\n"
+	"Complete model state dimension = 5\n"
+	"State bounds: [0.00000, 0.00000] [0.00000, 0.00000] [-3.14159, 3.14159] [-3.14159, 3.14159] [0.01000, 0.38600] \n"
+	"Parameter index:\n"
+	"base_link_joint = 0\n"
+	"link_a_joint = 3\n"
+	"link_c_joint = 4\n"
+	"Parameter name:\n"
+	"0 = base_link_joint\n"
+	"1 = base_link_joint\n"
+	"2 = base_link_joint\n"
+	"3 = link_a_joint\n"
+	"4 = link_c_joint\n"
+	"Floating joints at: \n"
+	"Planar joints at: 0 base_link_joint \n"
+	"Available groups: base \n"
+	"Group base with ID 0 has 1 roots: base_link_joint \n"
+	"The state components for this group are: 0 1 2 3 4 base_link_joint base_link_joint base_link_joint link_a_joint link_c_joint \n";
+
+    urdf::Model urdfModel;
+    urdfModel.initString(MODEL2);
+    
+    std::map < std::string, std::vector<std::string> > groups;
+    groups["base"].push_back("base_joint");
+    groups["base"].push_back("joint_a");
+    groups["base"].push_back("joint_b");
+    groups["base"].push_back("joint_c");
+        
+    planning_models::KinematicModel *model = new planning_models::KinematicModel(urdfModel, groups);
+    
+    
+    EXPECT_EQ((unsigned int)5, model->getDimension());
+
+    double param[5] = { 1, 1, 0.5, -0.5, 0.1 };
+    model->getGroup("base")->computeTransforms(param);
+    
+    std::stringstream ss1;
+    model->printModelInfo(ss1);
+    //    EXPECT_TRUE(sameStringIgnoringWS(MODEL2_INFO, ss1.str()));
+    ROS_INFO("'%s'", ss1.str().c_str());
+    
+    // make sure applying the state works for the entire robot
+    model->printTransforms(ss1);
+    
+    model->computeTransforms(param);
+    
+    std::stringstream ss2;
+    model->printModelInfo(ss2);
+    model->printTransforms(ss2);
+    
+    //    EXPECT_EQ(ss1.str(), ss2.str());
+    
+    EXPECT_NEAR(1.0, model->getLink("base_link")->globalTrans.getOrigin().x(), 1e-5);
+    EXPECT_NEAR(1.0, model->getLink("base_link")->globalTrans.getOrigin().y(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("base_link")->globalTrans.getOrigin().z(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("base_link")->globalTrans.getRotation().x(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("base_link")->globalTrans.getRotation().y(), 1e-5);
+    EXPECT_NEAR(0.247404, model->getLink("base_link")->globalTrans.getRotation().z(), 1e-5);
+    EXPECT_NEAR(0.968912, model->getLink("base_link")->globalTrans.getRotation().w(), 1e-5);
+
+    EXPECT_NEAR(1.0, model->getLink("link_a")->globalTrans.getOrigin().x(), 1e-5);
+    EXPECT_NEAR(1.0, model->getLink("link_a")->globalTrans.getOrigin().y(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_a")->globalTrans.getOrigin().z(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_a")->globalTrans.getRotation().x(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_a")->globalTrans.getRotation().y(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_a")->globalTrans.getRotation().z(), 1e-5);
+    EXPECT_NEAR(1.0, model->getLink("link_a")->globalTrans.getRotation().w(), 1e-5);
+
+    EXPECT_NEAR(1.0, model->getLink("link_b")->globalTrans.getOrigin().x(), 1e-5);
+    EXPECT_NEAR(1.5, model->getLink("link_b")->globalTrans.getOrigin().y(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_b")->globalTrans.getOrigin().z(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_b")->globalTrans.getRotation().x(), 1e-5);
+    EXPECT_NEAR(-0.20846, model->getLink("link_b")->globalTrans.getRotation().y(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_b")->globalTrans.getRotation().z(), 1e-5);
+    EXPECT_NEAR(0.978031, model->getLink("link_b")->globalTrans.getRotation().w(), 1e-5);
+
+    EXPECT_NEAR(1.1, model->getLink("link_c")->globalTrans.getOrigin().x(), 1e-5);
+    EXPECT_NEAR(1.4, model->getLink("link_c")->globalTrans.getOrigin().y(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_c")->globalTrans.getOrigin().z(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_c")->globalTrans.getRotation().x(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_c")->globalTrans.getRotation().y(), 1e-5);
+    EXPECT_NEAR(0.0, model->getLink("link_c")->globalTrans.getRotation().z(), 1e-5);
+    EXPECT_NEAR(1.0, model->getLink("link_c")->globalTrans.getRotation().w(), 1e-5);
+
+    /*
+    planning_models::StateParams *sp = model->newStateParams();
+    EXPECT_FALSE(sp->seenAll());
+
+    double tmpParam[3];
+    tmpParam[0] = 0.1;
+    sp->setParamsJoint(tmpParam, "link_a_joint");
+    EXPECT_FALSE(sp->seenAll());
+    EXPECT_TRUE(sp->seenJoint("link_a_joint"));
+
+    tmpParam[0] = -1.0;    
+    sp->setParamsJoint(tmpParam, "link_c_joint");
+    EXPECT_FALSE(sp->seenAll());
+    
+    tmpParam[0] = 0.5; tmpParam[1] = 0.4; tmpParam[2] = 1.1;
+    sp->setParamsJoint(tmpParam, "base_link_joint");
+    EXPECT_TRUE(sp->seenAll());
+    
+    EXPECT_EQ(0.5, sp->getParams()[0]);
+    EXPECT_EQ(0.4, sp->getParams()[1]);
+    EXPECT_EQ(1.1, sp->getParams()[2]);
+    EXPECT_EQ(0.1, sp->getParams()[3]);
+    EXPECT_EQ(-1.0, sp->getParams()[4]);
+    
+    planning_models::StateParams sp_copy = *sp;
+    EXPECT_TRUE(sp_copy == *sp);
+    
+    delete sp;
+    */
+    delete model;
+}
+
+
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);

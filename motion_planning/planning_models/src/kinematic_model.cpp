@@ -91,7 +91,7 @@ const std::string& planning_models::KinematicModel::getName(void) const
     return modelName_;
 }
 
-unsigned int planning_models::KinematicModel::getDimension(void) const
+inline unsigned int planning_models::KinematicModel::getDimension(void) const
 {
     return dimension_;
 }
@@ -101,12 +101,12 @@ const std::vector<double> &planning_models::KinematicModel::getStateBounds(void)
     return stateBounds_;
 }
 
-const btTransform& planning_models::KinematicModel::getRootTransform(void) const
+inline const btTransform& planning_models::KinematicModel::getRootTransform(void) const
 {
     return rootTransform_;
 }
 
-void planning_models::KinematicModel::setRootTransform(const btTransform &transform)
+inline void planning_models::KinematicModel::setRootTransform(const btTransform &transform)
 {
     rootTransform_ = transform;
 }
@@ -121,12 +121,12 @@ const std::vector<std::string> &planning_models::KinematicModel::getPlanarJoints
     return planarJoints_;
 }
 
-void planning_models::KinematicModel::lock(void)
+inline void planning_models::KinematicModel::lock(void)
 {
     lock_.lock();
 }
 
-void planning_models::KinematicModel::unlock(void)
+inline void planning_models::KinematicModel::unlock(void)
 {
     lock_.unlock();
 }
@@ -176,8 +176,6 @@ void planning_models::KinematicModel::buildGroups(const std::map< std::string, s
 
 planning_models::KinematicModel::Joint* planning_models::KinematicModel::buildRecursive(Link *parent, const urdf::Link *link)
 {
-    ROS_INFO("%s", link->name.c_str());
-    
     Joint *joint = constructJoint(link->parent_joint.get(), stateBounds_);
     joint->stateIndex = dimension_;
     jointMap_[joint->name] = joint;
@@ -196,7 +194,7 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::buildRe
     if (dynamic_cast<PlanarJoint*>(joint))
 	planarJoints_.push_back(joint->name);
     
-    for (unsigned int i = 0 ; link->child_links.size() ; ++i)
+    for (unsigned int i = 0 ; i < link->child_links.size() ; ++i)
 	joint->after->after.push_back(buildRecursive(joint->after, link->child_links[i].get()));
     
     return joint;
@@ -420,6 +418,18 @@ const planning_models::KinematicModel::Joint* planning_models::KinematicModel::g
 	return it->second;
 }
 
+planning_models::KinematicModel::Joint* planning_models::KinematicModel::getJoint(const std::string &name)
+{
+    std::map<std::string, Joint*>::iterator it = jointMap_.find(name);
+    if (it == jointMap_.end())
+    {
+	ROS_ERROR("Joint '%s' not found", name.c_str());
+	return NULL;
+    }
+    else
+	return it->second;
+}
+
 const planning_models::KinematicModel::Link* planning_models::KinematicModel::getLink(const std::string &name) const
 {
     std::map<std::string, Link*>::const_iterator it = linkMap_.find(name);
@@ -432,9 +442,33 @@ const planning_models::KinematicModel::Link* planning_models::KinematicModel::ge
 	return it->second;
 }
 
+planning_models::KinematicModel::Link* planning_models::KinematicModel::getLink(const std::string &name)
+{
+    std::map<std::string, Link*>::iterator it = linkMap_.find(name);
+    if (it == linkMap_.end())
+    {
+	ROS_ERROR("Link '%s' not found", name.c_str());
+	return NULL;
+    }
+    else
+	return it->second;
+}
+
 const planning_models::KinematicModel::JointGroup* planning_models::KinematicModel::getGroup(const std::string &name) const
 {
     std::map<std::string, JointGroup*>::const_iterator it = groupMap_.find(name);
+    if (it == groupMap_.end())
+    {
+	ROS_ERROR("Joint group '%s' not found", name.c_str());
+	return NULL;
+    }
+    else
+	return it->second;
+}
+
+planning_models::KinematicModel::JointGroup* planning_models::KinematicModel::getGroup(const std::string &name)
+{
+    std::map<std::string, JointGroup*>::iterator it = groupMap_.find(name);
     if (it == groupMap_.end())
     {
 	ROS_ERROR("Joint group '%s' not found", name.c_str());
@@ -554,7 +588,7 @@ void planning_models::KinematicModel::printTransforms(std::ostream &out) const
     getJoints(joints);
     for (unsigned int i = 0 ; i < joints.size() ; ++i)
     {
-	printTransform(joints[i]->name, joints[i]->varTrans);
+	printTransform(joints[i]->name, joints[i]->varTrans, out);
 	out << std::endl;	
     }
     out << "Link poses:" << std::endl;
@@ -562,7 +596,7 @@ void planning_models::KinematicModel::printTransforms(std::ostream &out) const
     getLinks(links);
     for (unsigned int i = 0 ; i < links.size() ; ++i)
     {
-	printTransform(links[i]->name, links[i]->globalTrans);
+	printTransform(links[i]->name, links[i]->globalTrans, out);
 	out << std::endl;	
     }    
 }
@@ -629,7 +663,7 @@ planning_models::KinematicModel::Link::~Link(void)
 }
 
 
-void planning_models::KinematicModel::Link::computeTransform(void)
+inline void planning_models::KinematicModel::Link::computeTransform(void)
 {
     globalTransFwd.mult(before->before ? before->before->globalTransFwd : owner->getRootTransform(), constTrans);
     globalTransFwd *= before->varTrans;    
@@ -652,7 +686,7 @@ planning_models::KinematicModel::AttachedBody::~AttachedBody(void)
 	delete shape;
 }
 
-void planning_models::KinematicModel::AttachedBody::computeTransform(void)
+inline void planning_models::KinematicModel::AttachedBody::computeTransform(void)
 {
     globalTrans = owner->globalTrans * attachTrans;
 }

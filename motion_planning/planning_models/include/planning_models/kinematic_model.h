@@ -224,7 +224,7 @@ namespace planning_models
 	    btTransform                globalTrans;
 
 	    /** \brief Recompute globalTrans and globalTransFwd */
-	    inline void computeTransform(void);
+	    void computeTransform(void);
 	    
 	};
 
@@ -256,7 +256,7 @@ namespace planning_models
 	    std::vector<std::string>  touchLinks;
 
 	    /** \brief Recompute globalTrans */
-	    inline void computeTransform(void);
+	    void computeTransform(void);
 	};
 
 
@@ -327,6 +327,9 @@ namespace planning_models
 	
 	/** \brief Get a group by its name */
 	const JointGroup* getGroup(const std::string &name) const;
+
+	/** \brief Get a group by its name */
+	JointGroup* getGroup(const std::string &name);
 	
 	/** \brief Check if a group exists */
 	bool hasGroup(const std::string &name) const;
@@ -340,6 +343,9 @@ namespace planning_models
 	/** \brief Get a link by its name */
 	const Link* getLink(const std::string &link) const;
 
+	/** \brief Get a link by its name */
+	Link* getLink(const std::string &link);
+
 	/** \brief Check if a link exists */
 	bool hasLink(const std::string &name) const;
 
@@ -351,6 +357,9 @@ namespace planning_models
 
 	/** \brief Get a joint by its name */
 	const Joint* getJoint(const std::string &joint) const;
+
+	/** \brief Get a joint by its name */
+	Joint* getJoint(const std::string &joint);
 
 	/** \brief Check if a joint exists */
 	bool hasJoint(const std::string &name) const;
