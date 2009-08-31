@@ -6,7 +6,7 @@
     headers and libraries in a way that can be managed by the ROS dependency system.
   </description>
   <author>Conor McGann, with contributions from many others. See respective projects.</author>
-  <license>BSD</license>
+  <license>BSD, NOSA</license>
   <review status="3rdparty" notes=""/>
   <url>http://code.google.com/p/trex-autonomy/</url>
   <export>
