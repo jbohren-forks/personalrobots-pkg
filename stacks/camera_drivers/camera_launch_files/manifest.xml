@@ -9,7 +9,6 @@
   <url>http://www.ros.org/wiki/camera_launch_files</url>
   <depend package="wge100_camera"/>
   <depend package="prosilica_camera"/>
-  <depend package="dcam"/>
   <depend package="stereo_image_proc"/>
   <depend package="image_view"/>
 </package>
