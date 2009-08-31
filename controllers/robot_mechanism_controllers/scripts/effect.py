@@ -38,11 +38,11 @@ import sys
 
 import roslib
 roslib.load_manifest('robot_mechanism_controllers')
-roslib.load_manifest('mechanism_control')
+roslib.load_manifest('pr2_mechanism_control')
 import rospy
 from std_msgs.msg import *
-from mechanism_control import mechanism
-from mechanism_msgs.srv import SpawnController, KillController, SwitchController
+from pr2_mechanism_control import mechanism
+from pr2_mechanism_msgs.srv import SpawnController, KillController, SwitchController
 
 
 def load_joint_config(joint_name):
