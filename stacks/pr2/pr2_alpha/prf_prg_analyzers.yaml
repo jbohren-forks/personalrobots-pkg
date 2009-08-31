@@ -4,7 +4,8 @@ sensors:
   contains: [
     'hokuyo',
     'prosilica',
-    'stereodcam',
+    'stereo',
+    'forearm_camera',
     'imu' ]
 computers:
   type: GenericAnalyzer
