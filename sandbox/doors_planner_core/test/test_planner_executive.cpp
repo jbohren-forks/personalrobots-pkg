@@ -490,7 +490,7 @@ class DoorPlannerExecutive
       goal.target_pose = goal_msg;
       goal.target_pose.header.stamp = ros::Time();
       move_base_client_->sendGoal(goal);
-      bool finished_before_timeout = move_base_client_->waitForGoalToFinish(timeout_medium);
+      bool finished_before_timeout = move_base_client_->waitForGoalToFinish(timeout_long);
       if (!finished_before_timeout) 
       {
         ROS_ERROR("Move base failed.");

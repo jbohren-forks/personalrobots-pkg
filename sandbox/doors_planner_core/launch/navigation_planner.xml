@@ -7,7 +7,7 @@
 <!-- Navigation through the door -->
   <include file="$(find door_demos)/launch/move_base_door.launch" />
   <param name="base_trajectory_controller/controller_frequency" value="100.0" type="double" />
-  <param name="base_trajectory_controller/max_update_time" value="20.0" type="double" />
+  <param name="base_trajectory_controller/max_update_time" value="0.2" type="double" />
 
   <param name="base_trajectory_controller/x/p_gain" value="2.5" type="double" />
   <param name="base_trajectory_controller/x/i_gain" value="0.1" type="double" />
