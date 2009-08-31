@@ -6,12 +6,12 @@ if [ `uname` = Darwin ]; then
 fi
 
 #Have to be here to source it.
-cd `rospack find trex`
+cd `rospack find trex_core`
 
 # PLASMA_HOME is required to build the PLASMA NDDL.jar
-source `rospack find trex`/devConfig
+source `rospack find trex_core`/devConfig
 
-cd `rospack find trex`/TREX
+cd `rospack find trex_core`/TREX
 
 echo "Building nddl.jar with jam"
 # Build the nddl jar file used to parse input files
@@ -42,7 +42,7 @@ function run_jam {
 
 
 if [ "$1" = "test" ] ; then
-  cd `rospack find trex`/TREX/agent/test
+  cd `rospack find trex_core`/TREX/agent/test
   jam agent-module-tests
   if [ $? -ne 0 ] ; then
     echo "TREX test file creation failed."
