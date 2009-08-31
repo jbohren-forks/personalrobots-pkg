@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- start collision map -->
+  <include file="$(find 3dnav_pr2)/launch/perception/bits/collision_map_self_occ.launch" />   
+  
+	<!-- start move_arm -->
+  <include file="$(find 3dnav_pr2)/launch/actions/right_arm.launch" />   
+  
+	<!-- start ompl planner -->
+  <include file="$(find 3dnav_pr2)/launch/planning/ompl_fake_planning.launch" />
+
+</launch>
