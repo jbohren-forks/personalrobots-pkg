@@ -1,30 +1,24 @@
 <package>
-  <description brief="TREX">
-
+  <description brief="trex_core contains the core of TREX prior to ROS integration">
     This package contains TREX (initially developed at the Monterey Bay Aquarium Research Institute), 
     and EUROPA from the NASA Ames Research Center. This package does not modify these 
     3rd party libraries in any way; it simply provides a convenient way to download and build the
-    headers and libraries in a way that can be managed by the ROS dependency
-    system.
-
+    headers and libraries in a way that can be managed by the ROS dependency system.
   </description>
   <author>Conor McGann, with contributions from many others. See respective projects.</author>
-  <license>NOSA</license>
+  <license>BSD</license>
   <review status="3rdparty" notes=""/>
-  <url>https://babelfish.arc.nasa.gov/trac/europa/wiki</url>
+  <url>http://code.google.com/p/trex-autonomy/</url>
   <export>
     <cpp lflags="-Wl,-rpath,${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib" 
-      cflags="-I${prefix}/include/TREX -I${prefix}/include/PLASMA -I${prefix}/include/PlanWorks -O3 -DEUROPA_FAST"/>
+      cflags="-I${prefix}/include/TREX -I${prefix}/include/PLASMA -O3 -DEUROPA_FAST"/>
     <trex_libs libs="Utils TREX"/>
     <nddl iflags="-I${prefix}/TREX/agent/base"/>
     <doxymaker external="https://babelfish.arc.nasa.gov/trac/europa/wiki"/>
   </export>
   <versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PLASMA/trunk"/>
-  <versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PlanWorks/trunk"/>
   <versioncontrol type="svn" url="http://trex-autonomy.googlecode.com/svn/trunk"/>
   <rosdep name="jam"/>
-  <rosdep name="ant"/>
-  <rosdep name="java"/>
 </package>
 
 
