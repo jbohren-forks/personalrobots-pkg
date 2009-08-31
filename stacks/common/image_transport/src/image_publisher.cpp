@@ -72,13 +72,19 @@ void ImagePublisher::advertise(ros::NodeHandle& nh, const std::string& topic,
   impl_->topic = topic;
   
   BOOST_FOREACH(const std::string& lookup_name, impl_->loader.getDeclaredClasses()) {
-    ROS_INFO("Loading %s", lookup_name.c_str());
-    PublisherPlugin* pub = impl_->loader.createClassInstance(lookup_name);
-    impl_->publishers.push_back(pub);
-    // @todo: support overriding the topic names
-    std::string sub_topic = pub->getDefaultTopic(topic);
-    nh.setParam(sub_topic + "/transport_type", pub->getTransportType());
-    pub->advertise(nh, sub_topic, queue_size, latch);
+    //ROS_INFO("Loading %s", lookup_name.c_str());
+    try {
+      PublisherPlugin* pub = impl_->loader.createClassInstance(lookup_name);
+      impl_->publishers.push_back(pub);
+      // @todo: support overriding the topic names
+      std::string sub_topic = pub->getDefaultTopic(topic);
+      nh.setParam(sub_topic + "/transport_type", pub->getTransportType());
+      pub->advertise(nh, sub_topic, queue_size, latch);
+    }
+    catch (const std::runtime_error& e) {
+      ROS_WARN("Failed to load plugin %s, error string: %s",
+               lookup_name.c_str(), e.what());
+    }
   }
 }
 
