@@ -272,4 +272,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::DoorCmd, door_ms
   std::vector<double> velocity_limits_;
 
   int door_index_;
+
+  void printPlan(const std::string name, manipulation_msgs::JointTraj &traj_out);
+
 };

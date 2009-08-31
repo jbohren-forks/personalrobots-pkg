@@ -571,7 +571,7 @@ namespace mpglue {
   const double arm_min_workspace_radius = 0.48;
   const double arm_max_workspace_radius = 0.77;
 
-  const double arm_max_workspace_angle = M_PI/6.0;
+  const double arm_max_workspace_angle = M_PI/2.0;
   const double arm_min_workspace_angle = -M_PI*70.0/180.0;
   const double door_angle_discretization_interval = 0.0175;
   geometry_msgs::Point32 shoulder;

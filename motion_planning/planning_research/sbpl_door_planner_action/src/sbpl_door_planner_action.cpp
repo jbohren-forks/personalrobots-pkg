@@ -120,7 +120,7 @@ SBPLDoorPlanner::SBPLDoorPlanner() :  Action<door_msgs::DoorCmd, door_msgs::Door
   velocity_limits_.push_back(tmp);
   ros_node_.param<double>("~vel/theta_limit",tmp,1.0);
   velocity_limits_.push_back(tmp);
-  ros_node_.param<double>("~vel/door_limit",tmp,0.25);
+  ros_node_.param<double>("~vel/door_limit",tmp,0.1);
   velocity_limits_.push_back(tmp);
   ros_node_.param<int>("~door_index",door_index_,3);
 
@@ -467,7 +467,9 @@ void SBPLDoorPlanner::processPlan(const manipulation_msgs::JointTraj &path, mani
   manipulation_msgs::JointTrajPoint additional_point = path.points.back();
   additional_point.positions[3] = global_open_angle;
   return_path.points.push_back(additional_point);    
+  printPlan("Original",return_path);
   manipulation_msgs::JointTraj pruned_path = prunePlan(return_path,path.points.front().positions[door_index_],global_open_angle,0.05,true);
+  printPlan("Pruned",pruned_path);
   manipulation_msgs::JointTraj scaled_path;
 
   double control_dt;
@@ -514,15 +516,17 @@ manipulation_msgs::JointTraj SBPLDoorPlanner::prunePlan(const manipulation_msgs:
     ROS_INFO("Trajectory has dimension: %d, points: %d",(int) path.points[0].positions.size(), (int) path.points.size());
   }
   manipulation_msgs::JointTraj result = path;  
-  for(std::vector<manipulation_msgs::JointTrajPoint>::iterator it=result.points.begin(); it != result.points.end(); it++)
+  std::vector<manipulation_msgs::JointTrajPoint>::iterator it=result.points.begin();
+  while(it != result.points.end())
+//  for(std::vector<manipulation_msgs::JointTrajPoint>::iterator it=result.points.begin(); it != result.points.end(); it++)
   {
-    if( fabs(angles::normalize_angle(it->positions[door_index_]-start_door_angle)) <= tolerance)
+    if( fabs(angles::shortest_angular_distance(it->positions[door_index_],start_door_angle)) <= tolerance)
     {   
       break;
     }
     else
     {
-      result.points.erase(it);
+      it = result.points.erase(it);
     }
   }  
   if(result.points.empty())
@@ -530,21 +534,35 @@ manipulation_msgs::JointTraj SBPLDoorPlanner::prunePlan(const manipulation_msgs:
     ROS_ERROR("No door path found");
     return result;
   }
+  else
+  {
+    printPlan("beginPrune",result);
+  }
   for(std::vector<manipulation_msgs::JointTrajPoint>::iterator it=result.points.begin(); it != result.points.end(); it++)
   {
-    if(fabs(angles::normalize_angle(it->positions[door_index_]-end_door_angle)) <= tolerance)
+    if(fabs(angles::shortest_angular_distance(it->positions[door_index_],end_door_angle)) <= tolerance)
     {   
-      result.points.erase(it,result.points.end());
-      break;
+      if((it+1) == result.points.end())
+        break;
+      else
+      {
+        result.points.erase(it+1,result.points.end());
+        break;
+      }
     }
   }  
   if(result.points.empty()){
     ROS_ERROR("No door path found");
+    return result;
+  }
+  else
+  {
+    printPlan("endPrune",result);
   }
   if(impose_monotonic)
   {
     bool move_positive = true;
-    if(end_door_angle - start_door_angle < 0)
+    if(angles::shortest_angular_distance(start_door_angle,end_door_angle) < 0)
     {
       move_positive = false;
     }
@@ -556,20 +574,20 @@ manipulation_msgs::JointTraj SBPLDoorPlanner::prunePlan(const manipulation_msgs:
         ++it;
         continue;
       }
-      if(it->positions[door_index_] - (it-1)->positions[door_index_] < 0 && move_positive)
+      if(angles::shortest_angular_distance((it-1)->positions[door_index_],it->positions[door_index_]) < 0 && move_positive)
       {
         it = result.points.erase(it);
         continue;
       }
-      if(it->positions[door_index_] - (it-1)->positions[door_index_] > 0 && !move_positive)
+      if(angles::shortest_angular_distance((it-1)->positions[door_index_],it->positions[door_index_])  > 0 && !move_positive)
       {
         it = result.points.erase(it);
         continue;
       }
       ++it;
-    }  
+    } 
+    printPlan("imposeMonotonic",result); 
   }
-  ROS_INFO("Result has dimension %d and size %d",(int) result.points[0].positions.size(), (int) result.points.size());
   return result;
 }
 
@@ -579,6 +597,7 @@ bool SBPLDoorPlanner::scalePlan(const manipulation_msgs::JointTraj &traj, const 
   trajectory::Trajectory traj_c(traj.points[0].positions.size());
   manipulation_msgs::JointTraj result;
   traj_c.setJointWraps(2);
+  traj_c.setJointWraps(3);
   traj_c.autocalc_timing_ = true;
   traj_c.setMaxRates(velocity_limits_);
   traj_c.setInterpolationMethod(trajectory_type_);
@@ -589,12 +608,18 @@ bool SBPLDoorPlanner::scalePlan(const manipulation_msgs::JointTraj &traj, const 
   if(!createMsgFromTrajectory(result_c,result))
      return false;
   traj_out = result;
-  ROS_INFO("Scaled plan has %d points",traj_out.points.size());
+  printPlan("Scaled",traj_out);
+  return true;
+}
+
+void SBPLDoorPlanner::printPlan(const std::string name, manipulation_msgs::JointTraj &traj_out)
+{
+  ROS_INFO(" ");
+  ROS_INFO("%s plan has %d points",name.c_str(),traj_out.points.size());
   for(int i=0; i < (int) traj_out.points.size(); i++)
   {
     ROS_INFO("%d: %f %f %f %f",i,traj_out.points[i].positions[0],traj_out.points[i].positions[1],traj_out.points[i].positions[2],traj_out.points[i].positions[3]);
   }
-  return true;
 }
 
 bool SBPLDoorPlanner::createTrajectoryPointsVectorFromMsg(const manipulation_msgs::JointTraj &new_traj, std::vector<trajectory::Trajectory::TPoint> &tp)

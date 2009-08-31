@@ -806,10 +806,14 @@ void EnvironmentNAVXYTHETADOORLAT::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t wor
 
   db_.getValidDoorAngles(robot_global_pose,robot_global_yaw,*doorangleV,*dooranglecostV,*doorangleintV);
 
-//    for(int i=0; i<doorangleV->size(); i++)
-//    {
-//      printf("Valid angle [%d]: %d, %d\n",i,doorangleV->at(i),dooranglecostV->at(i));
-//    }
+/*
+#ifdef DEBUG
+    for(int i=0; i<doorangleV->size(); i++)
+    {
+      printf("Valid angle [%d]: %d, %d\n",i,doorangleV->at(i),dooranglecostV->at(i));
+    }
+#endif
+*/
 // No larger than 255 unsigned char
 // Also put in an infinite cost
 }
