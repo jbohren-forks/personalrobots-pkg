@@ -42,8 +42,8 @@ rosbuild_add_executable(bin/stub_ros_container src/stub_ros_container.cpp)
 rosbuild_add_executable(test/ros_reactor_test test/ros_reactor_test.cpp)
 
 # Model and executive tests with NDDL simulator
+rosbuild_add_rostest(test/drive_open_drive/sim/drive_open_drive_sim_pr2.test)
 rosbuild_add_rostest(test/switch_controllers/sim/switch_controllers_sim_pr2.test)
-rosbuild_add_rostest_future(test/drive_open_drive/sim/drive_open_drive_sim_pr2.test)
 rosbuild_add_rostest(test/plug_in/sim/plugin_sim_pr2.test)
 rosbuild_add_rostest(test/m2_lite/sim/m2_lite_sim_pr2.test)
 rosbuild_add_rostest(test/m2/sim/m2_sim_pr2.test)
