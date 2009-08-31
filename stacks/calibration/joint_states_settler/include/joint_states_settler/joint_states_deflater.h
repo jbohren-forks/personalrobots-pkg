@@ -35,7 +35,7 @@
 #ifndef JOINT_STATES_SETTLER_JOINT_STATES_DEFLATER_H_
 #define JOINT_STATES_SETTLER_JOINT_STATES_DEFLATER_H_
 
-#include <pr2_mechanism_msgs/JointStates.h>
+#include <sensor_msgs/JointState.h>
 #include <settlerlib/deflated.h>
 #include "deflated_joint_states.h"
 
@@ -66,7 +66,7 @@ public:
    * \param joint_states Incoming JointStates message
    * \param Ouput datatype. Stores the deflated data, along with the original joint states message
    */
-  void deflate(const pr2_mechanism_msgs::JointStatesConstPtr& joint_states, DeflatedJointStates& deflated_elem);
+  void deflate(const sensor_msgs::JointStateConstPtr& joint_states, DeflatedJointStates& deflated_elem);
 
 private:
   std::vector<unsigned int> mapping_;
@@ -76,7 +76,7 @@ private:
    * \brief Given a stereotypical JointStates message, computes the mapping
    * from JointStates to the deflated data
    */
-  void updateMapping(const pr2_mechanism_msgs::JointStates& joint_states);
+  void updateMapping(const sensor_msgs::JointState& joint_states);
 
 };
 

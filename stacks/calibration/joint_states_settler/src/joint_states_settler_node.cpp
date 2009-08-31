@@ -94,7 +94,7 @@ joint_states_settler::ConfigGoal getParamConfig(ros::NodeHandle& n)
   return config;
 }
 
-void jointStatesCallback(ros::Publisher* pub, JointStatesSettler* settler, const pr2_mechanism_msgs::JointStatesConstPtr& msg)
+void jointStatesCallback(ros::Publisher* pub, JointStatesSettler* settler, const sensor_msgs::JointStateConstPtr& msg)
 {
   pub->publish(settler->add(msg));
 }
@@ -115,7 +115,7 @@ int main(int argc, char** argv)
 
   // Input
 
-  boost::function<void (const pr2_mechanism_msgs::JointStatesConstPtr&)> cb = boost::bind(&jointStatesCallback, &pub, &settler, _1);
+  boost::function<void (const sensor_msgs::JointStateConstPtr&)> cb = boost::bind(&jointStatesCallback, &pub, &settler, _1);
   ros::Subscriber sub = n.subscribe(std::string("joint_states"), 1, cb);
 
   ros::spin();

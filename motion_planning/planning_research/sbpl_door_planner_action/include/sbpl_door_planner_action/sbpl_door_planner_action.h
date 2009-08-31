@@ -49,7 +49,7 @@
 #include <mapping_msgs/CollisionMap.h>
 #include <motion_planning_msgs/KinematicPath.h>
 #include <pr2_mechanism_msgs/MechanismState.h>
-#include <pr2_mechanism_msgs/JointStates.h>
+#include <sensor_msgs/JointState.h>
 
 // Costmap used for the map representation
 #include <costmap_2d/costmap_2d_ros.h>
@@ -118,10 +118,10 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::DoorCmd, door_ms
   ros::Publisher pr2_ik_pub_;
   ros::Publisher base_control_pub_;
   tf::TransformListener tf_;
-  pr2_mechanism_msgs::JointStates joint_states_;
+  sensor_msgs::JointState joint_states_;
   motion_planning_msgs::KinematicPath robot_path_;
 
-  void jointsCallback(const pr2_mechanism_msgs::JointStatesConstPtr &joint_states);
+  void jointsCallback(const sensor_msgs::JointStateConstPtr &joint_states);
 
 //   tf::TransformListener &tf_;  
   boost::shared_ptr<mpglue::CostmapAccessor> cm_access_;

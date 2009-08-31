@@ -100,7 +100,7 @@ bool HeadServoingController::init(mechanism::RobotState *robot_state, const ros:
 
 
   // subscribe to head commands
-  sub_command_ = node_.subscribe<pr2_mechanism_msgs::JointStates>("command", 1, &HeadServoingController::command, this);
+  sub_command_ = node_.subscribe<sensor_msgs::JointState>("command", 1, &HeadServoingController::command, this);
 
   point_head_notifier_.reset(new MessageNotifier<geometry_msgs::PointStamped>(tf_,
                                                                        boost::bind(&HeadServoingController::pointHead, this, _1),
@@ -135,21 +135,31 @@ void HeadServoingController::update()
   head_tilt_controller_.update();
 }
 
-void HeadServoingController::command(const pr2_mechanism_msgs::JointStatesConstPtr& command_msg)
+void HeadServoingController::command(const sensor_msgs::JointStateConstPtr& command_msg)
 {
+  // do not use assert to check user input!
 
-  assert(command_msg->joints.size() == 2);
-  if(command_msg->joints[0].name == head_pan_controller_.joint_state_->joint_->name_)
+  if (command_msg->name.size() != 2 || command_msg->position.size() != 2){
+    ROS_ERROR("Head servoing controller expected joint command of size 2");
+    return;
+  }
+  if (command_msg->name[0] == head_pan_controller_.joint_state_->joint_->name_ &&
+      command_msg->name[1] == head_tilt_controller_.joint_state_->joint_->name_)
   {
-    pan_out_ = command_msg->joints[0].position;
-    tilt_out_ = command_msg->joints[1].position;
+    pan_out_  = command_msg->position[0];
+    tilt_out_ = command_msg->position[1];
+  }
+  else if (command_msg->name[1] == head_pan_controller_.joint_state_->joint_->name_ &&
+           command_msg->name[0] == head_tilt_controller_.joint_state_->joint_->name_)
+
+  {
+    pan_out_ = command_msg->position[1];
+    tilt_out_ = command_msg->position[0];
   }
   else
   {
-    pan_out_ = command_msg->joints[1].position;
-    tilt_out_ = command_msg->joints[0].position;
+    ROS_ERROR("Head servoing controller received invalid joint command");
   }
-
 }
 
 

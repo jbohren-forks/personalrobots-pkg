@@ -51,7 +51,7 @@
 #include <pr2_mechanism_msgs/KillController.h>
 #include <pr2_mechanism_msgs/SwitchController.h>
 #include <pr2_mechanism_msgs/MechanismState.h>
-#include <pr2_mechanism_msgs/JointStates.h>
+#include <sensor_msgs/JointState.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
 
 
@@ -108,7 +108,7 @@ private:
   void publishDiagnostics();
   void publishState();
   realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticArray> pub_diagnostics_;
-  realtime_tools::RealtimePublisher<pr2_mechanism_msgs::JointStates> pub_joints_;
+  realtime_tools::RealtimePublisher<sensor_msgs::JointState> pub_joint_state_;
   realtime_tools::RealtimePublisher<pr2_mechanism_msgs::MechanismState> pub_mech_state_;
   double publish_period_state_, last_published_state_;
   double publish_period_diagnostics_, last_published_diagnostics_;

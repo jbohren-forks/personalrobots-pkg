@@ -14,12 +14,10 @@
 
   <!-- common_msgs -->
   <depend package="actionlib_msgs"/>
+  <depend package="sensor_msgs"/>
 
   <!-- common -->
   <depend package="actionlib"/>
-
-  <!-- mechanism -->
-  <depend package="pr2_mechanism_msgs"/>
 
   <!-- calibration -->
   <depend package="settlerlib"/>

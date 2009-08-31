@@ -4,12 +4,12 @@
   <author>Benjamin Cohen /bcohen@willowgarage.com</author>
   <license>BSD</license>
     <depend package="roscpp"/>
-		<depend package="geometric_shapes"/>
+    <depend package="geometric_shapes"/>
     <depend package="planning_environment" />
-		<depend package="bullet" />
+    <depend package="bullet" />
     <depend package="planning_models" />
-		<depend package="visualization_msgs" />
-		<depend package="pr2_mechanism_msgs" />
+    <depend package="visualization_msgs" />
+    <depend package="sensor_msgs" />
   <url></url>
 
   <export>

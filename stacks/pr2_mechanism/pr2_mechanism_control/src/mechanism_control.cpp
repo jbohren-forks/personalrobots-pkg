@@ -53,7 +53,7 @@ MechanismControl::MechanismControl(HardwareInterface *hw) :
   current_controllers_list_(0),
   used_by_realtime_(-1),
   pub_diagnostics_(node_, "/diagnostics", 1),
-  pub_joints_(node_, "joint_states", 1),
+  pub_joint_state_(node_, "joint_states", 1),
   pub_mech_state_(node_, "mechanism_state", 1),
   last_published_state_(ros::Time::now().toSec()),
   last_published_diagnostics_(ros::Time::now().toSec())
@@ -80,8 +80,11 @@ bool MechanismControl::initXml(TiXmlElement* config)
     if (type == urdf::Joint::REVOLUTE || type == urdf::Joint::CONTINUOUS || type == urdf::Joint::PRISMATIC)
       ++joints_size;
   }
-  pub_joints_.msg_.set_joints_size(joints_size);
   pub_mech_state_.msg_.set_joint_states_size(joints_size);
+  pub_joint_state_.msg_.set_name_size(joints_size);
+  pub_joint_state_.msg_.set_position_size(joints_size);
+  pub_joint_state_.msg_.set_velocity_size(joints_size);
+  pub_joint_state_.msg_.set_effort_size(joints_size);
 
   // Advertise services
   srv_list_controllers_ = node_.advertiseService("list_controllers", &MechanismControl::listControllersSrv, this);
@@ -513,14 +516,15 @@ void MechanismControl::publishState()
         if (type == urdf::Joint::REVOLUTE || type == urdf::Joint::CONTINUOUS || type == urdf::Joint::PRISMATIC)
         {
           assert(j < pub_mech_state_.msg_.get_joint_states_size());
-          pr2_mechanism_msgs::JointState *out = &pub_mech_state_.msg_.joint_states[j++];
           mechanism::JointState *in = &state_->joint_states_[i];
+          pr2_mechanism_msgs::JointState *out = &pub_mech_state_.msg_.joint_states[j];
           out->name = model_.joints_[i]->name_;
           out->position = in->position_;
           out->velocity = in->velocity_;
           out->applied_effort = in->applied_effort_;
           out->commanded_effort = in->commanded_effort_;
           out->is_calibrated = in->calibrated_;
+          j++;
         }
       }
 
@@ -557,7 +561,7 @@ void MechanismControl::publishState()
       pub_mech_state_.unlockAndPublish();
     }
 
-    if (pub_joints_.trylock())
+    if (pub_joint_state_.trylock())
     {
       unsigned int j = 0;
       for (unsigned int i = 0; i < model_.joints_.size(); ++i)
@@ -565,21 +569,23 @@ void MechanismControl::publishState()
         int type = state_->joint_states_[i].joint_->type_;
         if (type == urdf::Joint::REVOLUTE || type == urdf::Joint::CONTINUOUS || type == urdf::Joint::PRISMATIC)
         {
-          assert(j < pub_joints_.msg_.get_joints_size());
-          pr2_mechanism_msgs::JointState *out = &pub_joints_.msg_.joints[j++];
+          assert(j < pub_joint_state_.msg_.get_name_size());
+          assert(j < pub_joint_state_.msg_.get_position_size());
+          assert(j < pub_joint_state_.msg_.get_velocity_size());
+          assert(j < pub_joint_state_.msg_.get_effort_size());
           mechanism::JointState *in = &state_->joint_states_[i];
-          out->name = model_.joints_[i]->name_;
-          out->position = in->position_;
-          out->velocity = in->velocity_;
-          out->applied_effort = in->applied_effort_;
-          out->commanded_effort = in->commanded_effort_;
-          out->is_calibrated = in->calibrated_;
+          pub_joint_state_.msg_.name[j] = model_.joints_[i]->name_;
+          pub_joint_state_.msg_.position[j] = in->position_;
+          pub_joint_state_.msg_.velocity[j] = in->velocity_;
+          pub_joint_state_.msg_.effort[j] = in->applied_effort_;
+
+          j++;
         }
       }
 
-      pub_joints_.msg_.header.stamp = ros::Time::now();
+      pub_joint_state_.msg_.header.stamp = ros::Time::now();
 
-      pub_joints_.unlockAndPublish();
+      pub_joint_state_.unlockAndPublish();
     }
   }
 }

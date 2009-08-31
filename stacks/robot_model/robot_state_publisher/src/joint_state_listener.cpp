@@ -36,7 +36,6 @@
 
 #include <kdl/tree.hpp>
 #include <ros/ros.h>
-#include <pr2_mechanism_msgs/JointStates.h>
 #include "robot_state_publisher/robot_state_publisher.h"
 #include "robot_state_publisher/joint_state_listener.h"
 
@@ -67,10 +66,20 @@ JointStateListener::~JointStateListener()
 
 void JointStateListener::callbackJointState(const JointStateConstPtr& state)
 {
+  if (state->get_name_size() == 0){
+    ROS_ERROR("Robot state publisher received an empty joint state vector");
+    return;
+  }
+
+  if (state->get_name_size() != state->get_position_size()){
+    ROS_ERROR("Robot state publisher received an invalid joint state vector");
+    return;
+  }
+
   // get joint positions from state message
   map<string, double> joint_positions;
-  for (unsigned int i=0; i<state->joints.size(); i++)
-    joint_positions.insert(make_pair(state->joints[i].name, state->joints[i].position));
+  for (unsigned int i=0; i<state->name.size(); i++)
+    joint_positions.insert(make_pair(state->name[i], state->position[i]));
   state_publisher_.publishTransforms(joint_positions, state->header.stamp);
   publish_rate_.sleep();
 }

@@ -38,7 +38,6 @@
 #include <ros/ros.h>
 #include <kdl_parser/dom_parser.hpp>
 #include <urdf/model.h>
-#include <pr2_mechanism_msgs/MechanismState.h>
 #include "robot_state_publisher/joint_state_listener.h"
 
 using namespace std;

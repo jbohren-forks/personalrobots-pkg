@@ -18,7 +18,6 @@
   <depend package="move_arm_tools"/>
   <depend package="tf"/>
   <depend package="point_cloud_mapping"/>
-  <depend package="pr2_mechanism_msgs"/>
   <depend package="bullet"/>
   <depend package="move_arm_tools"/>
 

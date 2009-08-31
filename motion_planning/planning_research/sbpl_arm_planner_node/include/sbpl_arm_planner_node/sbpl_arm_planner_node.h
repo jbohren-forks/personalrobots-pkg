@@ -185,7 +185,7 @@ class SBPLArmPlannerNode
 
       pr2_mechanism_msgs::MechanismState mechanism_state_;
 			
-			pr2_mechanism_msgs::JointStates joint_states_;
+			sensor_msgs::JointState joint_states_;
 			
 			tf::MessageNotifier<sensor_msgs::PointCloud>  *point_cloud_notifier_;
 			
@@ -265,7 +265,7 @@ class SBPLArmPlannerNode
 
       void pointCloudCallback(const sensor_msgs::PointCloudConstPtr &point_cloud);
 
-			void jointStatesCallback(const pr2_mechanism_msgs::JointStatesConstPtr &joint_states);
+			void jointStatesCallback(const sensor_msgs::JointStateConstPtr &joint_states);
 					
       void createOccupancyGrid();
 

@@ -48,30 +48,35 @@ void JointStatesDeflater::setDeflationJointNames(std::vector<std::string> joint_
   mapping_.resize(joint_names_.size());
 }
 
-void JointStatesDeflater::deflate(const pr2_mechanism_msgs::JointStatesConstPtr& joint_states, DeflatedJointStates& deflated_elem)
+void JointStatesDeflater::deflate(const sensor_msgs::JointStateConstPtr& joint_states, DeflatedJointStates& deflated_elem)
 {
+  if (joint_states->get_name_size() !=  joint_states->get_position_size()){
+    ROS_ERROR("JointStatesDeflater got invalid joint state message");
+    return;
+  }
+    
   if (mapping_.size() != joint_names_.size())
     updateMapping(*joint_states);
-
+  
   const unsigned int N = joint_names_.size();
-
+  
   deflated_elem.channels_.resize(N);
-
+  
   for (unsigned int i=0; i<N; i++)
   {
-    if ( mapping_[i] >= joint_states->joints.size() )
+    if ( mapping_[i] >= joint_states->name.size() )
       updateMapping(*joint_states);
-
-    if ( joint_states->joints[mapping_[i]].name != joint_names_[i])
+    
+    if ( joint_states->name[mapping_[i]] != joint_names_[i])
       updateMapping(*joint_states);
-
+    
     deflated_elem.header = joint_states->header;
-    deflated_elem.channels_[i] = joint_states->joints[mapping_[i]].position;
+    deflated_elem.channels_[i] = joint_states->position[mapping_[i]];
     deflated_elem.msg_ = joint_states;
   }
 }
 
-void JointStatesDeflater::updateMapping(const pr2_mechanism_msgs::JointStates& joint_states)
+void JointStatesDeflater::updateMapping(const sensor_msgs::JointState& joint_states)
 {
   ROS_DEBUG("Updating the JointStates mapping");
 
@@ -82,9 +87,9 @@ void JointStatesDeflater::updateMapping(const pr2_mechanism_msgs::JointStates& j
   for (unsigned int i=0; i<N; i++)
   {
     bool mapping_found = false;
-    for (unsigned int j=0; j<joint_states.joints.size(); j++)
+    for (unsigned int j=0; j<joint_states.name.size(); j++)
     {
-      if ( joint_names_[i] == joint_states.joints[j].name)
+      if ( joint_names_[i] == joint_states.name[j])
       {
         mapping_[i] = j;
         mapping_found = true;

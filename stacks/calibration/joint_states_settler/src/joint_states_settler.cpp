@@ -73,7 +73,7 @@ bool JointStatesSettler::configure(const joint_states_settler::ConfigGoal& goal)
   return true;
 }
 
-calibration_msgs::Interval JointStatesSettler::add(const pr2_mechanism_msgs::JointStatesConstPtr msg)
+calibration_msgs::Interval JointStatesSettler::add(const sensor_msgs::JointStateConstPtr msg)
 {
   if (!configured_)
   {

@@ -1,5 +1,4 @@
-#include <pr2_mechanism_msgs/JointStates.h>
-#include <pr2_mechanism_msgs/JointState.h>
+#include <sensor_msgs/JointState.h>
 
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/point.h>
@@ -26,7 +25,7 @@ Hanoi::Hanoi(ros::NodeHandle &nh)
   // Subscribe to the blobs topic
   blobSubscriber_ = nodeHandle_.subscribe("blobs", 100, &Hanoi::BlobCB, this);
 
-  headPublisher_ = nodeHandle_.advertise<pr2_mechanism_msgs::JointStates>("pan_tilt", 1, true);
+  headPublisher_ = nodeHandle_.advertise<sensor_msgs::JointState>("pan_tilt", 1, true);
 
   // Create the publisher for cylinder data
   cylinderPublisher_ = nodeHandle_.advertise<hanoi::Cylinders>("cylinders", 1);
@@ -57,19 +56,17 @@ Hanoi::~Hanoi()
 // Pan and tilt the head
 void Hanoi::CommandHead(float pan, float tilt)
 {
-  pr2_mechanism_msgs::JointStates jointStatesMsg;
-  pr2_mechanism_msgs::JointState panJoint, tiltJoint;
+  sensor_msgs::JointState jointStateMsg;
+  jointStateMsg.set_name_size(2);
+  jointStateMsg.set_position_size(2);
 
-  panJoint.name = "head_pan_joint";
-  panJoint.position = pan;
+  jointStateMsg.name[0] = "head_pan_joint";
+  jointStateMsg.position[0] = pan;
 
-  tiltJoint.name = "head_tilt_joint";
-  tiltJoint.position = tilt;
+  jointStateMsg.name[1] = "head_tilt_joint";
+  jointStateMsg.position[1] = tilt;
 
-  jointStatesMsg.joints.push_back(panJoint);
-  jointStatesMsg.joints.push_back(tiltJoint);
-
-  headPublisher_.publish( jointStatesMsg );
+  headPublisher_.publish( jointStateMsg );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

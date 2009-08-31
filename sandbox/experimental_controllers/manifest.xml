@@ -10,7 +10,7 @@
   <depend package="kdl_parser"/>
   <depend package="rospy"/>
   <depend package="pr2_controller_interface" />
-  <depend package="pr2_mechanism_msgs" />
+  <depend package="sensor_msgs" />
   <depend package="pr2_mechanism_model" />
   <depend package="pr2_mechanism_control" />
   <depend package="pluginlib" />

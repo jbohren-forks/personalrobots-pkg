@@ -198,10 +198,13 @@ bool SBPLDoorPlanner::initializePlannerAndEnvironment(const door_msgs::Door &doo
   return true;
 }
 
-void SBPLDoorPlanner::jointsCallback(const pr2_mechanism_msgs::JointStatesConstPtr &joint_states)
+void SBPLDoorPlanner::jointsCallback(const sensor_msgs::JointStateConstPtr &joint_states)
 {
   //this is a stupid way of doing things ?
-  joint_states_ = *joint_states;
+  if (joint_states->get_name_size() != joint_states->get_position_size())
+    ROS_ERROR("SBPL door planner received invalid joint state");
+  else
+    joint_states_ = *joint_states;
 }
 
 bool SBPLDoorPlanner::removeDoor()
@@ -974,11 +977,11 @@ void SBPLDoorPlanner::updatePathVizualization(std::string frame_id, std::vector<
   robot_path_.set_states_size(path_length);
 
   // get start_state of the robot from joint_states topic
-  for(i = 0; i < joint_states_.get_joints_size(); ++i)
+  for(i = 0; i < joint_states_.get_name_size(); ++i)
   {
     robot_path_.start_state[i].header = joint_states_.header;
-    robot_path_.start_state[i].joint_name = joint_states_.joints[i].name;
-    robot_path_.start_state[i].value[0] = joint_states_.joints[i].position;
+    robot_path_.start_state[i].joint_name = joint_states_.name[i];
+    robot_path_.start_state[i].value[0] = joint_states_.position[i];
   }
 
   // set names of arm joints in path
@@ -1029,12 +1032,12 @@ void SBPLDoorPlanner::getCurrentJointAngles(const std::vector <std::string> &joi
 {
   int nind = 0;
   joint_angles->resize(num_joints_);
-  for(unsigned int i = 0; i < joint_states_.get_joints_size(); i++)
+  for(unsigned int i = 0; i < joint_states_.get_name_size(); i++)
   {
-    if(joint_names_[nind].compare(joint_states_.joints[i].name) == 0)
+    if(joint_names_[nind].compare(joint_states_.name[i]) == 0)
     {
-      ROS_DEBUG("%s: %.3f",joint_states_.joints[i].name.c_str(), joint_states_.joints[i].position);
-      joint_angles->at(nind) = joint_states_.joints[i].position;
+      ROS_DEBUG("%s: %.3f",joint_states_.name[i].c_str(), joint_states_.position[i]);
+      joint_angles->at(nind) = joint_states_.position[i];
       nind++;
     }
     if(nind == num_joints_)

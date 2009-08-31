@@ -45,8 +45,7 @@
 #include <ros/time.h>
 #include "tf/transform_listener.h"
 
-#include "pr2_mechanism_msgs/JointState.h"
-#include "pr2_mechanism_msgs/JointStates.h"
+#include <sensor_msgs/JointState.h>
 
 #define TORSO_TOPIC "/torso_lift_controller/set_command"
 #define HEAD_TOPIC "/head_controller/command"
@@ -157,7 +156,7 @@ class TeleopGoalProjection
       if(torso_dn_button != 0)
         torso_pub_ = node_handle_.advertise<std_msgs::Float64> (TORSO_TOPIC, 1);
       if(head_button != 0)
-        head_pub_ = node_handle_.advertise<pr2_mechanism_msgs::JointStates> (HEAD_TOPIC, 1);
+        head_pub_ = node_handle_.advertise<sensor_msgs::JointState> (HEAD_TOPIC, 1);
       goal_pub_ = node_handle_.advertise<geometry_msgs::PoseStamped> ("/goal", 1);
       joy_sub_ = node_handle_.subscribe("joy",1,&TeleopGoalProjection::joy_cb,this);
       ROS_DEBUG("done with ctor\n");
@@ -285,15 +284,13 @@ class TeleopGoalProjection
           // Head
           if(head_button != 0)
           {
-	    pr2_mechanism_msgs::JointState joint_cmd ;
-	    pr2_mechanism_msgs::JointStates joint_cmds;
-
-	    joint_cmd.name ="head_pan_joint";
-	    joint_cmd.position = req_pan;
-	    joint_cmds.joints.push_back(joint_cmd);
-	    joint_cmd.name="head_tilt_joint";
-	    joint_cmd.position = req_tilt;
-	    joint_cmds.joints.push_back(joint_cmd);
+	    sensor_msgs::JointState joint_cmds;
+            joint_cmds.set_name_size(2);
+            joint_cmds.set_position_size(2);
+	    joint_cmds.name[0] ="head_pan_joint";
+	    joint_cmds.position[0] = req_pan;
+	    joint_cmds.name[1]="head_tilt_joint";
+	    joint_cmds.position[1] = req_tilt;
             head_pub_.publish(joint_cmds);
           }
 
@@ -347,15 +344,13 @@ class TeleopGoalProjection
             // Publish head
             if(head_button != 0)
             {
-	      pr2_mechanism_msgs::JointState joint_cmd ;
-	      pr2_mechanism_msgs::JointStates joint_cmds;
-
-	      joint_cmd.name ="head_pan_joint";
-	      joint_cmd.position = req_pan;
-	      joint_cmds.joints.push_back(joint_cmd);
-	      joint_cmd.name="head_tilt_joint";
-	      joint_cmd.position = req_tilt;
-	      joint_cmds.joints.push_back(joint_cmd);
+	      sensor_msgs::JointState joint_cmds;
+              joint_cmds.set_name_size(2);
+              joint_cmds.set_position_size(2);
+	      joint_cmds.name[0] ="head_pan_joint";
+	      joint_cmds.position[0] = req_pan;
+	      joint_cmds.name[1]="head_tilt_joint";
+	      joint_cmds.position[1] = req_tilt;
               head_pub_.publish(joint_cmds);
             }
 

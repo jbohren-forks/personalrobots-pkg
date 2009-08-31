@@ -436,9 +436,12 @@ void SBPLArmPlannerNode::updateMapFromPointCloud(const sensor_msgs::PointCloudCo
   }
 }
 
-void SBPLArmPlannerNode::jointStatesCallback(const pr2_mechanism_msgs::JointStatesConstPtr &joint_states)
+void SBPLArmPlannerNode::jointStatesCallback(const sensor_msgs::JointStateConstPtr &joint_states)
 {
-	joint_states_ = *joint_states;
+  if (joint_states->get_name_size() != joint_states->get_position_size())
+    ROS_ERROR("SBPL door planner received invalid joint state");
+  else
+    joint_states_ = *joint_states;
 }
 
 /** \brief Fetch the SBPL collision map and publish it for debugging purposes in rviz */

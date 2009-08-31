@@ -46,7 +46,7 @@
 #include <tf/message_notifier.h>
 #include <tf/transform_datatypes.h>
 #include <robot_mechanism_controllers/joint_position_controller.h>
-#include <pr2_mechanism_msgs/JointStates.h>
+#include <sensor_msgs/JointState.h>
 #include <geometry_msgs/PointStamped.h>
 #include <boost/scoped_ptr.hpp>
 
@@ -73,7 +73,7 @@ private:
   mechanism::RobotState *robot_state_;
   ros::Subscriber sub_command_;
   
-  void command(const pr2_mechanism_msgs::JointStatesConstPtr& command_msg);
+  void command(const sensor_msgs::JointStateConstPtr& command_msg);
   
   void pointHead(const tf::MessageNotifier<geometry_msgs::PointStamped>::MessagePtr& point_msg);
   void pointFrameOnHead(const tf::MessageNotifier<geometry_msgs::PointStamped>::MessagePtr& point_msg);

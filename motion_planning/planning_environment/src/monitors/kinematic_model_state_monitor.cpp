@@ -124,41 +124,45 @@ void planning_environment::KinematicModelStateMonitor::stopStateMonitor(void)
     stateMonitorStarted_ = false;
 }
 
-void planning_environment::KinematicModelStateMonitor::jointStateCallback(const pr2_mechanism_msgs::JointStatesConstPtr &jointState)
+void planning_environment::KinematicModelStateMonitor::jointStateCallback(const sensor_msgs::JointStateConstPtr &jointState)
 {
     bool change = !haveJointState_;
 
     static bool first_time = true;
     
     double totalv = 0.0;
-    unsigned int n = jointState->get_joints_size();
+    unsigned int n = jointState->get_name_size();
+    if (jointState->get_name_size() != jointState->get_position_size() || jointState->get_name_size() !=jointState->get_velocity_size()){
+      ROS_ERROR("Planning environment received invalid joint state");
+      return;
+    }
     for (unsigned int i = 0 ; i < n ; ++i)
     {
-	planning_models::KinematicModel::Joint* joint = kmodel_->getJoint(jointState->joints[i].name);
+	planning_models::KinematicModel::Joint* joint = kmodel_->getJoint(jointState->name[i]);
 	if (joint)
 	{
 	    if (joint->usedParams == 1)
 	    {
-		double pos = jointState->joints[i].position;
-		double vel = jointState->joints[i].velocity;
+		double pos = jointState->position[i];
+		double vel = jointState->velocity[i];
 		totalv += vel * vel;
 		planning_models::KinematicModel::RevoluteJoint* rjoint = dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(joint);
 		if (rjoint)
 		    if (rjoint->continuous)
 			pos = angles::normalize_angle(pos);
-		bool this_changed = robotState_->setParamsJoint(&pos, jointState->joints[i].name);
+		bool this_changed = robotState_->setParamsJoint(&pos, jointState->name[i]);
 		change = change || this_changed;
 	    }
 	    else
 	    {
 		if (first_time)
-		    ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", jointState->joints[i].name.c_str(), joint->usedParams);
+		    ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", jointState->name[i].c_str(), joint->usedParams);
 	    }
 	}
 	else
 	{
 	    if (first_time)
-		ROS_ERROR("Unknown joint: %s", jointState->joints[i].name.c_str());
+		ROS_ERROR("Unknown joint: %s", jointState->name[i].c_str());
 	}
     }
     robotVelocity_ = sqrt(totalv);
