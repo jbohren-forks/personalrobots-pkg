@@ -35,6 +35,8 @@
 
 #include <cminpack.h>
 
+#define SQR(a) ((a)*(a))
+
 namespace sample_consensus
 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,8 +177,19 @@ namespace sample_consensus
     SACModelCircle2D::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
                                      sensor_msgs::PointCloud &projected_points)
   {
-    std::cerr << "[SACModelCircle2D::projecPoints] Not implemented yet." << std::endl;
+//    std::cerr << "[SACModelCircle2D::projecPoints] Not implemented yet." << std::endl;
     projected_points = *cloud_;
+
+	double cx = model_coefficients[0];
+	double cy = model_coefficients[1];
+	double r =  model_coefficients[2];
+	for(size_t i=0;i<cloud_->get_points_size();i++) {
+		double dx = cloud_->points[i].x - cx;
+		double dy = cloud_->points[i].y - cy;
+		double a = sqrt( SQR(r) / ( SQR(dx) + SQR(dy) ));
+		projected_points.points[i].x = a*dx + cx;
+		projected_points.points[i].y = a*dy + cy;
+	}
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
