@@ -1,19 +1,21 @@
 <stack name="controllers" version="0.1">
-  <description brief="controller packages from ros-pkg">
+  <description brief="controllers">
     These are robot controllers.
   </description>
   <author>Melonee Wise mwise@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/controllers</url>
+  <url>http://ros.org/wiki/controllers</url>
   
-
-  <depend stack="geometry"/> <!-- tf, kdl, angles, eigen, eigen, tf, angles, angles --> 
-  <depend stack="mechanism"/> <!-- mechanism_model, mechanism_model, kdl_parser, mechanism_model, mechanism_control, hardware_interface, mechanism_control, mechanism_model, mechanism_msgs --> 
-  <!--depend stack="util"/CAUSING CIRCULAR DEPENDENCY--> <!-- realtime_tools, realtime_tools, realtime_tools, realtime_tools, trajectory --> 
-  <depend stack="common"/> <!-- tinyxml, manipulation_msgs, filters, tinyxml, robot_actions, filters, manipulation_msgs --> 
-  <depend stack="ros"/> <!-- rospy, rospy, rospy, roscpp, std_msgs, rosconsole, roscpp, roscpp, roscpp, rospy, std_msgs, rosconsole --> 
-  <depend stack="visualization_common"/> <!-- visualization_msgs, visualization_msgs --> 
-  <depend stack="common_msgs"/> <!-- geometry_msgs --> 
+  <depend stack="manipulation_common"/> <!-- trajectory -->
+  <depend stack="robot_model"/> <!-- kdl_parser -->
+  <depend stack="geometry"/> <!-- tf, kdl, angles, tf_conversions, eigen -->
+  <depend stack="pr2_mechanism"/> <!-- pr2_mechanism_msgs, pr2_mechanism_model, pr2_mechanism_control, realtime_tools, pr2_controller_interface -->
+  <depend stack="visualization_common"/> <!-- visualization_msgs -->
+  <depend stack="common"/> <!-- filters, tinyxml, pluginlib -->
+  <depend stack="diagnostics"/> <!-- diagnostic_updater -->
+  <depend stack="pr2_common"/> <!-- pr2_msgs -->
+  <depend stack="ros"/> <!-- std_msgs, rospy, roscpp, rosconsole -->
+  <depend stack="common_msgs"/> <!-- nav_msgs, geometry_msgs, diagnostic_msgs -->
 
 </stack>
