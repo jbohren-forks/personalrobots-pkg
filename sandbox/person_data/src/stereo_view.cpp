@@ -48,8 +48,8 @@
 #include "opencv/highgui.h"
 
 #include "ros/node.h"
-#include "sensor_msgs/StereoInfo.h"
-#include "sensor_msgs/DisparityInfo.h"
+//#include "sensor_msgs/StereoInfo.h"
+//#include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/Image.h"
 
 
@@ -68,8 +68,8 @@ public:
   sensor_msgs::Image limage;
   sensor_msgs::Image rimage;
   sensor_msgs::Image dimage;
-  sensor_msgs::StereoInfo stinfo;
-  sensor_msgs::DisparityInfo dinfo;
+  //sensor_msgs::StereoInfo stinfo;
+  //sensor_msgs::DisparityInfo dinfo;
 
   sensor_msgs::CvBridge lbridge;
   sensor_msgs::CvBridge rbridge;
@@ -111,8 +111,8 @@ public:
     sync.subscribe(right_list, rimage, 1);
 
     sync.subscribe(mapName("stereo") + "/disparity", dimage, 1);
-    sync.subscribe(mapName("stereo") + "/stereo_info", stinfo, 1);
-    sync.subscribe(mapName("stereo") + "/disparity_info", dinfo, 1);
+    //sync.subscribe(mapName("stereo") + "/stereo_info", stinfo, 1);
+    //sync.subscribe(mapName("stereo") + "/disparity_info", dinfo, 1);
 
     sync.ready();
   }
@@ -155,6 +155,7 @@ public:
         cvShowImage("right", rbridge.toIpl());
     }
 
+/*
     if (dbridge.fromImage(dimage))
     {
       // Disparity has to be scaled to be be nicely displayable
@@ -163,6 +164,7 @@ public:
       cvShowImage("disparity", disp);
       cvReleaseImage(&disp);
     }
+*/
 
     cv_mutex.unlock();
 
