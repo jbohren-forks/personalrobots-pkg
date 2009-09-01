@@ -150,7 +150,7 @@ def main():
 
     pub_wrench = rospy.Publisher("/plug_force", Wrench)
     rospy.Subscriber("/plug_pose_ground_truth", Odometry, plugP3DInput)
-    rospy.Subscriber("/plug_holder_1_pose_ground_truth", Odometry, holderP3DInput)
+    rospy.Subscriber("/plug_holder_pose_ground_truth", Odometry, holderP3DInput)
     rospy.Subscriber("/r_gripper_tool_frame_pose_ground_truth", Odometry, gripperP3DInput)
 
     rospy.init_node(NAME, anonymous=True)
