@@ -10,7 +10,7 @@ based criteria.
   <author>Mrinal Kalakrishnan / kalakris@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/spline_smoother</url>
+  <url>http://ros.org/wiki/spline_smoother</url>
 
   <depend package="roscpp" />
   <depend package="filters" />
