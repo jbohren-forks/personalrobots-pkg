@@ -101,7 +101,13 @@ class RWTFactory(object):
         self.lock.release()
 
     def subscribe(self, topic):
-        maintopic, subtopic = splitTopic(topic)
+        # Don't use 'subtopics' as they are currently implemented
+        # because the nav stack has topic names with '/' in them.
+        if 0:
+            maintopic, subtopic = splitTopic(topic)
+        else:
+            maintopic = topic
+            subtopic = None
         main_rwt = None
         try:
             self.lock.acquire()
