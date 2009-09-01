@@ -206,7 +206,7 @@ void MoveAndGraspPlugAction::checkGrasp()
       else if(!lifted_)
       {
         lifted_=true;
-        return;
+        ROS_INFO("action_move_and_grasp_plug: plug not lifted.");
       }
 
       //now check if we still have the plug..
