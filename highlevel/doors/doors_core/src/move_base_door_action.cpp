@@ -71,6 +71,7 @@ namespace nav
     ros_node_.param("~control_topic_name", control_topic_name_, std::string("/base/trajectory_controller/command"));
     ros_node_.param("~action_max_allowed_time", action_max_allowed_time_,5.0);
 
+
     //for display purposes
     ros_node_.advertise<nav_msgs::Path>("~global_plan", 1);
     ros_node_.advertise<nav_msgs::Path>("~local_plan", 1);
@@ -117,8 +118,8 @@ namespace nav
     if(planner_cost_map_ros_ != NULL)
       delete planner_cost_map_ros_;
 
-    ros_node_.unadvertise("~gui_path");
-    ros_node_.unadvertise("~local_path");
+    ros_node_.unadvertise("~global_plan");
+    ros_node_.unadvertise("~local_plan");
     ros_node_.unadvertise("~robot_footprint");
     ros_node_.unadvertise(control_topic_name_);
     ros_node_.unadvertise("/diagnostics");
@@ -175,7 +176,7 @@ namespace nav
 
     valid_plan_ = valid_plan;
     global_plan_ = global_plan;
-    publishPath(global_plan, "~gui_path", 0.0, 1.0, 0.0, 0.0);
+    publishPath(global_plan, "~global_plan", 0.0, 1.0, 0.0, 0.0);
   }
 
   void MoveBaseDoorAction::updateGlobalPose()
@@ -326,7 +327,7 @@ namespace nav
         }
 
         //for visualization purposes
-        publishPath(global_plan_, "~gui_path", 0.0, 1.0, 0.0, 0.0);
+        publishPath(global_plan_, "~global_plan", 0.0, 1.0, 0.0, 0.0);
 	publishFootprint();
 
       }
