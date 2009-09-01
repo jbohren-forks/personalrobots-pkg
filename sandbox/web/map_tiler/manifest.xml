@@ -10,6 +10,9 @@
   <url>http://pr.willowgarage.com/wiki/map_tiler</url>
   <depend package="rosweb2"/>
   <depend package="nav_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="tf"/>
+  <depend package="rospy"/>
   <export>
     <rosweb2 plugin="map_tiler.handler"/>
   </export>
