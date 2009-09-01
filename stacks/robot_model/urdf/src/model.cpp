@@ -269,11 +269,11 @@ bool Model::initTree(std::map<std::string, std::string> &parent_link_tree)
 
     if (parent_link_name.empty())
     {
-      ROS_INFO("    Joint %s: does not have parent link name specified. Joint is an abstract joint.",(joint->second)->name.c_str());
+      ROS_DEBUG("    Joint %s: does not have parent link name specified. Joint is an abstract joint.",(joint->second)->name.c_str());
     }
     else if (child_link_name.empty())
     {
-      ROS_INFO("    Joint %s: does not have child link name specified. Joint is an abstract joint.",(joint->second)->name.c_str());
+      ROS_DEBUG("    Joint %s: does not have child link name specified. Joint is an abstract joint.",(joint->second)->name.c_str());
     }
     else
     {
