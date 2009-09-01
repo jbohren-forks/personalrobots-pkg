@@ -1057,5 +1057,5 @@ reset_state:
 
 int main(int argc, char **argv)
 { 
-  return driver_base::main<WGE100CameraNode>(argc, argv, "wge100_cameraera");
+  return driver_base::main<WGE100CameraNode>(argc, argv, "wge100_camera");
 }
