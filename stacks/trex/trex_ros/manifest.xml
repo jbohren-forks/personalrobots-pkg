@@ -12,7 +12,7 @@
   <depend package="geometry_msgs" />
 
   <export>
-    <nddl iflags="-I${prefix}/nddl -I${prefix}/deprecated -I${prefix}"/>
+    <nddl iflags="-I${prefix}/nddl"/>
     <cpp cflags="-I${prefix}/srv/cpp -I${prefix}/msg/cpp -I${prefix}/include/"
 	 lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>
     <trex_libs libs="trex_ros"/>
