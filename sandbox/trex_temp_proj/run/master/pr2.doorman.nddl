@@ -1,3 +1,0 @@
-#include "doors/doorman.nddl"
-
-close();

@@ -1,6 +1,0 @@
-class TestActions extends AgentActions {
-
-  predicate StartEvent {}
-}
-
-TestActions test_actions = new TestActions();
