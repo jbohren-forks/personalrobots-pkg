@@ -205,12 +205,9 @@ void pm_wrapper::removeObject(shapes::Shape *object, const btTransform &pose)
 	planning_monitor_->getEnvironmentModel()->lock();
 	
 	// remove the objects colliding with the box
-	ROS_DEBUG("object removed has type %i (origin: %.2f %.2f %.2f) in frame %s", object->type, pose.getOrigin().getX(), pose.getOrigin().getY(), pose.getOrigin().getZ(), planning_monitor_->getFrameId().c_str());
+	ROS_INFO("object removed has type %i (origin: %.2f %.2f %.2f) in frame %s", object->type, pose.getOrigin().getX(), pose.getOrigin().getY(), pose.getOrigin().getZ(), planning_monitor_->getFrameId().c_str());
 	
 	planning_monitor_->getEnvironmentModel()->removeCollidingObjects(object, pose);	
-	
-	if(visualize_map_)
-		publishInternalCollisionMap();
 
 	// release our hold
 	planning_monitor_->getEnvironmentModel()->unlock();
@@ -223,12 +220,9 @@ void pm_wrapper::addObject(const std::string &ns, shapes::Shape *object, const b
 	planning_monitor_->getEnvironmentModel()->lock();
 	
 	// remove the objects colliding with the box
-	ROS_DEBUG("object removed has type %i (origin: %.2f %.2f %.2f) in frame %s", object->type, pose.getOrigin().getX(), pose.getOrigin().getY(), pose.getOrigin().getZ(), planning_monitor_->getFrameId().c_str());
+	ROS_INFO("object added has type %i (origin: %.2f %.2f %.2f) in frame %s", object->type, pose.getOrigin().getX(), pose.getOrigin().getY(), pose.getOrigin().getZ(), planning_monitor_->getFrameId().c_str());
 	
 	planning_monitor_->getEnvironmentModel()->addObject(ns, object, pose);
-	
-	if(visualize_map_)
-		publishInternalCollisionMap();
 
 	// release our hold
 	planning_monitor_->getEnvironmentModel()->unlock();
@@ -236,9 +230,16 @@ void pm_wrapper::addObject(const std::string &ns, shapes::Shape *object, const b
 
 void pm_wrapper::publishInternalCollisionMap()
 {
+	// at this point, the environment model has the collision map inside it
+	// get exclusive access
+	planning_monitor_->getEnvironmentModel()->lock();
+	
 	//publish the collision map
 	planning_monitor_->recoverCollisionMap(planning_monitor_->getEnvironmentModel(), col_map_);
 	col_map_publisher_.publish(col_map_);	
+	
+	// release our hold
+	planning_monitor_->getEnvironmentModel()->unlock();
 }
 
 std::vector<std::vector<double> >  pm_wrapper::smoothPath(std::vector<std::vector<double> > &path, std::vector<std::string> joint_names)
@@ -305,56 +306,6 @@ std::vector<std::vector<double> >  pm_wrapper::smoothPath(std::vector<std::vecto
 
 	return path_out;
 }
-
-
-/*
-void pm_wrapper::setObject(shapes::Shape *object, btTransform pose)
-{
-	object_ = object;
-	object_pose_ = pose;
-}
-
-//copied straight from remove_object_example.cpp in planning_environment 
-void pm_wrapper::publishMapWithoutObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
-{
-	ROS_DEBUG("in publishMapWithoutObject()");
-	if(!remove_objects_from_collision_map_)
-		return;
-
-	// we do not care about incremental updates, only re-writes of the map
-	if (!clear)
-		return;
-
-	// at this point, the environment model has the collision map inside it
-
-	// get exclusive access
-	planning_monitor_->getEnvironmentModel()->lock();
-	ROS_DEBUG("locked environment model");
-
-	// get a copy of our own, to play with :)
-	collision_space::EnvironmentModel *env = planning_monitor_->getEnvironmentModel()->clone();
-	ROS_DEBUG("cloned environmentmodel");
-
-	// release our hold
-	planning_monitor_->getEnvironmentModel()->unlock();
-	ROS_DEBUG("unlocked environment model");
-
-	// remove the objects colliding with the box
-	ROS_DEBUG("object removed has type %i (origin: %.2f %.2f %.2f) in frame %s", object_->type, object_pose_.getOrigin().getX(), object_pose_.getOrigin().getY(), object_pose_.getOrigin().getZ(), planning_monitor_->getFrameId().c_str());
-	env->removeCollidingObjects(object_, object_pose_);
-
-	// forward the updated map
-	planning_monitor_->recoverCollisionMap(env, col_map_);
-	col_map_publisher_.publish(col_map_);
-
-	// throw away our copy
-	delete env;
-
-	ROS_INFO("Received collision map with %d points and published one with %d points", 
-					 (int)collisionMap->get_boxes_size(), (int)col_map_.get_boxes_size());
-}
-*/
-
 
 /*
 
