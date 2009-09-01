@@ -8,13 +8,14 @@
   <url>http://pr.willowgarage.com/wiki/openrave</url>
   
 
-  <depend stack="calibration"/> <!-- mocap_msgs --> 
-  <depend stack="geometry"/> <!-- bullet, tf --> 
-  <depend stack="mechanism"/> <!-- mechanism_msgs --> 
-  <depend stack="util"/> <!-- or_robot_self_filter --> 
-  <depend stack="simulator_gazebo"/> <!-- opende --> 
-  <depend stack="common"/> <!-- manipulation_msgs, laser_scan --> 
-  <depend stack="ros"/> <!-- std_msgs, roscpp, roscpp, roscpp, roscpp_sessions, std_msgs, rosoct, roscpp, roslaunch --> 
-  <depend stack="common_msgs"/> <!-- sensor_msgs, mapping_msgs --> 
+  <depend stack="manipulation_common"/> <!-- mapping_msgs, manipulation_msgs -->
+  <depend stack="laser_pipeline"/> <!-- laser_filters -->
+  <depend stack="pr2_mechanism"/> <!-- pr2_mechanism_msgs -->
+  <depend stack="simulator_gazebo"/> <!-- opende -->
+  <depend stack="geometry"/> <!-- tf, bullet -->
+  <depend stack="visual_feature_detectors"/> <!-- checkerboard_detector -->
+  <depend stack="calibration_experimental"/> <!-- mocap_msgs -->
+  <depend stack="ros"/> <!-- roslaunch, rosoct, roscpp_sessions, std_msgs, roscpp -->
+  <depend stack="common_msgs"/> <!-- sensor_msgs -->
 
 </stack>
