@@ -8,8 +8,10 @@
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/bag_experimental</url>
-  <depend stack="ros"/> <!-- std_msgs, rospy, roscpp, rosrecord --> 
-  <depend stack="vision"/> <!-- cv_mech_turk --> 
-  <depend stack="common_msgs"/> <!-- geometry_msgs, sensor_msgs --> 
+
+  <depend stack="imu_drivers"/> <!-- imu_node -->
+  <depend stack="ros"/> <!-- std_msgs, rospy, roscpp, rosrecord -->
+  <depend stack="vision"/> <!-- cv_mech_turk -->
+  <depend stack="common_msgs"/> <!-- nav_msgs, geometry_msgs, sensor_msgs -->
 
 </stack>
