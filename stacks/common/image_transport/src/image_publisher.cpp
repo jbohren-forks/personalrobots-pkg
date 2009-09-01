@@ -50,11 +50,16 @@ struct ImagePublisher::Impl
   std::string topic;
   pluginlib::ClassLoader<PublisherPlugin> loader;
   boost::ptr_vector<PublisherPlugin> publishers;
+  TransportTopicMap topic_map;
 };
 
 ImagePublisher::ImagePublisher()
   : impl_(new Impl)
 {
+  // Default behavior: load all plugins and use default topic names.
+  BOOST_FOREACH(const std::string& lookup_name, impl_->loader.getDeclaredClasses()) {
+    impl_->topic_map[lookup_name] = "";
+  }
 }
 
 ImagePublisher::ImagePublisher(const ImagePublisher& rhs)
@@ -69,21 +74,22 @@ ImagePublisher::~ImagePublisher()
 void ImagePublisher::advertise(ros::NodeHandle& nh, const std::string& topic,
                                uint32_t queue_size, bool latch)
 {
-  impl_->topic = topic;
+  impl_->topic = nh.resolveName(topic);
   
-  BOOST_FOREACH(const std::string& lookup_name, impl_->loader.getDeclaredClasses()) {
-    //ROS_INFO("Loading %s", lookup_name.c_str());
+  BOOST_FOREACH(const TransportTopicMap::value_type& value, impl_->topic_map) {
+    //ROS_INFO("Loading %s", value.first.c_str());
     try {
-      PublisherPlugin* pub = impl_->loader.createClassInstance(lookup_name);
+      PublisherPlugin* pub = impl_->loader.createClassInstance(value.first);
       impl_->publishers.push_back(pub);
-      // @todo: support overriding the topic names
-      std::string sub_topic = pub->getDefaultTopic(topic);
+      std::string sub_topic = value.second;
+      if (sub_topic.empty())
+        sub_topic = pub->getDefaultTopic(impl_->topic);
       nh.setParam(sub_topic + "/transport_type", pub->getTransportType());
       pub->advertise(nh, sub_topic, queue_size, latch);
     }
     catch (const std::runtime_error& e) {
       ROS_WARN("Failed to load plugin %s, error string: %s",
-               lookup_name.c_str(), e.what());
+               value.first.c_str(), e.what());
     }
   }
 }
@@ -99,6 +105,16 @@ uint32_t ImagePublisher::getNumSubscribers() const
 std::string ImagePublisher::getTopic() const
 {
   return impl_->topic;
+}
+
+ImagePublisher::TransportTopicMap& ImagePublisher::getTopicMap()
+{
+  return impl_->topic_map;
+}
+
+const ImagePublisher::TransportTopicMap& ImagePublisher::getTopicMap() const
+{
+  return impl_->topic_map;
 }
 
 void ImagePublisher::publish(const sensor_msgs::Image& message) const

@@ -34,6 +34,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
+#include <map>
 
 namespace image_transport {
 
@@ -52,6 +53,7 @@ namespace image_transport {
 class ImagePublisher
 {
 public:
+  typedef std::map<std::string, std::string> TransportTopicMap;
 
   /*!
    * \brief Empty constructor, use advertise() to advertise a set of topics.
@@ -78,6 +80,9 @@ public:
    * \brief Returns the base topic of this ImagePublisher.
    */
   std::string getTopic() const;
+
+  TransportTopicMap& getTopicMap();
+  const TransportTopicMap& getTopicMap() const;
 
   /*!
    * \brief Publish an image on the topics associated with this ImagePublisher.
