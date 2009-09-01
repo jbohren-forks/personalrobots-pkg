@@ -8,21 +8,16 @@
   <depend package="nav_view"/>
   <depend package="move_base"/>
   <depend package="move_base_client"/>
-  <depend package="gazebo_plugin"/>
   <depend package="map_server"/>
   <depend package="amcl"/>
   <depend package="fake_localization"/>
-  <depend package="teleop_base"/>
-  <depend package="teleop_arm_keyboard"/>
-  <depend package="trex_pr2"/>
-  <depend package="robot_pose_ekf"/>
   <depend package="pr2_gazebo"/>
-  <depend package="laser_assembler"/>
-  <depend package="semantic_point_annotator"/>
-  <depend package="or_robot_self_filter"/>
-  <depend package="robot_self_filter"/>
-  <depend package="3dnav_pr2"/>
+  <depend package="gazebo_plugin"/>
+  <depend package="gazebo_tools"/>
   <depend package="rviz"/>
+  <depend package="teleop_base"/>
+  <depend package="3dnav_pr2"/>
+  <depend package="2dnav_pr2"/>
 
   <!-- Adding experimental controllers as a dependency b/c of tuckarm move -->
   <depend package="experimental_controllers"/>
