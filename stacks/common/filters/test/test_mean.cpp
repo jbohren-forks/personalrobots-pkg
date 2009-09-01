@@ -135,8 +135,6 @@ TEST(MeanFilterDouble, ConfirmIdentityNRows)
 TEST(MeanFilterDouble, ThreeRows)
 {
   double epsilon = 1e-6;
-  int length = 5;
-  int rows = 5;
   
   FilterBase<double > * filter = new MeanFilter<double> ();
   EXPECT_TRUE(filter->configure("MeanFilterDouble5"));
