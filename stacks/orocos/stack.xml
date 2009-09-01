@@ -1,0 +1,13 @@
+<stack name="orocos" version="0.1.0">
+  <description brief="orocos">
+
+     Packages to support Orocos/ROS integration.
+
+  </description>
+  <author>Maintained by Ruben Smits</author>
+  <license>BSD,GPL+runtime exception,LGPL</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/orocos</url>
+  <depend stack="ros"/> <!-- std_msgs, roscpp --> 
+
+</stack>
