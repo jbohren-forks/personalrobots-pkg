@@ -74,7 +74,7 @@ The camera will set the following parameters after running:
 
 #include "dcam/dcam.h"
 #include "dcam/stereodcam.h"
-#include "cam_bridge_old.h"
+#include "stereo_image_proc/cam_bridge_old.h"
 
 #include "ros/node.h"
 

@@ -40,7 +40,7 @@
 //   
 
 #include "dcam/stereodcam.h"
-#include "stereolib.h"
+#include "stereo_image_proc/stereolib.h"
 
 #define PRINTF(a...) printf(a)
 

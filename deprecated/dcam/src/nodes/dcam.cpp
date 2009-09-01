@@ -35,7 +35,7 @@
 #include <cstdio>
 
 #include "dcam/dcam.h"
-#include "cam_bridge_old.h"
+#include "stereo_image_proc/cam_bridge_old.h"
 
 #include "ros/node.h"
 #include "sensor_msgs/Image.h"

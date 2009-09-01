@@ -69,7 +69,7 @@
 #endif
 #include "stereogui.h"
 #include "imwin/im3Dwin.h"
-#include "stereolib.h"
+#include "stereo_image_proc/stereolib.h"
 #include "dcam/stereodcam.h"
 
 #include <cv.h>

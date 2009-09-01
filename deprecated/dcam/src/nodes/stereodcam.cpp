@@ -134,7 +134,7 @@ The camera will read from the following parameters:
 #include "ros/node.h"
 
 #include "stereo_msgs/RawStereo.h"
-#include "cam_bridge_old.h"
+#include "stereo_image_proc/cam_bridge_old.h"
 
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/update_functions.h>
