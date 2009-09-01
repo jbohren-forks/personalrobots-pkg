@@ -18,7 +18,7 @@ public:
   double w;
   double h;
   ManifoldModel(btBoxTrack* track): track(track) {}
-  virtual void findParameters();
+  virtual void findParameters(ros::Publisher* pub = NULL);
   virtual double getRotationalError();
   virtual double getTranslationalError();
   virtual void getError(double &err_trans,double &err_rot);
@@ -36,7 +36,20 @@ public:
   btVector3 direction;
   double qMin, qMax;
   PrismaticModel(btBoxTrack* track);
-  void findParameters();
+  void findParameters(ros::Publisher* pub);
+  size_t getDOFs();
+  std::vector<double> getConfiguration( btTransform transform);
+  btTransform getPrediction( std::vector<double> configuration );
+  bool isValid();
+};
+
+class RotationalModel:public ManifoldModel {
+public:
+  btTransform center;
+  btTransform radius;
+  double qMin, qMax;
+  RotationalModel(btBoxTrack* track);
+  void findParameters(ros::Publisher* pub);
   size_t getDOFs();
   std::vector<double> getConfiguration( btTransform transform);
   btTransform getPrediction( std::vector<double> configuration );

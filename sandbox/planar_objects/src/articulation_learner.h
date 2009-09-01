@@ -51,6 +51,7 @@ public:
 
   // MESSAGES - OUTGOING
   ros::Publisher visualization_pub;
+  ros::Publisher cloud_pub;
 
   // Constructor
   ArticulationLearner();

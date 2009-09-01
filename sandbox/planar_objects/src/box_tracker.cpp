@@ -66,6 +66,7 @@ void BoxTracker::observationsCallback(const BoxObservations::ConstPtr& observati
 void BoxTracker::syncCallback()
 {
   ROS_INFO("BoxTracker::syncCallback(), received %d observations",observations_msg->get_obs_size());
+  setVisualization(&visualization_pub, NULL, observations_msg->header);
 
   observations.clear();
 
@@ -154,7 +155,7 @@ void BoxTracker::sendTracks() {
 void BoxTracker::removeOldLines() {
   LineVector lines;
   for(int l = newLines; l<oldLines; l++) {
-      visualizeLines(visualization_pub, observations_msg->header, lines,
+      visualizeLines(lines,
                      l,0,0,0);
   }
   oldLines = newLines;
@@ -164,7 +165,7 @@ void BoxTracker::removeOldLines() {
 void BoxTracker::visualizeObservations() {
   for(size_t i=0; i<observations.size(); i++) {
 //    cout << "drawing line "<<newLines << endl;
-    visualizeLines(visualization_pub, observations_msg->header, observations[i].visualize(),
+    visualizeLines(observations[i].visualize(),
                    newLines++,show_tracks?HSV_to_RGB(0.0 * i,0.0,1.0):0x00ff00);
   }
 }
@@ -175,7 +176,7 @@ void BoxTracker::visualizeTracks() {
 //    cout << "tracks[j].obs_history.rbegin()->stamp="<<(long)tracks[j].obs_history.rbegin()->stamp.toSec() << endl;
 //    if( observations_msg->header.stamp > tracks[j].obs_history.rbegin()->stamp + ros::Duration(1.00) ) continue;
     for(size_t i=0; i<tracks[j].obs_history.size(); i++) {
-        visualizeLines(visualization_pub, observations_msg->header, tracks[j].obs_history[i].visualize(),
+        visualizeLines(tracks[j].obs_history[i].visualize(),
                        newLines++,
                        HSV_to_RGB(
                           j/(double)tracks.size(),

@@ -28,21 +28,26 @@ float HSV_to_RGBf(float h, float s, float v);
 
 float mix_color(float mix, float a, float b);
 
+extern ros::Publisher* vis_utils_vis_pub;
+extern ros::Publisher* vis_utils_cloud_pub;
+extern roslib::Header vis_utils_header;
+
+void setVisualization(ros::Publisher *visualization_pub_, ros::Publisher *cloud_pub_, roslib::Header header);
+
 void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
                      std::vector<std::vector<int> >& plane_indices,
                      std::vector<sensor_msgs::PointCloud>& plane_cloud,
                      std::vector<std::vector<double> >& plane_coeff,
                      std::vector<float>& plane_color,
                      sensor_msgs::PointCloud& outside,
-                     ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub_,bool convexHull=false);
+                     bool convexHull=false);
 
-void visualizePolygon(const sensor_msgs::PointCloud& cloud, geometry_msgs::Polygon &polygon, int rgb, int id,
-                      ros::Publisher& visualization_pub);
+void visualizePolygon(const sensor_msgs::PointCloud& cloud, geometry_msgs::Polygon &polygon, int rgb, int id);
 
-void visualizeLines(ros::Publisher& visualization_pub_, roslib::Header header, std::vector<std::pair<btVector3,
+void visualizeLines(std::vector<std::pair<btVector3,
     btVector3> > lines, int id, double r, double b , double g,double scale=0.002 );
 
-void visualizeLines(ros::Publisher& visualization_pub_, roslib::Header header, std::vector<std::pair<btVector3,
+void visualizeLines(std::vector<std::pair<btVector3,
     btVector3> > lines, int id, int rgb,double scale=0.002);
 
 }

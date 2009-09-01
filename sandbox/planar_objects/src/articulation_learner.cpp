@@ -50,6 +50,7 @@ ArticulationLearner::ArticulationLearner() :
 
   // advertise topics
   visualization_pub = nh.advertise<visualization_msgs::Marker> ("visualization_marker", 100);
+  cloud_pub = nh.advertise<sensor_msgs::PointCloud> ("~planes", 1);
 }
 
 void ArticulationLearner::tracksCallback(const BoxTracks::ConstPtr& tracks_msg)
@@ -60,6 +61,7 @@ void ArticulationLearner::tracksCallback(const BoxTracks::ConstPtr& tracks_msg)
 void ArticulationLearner::syncCallback()
 {
   ROS_INFO("ArticulationLearner::syncCallback(), received %d tracks",tracks_msg->get_tracks_size());
+  setVisualization(&visualization_pub, &cloud_pub, tracks_msg->header);
 
   tracks.clear();       // forget everything
   for(size_t i =0; i<tracks_msg->tracks.size();i++) {
@@ -89,15 +91,24 @@ void ArticulationLearner::releaseModels() {
 }
 
 void ArticulationLearner::createModels() {
-  // create models for all tracks
-  for(size_t i =0; i<tracks.size();i++) {
-    models.push_back(new PrismaticModel(&tracks[i]));
+  if(tracks.size()<1) return;
+  size_t best_i = 0;
+  for(size_t i=1;i<tracks.size();i++) {
+	  if(tracks[i].obs_history.size() > tracks[best_i].obs_history.size())
+		  best_i = i;
   }
+  models.push_back(new RotationalModel(&tracks[best_i]));
+
+  // create models for all tracks
+//  for(size_t i =0; i<tracks.size();i++) {
+//	    models.push_back(new PrismaticModel(&tracks[i]));
+//	    models.push_back(new RotationalModel(&tracks[i]));
+//  }
 }
 
 void ArticulationLearner::updateModels() {
   for(size_t i =0; i<models.size();i++) {
-    models[i]->findParameters();
+    models[i]->findParameters(&visualization_pub);
   }
 }
 
@@ -122,7 +133,7 @@ void ArticulationLearner::visualizeTracks() {
 //    cout << "tracks[j].obs_history.rbegin()->stamp="<<(long)tracks[j].obs_history.rbegin()->stamp.toSec() << endl;
 //    if( observations_msg->header.stamp > tracks[j].obs_history.rbegin()->stamp + ros::Duration(1.00) ) continue;
     for(size_t i=0; i<tracks[j].obs_history.size(); i++) {
-        visualizeLines(visualization_pub, tracks_msg->header.frame_id, tracks[j].obs_history[i].visualize(),
+        visualizeLines(tracks[j].obs_history[i].visualize(),
                        newLines++,
                        HSV_to_RGB(
                           j/(double)tracks.size(),
@@ -172,14 +183,14 @@ void ArticulationLearner::visualizeModels() {
 //        " dy="<<models[i]->direction.y()<<
 //        " dz="<<models[i]->direction.z()<<
 //          endl;
-        visualizeLines(visualization_pub, tracks_msg->header.frame_id,
+        visualizeLines(
                        predObs.visualize(),
                        newLines++,HSV_to_RGB(j/((double)n),1.0,1.0));
       }
     }
     std::vector<double> q = models[i]->getConfiguration( models[i]->track->obs_history.rbegin()->tf );
     btBoxObservation predObs = models[i]->getPredictedObservation( q );
-    visualizeLines(visualization_pub, tracks_msg->header.frame_id,
+    visualizeLines(
                    predObs.visualize(),
                    newLines++,HSV_to_RGB( (q[0]-range[0].first)/(range[0].second-range[0].first),1.0,1.0),0.01);
   }
@@ -189,7 +200,7 @@ void ArticulationLearner::visualizeModels() {
 void ArticulationLearner::removeOldLines() {
   LineVector lines;
   for(int l = newLines; l<oldLines; l++) {
-      visualizeLines(visualization_pub, tracks_msg->header.frame_id, lines,
+      visualizeLines(lines,
                      l,0,0,0);
   }
   oldLines = newLines;

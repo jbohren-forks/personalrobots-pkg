@@ -20,6 +20,7 @@ btBoxObservation::btBoxObservation( ) {
 
 btBoxObservation::btBoxObservation(const BoxObservation &obs , const ros::Time stamp ) {
   setObservation(obs,stamp);
+  *this = this->getAmbiguity(1);
 }
 
 void btBoxObservation::setObservation(const BoxObservation &obs, const ros::Time stamp ) {

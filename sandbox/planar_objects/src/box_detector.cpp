@@ -231,6 +231,8 @@ bool sortCornersByAngle(const CornerCandidate& d1, const CornerCandidate& d2)
 
 void BoxDetector::syncCallback()
 {
+  setVisualization(&visualization_pub_, &cloud_planes_pub_, cloud_->header);
+
   ROS_INFO("BoxDetector::syncCallback(), %d points in cloud, seq=%d",cloud_->get_points_size(),cloud_->header.seq);
 
   Time timeStamp = Time::now();
@@ -394,8 +396,8 @@ void BoxDetector::visualizePlanes(const sensor_msgs::PointCloud& cloud, std::vec
   {
     plane_color[i] = HSV_to_RGBf(i / (double)plane_coeff.size(), 0.3, 1.0);
   }
-  visualizePlanes2(*cloud_, plane_indices, plane_cloud, plane_coeff, plane_color, outside, cloud_planes_pub_,
-                             visualization_pub_, convexHull);
+  visualizePlanes2(*cloud_, plane_indices, plane_cloud, plane_coeff, plane_color, outside,
+                             convexHull);
 
 }
 
@@ -412,7 +414,7 @@ void BoxDetector::visualizeCorners(std::vector<CornerCandidate> &corner, int id)
       lines[i].first = corner[i].tf.getOrigin();
       lines[i].second = corner[i].tf * (vec * 0.05);
     }
-    visualizeLines(visualization_pub_,cloud_->header,lines, id + 10 + j, j == 0 ? 1.00 : 0.00, j == 1 ? 1.00 : 0.00, j == 2 ? 1.00 : 0.00);
+    visualizeLines(lines, id + 10 + j, j == 0 ? 1.00 : 0.00, j == 1 ? 1.00 : 0.00, j == 2 ? 1.00 : 0.00);
   }
 }
 
@@ -436,11 +438,11 @@ void BoxDetector::visualizeRectangles3d(std::vector<CornerCandidate> &corner, in
     lines[3].first = corner[i].points3d[3];
     lines[3].second = corner[i].points3d[0];
 
-    visualizeLines(visualization_pub_,cloud_->header,lines, id + 100 + i, MIN(i*0.1,1.00), MAX(0.00, 1.00-i*.01), 0.00,0.002 * scaling);
+    visualizeLines(lines, id + 100 + i, MIN(i*0.1,1.00), MAX(0.00, 1.00-i*.01), 0.00,0.002 * scaling);
   }
   lines.resize(0);
   for (size_t i = corner.size(); i < 100; i++)
-    visualizeLines(visualization_pub_,cloud_->header,lines, id + 100 + i,1.0,1.0,1.0);
+    visualizeLines(lines, id + 100 + i,1.0,1.0,1.0);
 }
 
 void BoxDetector::visualizeRectangles2d(std::vector<CornerCandidate> &corner,CvScalar col)
