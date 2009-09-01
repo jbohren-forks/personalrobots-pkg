@@ -115,6 +115,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::DoorCmd, door_ms
   ros::Publisher door_frame_pub_;
   ros::Publisher door_pub_;
   ros::Publisher viz_markers_;
+	ros::Publisher viz_marker_array_pub_;
   ros::Publisher pr2_ik_pub_;
   ros::Publisher base_control_pub_;
   tf::TransformListener tf_;
@@ -270,6 +271,8 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::DoorCmd, door_ms
   std::string trajectory_type_;
 
   std::vector<double> velocity_limits_;
+	
+	void displayExpandedStates();
 
   int door_index_;
 

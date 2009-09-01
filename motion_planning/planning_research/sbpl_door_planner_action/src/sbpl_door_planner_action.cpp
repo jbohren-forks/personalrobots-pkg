@@ -30,6 +30,7 @@
 #include <sbpl_door_planner_action/sbpl_door_planner_action.h>
 #include <manipulation_msgs/IKRequest.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <pr2_ik/pr2_ik_controller.h>
 
 #include <kdl/frames.hpp>
@@ -97,7 +98,8 @@ SBPLDoorPlanner::SBPLDoorPlanner() :  Action<door_msgs::DoorCmd, door_msgs::Door
   display_path_pub_ = ros_node_.advertise<motion_planning_msgs::KinematicPath>("display_kinematic_path", 10);
   pr2_ik_pub_ = ros_node_.advertise<manipulation_msgs::IKRequest>(arm_control_topic_name_,1);
   base_control_pub_ = ros_node_.advertise<manipulation_msgs::JointTraj>(base_control_topic_name_,1);
-
+	viz_marker_array_pub_ = ros_node_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 3);
+	
   /** subscribers */
   joints_subscriber_ = ros_node_.subscribe("/joint_states", 1, &SBPLDoorPlanner::jointsCallback, this);
 
@@ -126,6 +128,7 @@ SBPLDoorPlanner::SBPLDoorPlanner() :  Action<door_msgs::DoorCmd, door_msgs::Door
 
   ros_node_.param<std::string>("~trajectory_type", trajectory_type_, "linear");
   
+
   //create a square footprint
   geometry_msgs::Point pt;
   pt.x = inscribed_radius_;
@@ -499,6 +502,10 @@ void SBPLDoorPlanner::processPlan(const manipulation_msgs::JointTraj &path, mani
     scaled_path.points.resize(switch_arm_index);
   }
   return_path = scaled_path;
+	
+	
+	//display the expanded states in rviz
+	displayExpandedStates();
 }
 
 manipulation_msgs::JointTraj SBPLDoorPlanner::prunePlan(const manipulation_msgs::JointTraj &path, 
@@ -1089,3 +1096,99 @@ void SBPLDoorPlanner::getCurrentJointAngles(const std::vector <std::string> &joi
     ROS_INFO("Additional point: %f %f %f %f",additional_point.positions[0],additional_point.positions[1],additional_point.positions[2],additional_point.positions[3]);
   }
 */
+
+void SBPLDoorPlanner::displayExpandedStates()
+{
+	unsigned int inc;
+	std::vector<int> states;
+	double x,y,theta;
+	visualization_msgs::MarkerArray marker_array;
+	mpglue::rfct_pose mp_pose(0,0,0);
+
+	//get expanded state IDs
+	states = env_->getDSI()->GetExpandedStates();
+
+	//check if the list is empty
+	if(states.empty())
+	{
+		ROS_INFO("There are no states in the expanded states list");
+		return;
+	}
+	else
+		ROS_INFO("There are %i states in the expanded states list",states.size());
+
+	//if there are too many states, rviz will crash and burn when drawing
+	if(states.size() > 50000)
+		inc = 200;
+	else if(states.size() > 5000)
+		inc = 20;
+	else if(states.size() > 500)
+		inc = 10;
+	else
+		inc = 1;
+		
+	ROS_INFO("Expanded Nodes:");
+	unsigned int mind = 0;
+	for(unsigned int i = 0; i < states.size(); i=i+inc)
+	{
+		//cubes
+		marker_array.set_markers_size(marker_array.get_markers_size()+2);
+		marker_array.markers[mind].header.frame_id = "odom_combined";
+		marker_array.markers[mind].header.stamp = ros::Time();
+		marker_array.markers[mind].ns = "sbpl_door_planner";
+		marker_array.markers[mind].id = mind;
+		marker_array.markers[mind].type = visualization_msgs::Marker::CUBE;
+		marker_array.markers[mind].action =  visualization_msgs::Marker::ADD;
+		marker_array.markers[mind].scale.x = .05;
+		marker_array.markers[mind].scale.y = .05;
+		marker_array.markers[mind].scale.z = .05;
+		marker_array.markers[mind].color.r = 1.0 - double(i)/double(states.size());
+		marker_array.markers[mind].color.g = 0.0 + double(i)/double(states.size());
+		marker_array.markers[mind].color.b = 0.0;
+		marker_array.markers[mind].color.a = 0.5;
+		marker_array.markers[mind].lifetime = ros::Duration(180.0);
+
+		
+		mp_pose = env_->GetPoseFromState(states[i]);
+		cm_index_->localToGlobal(mp_pose.x, mp_pose.y, mp_pose.th, &x, &y, &theta);
+		marker_array.markers[mind].pose.position.x = x;
+		marker_array.markers[mind].pose.position.y = y;
+		marker_array.markers[mind].pose.position.z = 0.01;
+		
+		++mind;
+		
+		//arrows
+		marker_array.markers[mind].header.frame_id = "odom_combined";
+		marker_array.markers[mind].header.stamp = ros::Time();
+		marker_array.markers[mind].ns = "sbpl_door_planner";
+		marker_array.markers[mind].id = mind;
+		marker_array.markers[mind].type = visualization_msgs::Marker::ARROW;
+		marker_array.markers[mind].action =  visualization_msgs::Marker::ADD;
+		marker_array.markers[mind].scale.x = 0.05;
+		marker_array.markers[mind].scale.y = 0.075;
+		marker_array.markers[mind].scale.z = 0.05;
+		marker_array.markers[mind].color.r = 0.0;
+		marker_array.markers[mind].color.g = 0.5;
+		marker_array.markers[mind].color.b = 0.5;
+		marker_array.markers[mind].color.a = 0.5;
+		marker_array.markers[mind].lifetime = ros::Duration(180.0);
+
+		marker_array.markers[mind].pose.position.x = x;
+		marker_array.markers[mind].pose.position.y = y;
+		marker_array.markers[mind].pose.position.z = 0.01;
+
+		btQuaternion marker_quat(theta,0,0);
+		ROS_INFO("%i: x:%.3f  y:%.3f  theta:%.3f",i,x,y,theta);	
+		ROS_INFO("      theta: %.3f  -->  x: %.3f  y:%.3f   z:%.3f   w:%.3f",theta, marker_quat.getX(),marker_quat.getY(),marker_quat.getZ(),marker_quat.getW());
+		marker_array.markers[mind].pose.orientation.x = marker_quat.getX();
+		marker_array.markers[mind].pose.orientation.y = marker_quat.getY();
+		marker_array.markers[mind].pose.orientation.z = marker_quat.getZ();
+		marker_array.markers[mind].pose.orientation.w = marker_quat.getW();
+
+		++mind;
+	}
+	ROS_DEBUG("published %d markers in the marker array", marker_array.get_markers_size());
+	viz_marker_array_pub_.publish(marker_array);
+}
+
+
