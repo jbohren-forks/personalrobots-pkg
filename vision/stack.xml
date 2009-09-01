@@ -15,13 +15,12 @@
   <depend stack="navigation"/> <!-- map_server, amcl, nav_view --> 
   <depend stack="drivers"/> <!-- axis_cam --> 
   <depend stack="semantic_mapping"/> <!-- point_cloud_mapping, FLANN, point_cloud_mapping, ANN --> 
-  <depend stack="util"/> <!-- image_utils, topic_synchronizer --> 
   <depend stack="opencv"/> <!-- opencv_latest, opencvpython --> 
   <depend stack="camera_drivers"/> <!-- dcam, dcam, dcam --> 
   <depend stack="common"/> <!-- robot_actions, filters, laser_scan, bfl, python_actions --> 
   <depend stack="highlevel"/> <!-- door_msgs --> 
   <depend stack="ros"/> <!-- roscpp, rostest, rospy, std_msgs, rosrecord, std_srvs --> 
-  <depend stack="visualization_core"/> <!-- visualization_msgs -->
+  <depend stack="visualization_common"/> <!-- visualization_msgs -->
   <depend stack="common_msgs"/> <!-- sensor_msgs, geometry_msgs -->
 
 </stack>
