@@ -8,14 +8,16 @@
   <url>http://pr.willowgarage.com/wiki/2dnav_pr2_app</url>
   
 
-  <depend stack="audio"/> <!-- backup_safetysound --> 
-  <depend stack="geometry"/> <!-- tf, bullet --> 
-  <depend stack="semantic_mapping"/> <!-- semantic_point_annotator --> 
-  <depend stack="mechanism"/> <!-- mechanism_control --> 
-  <depend stack="controllers"/> <!-- pr2_mechanism_controllers --> 
-  <depend stack="common"/> <!-- laser_scan, robot_actions --> 
-  <depend stack="estimation"/> <!-- robot_pose_ekf --> 
-  <depend stack="navigation"/> <!-- amcl, map_server, move_base, nav_robot_actions --> 
-  <depend stack="common_msgs"/> 
+  <depend stack="semantic_mapping"/> <!-- semantic_point_annotator -->
+  <depend stack="laser_pipeline"/> <!-- laser_filters -->
+  <depend stack="pr2_mechanism"/> <!-- pr2_mechanism_control -->
+  <depend stack="motion_planning"/> <!-- robot_self_filter -->
+  <depend stack="controllers"/> <!-- pr2_mechanism_controllers -->
+  <depend stack="geometry"/> <!-- tf, bullet -->
+  <depend stack="sandbox"/> <!-- move_base_client, 3dnav_pr2 -->
+  <depend stack="pr2"/> <!-- pr2_alpha -->
+  <depend stack="audio"/> <!-- backup_safetysound -->
+  <depend stack="navigation"/> <!-- move_base, map_server, amcl, robot_pose_ekf -->
+  <depend stack="common_msgs"/> <!-- geometry_msgs -->
 
 </stack>
