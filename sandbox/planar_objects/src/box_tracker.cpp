@@ -55,7 +55,7 @@ BoxTracker::BoxTracker() :
 
   // advertise topics
   tracks_pub = nh.advertise<BoxTracks> ("~tracks", 100);
-  visualization_pub = nh.advertise<visualization_msgs::Marker> ("visualization_marker", 100);
+  visualization_pub = nh.advertise<visualization_msgs::Marker> ("~visualization_marker", 100);
 }
 
 void BoxTracker::observationsCallback(const BoxObservations::ConstPtr& observations)
@@ -145,11 +145,13 @@ void BoxTracker::sendTracks() {
   BoxTracks tracks_msg;
   tracks_msg.header = observations_msg->header;
   tracks_msg.set_tracks_size(tracks.size());
+  std::stringstream s;
   for(size_t j=0; j<tracks.size(); j++) {
     tracks_msg.tracks[j] = tracks[j].getTrackMessage();
+    s<<" ["<<tracks_msg.tracks[j].id<<"]";
   }
   tracks_pub.publish(tracks_msg);
-  ROS_INFO("Sending %d tracks",tracks.size());
+  ROS_INFO("Sending %d tracks [%s]",tracks.size(),s.str().c_str());
 }
 
 void BoxTracker::removeOldLines() {

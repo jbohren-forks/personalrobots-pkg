@@ -18,9 +18,9 @@ btBoxObservation::btBoxObservation( ) {
   recall = 0;
 }
 
-btBoxObservation::btBoxObservation(const BoxObservation &obs , const ros::Time stamp ) {
+btBoxObservation::btBoxObservation(const BoxObservation &obs , const ros::Time stamp, int disambiguation ) {
   setObservation(obs,stamp);
-  *this = this->getAmbiguity(1);
+  *this = this->getAmbiguity(disambiguation);
 }
 
 void btBoxObservation::setObservation(const BoxObservation &obs, const ros::Time stamp ) {
@@ -157,10 +157,11 @@ btBoxTrack::btBoxTrack(TrackParameters param, btBoxObservation &obs, int id)
   obs_history.push_back(obs);
 }
 
-btBoxTrack::btBoxTrack(const BoxTrack&  msg, const ros::Time stamp) {
+btBoxTrack::btBoxTrack(const BoxTrack&  msg, const ros::Time stamp, int disambiguation) {
+  id = msg.id;
   obs_history.clear();
   for(size_t i=0;i<msg.obs.size();i++) {
-    obs_history.push_back( btBoxObservation( msg.obs[i],stamp ) );
+    obs_history.push_back( btBoxObservation( msg.obs[i],stamp,disambiguation ) );
   }
 }
 

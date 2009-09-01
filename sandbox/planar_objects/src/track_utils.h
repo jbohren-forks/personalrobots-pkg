@@ -33,7 +33,7 @@ public:
   double precision;
   double recall;
   btBoxObservation();
-  btBoxObservation(const BoxObservation &obs , const ros::Time stamp );
+  btBoxObservation(const BoxObservation &obs , const ros::Time stamp, int disambiguation=0 );
   void setObservation(const BoxObservation &obs , const ros::Time stamp );
   std::vector<btBoxObservation> listAmbiguity();
   btBoxObservation getAmbiguity(int num=0);
@@ -56,7 +56,7 @@ public:
   std::vector<btBoxObservation> obs_history;
   btBoxTrack();
   btBoxTrack(TrackParameters param, btBoxObservation &obs, int id);
-  btBoxTrack(const BoxTrack&  msg, const ros::Time stamp );
+  btBoxTrack(const BoxTrack&  msg, const ros::Time stamp, int disambiguation=0 );
   bool withinTolerance(btBoxObservation &obs);
   void updateTrack(std::vector<btBoxObservation> &obs);
   void updateTrack(btBoxObservation &obs);

@@ -27,8 +27,14 @@ using namespace std;
 
 #define PRINTVEC(a) a.x()<<" "<<a.y()<<" "<<a.z()<<" "
 #define SQR(a) ((a)*(a))
+#define sqr(a) ((a)*(a))
 
 namespace planar_objects {
+
+ManifoldModel::ManifoldModel(btBoxTrack* track):track(track) {
+	err_rot = DBL_MAX;
+	err_trans = DBL_MAX;
+}
 
 void ManifoldModel::findParameters(ros::Publisher* pub) {
 	w = 0;
@@ -46,15 +52,15 @@ void ManifoldModel::findParameters(ros::Publisher* pub) {
 }
 
 double ManifoldModel::getTranslationalError() {
-	double err_trans, err_rot;
-	getError(err_trans, err_rot);
 	return (err_trans);
 }
 
 double ManifoldModel::getRotationalError() {
-	double err_trans, err_rot;
-	getError(err_trans, err_rot);
 	return (err_rot);
+}
+
+double ManifoldModel::getLoglikelihood(double sigma_trans,double sigma_rot) {
+    return - ( sqr(err_rot)/sqr(sigma_rot) + sqr(err_trans)/sqr(sigma_trans) );
 }
 
 bool ManifoldModel::isValid() {
@@ -62,6 +68,11 @@ bool ManifoldModel::isValid() {
 }
 
 void ManifoldModel::getError(double &err_trans, double &err_rot) {
+	err_trans = this->err_trans;
+	err_rot = this->err_rot;
+}
+
+void ManifoldModel::computeError() {
 	err_rot = DBL_MAX;
 	err_trans = DBL_MAX;
 	if (track->obs_history.size() < 2 || !isValid())
@@ -255,8 +266,7 @@ void RotationalModel::findParameters(ros::Publisher* pub) {
 	vector<int> indices;
 	points.channels[0].set_values_size(track->obs_history.size());
 	for (size_t i = 0; i < track->obs_history.size(); i++) {
-		btTransform tf = track->obs_history[i].tf * btTransform(btQuaternion(
-				btVector3(0, 0, 1), 0 * M_PI / 2), btVector3(w / 2, h / 2, 0));
+		btTransform tf = track->obs_history[i].tf;
 		points.points[i].x = tf.getOrigin().x();
 		points.points[i].y = tf.getOrigin().y();
 		points.points[i].z = tf.getOrigin().z();
@@ -280,6 +290,10 @@ void RotationalModel::findParameters(ros::Publisher* pub) {
 	sample_consensus::SACModelPlane model_plane;
 	sample_consensus::RANSAC sacPlane(&model_plane, dist_thresh);
 	sacPlane.setMaxIterations(100);
+
+	if (indices.size()<3) {
+		return;
+	}
 
 	model_plane.setDataSet(&points, indices);
 	if (!sacPlane.computeModel()) {
@@ -309,10 +323,10 @@ void RotationalModel::findParameters(ros::Publisher* pub) {
 
 	// ***************** find transformation to xy plane
 	btVector3 rx,ry,rz(model_coeff[0],model_coeff[1],model_coeff[2]);
-	if(rz.maxAxis()==2) {
+	if(rz.closestAxis()==2) {
 		rx = btVector3(1,0,0);
 	} else {
-		if(rz.maxAxis()==0) {
+		if(rz.closestAxis()==0) {
 			rx = btVector3(0,1,0);
 		} else {
 			rx = btVector3(0,0,1);
@@ -358,6 +372,10 @@ void RotationalModel::findParameters(ros::Publisher* pub) {
 	// ***************** find transformation to xy plane (end)
 
 	// ***************** find circle in point cloud
+	if (centered_points.points.size()<3) {
+		return;
+	}
+
 	// Create and initialize the SAC model
 	sample_consensus::SACModelCircle2D model_circle;
 	sample_consensus::RANSAC sacCircle(&model_circle, dist_thresh);
@@ -401,11 +419,36 @@ void RotationalModel::findParameters(ros::Publisher* pub) {
 //		vis_utils_cloud_pub->publish(circle_points2);
 	}
 
+	// compute center
 	center = tf.inverse() * btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(model_coeff_circle[0],model_coeff_circle[1],0));
-	radius = center.inverse() * track->obs_history[0].tf
-		* btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(track->obs_history[0].w/2,track->obs_history[0].h/2,0))
-		* btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(-w/2,-h/2,0));
-	;
+
+	// make obs_history[0].configuration==0
+	cout << "conf[0]="<<getConfiguration(track->obs_history[0].tf)[0]<< endl;
+	center = center * btTransform(btQuaternion(btVector3(0,0,1),-getConfiguration(track->obs_history[0].tf)[0] ),btVector3(0,0,0));
+	cout << "conf[0]="<<getConfiguration(track->obs_history[0].tf)[0]<< endl;
+
+	// radius
+	radius =  btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(model_coeff_circle[2],0,0));
+
+	// offset (t=0; r=avg)
+	btQuaternion o =
+		btTransform(btQuaternion(btVector3(0,0,1),-getConfiguration(track->obs_history[0].tf)[0] ),btVector3(0,0,0)) *
+		track->obs_history[0].tf.getRotation();
+	for (size_t j = 1; j < track->obs_history.size(); j++) {
+		btQuaternion o2 =
+			btTransform(btQuaternion(btVector3(0,0,1),-getConfiguration(track->obs_history[j].tf)[0] ),btVector3(0,0,0)) *
+			track->obs_history[j].tf.getRotation();
+//		cout << o2.x() << " "<<o2.y()<<" "<<o2.z()<<" "<<o2.w() << endl;
+		o = o.slerp( o2	, 1 / (j + 1.0));
+	}
+	offset = btTransform(o, btVector3(0,0,0));
+	offset =
+		btTransform(
+				btTransform(btQuaternion(btVector3(0,0,1),-getConfiguration(track->obs_history[0].tf)[0] ),btVector3(0,0,0)) *
+				(center.inverse() *track->obs_history[0].tf).getRotation(),
+				btVector3(0,0,0));
+
+
 
 	std::vector<std::pair<btVector3,
 	    btVector3> > lines;
@@ -427,16 +470,14 @@ size_t RotationalModel::getDOFs() {
 
 std::vector<double> RotationalModel::getConfiguration(btTransform transform) {
 	std::vector<double> q;
-	q.resize(1);
-	q[0] = 0.00;
+	btTransform rel = center.inverseTimes(transform);
+	q.push_back( -atan2(rel.getOrigin().y(),rel.getOrigin().x()) );
 	return (q);
 }
 
 btTransform RotationalModel::getPrediction(std::vector<double> configuration) {
 	return center * btTransform(btQuaternion(btVector3(0, 0, 1),
-			configuration[0]), btVector3(0, 0, 0)) * radius * btTransform(
-			btQuaternion(btVector3(0, 0, 1), 0 * M_PI / 2), btVector3(-w / 2,
-					-h / 2, 0));
+			-configuration[0]), btVector3(0, 0, 0)) * radius * offset;
 }
 
 bool RotationalModel::isValid() {

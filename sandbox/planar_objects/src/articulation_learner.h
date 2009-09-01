@@ -64,6 +64,7 @@ public:
   void createModels();
   void updateModels();
   void filterModels();
+  void selectModels();
   void visualizeModels();
   void visualizeTracks();
 

@@ -16,6 +16,8 @@
 
 using namespace std;
 
+#define sqr(a) ((a)*(a))
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "articulation_learner");
@@ -49,7 +51,7 @@ ArticulationLearner::ArticulationLearner() :
   newLines = 0;
 
   // advertise topics
-  visualization_pub = nh.advertise<visualization_msgs::Marker> ("visualization_marker", 100);
+  visualization_pub = nh.advertise<visualization_msgs::Marker> ("~visualization_marker", 0);
   cloud_pub = nh.advertise<sensor_msgs::PointCloud> ("~planes", 1);
 }
 
@@ -65,14 +67,15 @@ void ArticulationLearner::syncCallback()
 
   tracks.clear();       // forget everything
   for(size_t i =0; i<tracks_msg->tracks.size();i++) {
-    tracks.push_back( btBoxTrack(tracks_msg->tracks[i], tracks_msg->header.stamp) );
+	  for(int j=0;j<4;j++) {
+		  tracks.push_back( btBoxTrack(tracks_msg->tracks[i], tracks_msg->header.stamp,j) );
+	  }
   }
-
-  cout <<"here!"<<endl;
 
   createModels();
   updateModels();
   filterModels();
+  selectModels();
 
   if(visualize) {
 //    visualizeTracks();
@@ -91,19 +94,19 @@ void ArticulationLearner::releaseModels() {
 }
 
 void ArticulationLearner::createModels() {
-  if(tracks.size()<1) return;
-  size_t best_i = 0;
-  for(size_t i=1;i<tracks.size();i++) {
-	  if(tracks[i].obs_history.size() > tracks[best_i].obs_history.size())
-		  best_i = i;
-  }
-  models.push_back(new RotationalModel(&tracks[best_i]));
+//  if(tracks.size()<1) return;
+//  size_t best_i = 0;
+//  for(size_t i=1;i<tracks.size();i++) {
+//	  if(tracks[i].obs_history.size() > tracks[best_i].obs_history.size())
+//		  best_i = i;
+//  }
+//  models.push_back(new RotationalModel(&tracks[best_i]));
 
   // create models for all tracks
-//  for(size_t i =0; i<tracks.size();i++) {
-//	    models.push_back(new PrismaticModel(&tracks[i]));
-//	    models.push_back(new RotationalModel(&tracks[i]));
-//  }
+  for(size_t i =0; i<tracks.size();i++) {
+	    models.push_back(new PrismaticModel(&tracks[i]));
+	    models.push_back(new RotationalModel(&tracks[i]));
+  }
 }
 
 void ArticulationLearner::updateModels() {
@@ -115,7 +118,8 @@ void ArticulationLearner::updateModels() {
 void ArticulationLearner::filterModels() {
   size_t i =0;
   while(i<models.size()) {
-    double err_rot=999, err_trans=999;
+    double err_rot=DBL_MAX, err_trans=DBL_MAX;
+    models[i]->computeError();
     models[i]->getError(err_trans,err_rot);
     cout << "model "<<i<<" error is: "<<err_rot << " " << err_trans <<" from "<<models[i]->track->obs_history.size()<<"obs."<< endl;
     if(err_trans > thres_trans || err_rot > thres_rot) {
@@ -124,7 +128,38 @@ void ArticulationLearner::filterModels() {
       i++;
     }
   }
-  cout << "active models: "<< models.size()<< endl;
+  cout << "valid models: "<< models.size()<< endl;
+}
+
+void ArticulationLearner::selectModels() {
+  std::map<int,double> m;
+  for(size_t i=0;i<models.size();i++) {
+	  double logp = models[i]->getLoglikelihood(thres_trans,thres_rot);
+    cout << "model "<<i<<
+		" error is: "<<models[i]->err_rot << " " << models[i]->err_trans <<
+		" log p="<<logp <<
+		" from "<<models[i]->track->obs_history.size()<<"obs."<< endl;
+    if( (m.find(models[i]->track->id)==m.end()) || (m[models[i]->track->id] < logp) )
+      m[models[i]->track->id] = logp;
+  }
+
+  size_t i =0;
+  while(i<models.size()) {
+	  double logp = models[i]->getLoglikelihood(thres_trans,thres_rot);
+    cout << "model "<<i<<" id="<<models[i]->track->id<<
+		" error is: "<<models[i]->err_rot << " " << models[i]->err_trans <<
+		" highest logp="<<m[models[i]->track->id]<<
+		" log p="<<logp <<
+		" from "<<models[i]->track->obs_history.size()<<"obs."<< endl;
+    if( m[models[i]->track->id] > logp ) {
+        cout << "deleting model "<<i<<endl;
+        models.erase( models.begin() + i );
+    } else {
+    	i++;
+    }
+  }
+
+  cout << "selected models: "<< models.size()<< endl;
 }
 
 void ArticulationLearner::visualizeTracks() {
@@ -155,7 +190,7 @@ void ArticulationLearner::visualizeModels() {
     for(size_t d=0;d<models[i]->getDOFs();d++) {
       std::vector<double> q = q_mean;
       int n = (int) ((range[0].second - range[0].first)/dist_vis);
-      cout << "n="<<n<<endl;
+//      cout << "n="<<n<<endl;
       for(size_t j=0;j<(size_t)n;j++) {
 //        q[d] = ((n-j-1)*range[d].first + j*range[d].second)/(n-1.0);
         q[d] = ((n-j-1)*range[d].first + j*range[d].second)/(n+1);
