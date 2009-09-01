@@ -1,0 +1,15 @@
+<stack name="manipulation_common" version="0.1.0">
+  <description brief="manipulation_common">
+
+     Common dependencies for manipulation-related capabilities, including message definitions and lower-level libraries
+
+  </description>
+  <author>Maintained by Sachin Chitta</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/manipulation_common</url>
+  <depend stack="geometry"/> <!-- bullet --> 
+  <depend stack="ros"/> <!-- std_msgs --> 
+  <depend stack="common_msgs"/> <!-- sensor_msgs, geometry_msgs --> 
+
+</stack>
