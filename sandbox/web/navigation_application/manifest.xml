@@ -1,0 +1,14 @@
+<package>
+  <description brief="navigation">
+    Navigation Application
+  </description>
+  <author>Scott Hassan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/navigation_application</url>
+  <depend package="roslib"/>
+  <depend package="rospy"/>
+  <depend package="webui"/>
+</package>
+
+
