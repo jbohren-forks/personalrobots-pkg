@@ -31,7 +31,7 @@ alpha_stall: 0.5
 kp_caster_steer: 40.0
 timeout: 0.4
 max_accel: 
- ax: 0.5
+ ax: 1.0
  ay: 2.0 
  alphaz: 2.0
 
