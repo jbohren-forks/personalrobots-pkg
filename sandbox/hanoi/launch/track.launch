@@ -1,0 +1,9 @@
+<launch>
+
+  <node name="color_tracker" pkg="hanoi" type="color_tracker" output="screen">
+    <remap from="pan_tilt" to="head_controller/command"/>
+    <param name="start_tilt" value="0.4"/>
+    <param name="start_pan" value="0.0"/>
+  </node>
+
+</launch>

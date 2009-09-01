@@ -7,13 +7,12 @@
     <param name="planner_service" value="ompl_planning/plan_kinematic_path" />
   </node>
 
-
-
   <include file="$(find hanoi)/launch/cmvision.launch"/>
 
   <node name="hanoi" pkg="hanoi" type="hanoi" output="screen"> 
-    <remap from="pan_tilt" to="head_controller/command"/>
     <remap from="cloud_data" to="/wide_stereo/cloud"/>
+    <param name="start_arm" value="0.4 -0.4 0.8"/>
   </node>
+
 
 </launch>

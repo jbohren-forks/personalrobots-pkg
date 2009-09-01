@@ -1,5 +1,3 @@
-#include <sensor_msgs/JointState.h>
-
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/areas.h>
@@ -17,33 +15,82 @@ Hanoi::Hanoi(ros::NodeHandle &nh)
   : nodeHandle_(nh), tf_(nodeHandle_)
 {
   std::string cloud_topic;
+  std::string start_arm;
+  float x,y,z;
 
-  
   if (!nodeHandle_.getParam("parameter_frame",parameter_frame_))
     parameter_frame_ = "base_link";
+
+  if (!nodeHandle_.getParam("~start_arm", start_arm))
+    start_arm = "0.1 0.2 0.3";
+
+  int index1 = start_arm.find(" ");
+  int index2 = start_arm.rfind(" ");
+
+  x = atof(start_arm.substr(0, index1).c_str());
+  y = atof(start_arm.substr(index1+1, index2-index1+1).c_str());
+  z = atof(start_arm.substr(index2).c_str());
+
+  armGoal_.header.frame_id = parameter_frame_;
+
+  std::cout << "XYZ[" << x << "," << y << "," << z << "]\n";
 
   // Subscribe to the blobs topic
   blobSubscriber_ = nodeHandle_.subscribe("blobs", 100, &Hanoi::BlobCB, this);
 
-  headPublisher_ = nodeHandle_.advertise<sensor_msgs::JointState>("pan_tilt", 1, true);
+  jointStateSubscriber_ = nodeHandle_.subscribe("joint_states", 100, 
+                                                &Hanoi::JointStatesCB, this);
+
+  moveArmResultSubscriber_ = nodeHandle_.subscribe("/move_right_arm/result", 10, &Hanoi::MoveArmResultCB, this);
+
+  colorTrackerStatusSubscriber_ = nodeHandle_.subscribe("/color_tracker/status", 10, &Hanoi::ColorTrackStatusCB, this);
+
+
+  positionArmPublisher_ = nodeHandle_.advertise<move_arm::MoveArmActionGoal>("/move_right_arm/goal", 1, true);
 
   // Create the publisher for cylinder data
-  cylinderPublisher_ = nodeHandle_.advertise<hanoi::Cylinders>("cylinders", 1);
+  cylinderPublisher_ = nodeHandle_.advertise<hanoi::Cylinders>("~/cylinders", 1);
 
-  cloudSubscriber_ = nodeHandle_.subscribe("cloud_data",1,&Hanoi::CloudCB,this);
+  // Create the publisher that controls head tracking
+  colorTrackPublisher_ = nodeHandle_.advertise<hanoi::ColorTrackCmd>("/color_tracker/cmd", 1);
+
+  // Subscribe to the point cloud data
+  //cloudSubscriber_ = nodeHandle_.subscribe("cloud_data",1,&Hanoi::CloudCB,this);
+
+  gripperAction_ = new actionlib::SimpleActionClient<move_arm::ActuateGripperAction>(nodeHandle_,"actuate_gripper_right_arm");
 
   ros::service::waitForService("/auto_arm_cmd_server");
   moveArmService_ = nodeHandle_.serviceClient<move_arm_tools::ArmCtrlCmd::Request, move_arm_tools::ArmCtrlCmd::Response> ("/auto_arm_cmd_server");
 
 
+  /*updateTimer_ = nodeHandle_.createTimer(ros::Duration(0.5), 
+        &Hanoi::UpdateCB, this);
+        */
+
   // Get the point cloud
-  /*tf::MessageNotifier<sensor_msgs::PointCloud> *message_notifier = 
+  tf::MessageNotifier<sensor_msgs::PointCloud> *message_notifier = 
     new tf::MessageNotifier<sensor_msgs::PointCloud>( tf_, 
        boost::bind(&Hanoi::CloudCB,this,_1), "cloud_data", parameter_frame_, 1);
-       */
 
-  this->CommandArm(0.5, 0.0, 0.8, 0, 0 ,0);
-  this->CommandHead(0.0, 0.4);
+  // Move arm to starting position
+  //this->CommandArm("move", x,y,z, M_PI/2.0, 0 , 0);
+
+  actions_["grasp"].push_back(MOVE_ARM);
+  actions_["grasp"].push_back(MOVING_ARM);
+  actions_["grasp"].push_back(OPEN_GRIPPER);
+  actions_["grasp"].push_back(OPENING_GRIPPER);
+  actions_["grasp"].push_back(MOVE_OFFSET);
+  actions_["grasp"].push_back(MOVING_ARM);
+  actions_["grasp"].push_back(CLOSE_GRIPPER);
+  actions_["grasp"].push_back(CLOSING_GRIPPER);
+
+  //this->ActivateAction("grasp");
+
+  hanoi::ColorTrackCmd ctcmd;
+  ctcmd.red = 1;
+  ctcmd.green = 0;
+  ctcmd.blue = 0;
+  colorTrackPublisher_.publish(ctcmd);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,58 +100,319 @@ Hanoi::~Hanoi()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Pan and tilt the head
-void Hanoi::CommandHead(float pan, float tilt)
+// Activate an action to perform
+void Hanoi::ActivateAction(const std::string actionName)
 {
-  sensor_msgs::JointState jointStateMsg;
-  jointStateMsg.set_name_size(2);
-  jointStateMsg.set_position_size(2);
+  std::map< std::string, std::vector<State> >::iterator iter;
 
-  jointStateMsg.name[0] = "head_pan_joint";
-  jointStateMsg.position[0] = pan;
+  iter = actions_.find(actionName);
 
-  jointStateMsg.name[1] = "head_tilt_joint";
-  jointStateMsg.position[1] = tilt;
+  if (iter != actions_.end())
+  {
+    stateIter_ = iter->second.begin();
+    currentAction_ = actionName;
+  }
+  else
+    currentAction_ = "";
+}
 
-  headPublisher_.publish( jointStateMsg );
+
+////////////////////////////////////////////////////////////////////////////////
+// Update callback
+void Hanoi::UpdateCB( const ros::TimerEvent &e )
+{
+  std::map<std::string, std::vector<State> >::iterator iter;
+
+  iter = actions_.find(currentAction_);
+
+  printf("Update\n");
+
+  if (iter != actions_.end())
+  {
+    switch (*stateIter_)
+    {
+      case MOVE_ARM:
+        printf("MOVE_ARM\n");
+        if (this->MoveArm())
+          stateIter_++;
+        break;
+
+      case MOVING_ARM:
+        printf("MOVING_ARM\n");
+        if (this->ArmAtGoal())
+          stateIter_++;
+        break;
+
+      case OPEN_GRIPPER:
+        printf("OPEN_GRIPPER\n");
+        this->OpenGripper();
+        stateIter_++;
+        break;
+
+      case OPENING_GRIPPER:
+        printf("OPENING_GRIPPER\n");
+        if (this->GripperIsOpen())
+          stateIter_++;
+        break;
+
+      case CLOSE_GRIPPER:
+        printf("CLOSE_GRIPPER\n");
+        this->CloseGripper();
+        stateIter_++;
+        break;
+
+      case CLOSING_GRIPPER:
+        printf("CLOSING_GRIPPER\n");
+        if (this->GripperIsClosed())
+          stateIter_++;
+        break;
+
+      case MOVE_OFFSET:
+        printf("MOVE_OFFSET\n");
+        this->CommandArm("move", armGoal_.point.x + HAND_OFFSET, 
+            armGoal_.point.y, armGoal_.point.z, M_PI/2.0, 0 , 0);
+        stateIter_++;
+        break;
+    };
+
+    // Check to see if the stateIter_ has reached the end of the action list
+    if (stateIter_ == iter->second.end())
+    {
+      std::cout << "Action[" << currentAction_ << " Is Complete!\n";
+      currentAction_ = "";
+    }
+  }
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Open the gripper
+void Hanoi::OpenGripper()
+{
+  move_arm::ActuateGripperGoal g;
+  g.data = 50.0;
+
+  gripperAction_->sendGoal(g);
+
+  bool status = gripperAction_->waitForGoalToFinish(ros::Duration(5));
+  if (status)
+    std::cout << "Gripper State:" << gripperAction_->getTerminalState().toString() << "\n";
+  else
+    std::cout << "Gripper unable to reach goal\n";
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Close the gripper
+void Hanoi::CloseGripper()
+{
+  move_arm::ActuateGripperGoal g;
+  g.data = -50.0;
+
+  gripperAction_->sendGoal(g);
+
+  bool status = gripperAction_->waitForGoalToFinish(ros::Duration(5));
+  if (status)
+    std::cout << "Gripper State:" << gripperAction_->getTerminalState().toString() << "\n";
+  else
+    std::cout << "Gripper unable to reach goal\n";
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Return true if the arm has reached its goal
+bool Hanoi::ArmAtGoal()
+{
+  geometry_msgs::PointStamped point;
+  float dist;
+
+  point.header.frame_id = "r_wrist_roll_link";
+  point.header.stamp = ros::Time();
+
+  point.point.x = 0;
+  point.point.y = 0;
+  point.point.z = 0;
+
+  tf_.transformPoint( "base_link", point, point );
+
+  dist = sqrt( pow(point.point.x-armGoal_.point.x,2) + 
+               pow(point.point.y-armGoal_.point.y,2) +
+               pow(point.point.z-armGoal_.point.z,2));
+
+  printf("Distance to goal[%f]\n",dist);
+  if (dist < 0.001)
+    return true;
+ 
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Command arm
-void Hanoi::CommandArm(float x, float y, float z, 
-                       float roll, float pitch, float yaw)
+bool Hanoi::CommandArm(const std::string &mode, float x, float y, float z, 
+                    float roll, float pitch, float yaw)
 {
   move_arm_tools::ArmCtrlCmd::Request req;
   move_arm_tools::ArmCtrlCmd::Response res;
+  float shoulderX, shoulderY, shoulderZ;
+
+  shoulderX = -0.05;
+  shoulderY = -0.18;
+  shoulderZ = 0.745;
+
+  float dist = sqrt( pow(x - shoulderX,2) + 
+                     pow(y - shoulderY,2) + 
+                     pow(z - shoulderZ,2) );
+
+  printf("Dist[%f]\n",dist);
+
+  if (dist > .82)
+  {
+    ROS_ERROR("Arm Pos[%f %f %f] is invalid\n",x,y,z);
+    return false;
+  }
 
   std::stringstream cmd;
 
-  btQuaternion quat(yaw, pitch, roll);
+  btQuaternion q(yaw, pitch, roll);
 
-  cmd << "move " << x << " " << y << " " << z << " " 
-    << quat.getX() << " " << quat.getY() << " " << quat.getZ() 
-    << " " << quat.getW();
+  if (mode == "go")
+  {
+    move_arm::MoveArmActionGoal g;
+    g.header.stamp = ros::Time::now();
+    moveArmGoalId_ = ros::Time::now();
 
-  req.cmd = cmd.str();
-  req.allowed_time = 60.0;
+    std::cout << "Move Arm Goal Id[" << moveArmGoalId_.toNSec() << "]\n";
 
-  printf("Moving arm...\r\n");
-  moveArmService_.call(req, res);
 
-  if (res.success)
-    printf("success\n");
+    g.goal.goal_constraints.pose_constraint.resize(1);
+    g.goal.goal_constraints.pose_constraint[0].type = 
+      motion_planning_msgs::PoseConstraint::POSITION_X + 
+      motion_planning_msgs::PoseConstraint::POSITION_Y + 
+      motion_planning_msgs::PoseConstraint::POSITION_Z +
+      motion_planning_msgs::PoseConstraint::ORIENTATION_R + 
+      motion_planning_msgs::PoseConstraint::ORIENTATION_P + 
+      motion_planning_msgs::PoseConstraint::ORIENTATION_Y;
+
+    g.goal.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
+    g.goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
+    g.goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "/base_link";
+    g.goal.goal_constraints.pose_constraint[0].pose.pose.position.x = x;
+    g.goal.goal_constraints.pose_constraint[0].pose.pose.position.y = y;
+    g.goal.goal_constraints.pose_constraint[0].pose.pose.position.z = z;
+
+    g.goal.goal_constraints.pose_constraint[0].pose.pose.orientation.x = q.getX();
+    g.goal.goal_constraints.pose_constraint[0].pose.pose.orientation.y = q.getY();
+    g.goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = q.getZ();
+    g.goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = q.getW();
+
+    g.goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.04;
+    g.goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.04;
+    g.goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.04;
+    g.goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.04;
+    g.goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.04;
+    g.goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.04;
+
+    g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.35;
+    g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.35;
+    g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.35;
+    g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.35;
+    g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.35;
+    g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.35;
+    g.goal.goal_constraints.pose_constraint[0].orientation_importance = 0.2;
+
+    positionArmPublisher_.publish(g);
+  }
   else
-    printf("failure\n");
+  {
+
+    cmd << mode << " " << x << " " << y << " " << z << " " 
+      << q.getX() << " " << q.getY() << " " << q.getZ() 
+      << " " << q.getW();
+
+    req.cmd = cmd.str();
+    req.allowed_time = 60.0;
+
+    printf("Moving arm...\r\n");
+    moveArmService_.call(req, res);
+    armGoal_.header.stamp = ros::Time();
+
+    if (res.success)
+    {
+      printf("success\n");
+    }
+    else
+    {
+      printf("failure\n");
+    }
+  }
+
+  armGoal_.point.x = x;
+  armGoal_.point.y = y;
+  armGoal_.point.z = z;
+
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Got a point cloud
-void Hanoi::CloudCB(const sensor_msgs::PointCloudConstPtr &cloud)
+void Hanoi::CloudCB(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud)
 {
   pointcloud_ = *cloud;
 
   //ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.points.size (), pointcloud_.header.frame_id.c_str (), (int)pointcloud_.channels.size (), cloud_geometry::getAvailableChannels (pointcloud_).c_str ());
+}
 
+////////////////////////////////////////////////////////////////////////////////
+// Move arm to a goal
+bool Hanoi::MoveArm()
+{
+  if (pointcloud_.points.size() <= 0)
+    return false;
+
+  float dist, minDist;
+  int minIndex = 0;
+  int closestIndex = 0;
+  float minPointX;
+  float xvalue, yvalue;
+
+  minDist = 1000;
+  minPointX = 1000;
+
+  tf_.transformPointCloud(parameter_frame_, pointcloud_, pointcloud_ );
+
+  for (unsigned int y = redBlob_.y; y < redBlob_.bottom; y++)
+  {
+    for (unsigned int i=0; i < pointcloud_.channels[1].values.size(); i++)
+    {
+      yvalue = pointcloud_.channels[2].values[i];
+      xvalue = pointcloud_.channels[1].values[i];
+
+      dist = sqrt( pow(xvalue-redBlob_.x, 2) + pow(yvalue-y,2) );
+      if (dist < minDist)
+      {
+        minDist = dist;
+        minIndex = i;
+      }
+    }
+
+    if (pointcloud_.points[minIndex].x < minPointX)
+    {
+      minPointX = pointcloud_.points[minIndex].x;
+      closestIndex = minIndex;
+    }
+
+  }
+
+  printf("MinDist[%f] I[%d] XYZ[%f %f %f]\n",minDist, closestIndex, 
+      pointcloud_.points[closestIndex].x,
+      pointcloud_.points[closestIndex].y, 
+      pointcloud_.points[closestIndex].z );
+
+  this->CommandArm("go", 
+      pointcloud_.points[closestIndex].x - HAND_OFFSET,
+      pointcloud_.points[closestIndex].y, 
+      pointcloud_.points[closestIndex].z, M_PI/2.0,0,0 );
+
+  return true;
 }
 
 
@@ -112,8 +420,6 @@ void Hanoi::CloudCB(const sensor_msgs::PointCloudConstPtr &cloud)
 // Blob callback
 void Hanoi::BlobCB(const cmvision::BlobsConstPtr &msg)
 {
-  printf("Blob Count[%d]\n", msg->blobCount);
-
   redBlob_.area = 0;
   greenBlob_.area = 0;
   blueBlob_.area = 0;
@@ -142,9 +448,10 @@ void Hanoi::BlobCB(const cmvision::BlobsConstPtr &msg)
    //printf("Blob[%d] RGB[%d %d %d] Size[%d]\n", i, r,g,b, area);
   }
 
-  printf("Red Size[%d] Pos[%d %d]\n", redBlob_.area, redBlob_.x, redBlob_.y);
+  /*printf("Red Size[%d] Pos[%d %d]\n", redBlob_.area, redBlob_.x, redBlob_.y);
   printf("Green Size[%d] Pos[%d %d]\n", greenBlob_.area, greenBlob_.x, greenBlob_.y);
   printf("Blue Size[%d] Pos[%d %d]\n", blueBlob_.area, blueBlob_.x, blueBlob_.y);
+  */
   this->CalculateGraspPoints();
 
   cylinderMessage_.redArea = redBlob_.area;
@@ -175,10 +482,65 @@ void Hanoi::BlobCB(const cmvision::BlobsConstPtr &msg)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/// Joint state callback
+void Hanoi::JointStatesCB(const pr2_mechanism_msgs::JointStatesConstPtr &msg)
+{
+  jointstates_ = *msg;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Calculate the 3D grasp points
 bool Hanoi::CalculateGraspPoints()
 {
-  std::cout << "FrameId:" << pointcloud_.header.frame_id << std::endl;
+  //std::cout << "FrameId:" << pointcloud_.header.frame_id << std::endl;
 
   return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Return true if the gripper is open
+bool Hanoi::GripperIsOpen()
+{
+  if (jointstates_.joints.size() <= 0)
+    return false;
+
+  for (unsigned int i=0; i < jointstates_.joints.size(); i++)
+  {
+    if (jointstates_.joints[i].name == "r_gripper_joint")
+      if (jointstates_.joints[i].position >= 0.05)
+        return true;
+  }
+
+  return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Return true if the gripper is closed
+bool Hanoi::GripperIsClosed()
+{
+  if (jointstates_.joints.size() <= 0)
+    return false;
+
+  for (unsigned int i=0; i < jointstates_.joints.size(); i++)
+  {
+    if (jointstates_.joints[i].name == "r_gripper_joint")
+      if (jointstates_.joints[i].position <= 0.002)
+        return true;
+  }
+
+  return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Move arm result callback
+void Hanoi::MoveArmResultCB(const move_arm::MoveArmResultConstPtr &msg)
+{
+  moveArmResult_ = *msg;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Color track status callback
+void Hanoi::ColorTrackStatusCB(const hanoi::ColorTrackStatusConstPtr &msg)
+{
+  colorTrackStatus_ = msg->status;
 }
