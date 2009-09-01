@@ -7,17 +7,25 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/calibration</url>
   
-  <depend stack="controllers"/> <!-- pr2_mechanism_controllers --> 
-  <depend stack="opencv"/> <!-- opencv_latest --> 
-  <depend stack="geometry"/> <!-- kdl, tf --> 
-  <depend stack="drivers"/> <!-- dense_laser_assembler, phase_space --> 
-  <depend stack="mechanism"/> <!-- mechanism_model, hardware_interface, mechanism_msgs --> 
-  <depend stack="util"/> <!-- topic_synchronizer --> 
-  <depend stack="openrave_planning"/> <!-- openraveros --> 
-  <depend stack="common"/> <!-- tinyxml, robot_actions, laser_scan, manipulation_msgs --> 
-  <depend stack="ros"/>
-  <depend stack="common_msgs"/> <!-- geometry_msgs, sensor_msgs, diagnostic_msgs --> 
+
+  <depend stack="manipulation_common"/> <!-- manipulation_msgs -->
+  <depend stack="camera_drivers"/> <!-- camera_calibration_parsers -->
+  <depend stack="diagnostics"/> <!-- diagnostic_updater -->
+  <depend stack="openrave_planning"/> <!-- openraveros -->
+  <depend stack="geometry"/> <!-- kdl, tf -->
+  <depend stack="calibration"/> <!-- calibration_msgs -->
+  <depend stack="drivers"/> <!-- phase_space -->
   <depend stack="visual_feature_detectors"/> <!-- checkerboard_detector -->
-  <depend stack="stereo" /> <!-- stereo_msgs -->
-  <depend stack="pr2_common" />
+  <depend stack="pr2_mechanism"/> <!-- pr2_mechanism_msgs, pr2_hardware_interface, pr2_mechanism_model -->
+  <depend stack="highlevel"/> <!-- move_arm -->
+  <depend stack="image_pipeline"/> <!-- stereo_msgs -->
+  <depend stack="controllers"/> <!-- pr2_mechanism_controllers -->
+  <depend stack="opencv"/> <!-- opencv_latest -->
+  <depend stack="sandbox"/> <!-- experimental_controllers, topic_synchronizer2 -->
+  <depend stack="common"/> <!-- actionlib, tinyxml -->
+  <depend stack="pr2"/> <!-- pr2_default_controllers -->
+  <depend stack="pr2_common"/> <!-- pr2_msgs -->
+  <depend stack="ros"/> <!-- std_srvs, roscpp, message_filters, std_msgs, rosoct, rospy, rosrecord -->
+  <depend stack="common_msgs"/> <!-- nav_msgs, sensor_msgs, geometry_msgs, diagnostic_msgs -->
+
 </stack>
