@@ -38,6 +38,7 @@ bool first_call = true;
 // for debugging costs
 FILE* fCosts = fopen("debug_costs.txt", "w");
 
+FILE* fMap = fopen("cost_map.txt", "w");
 
 /** --------------------- Hash Table --------------------------- */
 static unsigned int inthash(unsigned int key)
@@ -1310,6 +1311,9 @@ int EnvironmentNAVXYTHETADOORLAT::SetGoal(double x_m, double y_m, double theta_r
   EnvNAVXYTHETALATCfg.EndTheta = theta;
   desired_door_intervalindex = door_interval;
   
+	//clear vector of expanded states
+	expanded_states.clear();
+	
   return EnvNAVXYTHETALAT.goalstateid;    
   
 }
@@ -1365,17 +1369,16 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
 {
   if(first_call)
   {
-    FILE* fEnv = fopen("debug_environment.txt", "w");
     first_call = false;
     for(int i=0; i<EnvNAVXYTHETALATCfg.EnvHeight_c; i++)
     {
       for(int j=0; j<EnvNAVXYTHETALATCfg.EnvWidth_c; j++)
       {
-        fprintf(fEnv,"%u ",EnvNAVXYTHETALATCfg.Grid2D[j][i]);
+        fprintf(fMap,"%u ",EnvNAVXYTHETALATCfg.Grid2D[j][i]);
       }
-      fprintf(fEnv,"\n");
+      fprintf(fMap,"\n");
     }
-    fclose(fEnv);
+    fclose(fMap);
   }
 
   int aind;
@@ -1447,7 +1450,7 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
         if(actionV != NULL)
           actionV->push_back(nav3daction);
 
-	//printf("goal succ set at %d %d %d %d\n", newX,newY,newTheta,dind);
+				//printf("goal succ set at %d %d %d %d\n", newX,newY,newTheta,dind);
 
       }
       else{
@@ -1478,6 +1481,7 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
   time_getsuccs += clock()-currenttime;
 #endif
 
+  expanded_states.push_back(SourceStateID);
 }
 
 
@@ -1512,5 +1516,9 @@ void EnvironmentNAVXYTHETADOORLAT::PrintState(int stateID, bool bVerbose, FILE* 
                                     DiscTheta2Cont(HashEntry->Theta, NAVXYTHETALAT_THETADIRS), (int)HashEntry->door_intervalind);
 
 }
-
+ 
+vector<int> EnvironmentNAVXYTHETADOORLAT::GetExpandedStates()
+{
+	return expanded_states;
+}
 

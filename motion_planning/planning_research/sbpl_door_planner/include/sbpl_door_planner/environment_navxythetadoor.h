@@ -182,15 +182,19 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
        EnvNAVXYTHETALATAction_t* action,
        int* pCosttoDoorInterval0, int* pCosttoDoorInterval1, int* pBaseCost, int* pDoorCost, int maxcostXY[2], int* maxcostcellcost, int* SourceCost);
 
-  protected:
+	 virtual std::vector<int> GetExpandedStates();
 
+  protected:
 
    //hash table of size x_size*y_size. Maps from coords to stateId	
    int HashTableSize;
    vector<EnvNAVXYTHETADOORHashEntry_t*>* Coord2StateIDHashTable;
-   //vector that maps from stateID to coords	
+   
+	 //vector that maps from stateID to coords	
    vector<EnvNAVXYTHETADOORHashEntry_t*> StateID2CoordTable;
 
+	 vector<int> expanded_states;
+	 
    unsigned int GETHASHBIN(unsigned int X, unsigned int Y, unsigned int Theta);
 };
 
