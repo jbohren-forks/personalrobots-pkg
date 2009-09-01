@@ -38,6 +38,8 @@
 
 @b RemoveObjectExample is a node that forwards a collision map after it removes a box from it
 
+note: remember to remap "collision_map" to the desired collision map to be used by the planning environment. To run this, launch "launch/remove_object_example.launch"
+
 **/
 
 #include "planning_environment/monitors/planning_monitor.h"
@@ -125,7 +127,7 @@ private:
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "view_state_validity");
+    ros::init(argc, argv, "remove_object_example");
 
     RemoveObjectExample example;
     ros::spin();
