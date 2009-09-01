@@ -104,7 +104,10 @@ void CMVisionBF::imageCB(const sensor_msgs::ImageConstPtr& msg)
   ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
   // Get the image as and RGB image
-  this->imageBridge.fromImage(img, "bgr8");
+  if (img.encoding == "rgb8")
+    this->imageBridge.fromImage(img, "rgb8");
+  else
+    this->imageBridge.fromImage(img, "bgr8");
   cvImage = this->imageBridge.toIpl();
 
   size = cvGetSize(cvImage);
@@ -136,6 +139,9 @@ void CMVisionBF::imageCB(const sensor_msgs::ImageConstPtr& msg)
 
     this->width = size.width;
     this->height = size.height;
+
+    this->blobMessage.imageWidth = size.width;
+    this->blobMessage.imageHeight = size.height;
 
     if (this->uyvyImage)
       delete [] this->uyvyImage;
@@ -175,6 +181,12 @@ void CMVisionBF::imageCB(const sensor_msgs::ImageConstPtr& msg)
     return;
   }
 
+  if (img.encoding == "rgb8")
+  {
+    this->imageBridge.fromImage(img, "bgr8");
+    cvImage = this->imageBridge.toIpl();
+  }
+
   // Get all the blobs
   this->blobCount = 0;
   for (int ch = 0; ch < CMV_MAX_COLORS; ++ch)
@@ -195,7 +207,7 @@ void CMVisionBF::imageCB(const sensor_msgs::ImageConstPtr& msg)
 
       if (this->debugOn)
         cvRectangle(cvImage, cvPoint(r->x1, r->y1), 
-                    cvPoint(r->x2, r->y2), CV_RGB(c.blue, c.green, c.red));
+                    cvPoint(r->x2, r->y2), CV_RGB(c.red, c.green, c.blue));
 
       this->blobMessage.blobs[this->blobCount].red    = c.red;
       this->blobMessage.blobs[this->blobCount].green  = c.green;
@@ -211,9 +223,6 @@ void CMVisionBF::imageCB(const sensor_msgs::ImageConstPtr& msg)
       this->blobCount++;
     }
   }
-
-  this->imageBridge.fromImage(img, "rgb8");
-  cvImage = this->imageBridge.toIpl();
 
   if (this->debugOn)
   {

@@ -109,7 +109,10 @@ void ColorGui::imageCB(const sensor_msgs::ImageConstPtr& msg)
   const sensor_msgs::Image img = *msg;
 
   // Get the image as and RGB image
-  imageBridge.fromImage(img, "bgr8");
+  if (img.encoding == "rgb8")
+    imageBridge.fromImage(img, "rgb8");
+  else
+    imageBridge.fromImage(img, "bgr8");
   cvImage = imageBridge.toIpl();
 
   size = cvGetSize(cvImage);

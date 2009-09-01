@@ -19,6 +19,6 @@
   <!-- Color bandwidth: Bigger = smoother image-->
   <param name="cmvision/color_radius_pix" type="double" value="40.0"/>
 
-  <node pkg="cmvision" type="cmvision" args="image:=stereo/left_image" 
+  <node name="cmvision" pkg="cmvision" type="cmvision" args="image:=wide_stereo/left/image_rect_color" 
         output="screen" />
 </launch>
