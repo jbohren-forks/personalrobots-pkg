@@ -1,0 +1,15 @@
+<stack name="bag_experimental" version="0.1.0">
+  <description brief="bag_experimental">
+
+     Stack for developing and testing new ROS bag-related capabilities.
+
+  </description>
+  <author>Maintained by Jeremy Leibs</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/bag_experimental</url>
+  <depend stack="ros"/> <!-- std_msgs, rospy, roscpp, rosrecord --> 
+  <depend stack="vision"/> <!-- cv_mech_turk --> 
+  <depend stack="common_msgs"/> <!-- geometry_msgs, sensor_msgs --> 
+
+</stack>
