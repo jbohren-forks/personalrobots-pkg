@@ -13,9 +13,7 @@
   <param name="outlet_description" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/outlet_only.xacro.xml'" />
   <node pkg="gazebo_tools" type="urdf2factory" args="outlet_description 0 0 0 0 0 0 outlet" respawn="false" output="screen" />
 
-  <!--
-  <node pkg="plug_in_gazebo" type="set_plug_on_base.py" args=" -xyz 0.02 0 0.0142 -rpy 0 0 -1.57" respawn="false" output="screen" />
-  -->
+  <node pkg="plug_in_gazebo" type="set_plug_on_base.py" args=" -angular_p 0.1 -linear_p 0.1 -cutoff_dist 0.03" respawn="false" output="screen" />
 
   <!-- Robot state publisher -->
   <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">

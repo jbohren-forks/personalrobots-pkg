@@ -48,18 +48,13 @@ import rospy, rostest
 
 from std_msgs.msg import String
 from nav_robot_actions.msg import MoveBaseState
-from geometry_msgs.msg import Pose,Quaternion,Point, PoseStamped, PoseWithCovariance, TwistWithCovariance
+from geometry_msgs.msg import Pose,Quaternion,Point, PoseStamped, PoseWithCovariance, TwistWithCovariance, Wrench, Vector3
 from nav_msgs.msg import Odometry
 import tf.transformations as tft
 from numpy import float64
 
-# @todo: this is copied covariance from amcl, need to update for position
-COV = [float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float64(0),float64(0), \
-       float64(0),float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float64(0), \
-       float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
-       float64(0),float64(0),float64(0),float64(math.pi/23.0*math.pi/12.0),float64(0),float64(0), \
-       float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
-       float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0)  ]
+# simulate magnetic forces between plug and holder.
+# simulate magnetic forces between plug and gripper_tool_frame.
 
 def normalize_angle_positive(angle):
     return math.fmod(math.fmod(angle, 2*math.pi) + 2*math.pi, 2*math.pi)
@@ -78,104 +73,134 @@ def shortest_angular_distance(angle_from, angle_to):
 
 xyz = [0,0,0]
 rpy = [0,0,0]
-test_timeout = 5000;
-tolerance = 0.01;
-magnetic_cutoff = 0.01;
-goal_reached = False
-in_magnet_range = True;
 
-x_origin = 0.0
-y_origin = 0.0
-z_origin = 0.0
+update_rate = 100;
+timeout = 5000;
 
-magnet_p = [0,0,0]
-magnet_e = [0,0,0]
-magnet_q = [1,0,0,0]
+holder_cutoff = 0.03;
+in_holder_range = True;
+
+holder_p = [0,0,0]
+holder_q = [1,0,0,0]
+holder_e = [0,0,0]
+
+gripper_cutoff = 0.03;
+in_gripper_range = False;
+
+gripper_p = [0,0,0]
+gripper_q = [1,0,0,0]
+gripper_e = [0,0,0]
+
+plug_p = [0,0,0]
+plug_q = [1,0,0,0]
+plug_e = [0,0,0]
+
+linear_gain_p = 1.0
+angular_gain_p = 1.0
+
+plug_position_initialized = False
+holder_position_initialized = False
+gripper_position_initialized = False
 
 def  plugP3DInput(p3d):
-    global xyz,rpy,goal_reached
-    if not goal_reached:
-      p3d_x = p3d.pose.pose.position.x
-      p3d_y = p3d.pose.pose.position.y
-      p3d_z = p3d.pose.pose.position.z
-      p3d_qw = p3d.pose.pose.orientation.w
-      p3d_qx = p3d.pose.pose.orientation.x
-      p3d_qy = p3d.pose.pose.orientation.y
-      p3d_qz = p3d.pose.pose.orientation.z
+    global force,torque,holder_p,holder_e, holder_position_initialized, force,torque,plug_p,plug_e, plug_position_initialized, in_holder_range, holder_cutoff, linear_gain_p, angular_gain_p, timeout, update_rate, gripper_p, gripper_q, gripper_e, in_gripper_range, gripper_cutoff, gripper_position_initialized
 
-      # check plug position from goal
-      e = tft.euler_from_quaternion([p3d_qx,p3d_qy,p3d_qz,p3d_qw])
-      if tolerance > 0:
-        if abs(p3d_x - xyz[0]) < tolerance and \
-           abs(p3d_y - xyz[1]) < tolerance and \
-           abs(p3d_z - xyz[2]) < tolerance and \
-           abs(rpy[0] - e[0])  < tolerance and \
-           abs(rpy[1] - e[1])  < tolerance and \
-           abs(rpy[2] - e[2])  < tolerance:
-            goal_reached = True
+    plug_p = [p3d.pose.pose.position.x, p3d.pose.pose.position.y, p3d.pose.pose.position.z]
+    plug_q = [p3d.pose.pose.orientation.x, p3d.pose.pose.orientation.y, p3d.pose.pose.orientation.z, p3d.pose.pose.orientation.w]
+    plug_e = tft.euler_from_quaternion(plug_q)
 
-      if magnetic_cutoff > 0:
-        if abs(p3d_x - xyz[0]) > magnetic_cutoff and \
-           abs(p3d_y - xyz[1]) > magnetic_cutoff and \
-           abs(p3d_z - xyz[2]) > magnetic_cutoff:
-            in_magnet_range = False
+    plug_position_initialized = True
 
-def  magnetP3DInput(p3d):
-    global xyz,rpy,goal_reached,magnet_p,magnet_q,magnet_e
-    if not goal_reached:
-      magnet_p = [p3d.pose.pose.position.x - x_origin, p3d.pose.pose.position.y - y_origin, p3d.pose.pose.position.z - z_origin]
-      magnet_q = [p3d.pose.pose.orientation.x, p3d.pose.pose.orientation.y, p3d.pose.pose.orientation.z, p3d.pose.pose.orientation.w]
-      magnet_e = tft.euler_from_quaternion([magnet_q[0],magnet_q[1],magnet_q[2],magnet_q[3]])
+def  holderP3DInput(p3d):
+    global force,torque,holder_p,holder_e, holder_position_initialized, force,torque,plug_p,plug_e, plug_position_initialized, in_holder_range, holder_cutoff, linear_gain_p, angular_gain_p, timeout, update_rate, gripper_p, gripper_q, gripper_e, in_gripper_range, gripper_cutoff, gripper_position_initialized
+    holder_p = [p3d.pose.pose.position.x, p3d.pose.pose.position.y, p3d.pose.pose.position.z]
+    holder_q = [p3d.pose.pose.orientation.x, p3d.pose.pose.orientation.y, p3d.pose.pose.orientation.z, p3d.pose.pose.orientation.w]
+    holder_e = tft.euler_from_quaternion(holder_q)
+
+    holder_position_initialized = True
+
+def  gripperP3DInput(p3d):
+    global force,torque,holder_p,holder_e, holder_position_initialized, force,torque,plug_p,plug_e, plug_position_initialized, in_holder_range, holder_cutoff, linear_gain_p, angular_gain_p, timeout, update_rate, gripper_p, gripper_q, gripper_e, in_gripper_range, gripper_cutoff, gripper_position_initialized
+    gripper_p = [p3d.pose.pose.position.x, p3d.pose.pose.position.y, p3d.pose.pose.position.z]
+    gripper_q = [p3d.pose.pose.orientation.x, p3d.pose.pose.orientation.y, p3d.pose.pose.orientation.z, p3d.pose.pose.orientation.w]
+    gripper_e = tft.euler_from_quaternion(gripper_q)
+
+    gripper_position_initialized = True
 
 def main():
-    global xyz, rpy, test_timeout, goal_reached
+    global force,torque,holder_p,holder_e, holder_position_initialized, force,torque,plug_p,plug_e, plug_position_initialized, in_holder_range, holder_cutoff, linear_gain_p, angular_gain_p, timeout, update_rate, gripper_p, gripper_q, gripper_e, in_gripper_range, gripper_cutoff, gripper_position_initialized
 
     # get goal from commandline
     for i in range(0,len(sys.argv)):
+      if sys.argv[i] == '-update_rate':
+        if len(sys.argv) > i+1:
+          update_rate = float(sys.argv[i+1])
       if sys.argv[i] == '-timeout':
         if len(sys.argv) > i+1:
-          test_timeout = float(sys.argv[i+1])
-      if sys.argv[i] == '-xyz':
-        if len(sys.argv) > i+3:
-          xyz = [float(sys.argv[i+1]), float(sys.argv[i+2]), float(sys.argv[i+3])]
-      if sys.argv[i] == '-rpy':
-        if len(sys.argv) > i+3:
-          rpy = [float(sys.argv[i+1]), float(sys.argv[i+2]), float(sys.argv[i+3])]
-      if sys.argv[i] == '-mag':
+          timeout = float(sys.argv[i+1])
+      if sys.argv[i] == '-cutoff_dist':
         if len(sys.argv) > i+1:
-          magnetic_cutoff = float(sys.argv[i+1])
-      if sys.argv[i] == '-tol':
+          holder_cutoff = float(sys.argv[i+1])
+      if sys.argv[i] == '-linear_p':
         if len(sys.argv) > i+1:
-          tolerance = float(sys.argv[i+1])
+          linear_gain_p = float(sys.argv[i+1])
+      if sys.argv[i] == '-angular_p':
+        if len(sys.argv) > i+1:
+          angular_gain_p = float(sys.argv[i+1])
 
-    pub_pose = rospy.Publisher("set_plug_pose", Odometry)
-    rospy.Subscriber("plug_pose_ground_truth", Odometry, plugP3DInput)
-    rospy.Subscriber("plug_magnet_pose_ground_truth", Odometry, magnetP3DInput)
+    pub_wrench = rospy.Publisher("/plug_force", Wrench)
+    rospy.Subscriber("/plug_pose_ground_truth", Odometry, plugP3DInput)
+    rospy.Subscriber("/plug_holder_1_pose_ground_truth", Odometry, holderP3DInput)
+    rospy.Subscriber("/r_gripper_tool_frame_pose_ground_truth", Odometry, gripperP3DInput)
 
     rospy.init_node(NAME, anonymous=True)
 
-    timeout_t = time.time() + test_timeout
+    timeout_t = time.time() + timeout
 
-    # wait for result
-    while not goal_reached and not rospy.is_shutdown() and time.time() < timeout_t:
-      if in_magnet_range:
-        #create a temp header for publishers
-        h = rospy.Header();
-        h.stamp = rospy.get_rostime();
-        h.frame_id = "/map"
-        # publish pose
-        p = Point(xyz[0]+magnet_p[0],xyz[1]+magnet_p[1],xyz[2]+magnet_p[2])
-        tmpq = tft.quaternion_multiply(tft.quaternion_from_euler(rpy[0],rpy[1],rpy[2],'rxyz'),magnet_q)
-        q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
-        pose = PoseWithCovariance(Pose(p,q),COV)
-        #pose = PoseWithCovariance(Pose(Point(0.2,0,0.2),Quaternion(0,0,0,1)),COV)
-        poseWithRatesStamped = Odometry(h,"/map",pose,TwistWithCovariance());
-        pub_pose.publish(poseWithRatesStamped)
-        time.sleep(1.05)
+    # apply forces
+    while not rospy.is_shutdown() and time.time() < timeout_t:
+      if holder_position_initialized and plug_position_initialized and gripper_position_initialized:
+        holder_linear_offset  = [ holder_p[0] - plug_p[0], holder_p[1] - plug_p[1], holder_p[2] - plug_p[2] ]
+        holder_angular_offset = [ holder_e[0] - plug_e[0], holder_e[1] - plug_e[1], holder_e[2] - plug_e[2] ]
+        gripper_linear_offset  = [ gripper_p[0] - plug_p[0], gripper_p[1] - plug_p[1], gripper_p[2] - plug_p[2] ]
+        gripper_angular_offset = [ gripper_e[0] - plug_e[0], gripper_e[1] - plug_e[1], gripper_e[2] - plug_e[2] ]
+        holder_dist = (holder_linear_offset[0]*holder_linear_offset[0] + holder_linear_offset[1]*holder_linear_offset[1] + holder_linear_offset[2]*holder_linear_offset[2])
+        gripper_dist = (gripper_linear_offset[0]*gripper_linear_offset[0] + gripper_linear_offset[1]*gripper_linear_offset[1] + gripper_linear_offset[2]*gripper_linear_offset[2])
+        if holder_dist <= holder_cutoff*holder_cutoff and holder_dist < gripper_dist:
+          in_holder_range = True
+          in_gripper_range = False
+        else:
+          if gripper_dist < gripper_cutoff*gripper_cutoff:
+            in_holder_range = False
+            in_gripper_range = True
+        if in_holder_range:
+          linear_error  = [ linear_gain_p*holder_linear_offset[0]/abs(holder_linear_offset[0]*holder_linear_offset[0]*holder_linear_offset[0]+0.001), \
+                            linear_gain_p*holder_linear_offset[1]/abs(holder_linear_offset[1]*holder_linear_offset[1]*holder_linear_offset[1]+0.001), \
+                            linear_gain_p*holder_linear_offset[2]/abs(holder_linear_offset[2]*holder_linear_offset[2]*holder_linear_offset[2]+0.001) ]
+          angular_error  = [ angular_gain_p*holder_angular_offset[0]/abs(holder_angular_offset[0]*holder_angular_offset[0]*holder_angular_offset[0]+0.001), \
+                             angular_gain_p*holder_angular_offset[1]/abs(holder_angular_offset[1]*holder_angular_offset[1]*holder_angular_offset[1]+0.001), \
+                             angular_gain_p*holder_angular_offset[2]/abs(holder_angular_offset[2]*holder_angular_offset[2]*holder_angular_offset[2]+0.001) ]
+        else:
+          if in_gripper_range:
+            linear_error  = [ linear_gain_p*gripper_linear_offset[0]/abs(gripper_linear_offset[0]*gripper_linear_offset[0]*gripper_linear_offset[0]+0.001), \
+                              linear_gain_p*gripper_linear_offset[1]/abs(gripper_linear_offset[1]*gripper_linear_offset[1]*gripper_linear_offset[1]+0.001), \
+                              linear_gain_p*gripper_linear_offset[2]/abs(gripper_linear_offset[2]*gripper_linear_offset[2]*gripper_linear_offset[2]+0.001) ]
+            angular_error  = [0,0,0]
+          else:
+            linear_error  = [0,0,0]
+            angular_error  = [0,0,0]
+
+        # publish wrench
+        wrench = Wrench(Vector3(linear_error[0],linear_error[1],linear_error[2]),Vector3(angular_error[0],angular_error[1],angular_error[2]))
+        pub_wrench.publish(wrench)
+      if update_rate > 0:
+        time.sleep(1.0/update_rate)
+      else:
+        time.sleep(0.001)
 
 def print_usage(exit_code = 0):
     print '''Commands:
-    -timeout <seconds> - test timeout in seconds. default to 50 seconds
+    -timeout <seconds> - test timeout in seconds. default to 5000 seconds
     -xyz <x> <y> <z>
     -rpy <roll> <pitch> <yaw>
 '''
