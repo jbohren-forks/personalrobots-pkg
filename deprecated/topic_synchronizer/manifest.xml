@@ -1,0 +1,12 @@
+<package>
+  <description>A class to synchronize incoming topics with the same timestamp.</description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <export>
+    <cpp cflags="-I${prefix}/include -D__STDC_LIMIT_MACROS `rosboost-cfg --cflags`" lflags="`rosboost-cfg --lflags thread`"/>
+  </export>
+  <url>http://pr.willowgarage.com/wiki/topic_synchronizer</url>
+</package>
