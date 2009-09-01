@@ -16,5 +16,13 @@
   <depend package="gazebo_worlds" />
   <depend package="sensor_msgs" />
   <depend package="stereo_image_proc" />
-  <depend package="2dnav_pr2" />
+
+  <!-- for laser scan -->
+  <depend package="pr2_mechanism_control"/>
+  <depend package="pr2_mechanism_controllers"/>
+  <depend package="semantic_point_annotator"/>
+  <depend package="laser_filters"/>
+  <depend package="mux"/>
+  <depend package="robot_self_filter"/>
+
 </package>

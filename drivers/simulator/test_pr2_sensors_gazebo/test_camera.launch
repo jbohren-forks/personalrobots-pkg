@@ -18,7 +18,6 @@
   <!-- load controllers -->
   <include file="$(find pr2_default_controllers)/pr2_base_controller_odom.launch"/>
   <include file="$(find pr2_default_controllers)/head_position_controller.launch"/>
-  <include file="$(find 2dnav_pr2)/config/lasers_and_filters.xml" />
 
   <!-- starting up stereos -->
   <include file="$(find stereo_image_proc)/narrow_stereoproc.launch" />
