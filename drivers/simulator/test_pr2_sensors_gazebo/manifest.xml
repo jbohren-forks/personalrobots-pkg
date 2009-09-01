@@ -16,4 +16,5 @@
   <depend package="gazebo_worlds" />
   <depend package="sensor_msgs" />
   <depend package="stereo_image_proc" />
+  <depend package="2dnav_pr2" />
 </package>
