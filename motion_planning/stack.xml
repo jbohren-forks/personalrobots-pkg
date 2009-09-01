@@ -8,17 +8,20 @@
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/motion_planning</url>
-  <depend stack="visualization"/> <!-- rviz --> 
-  <depend stack="3rdparty"/> <!-- nepumuk, libsunflower --> 
-  <depend stack="geometry"/> <!-- tf, kdl, bullet, angles --> 
-  <depend stack="semantic_mapping"/> <!-- door_handle_detector --> 
-  <depend stack="visualization_common"/> <!-- visualization_msgs --> 
-  <depend stack="mechanism"/> <!-- kdl_parser, mechanism_msgs --> 
-  <depend stack="util"/> <!-- geometric_shapes, pr2_ik --> 
-  <depend stack="sandbox"/> <!-- robot_voxelizer, pr2_robot_actions, manipulation_srvs, mapping_msgs, manipulation_msgs, voxel3d --> 
-  <depend stack="highlevel"/> <!-- door_msgs, door_functions --> 
-  <depend stack="ros"/> <!-- rosconsole, roslib, std_msgs, roscpp --> 
-  <depend stack="navigation"/> <!-- navfn, costmap_2d --> 
-  <depend stack="common_msgs"/> <!-- geometry_msgs --> 
+  <depend stack="visualization"/> <!-- rviz -->
+  <depend stack="manipulation_common"/> <!-- trajectory, mapping_msgs, geometric_shapes, manipulation_msgs, manipulation_srvs -->
+  <depend stack="3rdparty"/> <!-- nepumuk, libsunflower -->
+  <depend stack="robot_model"/> <!-- urdf, resource_retriever, kdl_parser -->
+  <depend stack="geometry"/> <!-- tf, kdl, bullet, angles -->
+  <depend stack="pr2_mechanism"/> <!-- pr2_mechanism_msgs -->
+  <depend stack="semantic_mapping"/> <!-- door_handle_detector -->
+  <depend stack="visualization_common"/> <!-- ogre_tools, visualization_msgs -->
+  <depend stack="controllers"/> <!-- pr2_mechanism_controllers, robot_mechanism_controllers -->
+  <depend stack="sandbox"/> <!-- robot_voxelizer, pr2_robot_actions, voxel3d -->
+  <depend stack="highlevel"/> <!-- door_msgs, move_arm, door_functions -->
+  <depend stack="ros"/> <!-- rosconsole, roslib, std_msgs, roscpp, rospy -->
+  <depend stack="navigation"/> <!-- navfn, costmap_2d -->
+  <depend stack="pr2_common"/> <!-- pr2_defs -->
+  <depend stack="common_msgs"/> <!-- nav_msgs, sensor_msgs, geometry_msgs -->
 
 </stack>
