@@ -21,7 +21,7 @@ var MapTile = Class.create({
     },
 
     load_image: function() {
-        var url = "http://cib.willowgarage.com:8080/map";
+        var url = 'http://' + window.location.hostname + ':8080/map/get_tile';
         url += '?x=' + this.left;
         url += '&y=' + this.top;
         url += '&width=' + this.width;
@@ -81,7 +81,9 @@ var MapViewer = Class.create({
         Event.observe(document, 'mouseup', this.handleMouseUp.bind(this));
         Event.observe(document, 'mousemove', this.handleMouseMove.bind(this));
         Event.observe(document, 'keypress', this.handleKeyPress.bind(this));
-        this.pressed = false;
+        this.panning = false;
+        this.settingGoal = false;
+        this.settingPose = false;
     },
 
     handleDblClick : function(e) {
@@ -94,20 +96,35 @@ var MapViewer = Class.create({
     },
 
     handleMouseDown : function(e) {
+        this.mark = [Event.pointerX(e), Event.pointerY(e)];
         if (Event.isLeftClick(e)) {
-            this.pressed = true;
-            this.mark = [Event.pointerX(e), Event.pointerY(e)];
+            this.panning = true;
+        } else if (Event.isMiddleClick(e)) {
+            this.settingGoal = true;
         }
     },
 
     handleMouseUp : function(e) {
         if (Event.isLeftClick(e)) {
-            this.pressed = false;
+            this.panning = false;
+        } else if (Event.isMiddleClick(e)) {
+            this.settingGoal = false;
+            var dx = Event.pointerX(e) - this.mark[0];
+            var dy = Event.pointerY(e) - this.mark[1];
+            var angle = Math.atan2(-dy, dx);
+            var off = this.viewer.cumulativeOffset();
+            var pos = this.pixelToMap([this.mark[0]-off.left, this.mark[1]-off.top]);
+            var url = 'http://' + window.location.hostname + ':8080';
+            url += '/map/set_goal';
+            url += '?x=' + pos.x;
+            url += '&y=' + pos.y;
+            url += '&angle=' + angle;
+            getDataFromServer('_set_goal_pump', url);
         }
     },
 
     handleMouseMove : function(e) {
-        if (this.pressed) {
+        if (this.panning) {
             var old_mark = this.mark;
             this.mark = [Event.pointerX(e), Event.pointerY(e)];
             this.panMap(this.mark[0] - old_mark[0],
@@ -170,6 +187,15 @@ var MapViewer = Class.create({
             if (dx || dy) tile.move(dx, dy);
         }
         this.drawRobot();
+    },
+
+    pixelToMap: function(p) {
+        result = {'x': 0, 'y': 0};
+        var x = p[0] - parseInt(this.panner.style.left);
+        var y = p[1] - parseInt(this.panner.style.top);
+        result.x = x * this.sourceResolution * this.scale;
+        result.y = (this.sourceHeight / this.scale - y) * this.sourceResolution * this.scale;
+        return result;
     },
 
     mapToPixel: function(p) {
