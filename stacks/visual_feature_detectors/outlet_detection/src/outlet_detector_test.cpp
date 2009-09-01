@@ -7,9 +7,6 @@ Created by: Alexey Latyshev
 
 #include "outlet_detection/outlet_detector_test.h"
 #include "outlet_detection/ferns_detector_outlets.h"
-//#include "outlet_detection/one_way_descriptor.h"
-//#include "outlet_detection/one_way_descriptor_base.h"
-//#include "outlet_detection/one_way_outlets.h"
 #include "outlet_detection/constellation.h"
 
 #define DETECT_NA -1

@@ -58,9 +58,10 @@ void calcExactLocation4(vector<feature_t>& features, vector<feature_t>& outlet);
 //		  train_features - train outlet 
 //		  src_outlet - test outlet for which we try to calculate exact location
 //		  accuracy - max distance for feature selecting
+//		  useSecondAttraction - try to set correspondence between image features and outlet after mapping
 // OUTPUT: dst_outlet
 //		   reprojectionError - reprojection error for affine transform
-void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& train_features, vector<feature_t>& src_outlet, vector<feature_t>& dst_outlet, float& reprojectionError, int accuracy = 10);
+void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& train_features, vector<feature_t>& src_outlet, vector<feature_t>& dst_outlet, float& reprojectionError, int accuracy = 10, bool useSecondAttraction = true);
 void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& train_features, vector<feature_t>& src_outlet, vector<feature_t>& dst_outlet, float& reprojectionError, int accuracy = 10);
 
 // Main function for GeneralizedHough transform

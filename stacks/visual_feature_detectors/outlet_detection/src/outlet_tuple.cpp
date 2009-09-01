@@ -1092,11 +1092,10 @@ int outlet_template_t::load(const char* path)
     
     cvReleaseFileStorage(&fs);
     cvReleaseMemStorage(&storage);
-    
     create_one_way_descriptor_base();
     
     delete [] _outlet_centers;
-    
+
     return 1;
 }
 

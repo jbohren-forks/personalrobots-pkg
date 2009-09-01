@@ -556,6 +556,93 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     cvReleaseImage(&image2);
 }
 //------------------------------
+float calc_outlet_position(const vector<feature_t>& hole_candidates, const outlet_template_t& outlet_template, 
+						   vector<int>& desc_idx_vec, vector<int>& pose_idx_vec, vector<int>& idx_filtered,
+						   vector<outlet_t>& outlet)
+{
+	vector<feature_t> _hole_candidates = hole_candidates;
+	CvOneWayDescriptorObject* descriptors = const_cast<CvOneWayDescriptorObject*>(outlet_template.get_one_way_descriptor_base());
+    float modelErrorMin = 1e30;
+	float modelError = modelErrorMin;
+	outlet.clear();
+	vector<feature_t> outlet_features;
+
+
+	CvMat* transform = cvCreateMat(2, 3, CV_32FC1);
+    for(int i = 0; i < descriptors->GetPyrLevels(); i++)
+    {
+        vector<feature_t> train_features;
+        ScaleFeatures(descriptors->_GetLabeledFeatures(), train_features, 1.0f/(1<<i));
+		float accuracy = sqrt((float)((train_features[1].pt.x -train_features[0].pt.x)*(train_features[1].pt.x -train_features[0].pt.x)+
+			(train_features[1].pt.y -train_features[0].pt.y)*(train_features[1].pt.y -train_features[0].pt.y)));      
+	
+		for (int j=0;j<(int)hole_candidates.size();j++)
+		{
+			//if (hole_candidates[j].class_id < 1)
+			//	continue;
+
+			vector<feature_t> t_features = train_features;
+			CvAffinePose pose = descriptors->GetDescriptor(desc_idx_vec[idx_filtered[j]])->GetPose(pose_idx_vec[idx_filtered[j]]);
+
+			GenerateAffineTransformFromPose(cvSize(descriptors->GetPatchSize().width*2, descriptors->GetPatchSize().height*2),pose,transform);
+			for (int k=0;k<(int)train_features.size();k++)
+			{
+				t_features[k].pt.x = cvmGet(transform,0,0)*train_features[k].pt.x+cvmGet(transform,0,1)*train_features[k].pt.y+cvmGet(transform,0,2);
+				t_features[k].pt.y = cvmGet(transform,1,0)*train_features[k].pt.x+cvmGet(transform,1,1)*train_features[k].pt.y+cvmGet(transform,1,2);
+			}
+			
+
+			for (int k=0;k<(int)(t_features.size());k++)
+			{
+				if (t_features[k].class_id != hole_candidates[j].class_id)
+					continue;
+				vector<feature_t> test_outlet = t_features;
+				vector<feature_t> res_outlet;
+
+				for (int l=0;l<(int)t_features.size();l++)
+				{
+					test_outlet[l].pt.x += (hole_candidates[j].pt.x - t_features[k].pt.x);
+					test_outlet[l].pt.y += (hole_candidates[j].pt.y - t_features[k].pt.y);
+				}
+				
+				float error;
+				calcExactLocation(_hole_candidates,train_features,test_outlet,res_outlet,error,accuracy,false);
+
+				if (error < modelError)
+				{
+					modelError = error;
+					outlet_features = res_outlet;
+				}
+
+			}
+
+		}
+	}
+
+	cvReleaseMat(&transform);
+	if ((int)outlet_features.size() == 0)
+	{
+		return modelErrorMin;
+	}
+	else
+	{
+
+		outlet_t curr_outlet;
+
+		for (int i=0;i<(int)outlet_features.size()/3;i++)
+		{
+			curr_outlet.hole1 = outlet_features[2*i].pt;
+			curr_outlet.hole2 = outlet_features[2*i+1].pt;
+			curr_outlet.ground_hole = outlet_features[2*(int)outlet_features.size()/3+i].pt;
+			outlet.push_back(curr_outlet);
+		}
+
+		return modelError;
+	}
+
+}
+
+
 void detect_outlets_one_way_2(IplImage* test_image, const outlet_template_t& outlet_template, 
                             vector<outlet_t>& holes, IplImage* color_image, 
                             const char* output_path, const char* output_filename)
@@ -655,106 +742,29 @@ void detect_outlets_one_way_2(IplImage* test_image, const outlet_template_t& out
 
 	FilterOutletFeatures(hole_candidates, hole_candidates_filtered, idx_filtered, dist*4);
     hole_candidates = hole_candidates_filtered;
-	vector<feature_t> train_features = descriptors->_GetLabeledFeatures();
-	CvMat* transform = cvCreateMat(2, 3, CV_32FC1);
-	for (int i=0;i<(int)hole_candidates.size();i++)
+
+
+	int64 time_calc = cvGetTickCount();
+	calc_outlet_position(hole_candidates,outlet_template,desc_idx_vec, pose_idx_vec,idx_filtered,holes);
+	int64 time_calc2 = cvGetTickCount();
+	printf("Outlet position calculated. Time elapsed: %f\n", float(time_calc2 - time_calc)/cvGetTickFrequency()*1e-6);   
+
+#if defined(_VERBOSE)
+	for (int i = 0; i<(int)holes.size();i++)
 	{
-		vector<feature_t> features = train_features;
-		CvAffinePose pose = descriptors->GetDescriptor(desc_idx_vec[idx_filtered[i]])->GetPose(pose_idx_vec[idx_filtered[i]]);
 
-		GenerateAffineTransformFromPose(cvSize(descriptors->GetPatchSize().width*2, descriptors->GetPatchSize().height*2),pose,transform);
-		for (int j=0;j<(int)train_features.size();j++)
-		{
-			features[j].pt.x = cvmGet(transform,0,0)*train_features[j].pt.x+cvmGet(transform,0,1)*train_features[j].pt.y+cvmGet(transform,0,2);
-			features[j].pt.y = cvmGet(transform,1,0)*train_features[j].pt.x+cvmGet(transform,1,1)*train_features[j].pt.y+cvmGet(transform,1,2);
-		}
-		
-		CvPoint vec;
-		if (hole_candidates[i].class_id == 0)
-		{
-			vec.x = hole_candidates[i].pt.x - features[0].pt.x;
-			vec.y = hole_candidates[i].pt.y - features[0].pt.y;
-		}
-		else
-		{
-			
-			vec.x = hole_candidates[i].pt.x - features[(int)(features.size())-1].pt.x;
-			vec.y = hole_candidates[i].pt.y - features[(int)(features.size())-1].pt.y;
-		}
-		//IplImage* r = cvCloneImage(color_image);
+		CvScalar powerColor = cvScalar(0,255,50);
+		CvScalar groundColor =  cvScalar(255,0,50);
+		cvLine(image1, cvPoint((int)(holes[i].hole1.x+7), (int)(holes[i].hole1.y)), cvPoint((int)(holes[i].hole1.x-7),(int)(holes[i].hole1.y)),powerColor,2); 
+		cvLine(image1, cvPoint((int)(holes[i].hole2.x+7), (int)(holes[i].hole2.y)), cvPoint((int)(holes[i].hole2.x-7),(int)(holes[i].hole2.y)),powerColor,2); 
+		cvLine(image1, cvPoint((int)(holes[i].ground_hole.x+7), (int)(holes[i].ground_hole.y)), cvPoint((int)(holes[i].ground_hole.x-7),(int)(holes[i].ground_hole.y)),groundColor,2); 
 
-		//CvScalar color_parts[] = {CV_RGB(255, 255, 0), CV_RGB(0, 255, 255)};
-		//for(int j = 0; j < (int)features.size(); j++)
-		//{
-		//	CvPoint center;
-		//	center.x = features[j].pt.x + vec.x; 
-		//	center.y = features[j].pt.y + vec.y; 
-		//	cvCircle(r, center, features[j].size, color_parts[features[j].class_id], 2);
-		//}
-
-		//char p[1024];
-		//sprintf(p,"d:/temp/tmp/%d.jpg",i);
-		//cvSaveImage(p,r);
-		//cvReleaseImage(&r);
-		
+		cvLine(image1, cvPoint((int)(holes[i].hole1.x), (int)(holes[i].hole1.y+7)), cvPoint((int)(holes[i].hole1.x),(int)(holes[i].hole1.y-7)),powerColor,2); 
+		cvLine(image1, cvPoint((int)(holes[i].hole2.x), (int)(holes[i].hole2.y+7)), cvPoint((int)(holes[i].hole2.x),(int)(holes[i].hole2.y-7)),powerColor,2); 
+		cvLine(image1, cvPoint((int)(holes[i].ground_hole.x), (int)(holes[i].ground_hole.y+7)), cvPoint((int)(holes[i].ground_hole.x),(int)(holes[i].ground_hole.y-7)),groundColor,2); 
 	}
+#endif
 
-	cvReleaseMat(&transform);
-
-    vector<int> indices;
-
-#if defined(_GHT) // Test histogram calculating
-	int x_size = test_image->width/10;
-	int y_size = test_image->height/10;
-	int x_scale_size = 7;
-	int y_scale_size = 7;
-	int angle1_size = 7;
-	int angle2_size = 7;
-	int hist_size[] = {x_size, y_size, angle1_size, x_scale_size, y_scale_size, angle2_size};
-	float x_ranges[] ={ 0, test_image->width }; 
-	float y_ranges[] = { 0, test_image->height };
-	float angle1_ranges[] = { -CV_PI/4, CV_PI/4 };
-	float angle2_ranges[] = { -CV_PI/4, CV_PI/4 };
-	float x_scale_ranges[] = { 0.7, 1.1 };
-	float y_scale_ranges[] = { 0.7, 1.1 };
-	float* ranges[] ={ x_ranges, y_ranges, angle1_ranges, x_scale_ranges, y_scale_ranges, angle2_ranges};
-
-    float modelErrorMin = 1e10;
-#if defined(_VERBOSE)
-    IplImage* _image1 = cvCloneImage(color_image);
-#endif //_VERBOSE
-    for(int i = 0; i < descriptors->GetPyrLevels(); i++)
-    {
-        vector<feature_t> train_features;
-        ScaleFeatures(descriptors->_GetLabeledFeatures(), train_features, 1.0f/(1<<i));
-        
-        vector<outlet_t> _holes;
-                
-#if defined(_VERBOSE) 
-        cvCopy(color_image, _image1);
-        float modelError = generalizedHoughTransform(hole_candidates,train_features,hist_size,ranges,_holes, image2,_image1);
-#else
-        float modelError = generalizedHoughTransform(hole_candidates,train_features,hist_size,ranges,_holes);
-#endif //_VERBOSE
-        
-        if(modelError < modelErrorMin)
-        {
-            modelErrorMin = modelError;
-            holes = _holes;
-            printf("Picked up scale %d\n", i);
-#if defined(_VERBOSE)
-            cvCopy(_image1, image1);
-#endif //_VERBOSE
-
-        }
-    }
-#if defined(_VERBOSE)
-    cvReleaseImage(&_image1);
-#endif //_VERBOSE
-    
-#endif //_GHT
-  
-    
     
     int64 time4 = cvGetTickCount();
     printf("Object detection completed. Time elapsed: %f\n", float(time4 - time3)/cvGetTickFrequency()*1e-6);

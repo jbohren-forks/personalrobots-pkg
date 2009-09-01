@@ -75,7 +75,7 @@ void read_training_base(const char* config_path, char* outlet_filename,
 
 void ferns_l_detector_initialize(PlanarObjectDetector& detector, LDetector& ldetector, const char* outlet_config_path, Mat& object, Size patchSize)
 {
-	PatchGenerator gen(0,256,15,true,0.6,1.5,-CV_PI,CV_PI,-CV_PI,CV_PI);
+	PatchGenerator gen(0,256,0,true,0.6,1.5,-CV_PI,CV_PI,-CV_PI,CV_PI);
 
 	char outlet_model[1024];
 	sprintf(outlet_model,"%s/%s",outlet_config_path,outlet_model_filename);

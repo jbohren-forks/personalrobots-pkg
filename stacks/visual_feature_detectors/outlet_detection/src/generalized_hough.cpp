@@ -1300,7 +1300,7 @@ void calcExactLocation4(vector<feature_t>& features, vector<feature_t>& outlet)
 	delete[] angles;
 }
 
-void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& train_features, vector<feature_t>& src_outlet, vector<feature_t>& dst_outlet, float& reprojectionError, int accuracy)
+void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& train_features, vector<feature_t>& src_outlet, vector<feature_t>& dst_outlet, float& reprojectionError, int accuracy, bool useSecondAttraction)
 {
 	if (((int)train_features.size()) == ((int)src_outlet.size()))
 	{
@@ -1399,56 +1399,59 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 			dst_outlet.clear();
 			MapFeaturesAffine(train_features, dst_outlet, homography);
 
-			for (int i=0;i< (int)(dst_outlet.size());i++)
+			if (useSecondAttraction)
 			{
+				for (int i=0;i< (int)(dst_outlet.size());i++)
+				{
 
-					// The second attraction
-					//Temp
-				int min_index = -1;
-				float min_distance = (float)1e38;
-				float last_min_distance;
-				for (int j=0;j<(int)features.size();j++)
-				{				
-					if (features[j].class_id == dst_outlet[i].class_id)
-					{
-						float distance = (features[j].pt.x - dst_outlet[i].pt.x)*(features[j].pt.x - dst_outlet[i].pt.x)+
-							(features[j].pt.y - dst_outlet[i].pt.y)*(features[j].pt.y - dst_outlet[i].pt.y);
-						if (distance < min_distance)
+						// The second attraction
+						//Temp
+					int min_index = -1;
+					float min_distance = (float)1e38;
+					float last_min_distance;
+					for (int j=0;j<(int)features.size();j++)
+					{				
+						if (features[j].class_id == dst_outlet[i].class_id)
 						{
-							last_min_distance = distance;
-							//setting min distance to power holes distance / 3
-							float acc = (float)((train_features[1].pt.x - train_features[0].pt.x)*(train_features[1].pt.x - train_features[0].pt.x)+
-											(train_features[1].pt.y - train_features[0].pt.y)*(train_features[1].pt.y - train_features[0].pt.y))/9;
-							if (distance < acc)
-							{
-								min_distance = distance;
-								min_index = j;
-							}
-						}	
-						else
-						{
-							if (distance < last_min_distance)
+							float distance = (features[j].pt.x - dst_outlet[i].pt.x)*(features[j].pt.x - dst_outlet[i].pt.x)+
+								(features[j].pt.y - dst_outlet[i].pt.y)*(features[j].pt.y - dst_outlet[i].pt.y);
+							if (distance < min_distance)
 							{
 								last_min_distance = distance;
+								//setting min distance to power holes distance / 3
+								float acc = (float)((train_features[1].pt.x - train_features[0].pt.x)*(train_features[1].pt.x - train_features[0].pt.x)+
+												(train_features[1].pt.y - train_features[0].pt.y)*(train_features[1].pt.y - train_features[0].pt.y))/9;
+								if (distance < acc)
+								{
+									min_distance = distance;
+									min_index = j;
+								}
+							}	
+							else
+							{
+								if (distance < last_min_distance)
+								{
+									last_min_distance = distance;
+								}
 							}
 						}
 					}
-				}
-				if (min_index >= 0)
-				{
-					if (((min_distance > 0) && (last_min_distance/min_distance <= max_diff_coeff))||(min_distance == 0))
-						dst_outlet[i] = features[min_index];
-					
-				}
-				else
-
-					//End
-
-					if (indexes[i] >=0)
+					if (min_index >= 0)
 					{
-						dst_outlet[i] = features[indexes[i]];
+						if (((min_distance > 0) && (last_min_distance/min_distance <= max_diff_coeff))||(min_distance == 0))
+							dst_outlet[i] = features[min_index];
+						
 					}
-			}			
+					else
+
+						//End
+
+						if (indexes[i] >=0)
+						{
+							dst_outlet[i] = features[indexes[i]];
+						}
+				}	
+			}
 
 
 			//// Other calculation of reproj. error

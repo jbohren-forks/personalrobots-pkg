@@ -78,7 +78,12 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     cvReleaseImage(&red1);
     cvSetImageCOI(src, 0);
 #endif //_RED
+#if defined (_ONE_WAY_POSES)
+	detect_outlets_one_way_2(red, outlet_templ, outlets, src, output_path, filename);
+#else
     detect_outlets_one_way(red, outlet_templ, outlets, src, output_path, filename);
+#endif
+
 #endif
     
     if(outlets.size() != (size_t)outlet_templ.get_count())
