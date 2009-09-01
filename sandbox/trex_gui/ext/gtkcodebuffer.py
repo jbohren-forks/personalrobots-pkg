@@ -1,1 +1,0 @@
-PyGTKCodeBuffer-1.0-RC2/build/lib/gtkcodebuffer.py
