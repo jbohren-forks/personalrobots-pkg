@@ -11,7 +11,7 @@
   <depend stack="stereo"/> <!-- stereo_utils, stereo_msgs -->
   <depend stack="camera_drivers"/> <!-- prosilica_camera -->
   <depend stack="laser_pipeline"/> <!-- point_cloud_assembler -->
-  <depend stack="imaging_pipeline"/> <!-- stereo_image_proc -->
+  <depend stack="image_pipeline"/> <!-- stereo_image_proc -->
   <depend stack="geometry"/> <!-- tf, eigen, bullet -->
   <depend stack="semantic_mapping"/> <!-- point_cloud_mapping -->
   <depend stack="visualization_common"/> <!-- visualization_msgs -->
