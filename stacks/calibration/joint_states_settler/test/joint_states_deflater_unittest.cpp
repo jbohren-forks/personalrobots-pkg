@@ -37,7 +37,7 @@
 
 using namespace std;
 using namespace joint_states_settler;
-using namespace pr2_mechanism_msgs;
+using namespace sensor_msgs;
 
 static const double eps = 1e-10;
 
@@ -51,19 +51,22 @@ TEST(JointStatesDeflator, easy1)
   joint_names[1] = "C";
   deflater.setDeflationJointNames(joint_names);
 
-  JointStatesPtr joint_states;
+  JointStatePtr joint_states;
   DeflatedJointStates deflated_msg;
 
   // ***********************************************
 
-  joint_states.reset(new JointStates);
-  joint_states->joints.resize(3);
-  joint_states->joints[0].name = "A";
-  joint_states->joints[1].name = "B";
-  joint_states->joints[2].name = "C";
-  joint_states->joints[0].position = 1.0;
-  joint_states->joints[1].position = 2.0;
-  joint_states->joints[2].position = 3.0;
+  joint_states.reset(new JointState);
+  joint_states->name.resize(3);
+  joint_states->position.resize(3);
+  joint_states->velocity.resize(3);
+  joint_states->effort.resize(3);
+  joint_states->name[0] = "A";
+  joint_states->name[1] = "B";
+  joint_states->name[2] = "C";
+  joint_states->position[0] = 1.0;
+  joint_states->position[1] = 2.0;
+  joint_states->position[2] = 3.0;
 
   deflater.deflate(joint_states, deflated_msg);
 
@@ -73,14 +76,17 @@ TEST(JointStatesDeflator, easy1)
 
   // ***********************************************
 
-  joint_states.reset(new JointStates);
-  joint_states->joints.resize(3);
-  joint_states->joints[0].name = "C";
-  joint_states->joints[1].name = "A";
-  joint_states->joints[2].name = "B";
-  joint_states->joints[0].position = 4.0;
-  joint_states->joints[1].position = 5.0;
-  joint_states->joints[2].position = 6.0;
+  joint_states.reset(new JointState);
+  joint_states->name.resize(3);
+  joint_states->position.resize(3);
+  joint_states->velocity.resize(3);
+  joint_states->effort.resize(3);
+  joint_states->name[0] = "C";
+  joint_states->name[1] = "A";
+  joint_states->name[2] = "B";
+  joint_states->position[0] = 4.0;
+  joint_states->position[1] = 5.0;
+  joint_states->position[2] = 6.0;
 
   deflater.deflate(joint_states, deflated_msg);
 
@@ -90,16 +96,19 @@ TEST(JointStatesDeflator, easy1)
 
   // ***********************************************
 
-  joint_states.reset(new JointStates);
-  joint_states->joints.resize(4);
-  joint_states->joints[0].name = "D";
-  joint_states->joints[1].name = "C";
-  joint_states->joints[2].name = "B";
-  joint_states->joints[3].name = "A";
-  joint_states->joints[0].position = 7.0;
-  joint_states->joints[1].position = 8.0;
-  joint_states->joints[2].position = 9.0;
-  joint_states->joints[3].position = 10.0;
+  joint_states.reset(new JointState);
+  joint_states->name.resize(4);
+  joint_states->position.resize(4);
+  joint_states->velocity.resize(4);
+  joint_states->effort.resize(4);
+  joint_states->name[0] = "D";
+  joint_states->name[1] = "C";
+  joint_states->name[2] = "B";
+  joint_states->name[3] = "A";
+  joint_states->position[0] = 7.0;
+  joint_states->position[1] = 8.0;
+  joint_states->position[2] = 9.0;
+  joint_states->position[3] = 10.0;
 
   deflater.deflate(joint_states, deflated_msg);
 
