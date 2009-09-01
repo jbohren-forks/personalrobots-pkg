@@ -1,6 +1,6 @@
 # Provides all the state & sensor information for
 # a single sweep of laser attached to some mechanism.
-# Most likely, this 'mechanism' will be the tilting stage
+# Most likely, this will be used with PR2's tilting laser mechanism
 Header header
 
 # Store the laser intrinsics. This is very similar to the
@@ -23,17 +23,6 @@ uint32 num_scans            # (Height)
 float32[] ranges            # (Image data)
 float32[] intensities       # (Image data)
 
-# Joint information
-# Store joint information associated with each scan
-uint32 joint_encoding
-float64[] joint_positions
-float64[] joint_velocities
-string[] joint_names
-uint32 POS_PER_PIXEL             = 0
-uint32 POS_PER_ROW_START         = 1
-uint32 POS_PER_ROW_START_AND_END = 2
-
 # 1D Data storing meta information for each scan/row
-# Currently in stable, time vectors are not serialized correctly
-time[] scan_start
-
+geometry_msgs/PoseStamped[] start_pose
+geometry_msgs/PoseStamped[] end_pose
