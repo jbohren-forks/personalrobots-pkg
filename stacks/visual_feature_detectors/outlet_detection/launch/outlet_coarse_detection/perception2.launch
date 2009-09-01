@@ -25,7 +25,7 @@
   </node>
 
 <!-- Laser scan assembler for tilt laser -->
-  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
+  <node pkg="laser_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
     <remap from="scan_in" to="tilt_scan"/>
     <param name="tf_cache_time_secs" type="double" value="10.0" />
     <param name="max_scans" type="int" value="1000" />
@@ -35,7 +35,7 @@
   </node>
 
 <!-- Point cloud assembler for tilt laser -->
-  <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" name="point_cloud_assembler" respawn="true">
+  <node pkg="laser_assembler" type="point_cloud_assembler_srv" name="point_cloud_assembler" respawn="true">
     <remap from="scan_in" to="tilt_laser_cloud_filtered" />
     <param name="tf_cache_time_secs" type="double" value="10.0" />
     <param name="tf_extrap_limit" type="double" value="0.01" />
@@ -44,14 +44,14 @@
   </node>
 
 <!-- point cloud snapshotter for tilt laser -->
-  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" name="snapshotter" respawn="true" >
+  <node pkg="pr2_laser_snapshotter" type="pr2_laser_snapshotter" name="snapshotter" respawn="true" >
     <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="full_cloud" to="full_cloud" />
   </node>
 
 <!-- Generate single sweep scan -->
-  <node pkg="point_cloud_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
+  <node pkg="pr2_laser_snapshotter" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
 
 
 </launch>

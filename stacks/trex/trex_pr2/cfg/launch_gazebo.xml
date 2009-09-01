@@ -22,7 +22,7 @@
       <env name="OPENRAVE_PLUGINS" value="$(find openrave)/share/openrave/plugins"/>
     </node>
 
-    <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv"  name="point_cloud_assembler" respawn="true">
+    <node pkg="laser_assembler" type="point_cloud_assembler_srv"  name="point_cloud_assembler" respawn="true">
       <remap from="scan_in" to="robotlinks_cloud_filtered" />
       <param name="tf_cache_time_secs" type="double" value="10.0" />
       <param name="max_scans" type="int" value="400" />
@@ -30,7 +30,7 @@
       <param name="downsample_factor" type="int" value="1" />
     </node>
 
-    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" name="snapshotter">
+    <node pkg="pr2_laser_snapshotter" type="pr2_laser_snapshotter" name="snapshotter">
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
       <remap from="full_cloud" to="point_cloud_snapshotted" />
       <remap from="build_cloud" to="/point_cloud_assembler/build_cloud" />

@@ -52,7 +52,7 @@
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PointStamped.h>
-#include <laser_scan/laser_scan.h>
+#include <laser_geometry/laser_geometry.h>
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
@@ -232,7 +232,7 @@ private:
   string vslam_frame_;
 
   // Used to project laser scans
-  laser_scan::LaserProjection projector_;
+  laser_geometry::LaserProjection projector_;
 
   // Previously observed scans.  Requires lock.
   ObsScanVector observed_scans_;

@@ -79,11 +79,10 @@
 
 // Clouds and scans
 #include <sensor_msgs/LaserScan.h>
-#include <laser_scan/laser_scan.h>
+#include <laser_geometry/laser_geometry.h>
 
 //Filters
 #include "filters/filter_chain.h"
-#include "laser_scan/scan_shadows_filter.h"
 
 using namespace std;
 using namespace sensor_msgs;
@@ -102,7 +101,7 @@ class DoorTracker
   public:
     ros::NodeHandle node_handle_;
     sensor_msgs::PointCloud cloud_;
-    laser_scan::LaserProjection projector_; // Used to project laser scans into point clouds
+    laser_geometry::LaserProjection projector_; // Used to project laser scans into point clouds
     tf::TransformListener tf_;
     boost::scoped_ptr<tf::MessageNotifier<sensor_msgs::LaserScan> > message_notifier_;
     door_msgs::Door door_msg_;
@@ -336,7 +335,7 @@ class DoorTracker
       done_detection_  = false;
       sensor_msgs::LaserScan filtered_scan;
       filter_chain_.update (*scan_msg, filtered_scan);// Transform into a PointCloud message
-      int mask = laser_scan::MASK_INTENSITY | laser_scan::MASK_DISTANCE | laser_scan::MASK_INDEX | laser_scan::MASK_TIMESTAMP;
+      int mask = laser_geometry::MASK_INTENSITY | laser_geometry::MASK_DISTANCE | laser_geometry::MASK_INDEX | laser_geometry::MASK_TIMESTAMP;
       try 
       {
         projector_.transformLaserScanToPointCloud(fixed_frame_, cloud_, filtered_scan, tf_, mask);

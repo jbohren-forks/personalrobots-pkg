@@ -71,7 +71,7 @@ public:
 
   std::string query_;
 
-  BindToObservation() 
+  BindToObservation()
   {
     pub_=n_.advertise<annotated_map_msgs::TaggedPolygonalMap> ("bound_map", 1) ;
 
@@ -95,36 +95,36 @@ public:
 
     QueryAnnotatedMap::Request map_req ;
     QueryAnnotatedMap::Response map_resp ;
-    
+
     req.begin = ros::Time(0.0);//start_time;
     req.end   = ros::Time::now();
     req.query = query_;
-    
+
     if (!ros::service::call("geom_global_map", req, resp))
     {
       ROS_ERROR("Failed to call query_annotated_map service.");
       return;
-    } 
+    }
 
 
     QueryAnnotatedMap::Request local_map_req ;
     QueryAnnotatedMap::Response local_map_resp ;
-    
+
     req.begin = ros::Time(0.0);//start_time;
     req.end   = ros::Time::now();
     req.query = query_;
-    
+
     if (!ros::service::call("geom_local_map", local_map_req, local_map_resp))
     {
       ROS_ERROR("Failed to call query_local_map service.");
       return;
-    } 
+    }
 
     annotated_map_msgs::TaggedPolygonalMap global_map_locally;
     annotated_map_lib::transformAnyObject(local_map_resp.map.frame_id,local_map_resp.map.stamp,tf_,local_map_resp.map,global_map_locally);
-    
+
     transferAnnotations(global_map_locally,local_map_resp.map,0.1);
-  
+
     ros::Node::instance()->publish("full_map", local_map_resp.map) ;
     ROS_DEBUG("Annotation binder::Published map size=%u", local_map_resp.map.get_polygons_size()) ;
 
@@ -142,8 +142,8 @@ public:
 	  break;
 	}
       }
-  }  
-  
+  }
+
 } ;
 
 }

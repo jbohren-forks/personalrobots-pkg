@@ -35,11 +35,11 @@
 #ifndef CALCLEGFEATURES_HH
 #define CALCLEGFEATURES_HH
 
-#include "laser_scan/laser_processor.h"
+#include "laser_geometry/laser_processor.h"
 #include "sensor_msgs/LaserScan.h"
 
 // TODO: Should remove scan dependency from here.
 // Only used for jump distance
-std::vector<float> calcLegFeatures(laser_scan::SampleSet* cluster, sensor_msgs::LaserScan& scan);
+std::vector<float> calcLegFeatures(laser_geometry::SampleSet* cluster, sensor_msgs::LaserScan& scan);
 
 #endif

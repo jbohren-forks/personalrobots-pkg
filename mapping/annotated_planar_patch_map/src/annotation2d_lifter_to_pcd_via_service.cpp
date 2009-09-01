@@ -76,7 +76,7 @@
 #include "object_names/Name2Float.h"
 #include "object_names/Name2Color.h"
 
-#include "point_cloud_assembler/BuildCloud.h"
+#include "laser_assembler/AssembleScans.h"
 
 
 #include "point_cloud_mapping/normal_estimation_in_proc.h"
@@ -96,7 +96,7 @@ class AnnotationLifterToPcdViaService
 {
 
 public:
-  AnnotationLifterToPcdViaService() 
+  AnnotationLifterToPcdViaService()
   {
   }
 
@@ -116,7 +116,7 @@ public:
     ROS_INFO_STREAM("Local fixed frame is " <<local_fixed_frame_);
 
     /*Geometry location tolerance -ignored now*/
-    n_.param( std::string("~dist_tolerance"), dist_tolerance_, -10.0); 
+    n_.param( std::string("~dist_tolerance"), dist_tolerance_, -10.0);
 
     n_.param( std::string("~max_depth"), max_depth_, 5.0);
     n_.param( std::string("~min_depth"), min_depth_, 0.01);
@@ -132,7 +132,7 @@ public:
     n_.param( std::string("~lifting_delay"), delay, 0.0);
     lifting_delay_=ros::Duration(delay);
     ROS_INFO_STREAM("Lifting delay:"<< lifting_delay_);
-        
+
 
     /*Geometry querying config */
     double interval;
@@ -156,7 +156,7 @@ public:
 
     lifted_pub_=n_.advertise<sensor_msgs::PointCloud>(out_topic_name_,1);
     //original_pub_=n_.advertise<sensor_msgs::PointCloud>(out_topic_name_,1);
-    
+
     annotation_notifier_=new tf::MessageNotifier<cv_mech_turk::ExternalAnnotation>(*tf_,
                                                                                    boost::bind(&AnnotationLifterToPcdViaService::handleAnnotation, this,_1),
                                                                                    std::string("annotations_2d"),
@@ -220,11 +220,11 @@ public:
         return;
       }
       active_image_id_=srv.response.id;
-      
+
     }
 
-    point_cloud_assembler::BuildCloud::Request req;
-    point_cloud_assembler::BuildCloud::Response resp;
+    laser_assembler::AssembleScans::Request req;
+    laser_assembler::AssembleScans::Response resp;
     req.begin = annotation->reference_time-interval_before_image_;
     req.end = annotation->reference_time+interval_after_image_;
 
@@ -239,8 +239,8 @@ public:
     }
   }
 
-  void liftAndSend(const boost::shared_ptr<cv_mech_turk::ExternalAnnotation const> annotation, 
-                   const boost::shared_ptr<sensor_msgs::CameraInfo const> cam_info, 
+  void liftAndSend(const boost::shared_ptr<cv_mech_turk::ExternalAnnotation const> annotation,
+                   const boost::shared_ptr<sensor_msgs::CameraInfo const> cam_info,
                    const sensor_msgs::PointCloud& cloud)
   {
     sensor_msgs::PointCloud transformed_map_3D;
@@ -276,14 +276,14 @@ public:
   }
 
 
-  void bindAnnotations(cv_mech_turk::ExternalAnnotationConstPtr annotation, 
-                       const sensor_msgs::PointCloud& map_2D, const sensor_msgs::PointCloud& map_3D, 
+  void bindAnnotations(cv_mech_turk::ExternalAnnotationConstPtr annotation,
+                       const sensor_msgs::PointCloud& map_2D, const sensor_msgs::PointCloud& map_3D,
                        sensor_msgs::PointCloud& map_final)
   {
 
     // Allocate overlap buffer to store 1-1 correspondence
     unsigned int num_3D_pts=map_3D.points.size();
-    printf("%d n3dp\n",num_3D_pts);	
+    printf("%d n3dp\n",num_3D_pts);
 
 
     std::vector<int> overlap;
@@ -313,7 +313,7 @@ public:
       object_colors[0]=blank_color;
     }
 
-    
+
     std::vector<std::pair<double,int > > polygon_areas;
     std::vector<geometry_msgs::Polygon > gPolygons;
 
@@ -323,9 +323,9 @@ public:
     for(unsigned int iAnnotatedPolygon=0;iAnnotatedPolygon<num_poly;iAnnotatedPolygon++)
     {
       ROS_INFO_STREAM(iAnnotatedPolygon);
-      const cv_mech_turk::AnnotationPolygon &poly=annotation->polygons[iAnnotatedPolygon]; 
+      const cv_mech_turk::AnnotationPolygon &poly=annotation->polygons[iAnnotatedPolygon];
       geometry_msgs::Polygon &poly2=gPolygons[iAnnotatedPolygon];
-      
+
       unsigned int pt_count=poly.get_control_points_size();
       poly2.points.resize(pt_count);
       ROS_INFO_STREAM("RSZ: "<<iAnnotatedPolygon);
@@ -343,15 +343,15 @@ public:
     }
 
     sort(polygon_areas.begin(),polygon_areas.end());
-  
+
     int num_in=0;
     for(unsigned int ordered_polygon_idx=0;ordered_polygon_idx<num_poly;ordered_polygon_idx++)
     {
       int iAnnotatedPolygon=polygon_areas[ordered_polygon_idx].second;
-      const cv_mech_turk::AnnotationPolygon &poly=annotation->polygons[iAnnotatedPolygon];    
+      const cv_mech_turk::AnnotationPolygon &poly=annotation->polygons[iAnnotatedPolygon];
 
       ROS_INFO_STREAM(ordered_polygon_idx << " \\ " << iAnnotatedPolygon);
-	
+
       unsigned int pt_count=poly.get_control_points_size();
       if(pt_count<3)
       {
@@ -379,7 +379,7 @@ public:
         object_names::Name2Color::Request req;
         object_names::Name2Color::Response resp;
         req.name=poly.object_name;
-        
+
         ros::service::call("name_to_color",req,resp);
         object_colors[iAnnotatedPolygon+1]=resp.color;
       }
@@ -411,21 +411,21 @@ public:
         pt.y=map_2D.points[iPt].y;
 
         double dist = cvPointPolygonTest( poly_annotation, pt, 0 );
-        
+
         if(dist>dist_tolerance_)
         {
           //If the point is inside the polygon, assign it to this annotation.
           num_in++;
           overlap[iPt]=iAnnotatedPolygon+1;
         }
-      }      
+      }
       cvReleaseMat( &poly_annotation );
     }
     for(unsigned int iPt = 0; iPt<num_3D_pts; iPt++)
     {
       if(overlap[iPt]>0)
         continue;
-      
+
       bool in_depth=(map_2D.points[iPt].z <= max_depth_) && (map_2D.points[iPt].z >= min_depth_);
       if(! in_depth)
       {
@@ -453,7 +453,7 @@ public:
     }
     if(use_colors_)
     {
-      nCout+=1;      
+      nCout+=1;
     }
     if(annotate_image_id_)
     {
@@ -530,14 +530,14 @@ public:
         for(unsigned int iC=0;iC<nC;iC++)
         {
           map_final.channels[iC].values[iOut]=map_3D.channels[iC].values[iPt];
-        }        
+        }
         if(overlap[iPt]>0)
           map_final.channels[new_channel_id].values[iOut] = object_labels[overlap[iPt]-1];
         else
           map_final.channels[new_channel_id].values[iOut] = 0;
 
         if(annotate_reprojection_)
-        {        
+        {
           map_final.channels[chan_X_id].values[iOut] = map_2D.points[iPt].x;
           map_final.channels[chan_Y_id].values[iOut] = map_2D.points[iPt].y;
           map_final.channels[chan_Z_id].values[iOut] = map_2D.points[iPt].z;
@@ -628,7 +628,7 @@ int main(int argc, char **argv)
   {
     fprintf(stderr, "%s\n", e.what());
   }
-  
+
   return 0;
 }
 

@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Alex Sorokin 
+//! \author Alex Sorokin
 
 #ifndef OBJDET_PLANAR_OBJECT_DETECTOR_H
 #define OBJDET_PLANAR_OBJECT_DETECTOR_H
@@ -63,7 +63,7 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
-#include <point_cloud_assembler/BuildCloud.h>
+#include <laser_assembler/AssembleScans.h>
 
 #include "labeled_object_detector/BoundingBox.h"
 #include "object_model.h"
@@ -75,9 +75,9 @@ class PlanarObjectDetector
 {
 protected:
   ros::NodeHandle n_;
-  
+
   boost::shared_ptr<tf::TransformListener> tf_;
-  
+
   double min_height_;
 
   double max_link_distance_;
@@ -95,15 +95,15 @@ protected:
   std::string fixed_frame_;
 
   sensor_msgs::PointCloud filtered_cloud_;
-  
+
   std::vector<int> cluster_ids_;
   unsigned int num_clusters_;
-  
+
   std::vector<std::vector<int> > clouds_by_indices_;
-  
-  std::vector<boost::shared_ptr<sample_consensus::SACModelPlane> > plane_models_; 
+
+  std::vector<boost::shared_ptr<sample_consensus::SACModelPlane> > plane_models_;
   std::vector<std::vector<double> > plane_coeffs_;
-  
+
   boost::shared_ptr<cloud_kdtree::KdTreeANN> object_points_kd_tree_;
 
 
@@ -119,7 +119,7 @@ public:
 
   void detectObjects(const sensor_msgs::PointCloud& point_cloud,ObjectModelDeque& objects);
 
-  bool fitSACPlane (const sensor_msgs::PointCloud& points, const std::vector<int> &indices, 
+  bool fitSACPlane (const sensor_msgs::PointCloud& points, const std::vector<int> &indices,
                     std::vector<int> &inliers, std::vector<double> &coeff, // output
                     boost::shared_ptr<sample_consensus::SACModelPlane> &model_output, // output
                     double dist_thresh, int min_points_per_model);

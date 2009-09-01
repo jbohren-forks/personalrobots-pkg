@@ -15,9 +15,6 @@
   <!-- mechanism -->
   <depend package="pr2_mechanism_msgs" />
 
-  <!-- common -->
-  <depend package="laser_scan" />
-
   <!-- common_msgs -->
   <depend package="sensor_msgs" />
 

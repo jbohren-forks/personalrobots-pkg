@@ -10,9 +10,9 @@
   <node pkg="pr2_mechanism_controllers" type="send_periodic_cmd_srv.py" args="laser_tilt_controller linear 10 .75 .25" />
   
   <!-- convert tilt laser scan to pointcloud -->
-  <node machine="three" pkg="laser_scan" type="scan_to_cloud" output="screen" name="scan_to_cloud_tilt_laser">
+  <node machine="three" pkg="laser_filters" type="scan_to_cloud_filter_chain" output="screen" name="scan_to_cloud_filter_chain_tilt_laser">
     <param name="scan_topic" type="string" value="tilt_scan" />
-    <rosparam command="load" ns="scan_filters" file="$(find laser_scan)/default_scan_shadows.yaml" />
+    <rosparam command="load" ns="scan_filters" file="$(find laser_filters)/examples/shadow_filter_example.yaml" />
     <param name="cloud_topic" type="string" value="tilt_scan_cloud" />
   </node>
 
@@ -37,7 +37,7 @@
   <include file="$(find 3dnav_pr2)/launch/perception/bits/tilt_laser_self_filter.launch" />
   
   <!-- assemble pointcloud into a full world view -->
-  <node machine="four" pkg="point_cloud_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler">
+  <node machine="four" pkg="laser_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler">
     <remap from="scan_in" to="tilt_scan_cloud_filtered"/>
     <param name="tf_cache_time_secs" type="double" value="10.0" />
     <param name="tf_tolerance_secs" type="double" value="0.0" />
@@ -47,7 +47,7 @@
     <param name="downsample_factor" type="int" value="2" />
   </node>
   
-  <node machine="four" pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+  <node machine="four" pkg="pr2_laser_snapshotter" type="pr2_laser_snapshotter" output="screen" name="snapshotter">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
     <remap from="full_cloud" to="full_cloud_filtered" />

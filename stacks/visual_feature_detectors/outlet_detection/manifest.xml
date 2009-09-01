@@ -20,7 +20,8 @@
   <depend package="stereo_image_proc"/>
   <depend package="stereo_utils"/>
   <depend package="point_cloud_mapping"/>
-  <depend package="point_cloud_assembler"/>
+  <depend package="laser_assembler"/>
+  <depend package="pr2_laser_snapshotter"/>
   <depend package="robot_actions"/>
   <depend package="pr2_robot_actions"/>
   <depend package="visualization_msgs" />

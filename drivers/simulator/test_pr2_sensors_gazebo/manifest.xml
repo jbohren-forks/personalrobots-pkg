@@ -14,7 +14,6 @@
   <depend package="pr2_gazebo" />
   <depend package="pr2_ogre" />
   <depend package="gazebo_worlds" />
-  <depend package="laser_scan" />
   <depend package="sensor_msgs" />
   <depend package="stereo_image_proc" />
 </package>

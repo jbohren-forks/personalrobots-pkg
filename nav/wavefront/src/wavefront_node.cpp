@@ -115,7 +115,7 @@ parameters.
 #include <tf/message_notifier.h>
 
 //Laser projection
-#include "laser_scan/laser_scan.h"
+#include "laser_geometry/laser_geometry.h"
 
 // For time support
 #include <ros/time.h>
@@ -211,7 +211,7 @@ class WavefrontNode: public ros::Node
     // Internal helpers
     void sendVelCmd(double vx, double vy, double vth);
 
-    laser_scan::LaserProjection projector_;
+    laser_geometry::LaserProjection projector_;
   public:
     // Transform listener
     tf::TransformListener tf;

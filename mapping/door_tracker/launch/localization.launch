@@ -3,7 +3,7 @@
     <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
     <!-- Filter for tilt laser shadowing/veiling -->
-    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" />
+    <node pkg="laser_filters" type="scan_shadows_filter_node" respawn="true" machine="three" />
 
     <param name="robot_pose_ekf/freq" value="30.0"/>
     <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>

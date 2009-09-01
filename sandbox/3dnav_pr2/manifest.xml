@@ -26,8 +26,8 @@
   <depend package="joint_waypoint_controller" />
 
   <!-- mapping -->
-  <depend package="laser_scan"/>
-  <depend package="point_cloud_assembler"/>
+  <depend package="laser_filters"/>
+  <depend package="laser_assembler"/>
   <depend package="robot_self_filter"/>
   <depend package="collision_map"/>
 

@@ -7,7 +7,7 @@
   <depend package="openraveros"/>
   <depend package="orplugins"/>
   <depend package="roslaunch"/>
-  <depend package="laser_scan"/>
+  <depend package="laser_filters"/>
   <depend package="or_robot_self_filter"/>
   <depend package="collision_map"/>
 </package>

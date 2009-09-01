@@ -81,7 +81,7 @@
 #include "pr2_robot_actions/DetectOutletState.h"
 
 
-#include <point_cloud_assembler/BuildCloudAngle.h>
+#include <pr2_laser_snapshotter/BuildCloudAngle.h>
 
 #include <boost/thread.hpp>
 

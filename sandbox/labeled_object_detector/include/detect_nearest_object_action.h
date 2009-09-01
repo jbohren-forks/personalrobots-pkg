@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Alex Sorokin 
+//! \author Alex Sorokin
 #ifndef OBJDET_DETECT_NEAREST_OBJECT_ACTION_H
 #define OBJDET_DETECT_NEAREST_OBJECT_ACTION_H
 
@@ -63,7 +63,7 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
-#include <point_cloud_assembler/BuildCloud.h>
+#include <laser_assembler/AssembleScans.h>
 
 #include "labeled_object_detector/BoundingBox.h"
 #include <planar_object_detector.h>
@@ -81,15 +81,15 @@ protected:
   PlanarObjectDetector detector_;
 
   ros::NodeHandle n_;
-  
+
   sensor_msgs::PointCloudConstPtr cloud_;
-  
+
   boost::shared_ptr<ros::Subscriber>  cloud_sub_;
   ros::Publisher  cloud_pub_;
   ros::Publisher  box_pub_;
 
   ros::Publisher marker_pub_;
-  
+
   boost::shared_ptr<tf::TransformListener> tf_;
   tf::TransformBroadcaster broadcaster_;
 

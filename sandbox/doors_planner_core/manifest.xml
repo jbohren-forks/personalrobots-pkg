@@ -31,7 +31,7 @@
   <depend package="costmap_2d"/>
   <depend package="base_local_planner"/>
   <depend package="door_functions"/>
-  <depend package="point_cloud_assembler"/>
+  <depend package="laser_assembler"/>
 
   <depend package="move_arm"/>
   <depend package="move_base"/>

@@ -3,7 +3,7 @@
   <param name="/use_sim_time" value="true"/>
 
   <!-- Get point clouds -->
-  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"
+  <node pkg="laser_assembler" type="laser_scan_assembler_srv" output="screen"
         name="laser_scan_assembler">
 
     <remap from="scan_in" to="tilt_scan"/>
@@ -14,7 +14,7 @@
     <param name="downsampling_factor" type="int" value="1" />
   </node>
   
-  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+  <node pkg="pr2_laser_snapshotter" type="pr2_laser_snapshotter" output="screen" name="snapshotter">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
     <remap from="full_cloud" to="snapshot_cloud" />

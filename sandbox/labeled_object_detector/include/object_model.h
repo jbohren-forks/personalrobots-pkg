@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Alex Sorokin 
+//! \author Alex Sorokin
 
 #ifndef OBJDET_OBJECT_MODEL_H
 #define OBJDET_OBJECT_MODEL_H
@@ -66,7 +66,7 @@
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/PointStamped.h>
 
-#include <point_cloud_assembler/BuildCloud.h>
+#include <laser_assembler/AssembleScans.h>
 
 #include "labeled_object_detector/BoundingBox.h"
 
@@ -85,7 +85,7 @@ public:
   geometry_msgs::PointStamped center_;
 
   virtual geometry_msgs::PointStamped getCenter();
-  
+
 
   inline geometry_msgs::PoseStamped getPose(){
     geometry_msgs::PoseStamped msg;

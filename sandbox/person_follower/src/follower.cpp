@@ -141,7 +141,7 @@ class Follower {
       boost::mutex::scoped_lock lock(tiltMutex);
 
       receivedTiltCloud = true;
-      laser_scan::LaserProjection proj;
+      laser_geometry::LaserProjection proj;
       proj.transformLaserScanToPointCloud("/base_footprint", lastTiltScan, *scan, tf_client_, 0, false);
   }
 

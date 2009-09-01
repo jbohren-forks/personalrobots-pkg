@@ -37,7 +37,7 @@
 
 
 
-#include "laser_scan/laser_processor.h"
+#include "laser_geometry/laser_processor.h"
 #include "calc_leg_features.h"
 
 #include "opencv/cxcore.h"
@@ -60,7 +60,7 @@
 #include <algorithm>
 
 using namespace std;
-using namespace laser_scan;
+using namespace laser_geometry;
 using namespace ros;
 using namespace tf;
 using namespace estimation;

@@ -15,7 +15,7 @@
   <depend package="kdl" />
   <depend package="angles" />
   <depend package="point_cloud_mapping" />
-  <depend package="point_cloud_assembler" />
+  <depend package="laser_assembler" />
   <depend package="std_msgs" />
   <depend package="opencv_latest"/>
   <depend package="sensor_msgs"/>

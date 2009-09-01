@@ -38,11 +38,11 @@
 #include "annotated_planar_patch_map/generic_map_base_assembler_srv.h"
 
 // Service
-#include "point_cloud_assembler/BuildCloud.h"
+#include "laser_assembler/AssembleScans.h"
 
 using namespace annotated_map_msgs;
 using namespace std ;
-using namespace point_cloud_assembler;
+using namespace laser_assembler;
 
 namespace annotated_planar_patch_map
 {
@@ -62,7 +62,7 @@ public:
   PcdAssemblerSrv() : GenericMapBaseAssemblerSrv<sensor_msgs::PointCloud,sensor_msgs::PointCloud>()
   {
     // ***** Start Services *****
-    svc_ = n_.advertiseService<BuildCloud::Request,BuildCloud::Response>("~build_cloud", boost::bind(&PcdAssemblerSrv::buildCloud, this,_1,_2)) ;
+    svc_ = n_.advertiseService<AssembleScans::Request,AssembleScans::Response>("~build_cloud", boost::bind(&PcdAssemblerSrv::buildCloud, this,_1,_2)) ;
 
   }
 
@@ -84,11 +84,11 @@ public:
   }
 
 
-  bool buildCloud(BuildCloud::Request& req, BuildCloud::Response& resp)
+  bool buildCloud(AssembleScans::Request& req, AssembleScans::Response& resp)
   {
     ROS_DEBUG("Starting Service Request\n") ;
     ROS_DEBUG_STREAM( "\tFrom: \t" << req.begin << "\n\tTo:\t" << req.end <<"\n") ;
-    
+
     scan_hist_mutex_.lock() ;
     // Determine where in our history we actually are
     unsigned int i = 0 ;
@@ -104,9 +104,9 @@ public:
       ROS_DEBUG_STREAM( "Last scan before the interval\t" << scan_hist_[i-1].header.stamp<<"\n" );
     else
       ROS_DEBUG_STREAM( "No scans before the interval\n");
-    
 
-    
+
+
 
     unsigned int req_pts = 0 ;                                                          // Keep a total of the points in the current request
   // Find the end of the request
@@ -121,7 +121,7 @@ public:
       ROS_DEBUG_STREAM( "First scan after the interval:\t" << scan_hist_[i].header.stamp << "\n");
     else
       ROS_DEBUG_STREAM( "No scans after the interval\n");
-    
+
     if (start_index == past_end_index)
     {
       resp.cloud.header.frame_id = fixed_frame_ ;
@@ -147,7 +147,7 @@ public:
         map.channels[iC].values.resize(req_pts);
         map.channels[iC].name=scan_hist_[start_index].channels[iC].name;
       }
-    
+
       unsigned int cloud_count = 0 ;
       for (i=start_index; i<past_end_index; i+=downsample_factor_)
       {
@@ -185,6 +185,6 @@ int main(int argc, char **argv)
   PcdAssemblerSrv assembler;
 
   ros::spin();
-  
+
   return 0;
 }

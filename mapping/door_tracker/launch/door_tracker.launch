@@ -1,6 +1,6 @@
 <launch>
   <node pkg="door_tracker" type="door_tracker_node" output="screen" name="door_tracker_node">
-    <rosparam command="load" ns="filters" file="$(find laser_scan)/default_scan_shadows.yaml" />  
+    <rosparam command="load" ns="filters" file="$(find laser_filters)/examples/shadow_filter_example.yaml" />  
     <param name="p_fixed_frame" value="odom"/>
     <param name="publish_all_candidates" value="true"/>
     <param name="p_door_min_width" value="0.8"/>

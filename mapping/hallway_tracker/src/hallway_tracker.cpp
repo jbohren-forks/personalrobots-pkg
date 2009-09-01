@@ -75,13 +75,11 @@
 // Clouds and scans
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/LaserScan.h>
-#include <laser_scan/laser_scan.h>
+#include <laser_geometry/laser_geometry.h>
 
 
 //Filters
 #include "filters/filter_chain.h"
-#include "laser_scan/scan_shadows_filter.h"
-#include "laser_scan/intensity_filter.h"
 
 using namespace std;
 using namespace geometry_msgs;
@@ -101,7 +99,7 @@ public:
   ros::Node *node_;
 
   sensor_msgs::PointCloud cloud_;
-  laser_scan::LaserProjection projector_; // Used to project laser scans into point clouds
+  laser_geometry::LaserProjection projector_; // Used to project laser scans into point clouds
 
   tf::TransformListener *tf_;
   filters::FilterChain<sensor_msgs::LaserScan> filter_chain_;
@@ -171,7 +169,7 @@ public:
 
 
     // Transform into a PointCloud message
-    int mask = laser_scan::MASK_INTENSITY | laser_scan::MASK_DISTANCE | laser_scan::MASK_INDEX | laser_scan::MASK_TIMESTAMP;
+    int mask = laser_geometry::MASK_INTENSITY | laser_geometry::MASK_DISTANCE | laser_geometry::MASK_INDEX | laser_geometry::MASK_TIMESTAMP;
     try {
       projector_.transformLaserScanToPointCloud(fixed_frame_, cloud_, filtered_scan, *tf_, mask);
     }

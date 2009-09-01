@@ -4,9 +4,9 @@
    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" />
 
 <!-- Laser scan assembler for tilt laser -->
-  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
+  <node pkg="laser_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
     <remap from="scan_in" to="tilt_scan"/>
-    <rosparam command="load" ns="filters" file="$(find laser_scan)/default_scan_shadows.yaml" />
+    <rosparam command="load" ns="filters" file="$(find laser_filters)/examples/shadow_filter_example.yaml" />
     <param name="tf_cache_time_secs" type="double" value="10.0" />
     <param name="max_scans" type="int" value="1000" />
     <param name="ignore_laser_skew" type="bool" value="true" />
@@ -15,7 +15,7 @@
   </node>
 
 <!-- Generate single sweep scan -->
-  <node pkg="point_cloud_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
+  <node pkg="laser_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
 
 
 </launch>

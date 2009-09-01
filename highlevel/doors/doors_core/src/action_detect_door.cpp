@@ -37,7 +37,7 @@
 #include <door_handle_detector/DoorsDetectorCloud.h>
 #include <door_handle_detector/geometric_helper.h>
 #include <door_functions/door_functions.h>
-#include <point_cloud_assembler/BuildCloudAngle.h>
+#include <pr2_laser_snapshotter/BuildCloudAngle.h>
 #include <pr2_robot_actions/set_hokuyo_mode.h>
 #include "doors_core/action_detect_door.h"
 
@@ -135,8 +135,8 @@ bool DetectDoorAction::laserDetection(const door_msgs::Door& door_in, door_msgs:
   if (isPreemptRequested()) return false;
 
   ROS_INFO("DetectDoorAction: get a point cloud from the door");
-  point_cloud_assembler::BuildCloudAngle::Request req_pointcloud;
-  point_cloud_assembler::BuildCloudAngle::Response res_pointcloud;
+  pr2_laser_snapshotter::BuildCloudAngle::Request req_pointcloud;
+  pr2_laser_snapshotter::BuildCloudAngle::Response res_pointcloud;
   req_pointcloud.angle_begin = -atan2(door_top - laser_height, dist);
   req_pointcloud.angle_end = atan2(laser_height - door_bottom, dist);
   req_pointcloud.duration = 10.0;

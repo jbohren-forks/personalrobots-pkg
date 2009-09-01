@@ -14,6 +14,7 @@
   <depend package="python_actions" />
   <depend package="bagserver" />
   <depend package="stereo_msgs"/>
+  <depend package="laser_filters"/>
   <export>
      <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
   </export>

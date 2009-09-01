@@ -1,13 +1,13 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -39,7 +39,7 @@
 #include <door_functions/door_functions.h>
 #include <door_msgs/Door.h>
 #include <boost/thread/thread.hpp>
-#include <point_cloud_assembler/BuildCloudAngle.h>
+#include <pr2_laser_snapshotter/BuildCloudAngle.h>
 #include <kdl/frames.hpp>
 #include <pr2_robot_actions/set_hokuyo_mode.h>
 #include "doors_core/action_detect_handle.h"
@@ -58,7 +58,7 @@ static const double scan_height = 0.4; //[m]
 static const unsigned int max_retries = 5;
 static const double handle_dimension = 0.07; // [m] this is the radius of a half circle approximating the handle
 
-DetectHandleAction::DetectHandleAction(tf::TransformListener& tf): 
+DetectHandleAction::DetectHandleAction(tf::TransformListener& tf):
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("detect_handle"),
   tf_(tf)
 {
@@ -84,7 +84,7 @@ robot_actions::ResultStatus DetectHandleAction::execute(const door_msgs::Door& g
   door_msgs::Door goal_tr;
   transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame);
 
-  // try to detect handle 
+  // try to detect handle
   for (unsigned int nr_tries=0; nr_tries<max_retries; nr_tries++){
 
     // check for preemption
@@ -145,7 +145,7 @@ robot_actions::ResultStatus DetectHandleAction::execute(const door_msgs::Door& g
       feedback.handle.x = (result_laser.handle.x + result_camera.handle.x)/2.0;
       feedback.handle.y = (result_laser.handle.y + result_camera.handle.y)/2.0;
       feedback.handle.z = (result_laser.handle.z + result_camera.handle.z)/2.0;
-      
+
       // take detection angle into account
       geometry_msgs::Point32 handle_robot_point;
       if (!transformPointTo(tf_, feedback.header.frame_id, "base_footprint", feedback.header.stamp,  feedback.handle, handle_robot_point, fixed_frame, feedback.header.stamp)){
@@ -223,15 +223,15 @@ bool DetectHandleAction::laserDetection(const door_msgs::Door& door_in,
   handlepoint[2] = 0;
   double dist = handlepoint.length();
   ROS_INFO("tilt laser is at height %f, and door at distance %f", laser_height, dist);
-  
+
   // set the laser scanner to intensity mode
   pr2_robot_actions::setHokuyoMode("tilt_hokuyo_node", "intensity");
 
   // gets a point cloud from the point_cloud_srv
   if (isPreemptRequested()) return false;
   ROS_INFO("get a point cloud from the door");
-  point_cloud_assembler::BuildCloudAngle::Request req_pointcloud;
-  point_cloud_assembler::BuildCloudAngle::Response res_pointcloud;
+  pr2_laser_snapshotter::BuildCloudAngle::Request req_pointcloud;
+  pr2_laser_snapshotter::BuildCloudAngle::Response res_pointcloud;
   req_pointcloud.angle_begin = -atan2(handle_top - laser_height, dist);
   req_pointcloud.angle_end = atan2(laser_height - handle_bottom, dist);
   req_pointcloud.duration = scan_height/scan_speed;
@@ -285,9 +285,9 @@ bool DetectHandleAction::cameraDetection(const door_msgs::Door& door_in,
     ROS_ERROR("Door hinge side is not specified");
     return false;
   }
-  cout << "door_pnt.point " << door_in.header.frame_id << " " 
-       << door_pnt.point.x << " " 
-       << door_pnt.point.y << " " 
+  cout << "door_pnt.point " << door_in.header.frame_id << " "
+       << door_pnt.point.x << " "
+       << door_pnt.point.y << " "
        <<  door_pnt.point.z << endl;
   pub_.publish(door_pnt);
   ros::Duration().fromSec(2).sleep();
