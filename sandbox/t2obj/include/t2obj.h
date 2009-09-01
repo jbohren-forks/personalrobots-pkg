@@ -87,10 +87,8 @@ void findObjectPositionsFromStereo( const sensor_msgs::PointCloud& cloud, sensor
         const sensor_msgs::CameraInfo& lcinfo ,
         cv::Mat& right_objbbx, const geometry_msgs::Point32& orientation, double eps_angle, int indx, double max_height, double min_height,double min_depth, double max_depth, double cluster_radius);
 
-geometry_msgs::Point project3DPointIntoImageNoTF(const sensor_msgs::CameraInfo& cam_info, geometry_msgs::PointStamped point);
 geometry_msgs::Point project3DPointIntoImage(const sensor_msgs::CameraInfo& cam_info, geometry_msgs::PointStamped point, tf::TransformListener& tf_);
 
-void GetPointCloud2pointNoTF( sensor_msgs::PointCloud& cloud, cv::Vector<geometry_msgs::Point>& point2d, const sensor_msgs::CameraInfo& lcinfo);
 void GetPointCloud2point( sensor_msgs::PointCloud& cloud, cv::Vector<geometry_msgs::Point>& point2d, const sensor_msgs::CameraInfo& lcinfo, tf::TransformListener& tf_);
 
 void Overlay2dpoint(cv::Mat& img, cv::Vector<geometry_msgs::Point>& pp, cv::Scalar Color);

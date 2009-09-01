@@ -1,13 +1,11 @@
 <package>
   <description brief="t2obj">
-
      t2obj
-
   </description>
   <author>Min Sun</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/t2obj</url>
+  <url>http://www.ros.org/wiki/t2obj</url>
   <depend package="roscpp"/>
   <depend package="opencv_latest"/>
   <depend package="topic_synchronizer2"/>
