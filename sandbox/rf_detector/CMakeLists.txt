@@ -31,6 +31,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #include_directories(${PROJECT_SOURCE_DIR}/include)
 
+rospack_download_test_data(http://pr.willowgarage.com/data/rf_detector/model/Pcd_test_hogshape_RFV05/ClassId2ViewObjClassMap.txt model/ClassId2ViewObjClassMap.txt)
+
 rospack_add_executable (rf_pcd_hogshape_detector src/RFPcdHogShapeDetector.cpp src/write.cpp src/shape2.cpp src/Exehog.cpp src/RandomForest.cpp src/stdafx.cpp src/librf/discrete_dist.cpp src/librf/random_forest.cpp src/librf/tree_node.cpp src/librf/instance_set.cpp src/librf/tree.cpp)
 target_link_libraries (rf_pcd_hogshape_detector t2obj)
 target_link_libraries (rf_pcd_hogshape_detector descriptors_3d)
+
+
