@@ -1,7 +1,1 @@
-qhull:
-  ubuntu: libqhull-dev
-  debian: libqhull-dev
-  arch: qhull
-  macports: qhull
-  gentoo: qhull
 
