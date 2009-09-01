@@ -67,19 +67,19 @@ public:
   JointEffortController();
   ~JointEffortController();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool init(mechanism::RobotState *robot, const std::string &joint_name);
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(pr2_mechanism::RobotState *robot, const std::string &joint_name);
+  virtual bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   virtual bool starting() { command_ = 0.0; return true; }
   virtual void update();
 
-  mechanism::JointState *joint_state_;
+  pr2_mechanism::JointState *joint_state_;
 
   double command_;
 
 private:
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
 
   ros::NodeHandle node_;
   ros::Subscriber sub_command_;

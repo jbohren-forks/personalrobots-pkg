@@ -52,7 +52,7 @@ JointTrajectoryController2::~JointTrajectoryController2()
   sub_command_.shutdown();
 }
 
-bool JointTrajectoryController2::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool JointTrajectoryController2::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   using namespace XmlRpc;
   node_ = n;
@@ -80,7 +80,7 @@ bool JointTrajectoryController2::init(mechanism::RobotState *robot, const ros::N
       return false;
     }
 
-    mechanism::JointState *j = robot->getJointState((std::string)name_value);
+    pr2_mechanism::JointState *j = robot->getJointState((std::string)name_value);
     if (!j) {
       ROS_ERROR("Joint not found: %s. (namespace: %s)",
                 ((std::string)name_value).c_str(), node_.getNamespace().c_str());
@@ -167,15 +167,15 @@ void JointTrajectoryController2::update()
     double error = 0.0;
     switch (joints_[i]->joint_->type_)
     {
-    case mechanism::JOINT_ROTARY:
+    case pr2_mechanism::JOINT_ROTARY:
       angles::shortest_angular_distance_with_limits(
         q[i], joints_[i]->position_,
         joints_[i]->joint_->joint_limit_min_, joints_[i]->joint_->joint_limit_max_, error);
       break;
-    case mechanism::JOINT_CONTINUOUS:
+    case pr2_mechanism::JOINT_CONTINUOUS:
       error = angles::shortest_angular_distance(q[i], joints_[i]->position_);
       break;
-    case mechanism::JOINT_PRISMATIC:
+    case pr2_mechanism::JOINT_PRISMATIC:
       error = joints_[i]->position_ - q[i];
       break;
     default:

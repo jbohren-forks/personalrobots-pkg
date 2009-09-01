@@ -60,7 +60,7 @@ CartesianPoseController::~CartesianPoseController()
 {}
 
 
-bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
+bool CartesianPoseController::init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &n)
 {
   node_ = n;
 

@@ -47,7 +47,7 @@ JointLimitCalibrationController::~JointLimitCalibrationController()
 {
 }
 
-bool JointLimitCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointLimitCalibrationController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   assert(config);
@@ -138,9 +138,9 @@ void JointLimitCalibrationController::update()
     {
       // Need to set zero offset correctly
       Actuator a;
-      mechanism::JointState j;
+      pr2_mechanism::JointState j;
       std::vector<Actuator*> fake_a;
-      std::vector<mechanism::JointState*> fake_j;
+      std::vector<pr2_mechanism::JointState*> fake_j;
       fake_a.push_back(&a);
       fake_j.push_back(&j);
 
@@ -206,7 +206,7 @@ void JointLimitCalibrationControllerNode::update()
   }
 }
 
-bool JointLimitCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointLimitCalibrationControllerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   robot_ = robot;
 

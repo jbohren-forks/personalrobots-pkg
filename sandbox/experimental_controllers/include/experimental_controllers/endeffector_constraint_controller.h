@@ -61,7 +61,7 @@ public:
   EndeffectorConstraintController();
   ~EndeffectorConstraintController();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void computeConstraintJacobian();
   void computeConstraintNullSpace();
@@ -71,10 +71,10 @@ public:
 
 private:
 
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
 
   // kdl stuff for kinematics
-  mechanism::Chain chain_;
+  pr2_mechanism::Chain chain_;
   KDL::Chain kdl_chain_;
   boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
   boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
@@ -122,7 +122,7 @@ class EndeffectorConstraintControllerNode : public Controller
   EndeffectorConstraintControllerNode();
   ~EndeffectorConstraintControllerNode();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void command();
 

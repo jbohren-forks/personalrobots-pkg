@@ -40,7 +40,7 @@
 
 #include "pr2_mechanism_msgs/BufferedData.h"
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 /** \brief Recorder provides support for streaming data out of
  * realtime without overloading ROS.
@@ -65,7 +65,7 @@ public:
   /**
    * Spins up the publishing thread and begins sending out data.
    */
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &node, const std::string &topic = "trace");
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &node, const std::string &topic = "trace");
 
   /**@brief Call record in realtime on each data value.  init() must have already been called.
    * \param index The channel index, corresponding to the index given to channel()
@@ -76,7 +76,7 @@ public:
 private:
   ros::NodeHandle node_;
   ros::Publisher pub_;
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
 
   pr2_mechanism_msgs::BufferedData msg_[2];
   int other(int i) { return i == 0 ? 1 : 0; }

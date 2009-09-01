@@ -68,9 +68,9 @@ namespace controller
        * @param config Tiny xml element pointing to this controller
        * @return Successful init
        */
-      bool init(mechanism::RobotState *robot, const ros::NodeHandle &node);
+      bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &node);
 
-      bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+      bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
       /*!
        * \brief (a) Updates commands to the gripper.
@@ -212,12 +212,12 @@ namespace controller
       /*!
        * \brief remembers everything about the state of the robot
        */
-      mechanism::RobotState *robot_state_;
+      pr2_mechanism::RobotState *robot_state_;
 
       /*!
        * \brief JointState for this caster joint
        */
-      mechanism::JointState *joint_;
+      pr2_mechanism::JointState *joint_;
 
       JointEffortController joint_controller_;
 

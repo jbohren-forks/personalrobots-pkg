@@ -63,13 +63,13 @@ namespace controller {
 
     ~TrajectoryController(); /*** Destructor ***/
 
-    bool init(mechanism::RobotState *robot_state, const ros::NodeHandle &n);
+    bool init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &n);
 
     bool starting();
 
     void update();
 
-    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+    bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
     private:
 
@@ -78,7 +78,7 @@ namespace controller {
     std::string controller_name_;
 
     // robot structure
-    mechanism::RobotState *robot_state_;
+    pr2_mechanism::RobotState *robot_state_;
 
     // pid controllers
 

@@ -54,7 +54,7 @@ Pr2GripperController::~Pr2GripperController()
   service_thread_.join();
 }
 
-bool Pr2GripperController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node)
+bool Pr2GripperController::init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &node)
 {
   double p, i, d, i1, i2;
   pthread_mutex_init(&pr2_gripper_controller_lock_,NULL);
@@ -65,7 +65,7 @@ bool Pr2GripperController::init(mechanism::RobotState *robot_state, const ros::N
   robot_state_ = robot_state;
   //name_ = config->Attribute("name"); //"l_gripper" or "r_gripper" expected
   name_ = node.getNamespace();
-//  mechanism::Link *link = robot_state_->model_->getLink(name_ + "_link");
+//  pr2_mechanism::Link *link = robot_state_->model_->getLink(name_ + "_link");
   std::string joint_name, fingertip_sensor_topic;
   node_.param<std::string>("joint_name",joint_name,"r_gripper_joint");
   node_.param<std::string>("fingertip_sensor_topic",fingertip_sensor_topic,"/pressure/r_gripper_motor");
@@ -134,7 +134,7 @@ bool Pr2GripperController::init(mechanism::RobotState *robot_state, const ros::N
   return true;
 }
 
-bool Pr2GripperController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+bool Pr2GripperController::initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   return init(robot_state,ros::NodeHandle(config->Attribute("name")));
 }

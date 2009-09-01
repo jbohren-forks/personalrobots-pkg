@@ -75,7 +75,7 @@ public:
    * \param *robot The robot that is being controlled.
    * \param &n Node handle for parameters and services
    */
-  bool init( mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool init( pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
 
   /*!
@@ -98,10 +98,10 @@ private:
   controller::JointPositionController* lift_controller_;
   controller::JointPositionController* flex_controller_;
 
-  mechanism::JointState* flex_state_;    
-  mechanism::JointState* lift_state_;    
+  pr2_mechanism::JointState* flex_state_;    
+  pr2_mechanism::JointState* lift_state_;    
 
-  mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
+  pr2_mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
 
   int starting_count_;
 

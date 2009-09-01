@@ -38,7 +38,7 @@
 #include <kdl/jntarrayvel.hpp>
 #include <kdl/jntarrayacc.hpp>
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 class Chain
 {
@@ -69,7 +69,7 @@ public:
   Joint* getJoint(unsigned int actuated_joint_i);
 
 private:
-  mechanism::Robot *robot_;
+  pr2_mechanism::Robot *robot_;
   KDL::Chain kdl_chain_;
 
   std::vector<int> joint_indices_;  // ONLY joints that can be actuated (not fixed joints)

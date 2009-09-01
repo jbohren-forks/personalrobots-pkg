@@ -17,9 +17,9 @@ private:
     WriteDataPort<std::vector<double> > joint_pos_port;
     WriteDataPort<std::vector<double> > joint_vel_port;
     EthercatHardware ec;
-    controller::MechanismControl* mc;
+    pr2_mechanism::MechanismControl* mc;
     std::vector<double> joint_pos,joint_vel,joint_eff;
-    std::vector<mechanism::JointState*> joints;
+    std::vector<pr2_mechanism::JointState*> joints;
     
   bool reset_motors_;
 public:
@@ -66,7 +66,7 @@ public:
         }
 
         // Create mechanism control
-        mc = new controller::MechanismControl(ec.hw_);
+        mc = new pr2_mechanism::MechanismControl(ec.hw_);
         // Initialize mechanism control from robot description
         mc->initXml(root);
 

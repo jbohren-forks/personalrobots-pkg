@@ -49,7 +49,7 @@ JointPositionSmoothController::~JointPositionSmoothController()
 {
 }
 
-bool JointPositionSmoothController::init(mechanism::RobotState *robot, const std::string &joint_name,
+bool JointPositionSmoothController::init(pr2_mechanism::RobotState *robot, const std::string &joint_name,
 				   const control_toolbox::Pid &pid)
 {
   assert(robot);
@@ -69,7 +69,7 @@ bool JointPositionSmoothController::init(mechanism::RobotState *robot, const std
   return true;
 }
 
-bool JointPositionSmoothController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointPositionSmoothController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
 
@@ -142,12 +142,12 @@ void JointPositionSmoothController::update()
 
   assert(joint_state_->joint_);
 
-  if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY)
+  if(joint_state_->joint_->type_ == pr2_mechanism::JOINT_ROTARY)
   {
     angles::shortest_angular_distance_with_limits(command_, joint_state_->position_, joint_state_->joint_->joint_limit_min_, joint_state_->joint_->joint_limit_max_,error);
 
   }
-  else if(joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS)
+  else if(joint_state_->joint_->type_ == pr2_mechanism::JOINT_CONTINUOUS)
   {
     error = angles::shortest_angular_distance(command_, joint_state_->position_);
   }
@@ -179,7 +179,7 @@ void JointPositionSmoothControllerNode::update()
   c_->update();
 }
 
-bool JointPositionSmoothControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointPositionSmoothControllerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(node_);
   service_prefix_ = config->Attribute("name");

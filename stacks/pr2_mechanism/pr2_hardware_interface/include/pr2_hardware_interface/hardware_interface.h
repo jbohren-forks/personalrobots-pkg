@@ -40,6 +40,8 @@
 
 #include <ros/ros.h>
 
+namespace pr2_mechanism{
+
 // See http://prdev.willowgarage.com/trac/personalrobots/ticket/883
 template <class C>
 void deleteElements(C *c)
@@ -158,5 +160,6 @@ public:
   std::vector<Actuator*> actuators_;
   ros::Time current_time_;
 };
+}
 
 #endif

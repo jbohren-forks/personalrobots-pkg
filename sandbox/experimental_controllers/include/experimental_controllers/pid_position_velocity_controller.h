@@ -95,8 +95,8 @@ public:
    * \param joint_name Name of joint we want to control.
    * \param *robot The robot.
    */
-  bool init(mechanism::RobotState *robot, const std::string &joint_name, const control_toolbox::Pid &pid);
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool init(pr2_mechanism::RobotState *robot, const std::string &joint_name, const control_toolbox::Pid &pid);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -120,13 +120,13 @@ public:
   void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min);
 
   std::string getJointName();
-  mechanism::JointState *joint_state_;           /**< Joint we're controlling. */
+  pr2_mechanism::JointState *joint_state_;           /**< Joint we're controlling. */
   ros::Duration dt_;
   void reset();
 
 private:
   ros::NodeHandle node_;
-  mechanism::RobotState *robot_;                  /**< Pointer to robot structure. */
+  pr2_mechanism::RobotState *robot_;                  /**< Pointer to robot structure. */
   control_toolbox::Pid pid_controller_;           /**< Internal PID controller. */
   ros::Time last_time_;                              /**< Last time stamp of update. */
   int loop_count_;

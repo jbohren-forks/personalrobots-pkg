@@ -68,7 +68,7 @@ public:
   virtual bool stopping() {return true;}
 
   /// The init function is called to initialize the controller from a non-realtime thread
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n) = 0;
+  virtual bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n) = 0;
 
   /// Method to get access to another controller by name and type. 
   template<class ControllerType> bool getController(const std::string& name, int sched, ControllerType*& c)
@@ -125,7 +125,7 @@ public:
     return ret;
   }
 
-  bool initRequest(ControllerProvider* cp, mechanism::RobotState *robot, const ros::NodeHandle &n)
+  bool initRequest(ControllerProvider* cp, pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
   {
     contr_prov_ = cp;
     

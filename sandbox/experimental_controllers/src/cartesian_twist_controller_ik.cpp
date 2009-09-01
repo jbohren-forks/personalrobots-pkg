@@ -61,7 +61,7 @@ namespace controller {
 
 
 
-  bool CartesianTwistControllerIk::init(mechanism::RobotState *robot_state, const NodeHandle& n)
+  bool CartesianTwistControllerIk::init(pr2_mechanism::RobotState *robot_state, const NodeHandle& n)
   {
     node_ = n;
 

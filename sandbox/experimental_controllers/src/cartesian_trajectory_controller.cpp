@@ -61,7 +61,7 @@ CartesianTrajectoryController::~CartesianTrajectoryController()
 
 
 
-bool CartesianTrajectoryController::init(mechanism::RobotState *robot_state, const NodeHandle& n)
+bool CartesianTrajectoryController::init(pr2_mechanism::RobotState *robot_state, const NodeHandle& n)
 {
   node_ = n;
 

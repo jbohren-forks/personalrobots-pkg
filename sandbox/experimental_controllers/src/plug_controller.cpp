@@ -70,7 +70,7 @@ PlugController::~PlugController()
 
 
 
-bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool PlugController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;
@@ -365,7 +365,7 @@ PlugControllerNode::~PlugControllerNode()
   delete internal_state_publisher_;
 }
 
-bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool PlugControllerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   // get name of topic to listen to from xml file
   topic_ = config->Attribute("name") ? config->Attribute("name") : "";

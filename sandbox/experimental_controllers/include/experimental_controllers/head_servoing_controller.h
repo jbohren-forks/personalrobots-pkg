@@ -60,7 +60,7 @@ public:
   HeadServoingController();
   ~HeadServoingController();
 
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   bool starting();
   void update();
@@ -70,10 +70,10 @@ public:
 
 private:
 
-  mechanism::Robot* robot_;     
+  pr2_mechanism::Robot* robot_;     
   ros::NodeHandle node_;
   std::string pan_link_name_, tilt_link_name_;
-  mechanism::RobotState *robot_state_;
+  pr2_mechanism::RobotState *robot_state_;
   
   double max_velocity_;
   double servo_gain_;

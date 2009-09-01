@@ -75,8 +75,8 @@ public:
   CartesianWrenchController();
   ~CartesianWrenchController();
 
-  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   bool starting();
   void update();
@@ -88,8 +88,8 @@ private:
   ros::NodeHandle node_;
   ros::Subscriber sub_command_;
   void command(const geometry_msgs::WrenchConstPtr& wrench_msg);
-  mechanism::RobotState *robot_state_;
-  mechanism::Chain chain_;
+  pr2_mechanism::RobotState *robot_state_;
+  pr2_mechanism::Chain chain_;
 
   KDL::Chain kdl_chain_;
   boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;

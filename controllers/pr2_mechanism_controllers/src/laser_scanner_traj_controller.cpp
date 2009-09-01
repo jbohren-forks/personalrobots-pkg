@@ -56,7 +56,7 @@ LaserScannerTrajController::~LaserScannerTrajController()
 
 }
 
-bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool LaserScannerTrajController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   if (!robot || !config)
     return false ;
@@ -163,7 +163,7 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
   return true ;
 }
 
-bool LaserScannerTrajController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool LaserScannerTrajController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   std::string xml;
   if (!n.getParam("xml", xml))
@@ -504,7 +504,7 @@ void LaserScannerTrajControllerNode::update()
   }
 }
 
-bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool LaserScannerTrajControllerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   robot_ = robot ;      // Need robot in order to grab hardware time
 
@@ -535,7 +535,7 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
   return true ;
 }
 
-bool LaserScannerTrajControllerNode::init(mechanism::RobotState *robot,
+bool LaserScannerTrajControllerNode::init(pr2_mechanism::RobotState *robot,
                                           const ros::NodeHandle &n)
 {
   std::string xml;

@@ -56,7 +56,7 @@
 
 class TiXmlElement;
 
-namespace mechanism
+namespace pr2_mechanism
 {
 
 /** \brief This class provides the controllers with an interface to the robot model. 

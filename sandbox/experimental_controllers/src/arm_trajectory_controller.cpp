@@ -61,13 +61,13 @@ ArmTrajectoryController::~ArmTrajectoryController()
     delete joint_pd_controllers_[i];
 }
 
-bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElement * config)
+bool ArmTrajectoryController::initXml(pr2_mechanism::RobotState * robot, TiXmlElement * config)
 {
   ROS_INFO("Initializing trajectory controller");
 
   robot_ = robot->model_;
   robot_state_ = robot;
-  mechanism::Joint *joint;
+  pr2_mechanism::Joint *joint;
 //  std::vector<double> joint_velocity_limits;
   std::vector<trajectory::Trajectory::TPoint> trajectory_points_vector;
 //  std::string trajectory_type = "linear";
@@ -89,7 +89,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
     {
       joint_velocity_limits_.push_back(joint->velocity_limit_*velocity_scaling_factor_);
       joint_type_.push_back(joint->type_);
-      if(joint->type_ == mechanism::JOINT_CONTINUOUS)
+      if(joint->type_ == pr2_mechanism::JOINT_CONTINUOUS)
         ROS_INFO("Pushing back joint of type: continuous joint: %s",joint->name_.c_str());
     }
 
@@ -119,7 +119,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
 
   for(int i=0; i < dimension_; i++)
   {
-    if(joint_type_[i] == mechanism::JOINT_CONTINUOUS)
+    if(joint_type_[i] == pr2_mechanism::JOINT_CONTINUOUS)
     {
       joint_trajectory_->setJointWraps(i);
     }
@@ -262,7 +262,7 @@ bool ArmTrajectoryController::reachedGoalPosition(std::vector<double> joint_cmd)
   bool return_val = true;
   double error(0.0);
   for(unsigned int i=0;i< (unsigned int) dimension_;++i){
-   if(joint_type_[i] == mechanism::JOINT_CONTINUOUS)
+   if(joint_type_[i] == pr2_mechanism::JOINT_CONTINUOUS)
    {
      error = fabs(angles::shortest_angular_distance(joint_pd_controllers_[i]->joint_state_->position_,joint_cmd[i]));
    }
@@ -364,7 +364,7 @@ void ArmTrajectoryControllerNode::updateTrajectoryQueue(int last_trajectory_fini
 }
 
 
-bool ArmTrajectoryControllerNode::init(mechanism::RobotState *robot, const ros::NodeHandle& n)
+bool ArmTrajectoryControllerNode::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle& n)
 {
   // get xml from parameter server
   string xml_string;
@@ -390,7 +390,7 @@ bool ArmTrajectoryControllerNode::init(mechanism::RobotState *robot, const ros::
   return initXml(robot, xml);
 }
 
-bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
+bool ArmTrajectoryControllerNode::initXml(pr2_mechanism::RobotState * robot, TiXmlElement * config)
 {
   ROS_INFO("Loading ArmTrajectoryControllerNode.");
   service_prefix_ = config->Attribute("name");

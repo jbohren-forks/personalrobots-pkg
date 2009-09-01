@@ -71,7 +71,7 @@ public:
   PlugController();
   ~PlugController();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void computeConstraintJacobian();
   void computeConstraintNullSpace();
@@ -89,7 +89,7 @@ public:
   KDL::Frame endeffector_frame_;
   KDL::Frame desired_frame_;
 
-  mechanism::Chain chain_;
+  pr2_mechanism::Chain chain_;
   KDL::Chain kdl_chain_;
 
   double dist_to_line_;
@@ -101,7 +101,7 @@ public:
 
 private:
 
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
   std::string controller_name_;
   boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
   boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
@@ -151,7 +151,7 @@ class PlugControllerNode : public Controller
   PlugControllerNode();
   ~PlugControllerNode();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void command();
   void outletPose();

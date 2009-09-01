@@ -321,8 +321,8 @@ void DynamicsEstimationNode::removeJointLimitPoints()
   // create the max and min values as 90% of the joint angle range:
   for (int i=0; i<num_joints_; i++)
   {
-    mechanism::Joint *joint = mechanism_chain_.getJoint(i);
-    if (joint->type_== mechanism::JOINT_CONTINUOUS)
+    pr2_mechanism::Joint *joint = mechanism_chain_.getJoint(i);
+    if (joint->type_== pr2_mechanism::JOINT_CONTINUOUS)
     {
       has_limits[i] = false;
       continue;

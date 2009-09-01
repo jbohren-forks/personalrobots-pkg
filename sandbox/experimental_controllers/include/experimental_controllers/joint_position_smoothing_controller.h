@@ -77,8 +77,8 @@ public:
    * \param joint_name Name of joint we want to control.
    * \param *robot The robot.
    */
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool init(mechanism::RobotState *robot, const std::string &joint_name,const control_toolbox::Pid &pid);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(pr2_mechanism::RobotState *robot, const std::string &joint_name,const control_toolbox::Pid &pid);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -101,11 +101,11 @@ public:
   void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min);
 
   std::string getJointName();
-  mechanism::JointState *joint_state_;        /**< Joint we're controlling. */
+  pr2_mechanism::JointState *joint_state_;        /**< Joint we're controlling. */
 
 private:
 
-  mechanism::RobotState *robot_;              /**< Pointer to robot structure. */
+  pr2_mechanism::RobotState *robot_;              /**< Pointer to robot structure. */
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
   ros::Time last_time_;                       /**< Last time stamp of update. */
   double command_;                            /**< Last commanded position. */
@@ -131,7 +131,7 @@ public:
   ~JointPositionSmoothControllerNode();
 
   void update();
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
   void setCommand();
 

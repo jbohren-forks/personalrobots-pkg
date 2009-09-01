@@ -70,7 +70,7 @@ public:
    * \param *robot The robot that is being controlled.
    * \param &n NodeHandle of mechanism control
    */
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   /*!
    * \brief Called when controller is started
@@ -98,8 +98,8 @@ public:
 private:
   joint_qualification_controllers::TestData::Request test_data_;
 
-  mechanism::JointState *joint_;     /**< Joint we're controlling. */
-  mechanism::RobotState *robot_;     /**< Pointer to robot structure. */
+  pr2_mechanism::JointState *joint_;     /**< Joint we're controlling. */
+  pr2_mechanism::RobotState *robot_;     /**< Pointer to robot structure. */
   controller::JointVelocityController *velocity_controller_;    /**< The velocity controller for the hysteresis test. */
   double velocity_;            /**< Velocity during the test. */
   double max_effort_;          /**< Maximum allowable effort. */

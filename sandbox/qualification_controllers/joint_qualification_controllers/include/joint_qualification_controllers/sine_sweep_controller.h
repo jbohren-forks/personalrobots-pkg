@@ -74,7 +74,7 @@ public:
    * \param *robot The robot that is being controlled.
    * \param &n NodeHandle of mechanism control
    */
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   bool starting();
 
@@ -88,8 +88,8 @@ public:
   joint_qualification_controllers::TestData::Request test_data_;
 
 private:
-  mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
-  mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
+  pr2_mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
+  pr2_mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
   control_toolbox::SineSweep *sweep_;       /**< Sine sweep. */
   double duration_;                         /**< Duration of the sweep. */
   ros::Time initial_time_;                     /**< Start time of the sweep. */

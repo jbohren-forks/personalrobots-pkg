@@ -49,7 +49,7 @@ CasterControllerEffort::~CasterControllerEffort()
 }
 
 bool CasterControllerEffort::init(
-  mechanism::RobotState *robot,
+  pr2_mechanism::RobotState *robot,
   const std::string &caster_joint,
   const std::string &wheel_l_joint, const std::string &wheel_r_joint,
   const control_toolbox::Pid &caster_pid)
@@ -71,7 +71,7 @@ bool CasterControllerEffort::init(
   return true;
 }
 
-bool CasterControllerEffort::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CasterControllerEffort::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   TiXmlElement *jel = config->FirstChildElement("joints");
   if (!jel)
@@ -136,7 +136,7 @@ CasterControllerEffortNode::~CasterControllerEffortNode()
 {
 }
 
-bool CasterControllerEffortNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CasterControllerEffortNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   ros::Node *node = ros::Node::instance();
   assert(node);

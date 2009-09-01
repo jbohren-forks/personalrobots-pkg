@@ -61,7 +61,7 @@ CartesianPoseTwistController::~CartesianPoseTwistController()
 {}
 
 
-bool CartesianPoseTwistController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
+bool CartesianPoseTwistController::init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &n)
 {
   node_ = n;
 

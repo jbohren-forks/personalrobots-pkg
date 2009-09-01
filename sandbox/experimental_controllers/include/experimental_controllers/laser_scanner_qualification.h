@@ -75,8 +75,8 @@ public:
    * \brief Functional way to initialize limits and gains.
    *
    */
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, pr2_mechanism::Robot *robot);
+  bool initXml(pr2_mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
    * \brief Read the torque of the motor
@@ -96,11 +96,11 @@ private:
    */
   void setJointEffort(double torque);
 
-  mechanism::Joint* joint_; /*!< Joint we're controlling>*/
+  pr2_mechanism::Joint* joint_; /*!< Joint we're controlling>*/
   JointVelocityController joint_velocity_controller_; /*!< Internal PID controller>*/
   double last_time_; /*!< Last time stamp of update> */
   double command_; /*!< Last commanded effort> */
-  mechanism::Robot *robot_; /*!< Pointer to robot structure>*/
+  pr2_mechanism::Robot *robot_; /*!< Pointer to robot structure>*/
 
   TestStatus effort_test_status_;/*!< Status of effort test>*/
   TestStatus sinesweep_test_status_;/*!< Status of sinesweep test>*/
@@ -151,7 +151,7 @@ public:
 
   void update();
 
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::Robot *robot, TiXmlElement *config);
 
   // Services
   bool setCommand(experimental_controllers::SetCommand::Request &req,

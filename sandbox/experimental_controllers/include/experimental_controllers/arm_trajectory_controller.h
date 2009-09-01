@@ -93,7 +93,7 @@ namespace controller
     /*!
      * \brief Functional way to initialize limits and gains.
      */
-    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+    bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
     /*!
      * \brief set the joint trajectory for the arm
@@ -125,8 +125,8 @@ namespace controller
 
     std::vector<int> joint_type_;
 
-    mechanism::Robot* robot_;
-    mechanism::RobotState* robot_state_;
+    pr2_mechanism::Robot* robot_;
+    pr2_mechanism::RobotState* robot_state_;
 
     void updateJointControllers(void);
 
@@ -195,8 +195,8 @@ namespace controller
 
     void update();
 
-    bool init(mechanism::RobotState *robot, const ros::NodeHandle& n);
-    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+    bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle& n);
+    bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
     /** @brief service that returns the goal of the controller
      * @note if you know the goal has been reached and you do not want to subscribe to the /mechanism_state topic, you can use it as a hack to get the position of the arm

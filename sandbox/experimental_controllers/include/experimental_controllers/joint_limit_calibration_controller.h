@@ -64,7 +64,7 @@ public:
   JointLimitCalibrationController();
   ~JointLimitCalibrationController();
 
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
   virtual void update();
 
@@ -82,8 +82,8 @@ protected:
 
   double search_velocity_;
   Actuator *actuator_;
-  mechanism::JointState *joint_;
-  mechanism::Transmission *transmission_;
+  pr2_mechanism::JointState *joint_;
+  pr2_mechanism::Transmission *transmission_;
 
   double init_time;
 
@@ -116,11 +116,11 @@ public:
 
   void update();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
 
 private:
-  mechanism::RobotState* robot_;
+  pr2_mechanism::RobotState* robot_;
   JointLimitCalibrationController c_;
 
   ros::Time last_publish_time_;

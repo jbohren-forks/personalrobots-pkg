@@ -84,7 +84,7 @@ HoldSetController::~HoldSetController()
 {
 }
 
-bool HoldSetController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool HoldSetController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   assert(robot);
   robot_ = robot;

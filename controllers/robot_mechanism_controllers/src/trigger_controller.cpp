@@ -140,7 +140,7 @@ void TriggerController::update()
   prev_tick_ = tick;
 }
 
-bool TriggerController::init(mechanism::RobotState *robot, const ros::NodeHandle& n)
+bool TriggerController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle& n)
 {
   node_handle_ = n;
 
@@ -160,7 +160,7 @@ bool TriggerController::init(mechanism::RobotState *robot, const ros::NodeHandle
     return false;
   }
 
-  Actuator *actuator = robot_->model_->getActuator(actuator_name_);
+  pr2_mechanism::Actuator *actuator = robot_->model_->getActuator(actuator_name_);
   if (!actuator)
   {
     ROS_ERROR("TriggerController could not find actuator named \"%s\".",

@@ -48,7 +48,7 @@ WristCalibrationController::~WristCalibrationController()
 {
 }
 
-bool WristCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool WristCalibrationController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   assert(config);
@@ -131,7 +131,7 @@ bool WristCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElem
   return true;
 }
 
-bool WristCalibrationController::init(mechanism::RobotState *robot,
+bool WristCalibrationController::init(pr2_mechanism::RobotState *robot,
                                       const ros::NodeHandle &n)
 {
   assert(robot);
@@ -311,17 +311,17 @@ void WristCalibrationController::update()
       // optical switches were hit.  Now we compute the actuator
       // positions when the joints should be at 0.
 
-      const int LEFT_MOTOR = mechanism::WristTransmission::LEFT_MOTOR;
-      const int RIGHT_MOTOR = mechanism::WristTransmission::RIGHT_MOTOR;
-      const int FLEX_JOINT = mechanism::WristTransmission::FLEX_JOINT;
-      const int ROLL_JOINT = mechanism::WristTransmission::ROLL_JOINT;
+      const int LEFT_MOTOR = pr2_mechanism::WristTransmission::LEFT_MOTOR;
+      const int RIGHT_MOTOR = pr2_mechanism::WristTransmission::RIGHT_MOTOR;
+      const int FLEX_JOINT = pr2_mechanism::WristTransmission::FLEX_JOINT;
+      const int ROLL_JOINT = pr2_mechanism::WristTransmission::ROLL_JOINT;
 
       // Sets up the data structures for passing joint and actuator
       // positions through the transmission.
-      Actuator fake_as_mem[2];  // This way we don't need to delete the objects later
-      mechanism::JointState fake_js_mem[2];
-      std::vector<Actuator*> fake_as;
-      std::vector<mechanism::JointState*> fake_js;
+      pr2_mechanism::Actuator fake_as_mem[2];  // This way we don't need to delete the objects later
+      pr2_mechanism::JointState fake_js_mem[2];
+      std::vector<pr2_mechanism::Actuator*> fake_as;
+      std::vector<pr2_mechanism::JointState*> fake_js;
       fake_as.push_back(&fake_as_mem[0]);
       fake_as.push_back(&fake_as_mem[1]);
       fake_js.push_back(&fake_js_mem[0]);

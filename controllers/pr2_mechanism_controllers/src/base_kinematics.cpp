@@ -40,7 +40,7 @@
 using namespace controller;
 
 
-bool Wheel::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node, std::string link_name)
+bool Wheel::init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &node, std::string link_name)
 {
   wheel_stuck_ = 0;
   direction_multiplier_ = 1;
@@ -72,7 +72,7 @@ bool Wheel::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node
   return true;
 }
 
-bool Caster::init(mechanism::RobotState *robot_state,  const ros::NodeHandle &node, std::string link_name)
+bool Caster::init(pr2_mechanism::RobotState *robot_state,  const ros::NodeHandle &node, std::string link_name)
 {
   caster_stuck_ = 0;
   caster_speed_ = 0;
@@ -118,7 +118,7 @@ bool Caster::init(mechanism::RobotState *robot_state,  const ros::NodeHandle &no
   return true;
 }
 
-bool BaseKinematics::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node)
+bool BaseKinematics::init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &node)
 {
   std::string caster_names_string;
   std::vector<std::string> caster_names;

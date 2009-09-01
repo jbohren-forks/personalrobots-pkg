@@ -42,7 +42,7 @@
 #include "pr2_mechanism_model/joint.h"
 #include "pr2_hardware_interface/hardware_interface.h"
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 class SimpleTransmission : public Transmission
 {
@@ -60,6 +60,6 @@ public:
   void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&);
 };
 
-} // namespace mechanism
+} // namespace pr2_mechanism
 
 #endif

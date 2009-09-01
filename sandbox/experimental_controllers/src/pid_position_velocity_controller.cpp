@@ -58,7 +58,7 @@ namespace controller
       sub_command_.shutdown();
   }
 
-  bool PIDPositionVelocityController::init(mechanism::RobotState *robot, const std::string &joint_name,
+  bool PIDPositionVelocityController::init(pr2_mechanism::RobotState *robot, const std::string &joint_name,
 				   const control_toolbox::Pid &pid)
   {
     assert(robot);
@@ -78,7 +78,7 @@ namespace controller
     return true;
   }
 
-  bool PIDPositionVelocityController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+  bool PIDPositionVelocityController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
   {
     assert(robot);
     node_ = n;
@@ -146,11 +146,11 @@ namespace controller
 
     error_dot = joint_state_->velocity_ - command_dot_;
 
-    if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY)
+    if(joint_state_->joint_->type_ == pr2_mechanism::JOINT_ROTARY)
     {
       angles::shortest_angular_distance_with_limits(command_, joint_state_->position_, joint_state_->joint_->joint_limit_min_, joint_state_->joint_->joint_limit_max_,error);
     }
-    else if(joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS)
+    else if(joint_state_->joint_->type_ == pr2_mechanism::JOINT_CONTINUOUS)
     {
       error = angles::shortest_angular_distance(command_, joint_state_->position_);
     }

@@ -50,7 +50,7 @@ JointPDController::~JointPDController()
 {
 }
 
-bool JointPDController::init(mechanism::RobotState *robot, const std::string &joint_name,
+bool JointPDController::init(pr2_mechanism::RobotState *robot, const std::string &joint_name,
 				   const control_toolbox::Pid &pid)
 
 {
@@ -74,7 +74,7 @@ bool JointPDController::init(mechanism::RobotState *robot, const std::string &jo
   command_dot_ = 0;
 }
 
-bool JointPDController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointPDController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
 
@@ -152,12 +152,12 @@ void JointPDController::update()
   error_dot = joint_state_->velocity_ - command_dot_;
 //  error = joint_state_->position_ - command_;
 
-  if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY)
+  if(joint_state_->joint_->type_ == pr2_mechanism::JOINT_ROTARY)
   {
     angles::shortest_angular_distance_with_limits(command_, joint_state_->position_, joint_state_->joint_->joint_limit_min_, joint_state_->joint_->joint_limit_max_,error);
 
   }
-  else if(joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS)
+  else if(joint_state_->joint_->type_ == pr2_mechanism::JOINT_CONTINUOUS)
   {
     error = angles::shortest_angular_distance(command_, joint_state_->position_);
   }
@@ -190,7 +190,7 @@ void JointPDControllerNode::update()
   c_->update();
 }
 
-bool JointPDControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointPDControllerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(node_);
   service_prefix_ = config->Attribute("name");

@@ -60,7 +60,7 @@ public :
    *
    *
    */
-  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config) ;
+  bool initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config) ;
 
   /**
    * Realtime safe update method called from the realtime loop. Compares the target position to the current position,
@@ -90,7 +90,7 @@ private :
   controller::BaseControllerNode base_controller_node_ ;       // Converts a commanded velocity into a wheel velocities and turret angles
   ros::Node *node_ ;
 
-  mechanism::RobotState *robot_state_ ;
+  pr2_mechanism::RobotState *robot_state_ ;
 
   double last_time_ ;                                          // Store the last time that we called the update
 

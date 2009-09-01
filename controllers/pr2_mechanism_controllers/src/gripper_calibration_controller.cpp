@@ -53,7 +53,7 @@ GripperCalibrationController::~GripperCalibrationController()
 {
 }
 
-bool GripperCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool GripperCalibrationController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   assert(config);
@@ -106,7 +106,7 @@ bool GripperCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEl
   return true;
 }
 
-bool GripperCalibrationController::init(mechanism::RobotState *robot,
+bool GripperCalibrationController::init(pr2_mechanism::RobotState *robot,
                                         const ros::NodeHandle &n)
 {
   assert(robot);

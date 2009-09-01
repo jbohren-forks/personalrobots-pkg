@@ -58,7 +58,7 @@ JointChainConstraintController::~JointChainConstraintController()
 
 }
 
-bool JointChainConstraintController::init(mechanism::RobotState *robot_state,
+bool JointChainConstraintController::init(pr2_mechanism::RobotState *robot_state,
                                           const std::string& root_name,
                                           const std::string& tip_name,
                                           const std::string& controller_name)
@@ -170,7 +170,7 @@ void JointChainConstraintController::computeConstraintTorques()
 
     int joint_type = (*it).joint_->type_;
 
-    if(joint_type == mechanism::JOINT_ROTARY)
+    if(joint_type == pr2_mechanism::JOINT_ROTARY)
     {
       double limit_min = (*it).joint_->joint_limit_min_;
       double limit_max = (*it).joint_->joint_limit_max_;
@@ -178,7 +178,7 @@ void JointChainConstraintController::computeConstraintTorques()
       angles::shortest_angular_distance_with_limits((*it).threshold_start_, jnt_pos_((*it).joint_chain_index_), limit_min, limit_max, error);
 
     }
-    else if(joint_type == mechanism::JOINT_CONTINUOUS)
+    else if(joint_type == pr2_mechanism::JOINT_CONTINUOUS)
     {
       error = angles::shortest_angular_distance((*it).threshold_start_, jnt_pos_((*it).joint_chain_index_));
     }
@@ -309,7 +309,7 @@ JointChainConstraintControllerNode::~JointChainConstraintControllerNode()
 }
 
 
-bool JointChainConstraintControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointChainConstraintControllerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   robot_=robot;
   // get the controller name

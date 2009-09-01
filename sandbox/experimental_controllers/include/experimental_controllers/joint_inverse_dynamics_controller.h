@@ -64,7 +64,7 @@ namespace controller {
     JointInverseDynamicsController();
     ~JointInverseDynamicsController();
 
-    bool init(mechanism::RobotState *robot_state, const ros::NodeHandle& n);
+    bool init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle& n);
     bool starting();
     void update();
 
@@ -82,8 +82,8 @@ namespace controller {
 
     ros::Publisher pub_pos_desi_, pub_pos_meas_, pub_vel_desi_, pub_vel_meas_;
     ros::Publisher pub_acc_desi_, pub_acc_control_, pub_eff_calculated_, pub_eff_sent_;
-    mechanism::RobotState *robot_state_;
-    mechanism::Chain chain_;
+    pr2_mechanism::RobotState *robot_state_;
+    pr2_mechanism::Chain chain_;
   
     //For the inverse dynamics:
     KDL::Chain kdl_chain_;

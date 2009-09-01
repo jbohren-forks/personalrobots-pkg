@@ -49,7 +49,7 @@ JointEffortController::~JointEffortController()
   sub_command_.shutdown();
 }
 
-bool JointEffortController::init(mechanism::RobotState *robot, const std::string &joint_name)
+bool JointEffortController::init(pr2_mechanism::RobotState *robot, const std::string &joint_name)
 {
   if (!robot)
   {
@@ -69,7 +69,7 @@ bool JointEffortController::init(mechanism::RobotState *robot, const std::string
   return true;
 }
 
-bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointEffortController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   if (!robot)
   {
@@ -91,7 +91,7 @@ bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *
 
 }
 
-bool JointEffortController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool JointEffortController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   assert(robot);
   node_ = n;

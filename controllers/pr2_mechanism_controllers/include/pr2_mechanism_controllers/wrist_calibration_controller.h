@@ -56,8 +56,8 @@ public:
   WristCalibrationController();
   ~WristCalibrationController();
 
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  virtual bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
@@ -76,7 +76,7 @@ protected:
   enum { INITIALIZED, BEGINNING, MOVING_FLEX, MOVING_ROLL, CALIBRATED };
   int state_;
 
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
   ros::NodeHandle node_;
   ros::Time last_publish_time_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<std_msgs::Empty> > pub_calibrated_;
@@ -90,9 +90,9 @@ protected:
 
   double prev_actuator_l_position_, prev_actuator_r_position_;
 
-  Actuator *actuator_l_, *actuator_r_;
-  mechanism::JointState *flex_joint_, *roll_joint_;
-  mechanism::Transmission *transmission_;
+  pr2_mechanism::Actuator *actuator_l_, *actuator_r_;
+  pr2_mechanism::JointState *flex_joint_, *roll_joint_;
+  pr2_mechanism::Transmission *transmission_;
 
   controller::JointVelocityController vc_flex_, vc_roll_;
 };

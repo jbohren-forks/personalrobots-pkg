@@ -65,15 +65,15 @@ public:
   JointTrajectoryController2();
   ~JointTrajectoryController2();
 
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   bool starting();
   void update();
 
 private:
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
   ros::Time last_time_;
-  std::vector<mechanism::JointState*> joints_;
+  std::vector<pr2_mechanism::JointState*> joints_;
   std::vector<control_toolbox::Pid> pids_;
 
   ros::NodeHandle node_;
@@ -105,7 +105,7 @@ private:
   std::vector<double> q, qd, qdd;  // Preallocated in init
 
   enum { QS };
-  mechanism::Recorder recorder_;
+  pr2_mechanism::Recorder recorder_;
 
   // Samples, but handling time bounds.  When the time is past the end
   // of the spline duration, the position is the last valid position,

@@ -50,14 +50,14 @@ public:
   Probe();
   ~Probe();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
   virtual void update();
 
 private:
   ros::NodeHandle node_;
   ros::Publisher pub_probe_;
-  mechanism::RobotState *robot_;
-  mechanism::JointState *joint_;
+  pr2_mechanism::RobotState *robot_;
+  pr2_mechanism::JointState *joint_;
   double last_time_;
 };
 

@@ -70,7 +70,7 @@ Pr2BaseController::~Pr2BaseController()
 {
 }
 
-bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool Pr2BaseController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   if(!base_kin_.init(robot,n))
     return false;
@@ -151,7 +151,7 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
   return true;
 }
 
-bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool Pr2BaseController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
 //  base_kin_.initXml(robot, config);
   return init(robot, ros::NodeHandle(config->Attribute("name")));

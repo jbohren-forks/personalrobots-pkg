@@ -40,7 +40,7 @@
 #include <tinyxml/tinyxml.h>
 #include <urdf/joint.h>
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 class JointState;
 

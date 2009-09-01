@@ -51,7 +51,7 @@ TrajectoryController::~TrajectoryController()
 {
 }
 
-bool TrajectoryController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
+bool TrajectoryController::init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &n)
 {
   ROS_INFO("Trying to initialize the controller");
   node_ = n;
@@ -115,7 +115,7 @@ bool TrajectoryController::init(mechanism::RobotState *robot_state, const ros::N
   return true;
 }
 
-bool TrajectoryController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool TrajectoryController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   return init(robot, ros::NodeHandle(config->Attribute("name")));
 }
@@ -314,7 +314,7 @@ bool TrajectoryController::goalReached()
   double error(0.0);
   for(int i=0;i < num_joints_;++i)
   {
-    if(joint_controllers_[i]->joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS || joint_controllers_[i]->joint_state_->joint_->type_ == mechanism::JOINT_ROTARY)
+    if(joint_controllers_[i]->joint_state_->joint_->type_ == pr2_mechanism::JOINT_CONTINUOUS || joint_controllers_[i]->joint_state_->joint_->type_ == pr2_mechanism::JOINT_ROTARY)
     {
       error = fabs(angles::shortest_angular_distance(goal_.positions[i], joint_controllers_[i]->joint_state_->position_));
       ROS_DEBUG("Joint: %d position error: %f",i,error);

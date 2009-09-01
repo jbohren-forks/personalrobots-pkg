@@ -52,7 +52,7 @@ void spinThread()
 void controlLoop()
 {
   NullHardware hw;
-  controller::MechanismControl mc(hw.hw_);
+  pr2_mechanism::MechanismControl mc(hw.hw_);
 
   ros::NodeHandle node_;
 

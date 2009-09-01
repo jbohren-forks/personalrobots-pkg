@@ -84,7 +84,7 @@ CartesianHybridController::CartesianHybridController()
 {
 }
 
-bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CartesianHybridController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
 
   assert(robot);
@@ -99,7 +99,7 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
   return init(robot, ros::NodeHandle(name));
 }
 
-bool CartesianHybridController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool CartesianHybridController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   node_ = n;
   assert(robot);
@@ -482,7 +482,7 @@ CartesianHybridControllerNode::~CartesianHybridControllerNode()
   //node->unadvertiseService(name_ + "/set_tool_frame");
 }
 
-bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CartesianHybridControllerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   if (!c_.initXml(robot, config))
     return false;
@@ -516,7 +516,7 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 
 }
 
-bool CartesianHybridControllerNode::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool CartesianHybridControllerNode::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   node_ = n;
   if (!c_.init(robot, n))

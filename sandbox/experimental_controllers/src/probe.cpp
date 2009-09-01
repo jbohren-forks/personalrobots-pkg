@@ -43,7 +43,7 @@ Probe::~Probe()
   pub_probe_.shutdown();
 }
 
-bool Probe::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool Probe::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   robot_ = robot;
   node_ = ros::NodeHandle(config->Attribute("name"));

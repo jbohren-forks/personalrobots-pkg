@@ -51,7 +51,7 @@ CasterController::~CasterController()
 }
 
 bool CasterController::init(
-  mechanism::RobotState *robot,
+  pr2_mechanism::RobotState *robot,
   const std::string &caster_joint,
   const std::string &wheel_l_joint, const std::string &wheel_r_joint,
   const control_toolbox::Pid &caster_pid, const control_toolbox::Pid &wheel_pid)
@@ -73,7 +73,7 @@ bool CasterController::init(
   return true;
 }
 
-bool CasterController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CasterController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   TiXmlElement *jel = config->FirstChildElement("joints");
   if (!jel)
@@ -122,7 +122,7 @@ bool CasterController::initXml(mechanism::RobotState *robot, TiXmlElement *confi
   return init(robot, caster_joint, wheel_l_joint, wheel_r_joint, caster_pid, wheel_pid);
 }
 
-bool CasterController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool CasterController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   node_ = n;
   assert(robot);

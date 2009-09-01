@@ -50,7 +50,7 @@ BasePositionControllerNode::~BasePositionControllerNode()
 
 }
 
-bool BasePositionControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+bool BasePositionControllerNode::initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   ROS_INFO("BasePositionControllerNode:: initXml()") ;
 

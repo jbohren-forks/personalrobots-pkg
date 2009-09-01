@@ -67,7 +67,7 @@ EndeffectorConstraintController::~EndeffectorConstraintController()
 
 
 
-bool EndeffectorConstraintController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool EndeffectorConstraintController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;
@@ -339,7 +339,7 @@ EndeffectorConstraintControllerNode::~EndeffectorConstraintControllerNode()
   node_->unsubscribe(topic_ + "/command");
 }
 
-bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool EndeffectorConstraintControllerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   // get name of topic to listen to from xml file
   topic_ = config->Attribute("name") ? config->Attribute("name") : "";

@@ -73,7 +73,7 @@ namespace controller
     * @param config Tiny xml element pointing to this controller
     * @return Successful init
     */
-    bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+    bool initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config);
 
     /*!
     * \brief Initializes and loads odometry information from the param server
@@ -81,7 +81,7 @@ namespace controller
     * @param config Tiny xml element pointing to this controller
     * @return Successful init
     */
-    bool init(mechanism::RobotState *robot_state, const ros::NodeHandle &node);
+    bool init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &node);
 
     /*
     * \brief  The starting method is called by the realtime thread just before

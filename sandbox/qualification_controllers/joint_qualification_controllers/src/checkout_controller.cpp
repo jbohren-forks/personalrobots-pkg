@@ -60,7 +60,7 @@ CheckoutController::~CheckoutController()
 {
 }
 
-bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool CheckoutController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   assert(robot);
   robot_ = robot;
@@ -72,7 +72,7 @@ bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandl
 
   for (int i = 0; i < joint_count_; i++)
   {
-    mechanism::Joint *joint = robot_->joint_states_[i].joint_;
+    pr2_mechanism::Joint *joint = robot_->joint_states_[i].joint_;
 
     robot_data_.joint_data[i].index = i;
     robot_data_.joint_data[i].name = joint->name_;
@@ -82,25 +82,25 @@ bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandl
     // Assign type strings based on type
     switch (joint->type_)
     {
-    case (mechanism::JOINT_NONE):
+    case (pr2_mechanism::JOINT_NONE):
       robot_data_.joint_data[i].type = "None";
       break;
-    case (mechanism::JOINT_ROTARY):
+    case (pr2_mechanism::JOINT_ROTARY):
       robot_data_.joint_data[i].type = "Rotary";
       break;
-    case (mechanism::JOINT_CONTINUOUS):
+    case (pr2_mechanism::JOINT_CONTINUOUS):
       robot_data_.joint_data[i].type = "Continuous";
       break;
-    case (mechanism::JOINT_PRISMATIC):
+    case (pr2_mechanism::JOINT_PRISMATIC):
       robot_data_.joint_data[i].type = "Prismatic";
       break;
-    case (mechanism::JOINT_FIXED):
+    case (pr2_mechanism::JOINT_FIXED):
       robot_data_.joint_data[i].type = "Fixed";
       break;
-    case (mechanism::JOINT_PLANAR):
+    case (pr2_mechanism::JOINT_PLANAR):
       robot_data_.joint_data[i].type = "Planar";
       break;
-    case (mechanism::JOINT_TYPES_MAX):
+    case (pr2_mechanism::JOINT_TYPES_MAX):
       robot_data_.joint_data[i].type = "Types max";
       break;
     default:
@@ -116,7 +116,7 @@ bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandl
 
   for (int i = 0; i < actuator_count_; i++)
   {
-    Actuator *actuator = robot_->model_->actuators_[i];
+    pr2_mechanism::Actuator *actuator = robot_->model_->actuators_[i];
 
     robot_data_.actuator_data[i].index = i;
     robot_data_.actuator_data[i].name = actuator->name_;

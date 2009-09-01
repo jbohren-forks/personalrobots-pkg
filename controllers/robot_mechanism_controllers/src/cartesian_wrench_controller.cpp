@@ -57,7 +57,7 @@ CartesianWrenchController::~CartesianWrenchController()
 
 
 
-bool CartesianWrenchController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+bool CartesianWrenchController::initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   // get the controller name from xml file
   std::string controller_name = config->Attribute("name") ? config->Attribute("name") : "";
@@ -69,7 +69,7 @@ bool CartesianWrenchController::initXml(mechanism::RobotState *robot_state, TiXm
   return init(robot_state, ros::NodeHandle(controller_name));
 }
 
-bool CartesianWrenchController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool CartesianWrenchController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   // test if we got robot pointer
   assert(robot);

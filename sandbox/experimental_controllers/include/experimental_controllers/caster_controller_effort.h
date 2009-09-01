@@ -61,11 +61,11 @@ public:
   CasterControllerEffort();
   ~CasterControllerEffort();
 
-  bool init(mechanism::RobotState *robot_state,
+  bool init(pr2_mechanism::RobotState *robot_state,
             const std::string &caster_joint,
             const std::string &wheel_l_joint, const std::string &wheel_r_joint,
             const control_toolbox::Pid &caster_pid);
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
   void update();
 
@@ -75,7 +75,7 @@ public:
   double getSteerPosition() { return caster_->position_; }
   double getSteerVelocity() { return caster_->velocity_; }
 
-  mechanism::JointState *caster_;
+  pr2_mechanism::JointState *caster_;
 
 private:
   JointVelocityController caster_vel_;
@@ -93,7 +93,7 @@ public:
   CasterControllerEffortNode();
   ~CasterControllerEffortNode();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
   void update();
 

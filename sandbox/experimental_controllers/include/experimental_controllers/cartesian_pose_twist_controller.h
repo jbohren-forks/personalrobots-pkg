@@ -58,7 +58,7 @@ public:
   CartesianPoseTwistController();
   ~CartesianPoseTwistController();
 
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
   bool starting();
   void update();
 
@@ -86,8 +86,8 @@ private:
   KDL::Wrench wrench_out_;
 
   // robot structure
-  mechanism::RobotState *robot_state_;
-  mechanism::Chain chain_;
+  pr2_mechanism::RobotState *robot_state_;
+  pr2_mechanism::Chain chain_;
 
   // pid controllers
   std::vector<control_toolbox::Pid> pid_controller_;

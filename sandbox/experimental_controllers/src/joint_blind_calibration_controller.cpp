@@ -48,7 +48,7 @@ JointBlindCalibrationController::~JointBlindCalibrationController()
 {
 }
 
-bool JointBlindCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointBlindCalibrationController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   assert(config);
@@ -160,9 +160,9 @@ void JointBlindCalibrationController::update()
       double joint_zero = ((joint_max_raw - joint_->joint_->joint_limit_max_) +
                            (joint_min_raw - joint_->joint_->joint_limit_min_)) / 2.0;
       std::vector<Actuator*> fake_a;
-      std::vector<mechanism::JointState*> fake_j;
+      std::vector<pr2_mechanism::JointState*> fake_j;
       fake_a.push_back(new Actuator);
-      fake_j.push_back(new mechanism::JointState);
+      fake_j.push_back(new pr2_mechanism::JointState);
       fake_j[0]->position_ = joint_zero;
       transmission_->propagatePositionBackwards(fake_j, fake_a);
       actuator_->state_.zero_offset_ = fake_a[0]->state_.position_;
@@ -214,7 +214,7 @@ void JointBlindCalibrationControllerNode::update()
   return true;
 }
 
-bool JointBlindCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointBlindCalibrationControllerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   ros::Node *node = ros::Node::instance();
 

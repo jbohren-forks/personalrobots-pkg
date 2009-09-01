@@ -36,7 +36,7 @@
 #include "ros/console.h"
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
 
-using namespace mechanism;
+using namespace pr2_mechanism;
 using namespace controller;
 using namespace boost::accumulators;
 using namespace ros;
@@ -516,7 +516,7 @@ void MechanismControl::publishState()
         if (type == urdf::Joint::REVOLUTE || type == urdf::Joint::CONTINUOUS || type == urdf::Joint::PRISMATIC)
         {
           assert(j < pub_mech_state_.msg_.get_joint_states_size());
-          mechanism::JointState *in = &state_->joint_states_[i];
+          pr2_mechanism::JointState *in = &state_->joint_states_[i];
           pr2_mechanism_msgs::JointState *out = &pub_mech_state_.msg_.joint_states[j];
           out->name = model_.joints_[i]->name_;
           out->position = in->position_;
@@ -573,7 +573,7 @@ void MechanismControl::publishState()
           assert(j < pub_joint_state_.msg_.get_position_size());
           assert(j < pub_joint_state_.msg_.get_velocity_size());
           assert(j < pub_joint_state_.msg_.get_effort_size());
-          mechanism::JointState *in = &state_->joint_states_[i];
+          pr2_mechanism::JointState *in = &state_->joint_states_[i];
           pub_joint_state_.msg_.name[j] = model_.joints_[i]->name_;
           pub_joint_state_.msg_.position[j] = in->position_;
           pub_joint_state_.msg_.velocity[j] = in->velocity_;

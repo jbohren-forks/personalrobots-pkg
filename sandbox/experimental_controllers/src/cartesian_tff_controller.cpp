@@ -64,7 +64,7 @@ CartesianTFFController::~CartesianTFFController()
 
 
 
-bool CartesianTFFController::init(mechanism::RobotState *robot_state, const ros::NodeHandle& n)
+bool CartesianTFFController::init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle& n)
 {
   node_ = n;
 

@@ -32,8 +32,8 @@
 #include <pluginlib/class_list_macros.h>
 
 PLUGINLIB_REGISTER_CLASS(NonlinearTransmission, 
-                         mechanism::NonlinearTransmission, 
-                         mechanism::Transmission)
+                         pr2_mechanism::NonlinearTransmission, 
+                         pr2_mechanism::Transmission)
 
 
 void NonlinearTransmission::initXml(TiXmlElement *elt, Robot *robot)

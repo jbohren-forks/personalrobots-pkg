@@ -83,7 +83,7 @@ public:
   double threshold_start_;
   double nullspace_start_;
   double max_constraint_torque_;
-  mechanism::Joint* joint_;
+  pr2_mechanism::Joint* joint_;
   int joint_chain_index_;
   double joint_error_;
   bool remove_;
@@ -106,7 +106,7 @@ public:
    * \param tip_name The tip of the chain.
    * \param *robot The robot.
    */
-  bool init(mechanism::RobotState *robot, const std::string& root_name,
+  bool init(pr2_mechanism::RobotState *robot, const std::string& root_name,
             const std::string& tip_name, const std::string& controller_name);
 
   void update();
@@ -126,10 +126,10 @@ private:
   Eigen::Matrix<float,6,1> task_wrench_;
   std::list<ConstraintState> constraint_list_;
   int list_size_;
-  mechanism::Chain mechanism_chain_;
+  pr2_mechanism::Chain mechanism_chain_;
 
   std::string controller_name_;
-  mechanism::RobotState *robot_state_;
+  pr2_mechanism::RobotState *robot_state_;
 
   KDL::Chain kdl_chain_;
   KDL::ChainJntToJacSolver *jnt_to_jac_solver_;
@@ -163,7 +163,7 @@ class JointChainConstraintControllerNode : public Controller
   JointChainConstraintControllerNode();
   ~JointChainConstraintControllerNode();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
  private:
@@ -172,7 +172,7 @@ class JointChainConstraintControllerNode : public Controller
   ros::Node* node_;
   std::string controller_name_;
   JointChainConstraintController controller_;
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
 
   geometry_msgs::Wrench wrench_msg_;
 

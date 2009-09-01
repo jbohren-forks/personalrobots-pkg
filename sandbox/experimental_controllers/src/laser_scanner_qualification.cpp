@@ -69,7 +69,7 @@ LaserScannerQualification::~LaserScannerQualification()
 
 }
 
-void LaserScannerQualification::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
+void LaserScannerQualification::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, pr2_mechanism::Robot *robot)
 {
   robot_ = robot;
   joint_ = robot->getJoint(name);
@@ -79,7 +79,7 @@ void LaserScannerQualification::init(double p_gain, double i_gain, double d_gain
   last_time_= time;
 }
 
-bool LaserScannerQualification::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool LaserScannerQualification::initXml(pr2_mechanism::Robot *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;
@@ -302,7 +302,7 @@ bool LaserScannerQualificationNode::getCommand(
   return true;
 }
 
-bool LaserScannerQualificationNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool LaserScannerQualificationNode::initXml(pr2_mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::Node *node = ros::Node::instance();
   string prefix = config->Attribute("name");

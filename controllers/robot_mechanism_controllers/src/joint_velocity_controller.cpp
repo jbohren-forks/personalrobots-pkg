@@ -51,7 +51,7 @@ JointVelocityController::~JointVelocityController()
   sub_command_.shutdown();
 }
 
-bool JointVelocityController::init(mechanism::RobotState *robot, const std::string &joint_name,
+bool JointVelocityController::init(pr2_mechanism::RobotState *robot, const std::string &joint_name,
 				   const control_toolbox::Pid &pid)
 {
   assert(robot);
@@ -71,7 +71,7 @@ bool JointVelocityController::init(mechanism::RobotState *robot, const std::stri
   return true;
 }
 
-bool JointVelocityController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointVelocityController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;
@@ -98,7 +98,7 @@ bool JointVelocityController::initXml(mechanism::RobotState *robot, TiXmlElement
   return init(robot, joint_name, pid);
 }
 
-bool JointVelocityController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool JointVelocityController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   assert(robot);
   node_ = n;

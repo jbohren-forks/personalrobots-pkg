@@ -80,7 +80,7 @@ JointTrajectoryController::~JointTrajectoryController()
     delete joint_trajectory_;
 }
 
-bool JointTrajectoryController::init(mechanism::RobotState *robot, const ros::NodeHandle& n)
+bool JointTrajectoryController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle& n)
 {
   // get xml from parameter server
   string xml_string;
@@ -107,7 +107,7 @@ bool JointTrajectoryController::init(mechanism::RobotState *robot, const ros::No
 }
 
 
-bool JointTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElement * config)
+bool JointTrajectoryController::initXml(pr2_mechanism::RobotState * robot, TiXmlElement * config)
 {
   name_ = config->Attribute("name");
   prefix_ = name_ + "/";
@@ -211,7 +211,7 @@ void JointTrajectoryController::unsubscribeTopics()
   node_->unsubscribe(prefix_ + listen_topic_name_);
 }
 
-bool JointTrajectoryController::loadXmlFile(mechanism::RobotState * robot, TiXmlElement * config)
+bool JointTrajectoryController::loadXmlFile(pr2_mechanism::RobotState * robot, TiXmlElement * config)
 {
   ROS_DEBUG("Loading joint trajectory controller from XML.");
 
@@ -278,7 +278,7 @@ void JointTrajectoryController::initTrajectory(TiXmlElement * config)
 
   for(int i=0; i<num_joints_; i++)
   {
-    if(joint_type_[i] == mechanism::JOINT_CONTINUOUS)
+    if(joint_type_[i] == pr2_mechanism::JOINT_CONTINUOUS)
     {
       ROS_INFO("Setting joint %d to wrap",i);
       joint_trajectory_->setJointWraps(i);
@@ -318,7 +318,7 @@ void JointTrajectoryController::setTrajectoryCmdToCurrentValues()
 
 void JointTrajectoryController::addJoint(const std::string &name)
 {
-  mechanism::Joint *joint;
+  pr2_mechanism::Joint *joint;
   joint = robot_state_->getJointState(name)->joint_;
   if(!joint)
   {
@@ -379,11 +379,11 @@ void JointTrajectoryController::computeJointErrors()
 {
   for(unsigned int i=0; i < (unsigned int) num_joints_; i++)
   {
-    if(joint_type_[i] == mechanism::JOINT_CONTINUOUS)
+    if(joint_type_[i] == pr2_mechanism::JOINT_CONTINUOUS)
     {
       joint_position_errors_[i] = angles::shortest_angular_distance(joint_cmd_[i], current_joint_position_[i]);
     }
-    else if(joint_type_[i] == mechanism::JOINT_ROTARY)
+    else if(joint_type_[i] == pr2_mechanism::JOINT_ROTARY)
     {
       joint_position_errors_[i] = angles::shortest_angular_distance(joint_cmd_[i], current_joint_position_[i]);
     }
@@ -556,7 +556,7 @@ bool JointTrajectoryController::reachedGoalPosition(std::vector<double> joint_cm
   double error(0.0);
   for(int i=0;i < num_joints_;++i)
   {
-    if(joint_type_[i] == mechanism::JOINT_CONTINUOUS || joint_type_[i] == mechanism::JOINT_ROTARY)
+    if(joint_type_[i] == pr2_mechanism::JOINT_CONTINUOUS || joint_type_[i] == pr2_mechanism::JOINT_ROTARY)
     {
       error = fabs(angles::shortest_angular_distance(goal_.q_[i], current_joint_position_[i]));
     }

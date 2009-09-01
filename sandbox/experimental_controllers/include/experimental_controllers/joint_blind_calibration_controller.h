@@ -85,7 +85,7 @@ public:
    * \brief Functional way to initialize limits and gains.
    *
    */
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
 
   /*!
@@ -107,8 +107,8 @@ protected:
 
   double search_velocity_;
   Actuator *actuator_;
-  mechanism::JointState *joint_;
-  mechanism::Transmission *transmission_;
+  pr2_mechanism::JointState *joint_;
+  pr2_mechanism::Transmission *transmission_;
 
   double init_time;
 
@@ -141,7 +141,7 @@ public:
 
   void update();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
   bool calibrateCommand(experimental_controllers::CalibrateJoint::Request &req,

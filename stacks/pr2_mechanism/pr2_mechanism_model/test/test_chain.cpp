@@ -34,7 +34,7 @@
 #include "pr2_mechanism_model/chain.h"
 #include <kdl/chainfksolverpos_recursive.hpp>
 
-using namespace mechanism;
+using namespace pr2_mechanism;
 using namespace std;
 
 

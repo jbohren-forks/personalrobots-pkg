@@ -83,8 +83,8 @@ public:
    * \param time The current hardware time.
    * \param *joint The joint that is being controlled.
    */
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint);
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  void init(double p_gain, double i_gain, double d_gain, double windup, double time,pr2_mechanism::Robot *robot, pr2_mechanism::Joint *joint);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -123,13 +123,13 @@ public:
 
 private:
   bool tune_velocity_; /**<If true, uses velocity to tune. Otherwise uses position>*/
-  mechanism::Joint* joint_;  /**< Joint we're controlling.> */
-  mechanism::JointState* joint_state_;  /**< Joint we're controlling.> */
+  pr2_mechanism::Joint* joint_;  /**< Joint we're controlling.> */
+  pr2_mechanism::JointState* joint_state_;  /**< Joint we're controlling.> */
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller.> */
   ros::Time last_time_;         /**< Last time stamp of update.> */
   double command_;           /**< Last commanded position.> */
-  mechanism::Robot *robot_;  /**< Pointer to robot structure.> */
-  mechanism::RobotState *robot_state_;  /**< Pointer to robot structure.> */
+  pr2_mechanism::Robot *robot_;  /**< Pointer to robot structure.> */
+  pr2_mechanism::RobotState *robot_state_;  /**< Pointer to robot structure.> */
   const char* file_path_; /**<Filename and location to write results. >*/
   void writeGainValues(double period, double amplitude, double relay_height); /**<Calculate and write gain values> */
 
@@ -171,7 +171,7 @@ public:
 
   void update();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
   bool setCommand(experimental_controllers::SetCommand::Request &req,

@@ -55,9 +55,9 @@
 #include <diagnostic_msgs/DiagnosticArray.h>
 
 
-namespace controller{
+namespace pr2_mechanism{
 
-class MechanismControl: public ControllerProvider {
+class MechanismControl: public controller::ControllerProvider {
 
 public:
   MechanismControl(HardwareInterface *hw);
@@ -77,8 +77,8 @@ public:
   // controllers_lock_ must be locked before calling
   virtual controller::Controller* getControllerByName(const std::string& name);
 
-  mechanism::Robot model_;
-  mechanism::RobotState *state_;
+  pr2_mechanism::Robot model_;
+  pr2_mechanism::RobotState *state_;
   HardwareInterface *hw_;
 
 private:

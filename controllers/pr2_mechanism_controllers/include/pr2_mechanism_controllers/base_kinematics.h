@@ -59,7 +59,7 @@ namespace controller
       /*!
        * \brief JointState for this wheel joint
        */
-      mechanism::JointState *joint_;
+      pr2_mechanism::JointState *joint_;
 
       /*!
        * \brief default offset from the parent caster before any transformations
@@ -127,8 +127,8 @@ namespace controller
        * @param robot_state The robot's current state
        * @param config Tiny xml element pointing to this wheel
        */
-//      void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-      bool init(mechanism::RobotState *robot_state, const ros::NodeHandle &node, std::string link_name);
+//      void initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config);
+      bool init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &node, std::string link_name);
 
       /*!
        * \brief Computes 2d postion of the wheel relative to the center of the base
@@ -146,7 +146,7 @@ namespace controller
       /*!
        * \brief JointState for this caster joint
        */
-      mechanism::JointState *joint_;
+      pr2_mechanism::JointState *joint_;
 
       /*!
        * \brief offset from the center of the base
@@ -220,8 +220,8 @@ namespace controller
        * @param robot_state The robot's current state
        * @param config Tiny xml element pointing to this caster
        */
-//      void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-      bool init(mechanism::RobotState *robot_state,  const ros::NodeHandle &node, std::string link_name);
+//      void initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config);
+      bool init(pr2_mechanism::RobotState *robot_state,  const ros::NodeHandle &node, std::string link_name);
   };
 
   /*! \class
@@ -237,8 +237,8 @@ namespace controller
        * @param config Tiny xml element pointing to its controller
        * @return Successful init
        */
-//      bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-    bool init(mechanism::RobotState *robot_state, const ros::NodeHandle &node);
+//      bool initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config);
+    bool init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &node);
 
       /*!
        * \brief Computes 2d postion of every wheel relative to the center of the base
@@ -256,7 +256,7 @@ namespace controller
       /*!
        * \brief remembers everything about the state of the robot
        */
-      mechanism::RobotState *robot_state_;
+      pr2_mechanism::RobotState *robot_state_;
 
       /*!
        * \brief number of wheels connected to the base

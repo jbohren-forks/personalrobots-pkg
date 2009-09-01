@@ -48,7 +48,7 @@ DallasController::~DallasController()
   sub_command_.shutdown();
 }
 
-bool DallasController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool DallasController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   robot_ = robot;
   node_ = n;

@@ -31,7 +31,7 @@
 
 #include "pr2_mechanism_model/chain.h"
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 using namespace std;
 

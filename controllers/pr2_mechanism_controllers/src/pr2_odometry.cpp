@@ -50,7 +50,7 @@ Pr2Odometry::~Pr2Odometry()
 {
 }
 
-bool Pr2Odometry::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node)
+bool Pr2Odometry::init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &node)
 {
   node_ = node;
   node.param("odometer/distance", odometer_distance_, 0.0);
@@ -100,7 +100,7 @@ bool Pr2Odometry::init(mechanism::RobotState *robot_state, const ros::NodeHandle
   return true;
 }
 
-bool Pr2Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+bool Pr2Odometry::initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   return init(robot_state,ros::NodeHandle(config->Attribute("name")));
 }

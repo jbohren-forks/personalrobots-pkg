@@ -1,7 +1,7 @@
 #include <mechanism_controller_test/null_hardware.h>
 
 NullHardware::NullHardware(){
-  hw_ = new HardwareInterface(0);
+  hw_ = new pr2_mechanism::HardwareInterface(0);
 }
 
 NullHardware::~NullHardware(){

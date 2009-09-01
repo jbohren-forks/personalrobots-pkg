@@ -66,7 +66,7 @@ public:
   
   void update();
   
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
   
   /**
    * \brief Convert time to an unrolled phase (in cycles).
@@ -226,8 +226,8 @@ private:
   bool setWaveformSrv(trigger_configuration &req,
       robot_mechanism_controllers::SetWaveform::Response &resp);
     
-  mechanism::RobotState * robot_;
-  ActuatorCommand *actuator_command_;
+  pr2_mechanism::RobotState * robot_;
+  pr2_mechanism::ActuatorCommand *actuator_command_;
   
   double prev_tick_;
   

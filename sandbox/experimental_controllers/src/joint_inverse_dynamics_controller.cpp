@@ -62,7 +62,7 @@ JointInverseDynamicsController::~JointInverseDynamicsController()
 
 
 
-bool JointInverseDynamicsController::init(mechanism::RobotState *robot_state, const NodeHandle& n)
+bool JointInverseDynamicsController::init(pr2_mechanism::RobotState *robot_state, const NodeHandle& n)
 {
   node_ = n;
 

@@ -55,8 +55,8 @@ public:
   CartesianHybridController();
   ~CartesianHybridController() {}
 
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  virtual bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
   virtual void update(void);
   virtual bool starting();
 
@@ -85,9 +85,9 @@ public:
   KDL::Frame task_frame_offset_;  // task frame in the root frame
   KDL::Frame tool_frame_offset_;  // tool frame in the ee frame
 
-  mechanism::Chain chain_;
+  pr2_mechanism::Chain chain_;
   KDL::Chain kdl_chain_;
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
   ros::Time last_time_;
 
   int initial_mode_;
@@ -106,8 +106,8 @@ public:
   CartesianHybridControllerNode();
   ~CartesianHybridControllerNode();
 
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  virtual bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
   virtual void update(void);
   virtual bool starting() { return c_.starting(); }
 

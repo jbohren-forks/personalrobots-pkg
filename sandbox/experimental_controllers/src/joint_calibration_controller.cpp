@@ -48,7 +48,7 @@ JointCalibrationController::~JointCalibrationController()
 {
 }
 
-bool JointCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointCalibrationController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   assert(config);
@@ -130,9 +130,9 @@ void JointCalibrationController::update()
     if (switch_state_ != original_switch_state_)
     {
       Actuator a;
-      mechanism::JointState j;
+      pr2_mechanism::JointState j;
       std::vector<Actuator*> fake_a;
-      std::vector<mechanism::JointState*> fake_j;
+      std::vector<pr2_mechanism::JointState*> fake_j;
       fake_a.push_back(&a);
       fake_j.push_back(&j);
 
@@ -201,7 +201,7 @@ void JointCalibrationControllerNode::update()
   }
 }
 
-bool JointCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointCalibrationControllerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;

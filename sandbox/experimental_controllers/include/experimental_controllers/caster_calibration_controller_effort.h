@@ -47,7 +47,7 @@ public:
   CasterCalibrationControllerEffort();
   ~CasterCalibrationControllerEffort();
 
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
 
   /*!
@@ -71,8 +71,8 @@ protected:
   bool original_switch_state_;
 
   Actuator *actuator_;
-  mechanism::JointState *joint_;
-  mechanism::Transmission *transmission_;
+  pr2_mechanism::JointState *joint_;
+  pr2_mechanism::Transmission *transmission_;
 
   controller::CasterControllerEffort cc_;
 };
@@ -86,13 +86,13 @@ public:
 
   void update();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
   bool calibrateCommand(experimental_controllers::CalibrateJoint::Request &req,
                         experimental_controllers::CalibrateJoint::Response &resp);
 
 private:
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
   CasterCalibrationControllerEffort c_;
   AdvertisedServiceGuard guard_calibrate_;
 

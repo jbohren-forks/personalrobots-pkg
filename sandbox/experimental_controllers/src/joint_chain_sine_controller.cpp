@@ -64,7 +64,7 @@ JointChainSineController::~JointChainSineController()
 {
 }
 
-bool JointChainSineController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+bool JointChainSineController::initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config)
 {
 
   // ensure that we got the robot pointer
@@ -144,7 +144,7 @@ bool JointChainSineController::initXml(mechanism::RobotState *robot_state, TiXml
     {
       //int real_joint_index = mechanism_chain_.joint_indices_[i];
       //robot_state_->joint_states_[real_joint_index].joint_;
-      mechanism::Joint *joint = mechanism_chain_.getJoint(i);
+      pr2_mechanism::Joint *joint = mechanism_chain_.getJoint(i);
       if (joint->name_.compare(joint_name_c)==0)
       {
         matchIndex = i;
@@ -196,9 +196,9 @@ void JointChainSineController::initSinusoids(double min_freq, double max_freq, d
     double freq = exp(log_min_freq + log_freq_add*i) + gaussian();
     //int real_joint_index = mechanism_chain_.joint_indices_[i];
     //robot_state_->joint_states_[real_joint_index].joint_;
-    mechanism::Joint *joint = mechanism_chain_.getJoint(i);
+    pr2_mechanism::Joint *joint = mechanism_chain_.getJoint(i);
     //cout << joint->name_ << endl;
-    if (joint->type_ == mechanism::JOINT_CONTINUOUS)
+    if (joint->type_ == pr2_mechanism::JOINT_CONTINUOUS)
     {
       // add a slow high amplitude sine:
       sinusoids_[i].push_back(control_toolbox::Sinusoid(0.0, 2.0*M_PI, min_freq/5.0 + fabs(gaussian()), 0.0));
@@ -274,14 +274,14 @@ void JointChainSineController::update()
   {
     //int real_joint_index = mechanism_chain_.joint_indices_[i];
     //&robot_state_->joint_states_[real_joint_index];
-    mechanism::Joint *joint = mechanism_chain_.getJoint(i);
+    pr2_mechanism::Joint *joint = mechanism_chain_.getJoint(i);
 
     // get the errors:
     double error = jnt_pos_vel_.q(i) - jnt_des_pos_vel_.q(i);
     double errord = (jnt_pos_vel_.qdot(i) - jnt_des_pos_vel_.qdot(i));
 
     // correct the position error if it's a continuous joint with wrap-arounds...
-    if(joint->type_ == mechanism::JOINT_CONTINUOUS)
+    if(joint->type_ == pr2_mechanism::JOINT_CONTINUOUS)
     {
       while (error < -M_PI)
       {

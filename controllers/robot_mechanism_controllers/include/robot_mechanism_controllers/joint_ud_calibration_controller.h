@@ -50,8 +50,8 @@ public:
   JointUDCalibrationController();
   virtual ~JointUDCalibrationController();
 
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  virtual bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   virtual void update();
 
@@ -64,7 +64,7 @@ public:
 
 protected:
 
-  mechanism::RobotState* robot_;
+  pr2_mechanism::RobotState* robot_;
   ros::NodeHandle node_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<std_msgs::Empty> > pub_calibrated_;
   ros::Time last_publish_time_;
@@ -76,9 +76,9 @@ protected:
   double search_velocity_;
   bool original_switch_state_;
 
-  Actuator *actuator_;
-  mechanism::JointState *joint_;
-  mechanism::Transmission *transmission_;
+  pr2_mechanism::Actuator *actuator_;
+  pr2_mechanism::JointState *joint_;
+  pr2_mechanism::Transmission *transmission_;
 
   controller::JointVelocityController vc_;
 };

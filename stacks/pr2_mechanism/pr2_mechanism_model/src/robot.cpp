@@ -39,7 +39,7 @@
 #include <pluginlib/class_loader.h>
 
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 bool Robot::initXml(TiXmlElement *root)
 {
@@ -76,7 +76,7 @@ bool Robot::initXml(TiXmlElement *root)
   }
 
   // Constructs the transmissions by parsing custom xml.
-  pluginlib::ClassLoader<mechanism::Transmission> transmission_loader("pr2_mechanism_model", "mechanism::Transmission");
+  pluginlib::ClassLoader<pr2_mechanism::Transmission> transmission_loader("pr2_mechanism_model", "pr2_mechanism::Transmission");
   TiXmlElement *xit = NULL;
   for (xit = root->FirstChildElement("transmission"); xit;
        xit = xit->NextSiblingElement("transmission"))
@@ -255,4 +255,4 @@ void RobotState::propagateEffortBackwards()
 }
 
 
-} // namespace mechanism
+} // namespace pr2_mechanism

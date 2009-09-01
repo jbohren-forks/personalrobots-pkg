@@ -56,7 +56,7 @@ JointAutotuner::~JointAutotuner()
   std::cout<<"Destroyed autotuner\n";
 }
 
-void JointAutotuner::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+void JointAutotuner::init(double p_gain, double i_gain, double d_gain, double windup, double time,pr2_mechanism::Robot *robot, pr2_mechanism::Joint *joint)
 {
   pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
 
@@ -69,7 +69,7 @@ void JointAutotuner::init(double p_gain, double i_gain, double d_gain, double wi
    current_state_ = POSITIVE_PEAK;
 }
 
-bool JointAutotuner::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointAutotuner::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot->model_;
@@ -340,7 +340,7 @@ bool JointAutotunerNode::getActual(
   return true;
 }
 
-bool JointAutotunerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointAutotunerNode::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
 ros::Node *node = ros::Node::instance();
   string prefix = config->Attribute("name");

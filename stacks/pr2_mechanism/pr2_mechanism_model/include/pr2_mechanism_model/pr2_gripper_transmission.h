@@ -49,7 +49,7 @@
 #include "pr2_mechanism_model/robot.h"
 //#include <fstream>
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 class PR2GripperTransmission : public Transmission
 {
@@ -115,6 +115,6 @@ extern const double PR2GripperTransmission::coef_b_          ;
 extern const double PR2GripperTransmission::coef_r_          ;
 extern const double PR2GripperTransmission::rad2mr_          ;
 
-} // namespace mechanism
+} // namespace pr2_mechanism
 
 #endif

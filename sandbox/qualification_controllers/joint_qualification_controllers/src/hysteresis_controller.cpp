@@ -87,7 +87,7 @@ HysteresisController::~HysteresisController()
 {
 }
 
-bool HysteresisController::init( mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool HysteresisController::init( pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   assert(robot);
   robot_ = robot;
@@ -240,7 +240,7 @@ void HysteresisController::update()
       state_ = MOVING;
     break;
   case MOVING:
-    if (fabs(joint_->velocity_) < 0.001 && fabs(joint_->commanded_effort_) > max_effort_ && joint_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
+    if (fabs(joint_->velocity_) < 0.001 && fabs(joint_->commanded_effort_) > max_effort_ && joint_->joint_->type_!=pr2_mechanism::JOINT_CONTINUOUS)
     {
       velocity_controller_->setCommand(0.0);
       if (loop_count_ < 3)
@@ -248,7 +248,7 @@ void HysteresisController::update()
       else
         state_ = ANALYZING;
     }
-    else if(fabs(joint_->position_-initial_position_)>6.28 && joint_->joint_->type_==mechanism::JOINT_CONTINUOUS)
+    else if(fabs(joint_->position_-initial_position_)>6.28 && joint_->joint_->type_==pr2_mechanism::JOINT_CONTINUOUS)
     {
 
       velocity_controller_->setCommand(0.0);

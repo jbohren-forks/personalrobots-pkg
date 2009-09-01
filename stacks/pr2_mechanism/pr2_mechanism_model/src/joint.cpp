@@ -40,7 +40,7 @@
 //#include "urdf/parser.h"
 
 using namespace std;
-using namespace mechanism;
+using namespace pr2_mechanism;
 
 static const pair<int, int> types[] = {
   pair<int, int>(urdf::Joint::UNKNOWN, JOINT_NONE),

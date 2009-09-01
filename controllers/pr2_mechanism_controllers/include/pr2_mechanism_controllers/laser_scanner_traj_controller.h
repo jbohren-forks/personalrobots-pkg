@@ -68,8 +68,8 @@ public:
   LaserScannerTrajController() ;
   ~LaserScannerTrajController() ;
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   virtual void update() ;
 
@@ -93,16 +93,16 @@ private:
 
   //void initDErrorFilter(double f) ;                                     // Initializes d_error_filter using a smoothing factor
 
-  mechanism::RobotState *robot_ ;
-  mechanism::JointState *joint_state_ ;                                 // Need this to check the calibrated flag on the joint
+  pr2_mechanism::RobotState *robot_ ;
+  pr2_mechanism::JointState *joint_state_ ;                                 // Need this to check the calibrated flag on the joint
 
   boost::mutex traj_lock_ ;                                       // Mutex for traj_
   trajectory::Trajectory traj_ ;                                        // Stores the current trajectory being executed
 
   //boost::mutex track_link_lock_ ;
   //bool track_link_enabled_ ;
-  //mechanism::LinkState* target_link_ ;
-  //mechanism::LinkState* mount_link_ ;
+  //pr2_mechanism::LinkState* target_link_ ;
+  //pr2_mechanism::LinkState* mount_link_ ;
   tf::Vector3 track_point_ ;
 
   //JointPositionSmoothController joint_position_controller_ ;            // The PID position controller that is doing all the under-the-hood controls stuff
@@ -133,8 +133,8 @@ public:
 
   void update() ;
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config) ;
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config) ;
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   // Message Callbacks
   void setPeriodicCmd() ;
@@ -149,7 +149,7 @@ public:
 private:
   ros::Node *node_ ;
   LaserScannerTrajController c_ ;
-  mechanism::RobotState *robot_ ;
+  pr2_mechanism::RobotState *robot_ ;
   std::string service_prefix_ ;
 
   int prev_profile_segment_ ;                                                    //!< The segment in the current profile when update() was last called

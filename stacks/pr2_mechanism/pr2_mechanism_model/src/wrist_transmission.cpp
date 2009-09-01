@@ -39,11 +39,11 @@
 #include "pr2_mechanism_model/robot.h"
 #include "pr2_mechanism_model/wrist_transmission.h"
 
-using namespace mechanism;
+using namespace pr2_mechanism;
 
 PLUGINLIB_REGISTER_CLASS(WristTransmission, 
-                         mechanism::WristTransmission, 
-                         mechanism::Transmission)
+                         pr2_mechanism::WristTransmission, 
+                         pr2_mechanism::Transmission)
 
 
 bool WristTransmission::initXml(TiXmlElement *elt, Robot *robot)

@@ -31,7 +31,7 @@
 
 #include "pr2_mechanism_control/recorder.h"
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 Recorder::Recorder() : robot_(NULL), is_running_(false) {}
 
@@ -54,7 +54,7 @@ void Recorder::channel(unsigned int index, const std::string &name)
   msg_[0].channels[index].name = name;
 }
 
-bool Recorder::init(mechanism::RobotState *robot, const ros::NodeHandle &node, const std::string &topic)
+bool Recorder::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &node, const std::string &topic)
 {
   robot_ = robot;
 

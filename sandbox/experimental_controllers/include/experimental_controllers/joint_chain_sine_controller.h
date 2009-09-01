@@ -79,7 +79,7 @@ public:
   JointChainSineController();
   virtual ~JointChainSineController();
 
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
   /**
    * \brief Issues commands to the joints. Should be called at regular intervals
@@ -87,8 +87,8 @@ public:
   virtual void update();
 
 private:
-  mechanism::Chain mechanism_chain_;            /**< Kinematic chain */
-  mechanism::RobotState *robot_state_;          /**< Pointer to robot structure. */
+  pr2_mechanism::Chain mechanism_chain_;            /**< Kinematic chain */
+  pr2_mechanism::RobotState *robot_state_;          /**< Pointer to robot structure. */
   ros::Time last_time_;                         /**< Last time stamp of update. */
   bool initialized_;                            /**< Flag which indicates whether this class has been initialized */
   KDL::Chain kdl_chain_;                        /**< KDL chain */

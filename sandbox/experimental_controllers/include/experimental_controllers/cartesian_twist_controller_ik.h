@@ -58,7 +58,7 @@ namespace controller {
     CartesianTwistControllerIk();
     ~CartesianTwistControllerIk();
 
-    bool init(mechanism::RobotState *robot_state, const ros::NodeHandle& n);
+    bool init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle& n);
     bool starting();
     void update();
 
@@ -80,8 +80,8 @@ namespace controller {
     std::vector<control_toolbox::Pid> fb_pid_controller_;
 
     // robot description
-    mechanism::RobotState *robot_state_;
-    mechanism::Chain chain_;
+    pr2_mechanism::RobotState *robot_state_;
+    pr2_mechanism::Chain chain_;
 
     // kdl stuff for kinematics
     KDL::Chain             kdl_chain_;

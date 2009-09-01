@@ -58,7 +58,7 @@ public:
   HeadPositionController();
   ~HeadPositionController();
 
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   bool starting();
   void update();
@@ -70,7 +70,7 @@ private:
   
   ros::NodeHandle node_;
   std::string pan_link_name_, tilt_link_name_;
-  mechanism::RobotState *robot_state_;
+  pr2_mechanism::RobotState *robot_state_;
   ros::Subscriber sub_command_;
   
   void command(const sensor_msgs::JointStateConstPtr& command_msg);

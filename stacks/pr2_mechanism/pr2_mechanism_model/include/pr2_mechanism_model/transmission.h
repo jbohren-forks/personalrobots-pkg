@@ -41,7 +41,7 @@
 #include "pr2_mechanism_model/joint.h"
 #include "pr2_hardware_interface/hardware_interface.h"
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 class Robot;
 
@@ -77,6 +77,6 @@ public:
   std::vector<std::string> joint_names_;
 };
 
-} // namespace mechanism
+} // namespace pr2_mechanism
 
 #endif

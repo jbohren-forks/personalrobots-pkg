@@ -49,7 +49,7 @@ CartesianSplineTrajectoryController::~CartesianSplineTrajectoryController()
 {
 }
 
-bool CartesianSplineTrajectoryController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
+bool CartesianSplineTrajectoryController::init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &n)
 {
   ROS_INFO("Trying to initialize the controller");
   node_ = n;
@@ -119,7 +119,7 @@ bool CartesianSplineTrajectoryController::init(mechanism::RobotState *robot_stat
   return true;
 }
 
-bool CartesianSplineTrajectoryController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CartesianSplineTrajectoryController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   return init(robot, ros::NodeHandle(config->Attribute("name")));
 }

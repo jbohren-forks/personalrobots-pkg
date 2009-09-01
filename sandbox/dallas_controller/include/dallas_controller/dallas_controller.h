@@ -43,7 +43,7 @@ public:
   DallasController();
   ~DallasController();
 
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  virtual bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   virtual bool starting();
   virtual void update();
@@ -57,7 +57,7 @@ public:
   }
 
 private:
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
   ros::NodeHandle node_;
 
   ros::Time last_time_;

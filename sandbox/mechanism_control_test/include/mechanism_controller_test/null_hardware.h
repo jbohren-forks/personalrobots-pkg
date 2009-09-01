@@ -21,7 +21,7 @@ public:
 
   void initXml(TiXmlElement *config);
 
-  HardwareInterface *hw_;
+  pr2_mechanism::HardwareInterface *hw_;
 
 private:
 };

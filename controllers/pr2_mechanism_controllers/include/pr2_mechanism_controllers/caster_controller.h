@@ -61,12 +61,12 @@ public:
   CasterController();
   ~CasterController();
 
-  bool init(mechanism::RobotState *robot_state,
+  bool init(pr2_mechanism::RobotState *robot_state,
             const std::string &caster_joint,
             const std::string &wheel_l_joint, const std::string &wheel_r_joint,
             const control_toolbox::Pid &caster_pid, const control_toolbox::Pid &wheel_pid);
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   void update();
 
@@ -76,7 +76,7 @@ public:
   double getSteerPosition() { return caster_->position_; }
   double getSteerVelocity() { return caster_->velocity_; }
 
-  mechanism::JointState *caster_;
+  pr2_mechanism::JointState *caster_;
 
 private:
   ros::NodeHandle node_;

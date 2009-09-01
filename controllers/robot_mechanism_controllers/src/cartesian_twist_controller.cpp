@@ -58,7 +58,7 @@ CartesianTwistController::~CartesianTwistController()
 
 
 
-bool CartesianTwistController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+bool CartesianTwistController::initXml(pr2_mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   // get the controller name from xml file
   std::string controller_name = config->Attribute("name") ? config->Attribute("name") : "";
@@ -70,7 +70,7 @@ bool CartesianTwistController::initXml(mechanism::RobotState *robot_state, TiXml
   return init(robot_state, ros::NodeHandle(controller_name));
 }
 
-bool CartesianTwistController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
+bool CartesianTwistController::init(pr2_mechanism::RobotState *robot_state, const ros::NodeHandle &n)
 {
   node_ = n;
 

@@ -75,7 +75,7 @@ SineSweepController::~SineSweepController()
   delete sweep_;
 }
 
-bool SineSweepController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool SineSweepController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   assert(robot);
   robot_ = robot;

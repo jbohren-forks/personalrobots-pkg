@@ -36,11 +36,11 @@
 #include <algorithm>
 #include <numeric>
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 PLUGINLIB_REGISTER_CLASS(GripperTransmission, 
-                         mechanism::GripperTransmission, 
-                         mechanism::Transmission)
+                         pr2_mechanism::GripperTransmission, 
+                         pr2_mechanism::Transmission)
 
 bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
 {
@@ -179,4 +179,4 @@ void GripperTransmission::propagateEffortBackwards(
   }
 }
 
-} // namespace mechanism
+} // namespace pr2_mechanism

@@ -39,11 +39,11 @@
 #include "pr2_mechanism_model/robot.h"
 #include "pr2_mechanism_model/simple_transmission.h"
 
-using namespace mechanism;
+using namespace pr2_mechanism;
 
 PLUGINLIB_REGISTER_CLASS(SimpleTransmission, 
-                         mechanism::SimpleTransmission, 
-                         mechanism::Transmission)
+                         pr2_mechanism::SimpleTransmission, 
+                         pr2_mechanism::Transmission)
 
 
 bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)

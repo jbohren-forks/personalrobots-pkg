@@ -72,7 +72,7 @@ namespace controller
        */
       bool starting();
 
-      bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+      bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
       /*!
        * \brief Loads controller's information from the xml description file and param server
@@ -80,7 +80,7 @@ namespace controller
        * @param config Tiny xml element pointing to this controller
        * @return Successful init
        */
-      bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+      bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
       /*
        * \brief callback function for setting the desired velocity using a topic

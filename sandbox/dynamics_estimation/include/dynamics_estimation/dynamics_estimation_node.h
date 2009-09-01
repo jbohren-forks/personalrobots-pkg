@@ -95,7 +95,7 @@ private:
   std::string bag_file_;                                /**< Bag file to load trajectory data from */
   bool use_bag_file_;                                   /**< Should I load data from a bag file or listen to mechanism_state? */
 
-  mechanism::Chain mechanism_chain_;                    /**< Mechanism chain */
+  pr2_mechanism::Chain mechanism_chain_;                /**< Mechanism chain */
   KDL::Chain kdl_chain_;                                /**< KDL chain */
   int num_joints_;                                      /**< Number of actuated joints */
   std::map<std::string, int> joint_name_to_index_;      /**< Map of joint names to indices */

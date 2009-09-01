@@ -17,7 +17,7 @@ int main( int argc, char** argv )
 
 
   /*********** Create the robot model ****************/
-  mechanism::Robot *robot_model = new mechanism::Robot;
+  pr2_mechanism::Robot *robot_model = new pr2_mechanism::Robot;
   controller::BaseControllerNode bc;
   HardwareInterface hw(0);
   robot_model->hw_ = &hw;
@@ -33,7 +33,7 @@ int main( int argc, char** argv )
   TiXmlElement *root = xml.FirstChildElement("robot");
   urdf::normalizeXml(root);
   robot_model->initXml(root);
-  mechanism::RobotState *robot_state = new mechanism::RobotState(robot_model, &hw);
+  pr2_mechanism::RobotState *robot_state = new pr2_mechanism::RobotState(robot_model, &hw);
 
 
   /*********** Load the controller file ************/
@@ -106,7 +106,7 @@ TEST (BaseControllerTests, constructionDestruction)
 
 TEST (BaseControllerTests, loadXML)
 {
-  mechanism::Robot *robot = new mechanism::Robot("r2d2");
+  pr2_mechanism::Robot *robot = new pr2_mechanism::Robot("r2d2");
   controller::BaseController bc;
 
   const string xml_controller_file = "controller_base.xml";

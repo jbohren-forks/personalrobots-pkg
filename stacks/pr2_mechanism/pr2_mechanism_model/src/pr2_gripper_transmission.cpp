@@ -38,11 +38,11 @@
 #include <angles/angles.h>
 
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 PLUGINLIB_REGISTER_CLASS(PR2GripperTransmission, 
-                         mechanism::PR2GripperTransmission, 
-                         mechanism::Transmission)
+                         pr2_mechanism::PR2GripperTransmission, 
+                         pr2_mechanism::Transmission)
 
 bool PR2GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
 {
@@ -491,4 +491,4 @@ void PR2GripperTransmission::propagateEffortBackwards(
 
 }
 
-} // namespace mechanism
+} // namespace pr2_mechanism

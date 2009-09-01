@@ -100,9 +100,9 @@ namespace controller
      * @param robot pointer to a robot object passed in by all controllers.
      * @config TiXml configuration element
      */
-    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+    bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
 
-    bool init(mechanism::RobotState *robot, const ros::NodeHandle& n);
+    bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle& n);
 
     /*!
      * @brief Issues commands to the joints and is called at regular intervals in realtime. This function is required
@@ -142,9 +142,9 @@ namespace controller
 
     std::vector<double> joint_cmd_dot_; /**< internal representation of the instantaneous velocity commands for each joint */
 
-    mechanism::Robot* robot_; /**< Pointer to a robot object */
+    pr2_mechanism::Robot* robot_; /**< Pointer to a robot object */
 
-    mechanism::RobotState* robot_state_; /**< Pointer to a robot state object */
+    pr2_mechanism::RobotState* robot_state_; /**< Pointer to a robot state object */
 
     bool refresh_rt_vals_; /**< Indicates that a new trajectory has been received. */
 
@@ -244,7 +244,7 @@ namespace controller
      * @param robot pointer to a robot object passed in by all controllers.
      * @config TiXml configuration element
      */
-    bool loadXmlFile(mechanism::RobotState * robot, TiXmlElement * config);
+    bool loadXmlFile(pr2_mechanism::RobotState * robot, TiXmlElement * config);
 
     /**
      * @brief Initialize the trajectory from a tiny XML element

@@ -48,7 +48,7 @@ CasterCalibrationController::~CasterCalibrationController()
 {
 }
 
-bool CasterCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CasterCalibrationController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   // This method is gross and ugly and should change (and the xml
   // config format along with it)
@@ -101,7 +101,7 @@ bool CasterCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEle
   return true;
 }
 
-bool CasterCalibrationController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool CasterCalibrationController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   node_ = n;
   robot_ = robot;
@@ -217,10 +217,10 @@ void CasterCalibrationController::update()
     bool switch_state_ = actuator_->state_.calibration_reading_;
     if (switch_state_ != original_switch_state_)
     {
-      Actuator a;
-      mechanism::JointState j;
-      std::vector<Actuator*> fake_a;
-      std::vector<mechanism::JointState*> fake_j;
+      pr2_mechanism::Actuator a;
+      pr2_mechanism::JointState j;
+      std::vector<pr2_mechanism::Actuator*> fake_a;
+      std::vector<pr2_mechanism::JointState*> fake_j;
       fake_a.push_back(&a);
       fake_j.push_back(&j);
 

@@ -49,7 +49,7 @@
 #include "pr2_mechanism_model/transmission.h"
 #include "pr2_mechanism_model/robot.h"
 
-namespace mechanism {
+namespace pr2_mechanism {
 
 class GripperTransmission : public Transmission
 {
@@ -70,6 +70,6 @@ private:
   double A_, B_; // gripper angle = reduction*acos(A*motor+B)
 };
 
-} // namespace mechanism
+} // namespace pr2_mechanism
 
 #endif

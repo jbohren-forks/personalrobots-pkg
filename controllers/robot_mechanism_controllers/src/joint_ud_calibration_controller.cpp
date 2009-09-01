@@ -52,7 +52,7 @@ JointUDCalibrationController::~JointUDCalibrationController()
 {
 }
 
-bool JointUDCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointUDCalibrationController::initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   assert(config);
@@ -113,7 +113,7 @@ bool JointUDCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEl
   return true;
 }
 
-bool JointUDCalibrationController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+bool JointUDCalibrationController::init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   robot_ = robot;
   node_ = n;
@@ -214,10 +214,10 @@ void JointUDCalibrationController::update()
 
     if (actuator_->state_.calibration_reading_)
     {
-      Actuator a;
-      mechanism::JointState j;
-      std::vector<Actuator*> fake_a;
-      std::vector<mechanism::JointState*> fake_j;
+      pr2_mechanism::Actuator a;
+      pr2_mechanism::JointState j;
+      std::vector<pr2_mechanism::Actuator*> fake_a;
+      std::vector<pr2_mechanism::JointState*> fake_j;
       fake_a.push_back(&a);
       fake_j.push_back(&j);
 

@@ -80,7 +80,7 @@ public:
    * \param *robot The robot that is being controlled.
    * \param &n NodeHandle of mechanism control
    */
-  bool init( mechanism::RobotState *robot, const ros::NodeHandle &n);
+  bool init( pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   /*!
    * \brief Called when controller is started or restarted
@@ -104,7 +104,7 @@ public:
 
 
 private:
-  mechanism::RobotState *robot_;          /**< Pointer to robot structure. */
+  pr2_mechanism::RobotState *robot_;          /**< Pointer to robot structure. */
   ros::Time initial_time_;                   /**< Start time of the test. */
  
   double timeout_;

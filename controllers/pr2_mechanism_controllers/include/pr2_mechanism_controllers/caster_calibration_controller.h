@@ -47,8 +47,8 @@ public:
   CasterCalibrationController();
   ~CasterCalibrationController();
 
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+  virtual bool initXml(pr2_mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool init(pr2_mechanism::RobotState *robot, const ros::NodeHandle &n);
 
 
   /*!
@@ -66,7 +66,7 @@ public:
 protected:
 
   ros::NodeHandle node_;
-  mechanism::RobotState *robot_;
+  pr2_mechanism::RobotState *robot_;
 
   enum { INITIALIZED, BEGINNING, MOVING, CALIBRATED };
   int state_;
@@ -74,9 +74,9 @@ protected:
   double search_velocity_;
   bool original_switch_state_;
 
-  Actuator *actuator_;
-  mechanism::JointState *joint_, *wheel_l_joint_, *wheel_r_joint_;
-  mechanism::Transmission *transmission_;
+  pr2_mechanism::Actuator *actuator_;
+  pr2_mechanism::JointState *joint_, *wheel_l_joint_, *wheel_r_joint_;
+  pr2_mechanism::Transmission *transmission_;
 
   controller::CasterController cc_;
 
