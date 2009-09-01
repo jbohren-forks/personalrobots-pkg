@@ -64,7 +64,13 @@ public:
 		return false;
 	}
 
-
+	/** NOTE - for debugging door planner - ben 8.31.09 */
+	virtual std::vector<int> GetExpandedStates()
+	{
+		printf("Error: Not yet defined for any environment other than door environment.\n");
+		std::vector<int> list;
+		return list;
+	}
 
     //destructor
   virtual ~DiscreteSpaceInformation(){
