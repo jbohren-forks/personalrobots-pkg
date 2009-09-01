@@ -1,6 +1,0 @@
-<launch>
-
-<node pkg="joy_annotator" type="joy_annotator" args="$(find joy_annotator)/cmd.txt" respawn="false"/> 
-
-</launch>
-
