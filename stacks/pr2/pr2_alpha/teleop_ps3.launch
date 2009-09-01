@@ -1,4 +1,6 @@
 <launch>
+  <include file="$(find pr2_alpha)/pre.machine" />
+
   <!-- Start up pairing thing -->
   <node machine="realtime_root" pkg="ps3joy" output="screen"
         type="ps3joy.py" name="ps3_connector" />
