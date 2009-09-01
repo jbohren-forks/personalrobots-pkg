@@ -9,6 +9,7 @@
   <depend package="pr2_defs"/>
   <depend package="pr2_mechanism_msgs" />
   <depend package="pr2_mechanism_controllers" />
+  <depend package="mechanism_bringup" />
 </package>
 
 
