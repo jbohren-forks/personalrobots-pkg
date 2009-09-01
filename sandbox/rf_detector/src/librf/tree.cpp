@@ -631,12 +631,18 @@ namespace librf {
 
 	int Tree::predict_singlefeauture(float * feature, int * leaf_no, int *terminal) const {
 		//base case
+//		cout << "in predict_singlefeauture"<<endl;
 		bool result = false;
 		int cur_node = 0;
 		int label = 0;
 
+//        int level=0;
 		while (!result) {
+//		    cout << "level" << level <<endl;
+//		    level++;
 			const tree_node* n = &vecnodes_.at(cur_node);
+//			cout << n <<endl;
+//			cout << n->attr << endl;
 			assert(n->status == TERMINAL || n->status == SPLIT);
 			if (n->status == TERMINAL) {
 				result = true;
@@ -645,16 +651,22 @@ namespace librf {
 					*leaf_no = n->leaf_no;
 				}
 			} else {
+//			    if (n->attr >= 729)
+//                    cout << "n->attr" << (n->attr) << "left" << n->left <<"right"<<n->right<<endl;
+
 				if (feature[n->attr] < n->split_point) {
 					cur_node = n->left;
+//					cout << "node"<<n->left << endl;
 				} else {
 					cur_node = n->right;
+//					cout << "node"<<n->right << endl;
 				}
 			}
 		}
 		if (terminal != NULL) {
 			*terminal = cur_node;
 		}
+//		cout <<"leaf_no" << *(leaf_no) <<endl;
 		return label;
 	}
 

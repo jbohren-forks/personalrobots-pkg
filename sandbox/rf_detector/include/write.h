@@ -34,13 +34,12 @@
 // Author: Min Sun
 
 #include "cxcore.h"
-# include <vector>
-using namespace std;
+#include <vector>
+#include "geometry_msgs/Point32.h"
 
-void writeFloat2text( string filename, vector<float> & data);
-void writeInt2text( string filename, vector<int> & data);
-void writePoint2text( string filename, cv::Vector<cv::Point> & points);
-void writeRect2text( string filename, cv::Vector<cv::Rect> & Rect_);
-bool read2DFloatText( string filename, vector< vector<float> > & data);
-bool readFloattext( string filename, vector< vector<float> > & data);
-bool readIntegertext( string filename, vector< int > & data);
+//using namespace std;
+
+bool read2DFloatText( std::string filename, std::vector< std::vector<float> > & data);
+bool readFloatBinPlain( std::string filename, int NDim, std::vector< std::vector<float> > & data);
+bool readIntegerBinPlain(std::string filename, std::vector< int > & data);
+void readClassId2ViewObjClassMapFile( std::string filename, std::vector< std::string>& ObjClassStr, std::vector<int>& ViewMap);

@@ -164,6 +164,7 @@ void CRandomForest::RFPredict(IN vector< vector<float> > &vecFeature,
 		printf("model is not loaded.\n");
 		return;
 	}
+//	cout << "in CRandomForest::RFPredict" <<endl;
 	vecPredict.resize(vecFeature[0].size());
 	float *fFeature = new float [vecFeature.size()];
 	for (int i = 0; i < vecFeature[0].size(); i++)

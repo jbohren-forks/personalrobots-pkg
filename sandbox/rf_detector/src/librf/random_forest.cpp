@@ -157,6 +157,7 @@ namespace librf {
 	float RandomForest::predict_prob_singlefeature(float *feature, int label, int *leaflist) const {
 		// Gather the votes from each tree
 		DiscreteDist votes;
+//		cout << "in predict_prob_singlefeature" <<endl;
 		for (int i = 0; i < vectrees_.size(); ++i) {
 			int predict = vectrees_.at(i)->predict_singlefeauture(feature, leaflist + i);
 			votes.add(predict);

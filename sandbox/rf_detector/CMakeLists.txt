@@ -7,7 +7,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+set(ROS_BUILD_TYPE Release)
 
 rospack(rf_detector)
 
@@ -31,4 +31,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #include_directories(${PROJECT_SOURCE_DIR}/include)
 
-rospack_add_executable(rf_detector src/RFDetector.cpp src/hog.cpp src/RandomForest.cpp src/write.cpp src/stdafx.cpp src/librf/discrete_dist.cpp src/librf/random_forest.cpp src/librf/tree_node.cpp src/librf/instance_set.cpp src/librf/tree.cpp src/ObjectInPerspective.cpp)
+rospack_add_executable (rf_pcd_hogshape_detector src/RFPcdHogShapeDetector.cpp src/write.cpp src/shape2.cpp src/Exehog.cpp src/RandomForest.cpp src/stdafx.cpp src/librf/discrete_dist.cpp src/librf/random_forest.cpp src/librf/tree_node.cpp src/librf/instance_set.cpp src/librf/tree.cpp)
+target_link_libraries (rf_pcd_hogshape_detector t2obj)
+target_link_libraries (rf_pcd_hogshape_detector descriptors_3d)

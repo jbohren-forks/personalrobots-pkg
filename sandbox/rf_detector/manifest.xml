@@ -1,20 +1,24 @@
 <package>
   <description brief="rf_detector">
 
-     rf_detector stands for random forest detector. This detector first uses a random forest to build a multi-class discriminative codebook. Then it use the codeword of each image patch to vote for the object center. Finally, mean-shift mode finding is used to search for the existence of the object. Currently it works for mice, staplers, and mugs.
+     rf_detector
 
   </description>
   <author>Min Sun</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/rf_detector</url>
+  <url>http://www.ros.org/wiki/rf_detector</url>
   <depend package="roscpp"/>
   <depend package="opencv_latest"/>
-  <depend package="topic_synchronizer2"/>
   <depend package="std_msgs" />
+  <depend package="geometry_msgs" />
   <depend package="sensor_msgs"/>
   <depend package="tf"/>
   <depend package="point_cloud_mapping"/>
+  <depend package="t2obj"/>
+  <!--depend package="place_recognition"/-->
+  <depend package="descriptors_3d"/>
+  <!--depend package="wide_pfh"/-->
     <export>
       <cpp cflags="-I${prefix}/include/"/>
     </export>
