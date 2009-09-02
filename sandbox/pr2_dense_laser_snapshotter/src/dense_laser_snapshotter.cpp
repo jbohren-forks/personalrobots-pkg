@@ -34,14 +34,12 @@
 
 #include "ros/ros.h"
 
-
-#include "message_filters/subscriber.h"
-#include "dense_laser_assembler/dense_laser_msg_filter.h"
+#include <dense_laser_assembler/dense_laser_assembler.h>
 
 // Messages
+#include "sensor_msgs/LaserScan.h"
 #include "calibration_msgs/DenseLaserSnapshot.h"
 #include "pr2_msgs/LaserScannerSignal.h"
-
 
 using namespace dense_laser_assembler ;
 
@@ -53,15 +51,12 @@ class DenseLaserSnapshotter
 
 public:
 
-  DenseLaserSnapshotter() :
-    scan_sub_(n_, "tilt_scan", 20),
-    mech_state_sub_(n_, "mechanism_state", 20),
-    dense_laser_filter_("dense_laser_filter", scan_sub_, mech_state_sub_)
+  DenseLaserSnapshotter()
   {
-    prev_signal_.header.stamp.fromNSec(0) ;
-    signal_sub_ = n_.subscribe("laser_tilt_controller/laser_scanner_signal", 2, &DenseLaserSnapshotter::scannerSignalCallback, this) ;
-    snapshot_pub_ = n_.advertise<calibration_msgs::DenseLaserSnapshot> ("dense_laser_snapshot", 1) ;
-    first_time_ = true ;
+    prev_signal_.header.stamp = ros::Time(0, 0);
+    signal_sub_ = n_.subscribe("laser_tilt_controller/laser_scanner_signal", 2, &DenseLaserSnapshotter::scannerSignalCallback, this);
+    snapshot_pub_ = n_.advertise<calibration_msgs::DenseLaserSnapshot> ("dense_laser_snapshot", 1);
+    first_time_ = true;
   }
 
   ~DenseLaserSnapshotter()
@@ -72,9 +67,6 @@ public:
   void scannerSignalCallback(const pr2_msgs::LaserScannerSignalConstPtr& cur_signal)
   {
     ROS_DEBUG("Got Scanner Signal") ;
-    if (cur_signal->signal == 128 || cur_signal->signal == 129)       // These codes imply that this is the first signal during a given profile type
-      first_time_ = true ;
-
 
     if (first_time_)
     {
@@ -85,42 +77,38 @@ public:
     {
       if (cur_signal->signal == 1)
       {
-        ROS_DEBUG("About to make request") ;
+        ROS_DEBUG("About to make request");
 
-        ros::Time start = prev_signal_.header.stamp ;
-        ros::Time end = cur_signal->header.stamp ;
+        ros::Time start = prev_signal_.header.stamp;
+        ros::Time end = cur_signal->header.stamp;
 
-        calibration_msgs::DenseLaserSnapshot snapshot ;
+        calibration_msgs::DenseLaserSnapshot snapshot;
 
-        dense_laser_filter_.buildSnapshotFromInterval(start, end, snapshot) ;
+        assembler_.assembleSnapshot(start, end, snapshot);
 
-        ROS_DEBUG("header.stamp: %f", snapshot.header.stamp.toSec()) ;
-        ROS_DEBUG("header.frame_id: %s", snapshot.header.frame_id.c_str()) ;
-        ROS_DEBUG("ranges.size()=%u", snapshot.ranges.size()) ;
-        ROS_DEBUG("intensities.size()=%u", snapshot.intensities.size()) ;
-        ROS_DEBUG("joint_positions.size()=%u", snapshot.joint_positions.size()) ;
-        ROS_DEBUG("joint_velocities.size()=%u", snapshot.joint_velocities.size()) ;
-        ROS_DEBUG("scan_start.size()=%u", snapshot.scan_start.size()) ;
-        snapshot_pub_.publish(snapshot) ;
-
+        ROS_DEBUG("header.stamp: %f", snapshot.header.stamp.toSec());
+        ROS_DEBUG("header.frame_id: %s", snapshot.header.frame_id.c_str());
+        ROS_DEBUG("ranges.size()=%u", snapshot.ranges.size());
+        ROS_DEBUG("intensities.size()=%u", snapshot.intensities.size());
+        ROS_DEBUG("scan_start.size()=%u", snapshot.scan_start.size());
+        snapshot_pub_.publish(snapshot);
       }
       else
-        ROS_DEBUG("Not making request") ;
-      prev_signal_ = *cur_signal ;
+        ROS_DEBUG("Not making request");
+      prev_signal_ = *cur_signal;
     }
   }
 
 private:
-  ros::NodeHandle n_ ;
-  ros::Publisher snapshot_pub_ ;
-  ros::Subscriber signal_sub_ ;
-  message_filters::Subscriber<sensor_msgs::LaserScan> scan_sub_ ;
-  message_filters::Subscriber<pr2_mechanism_msgs::MechanismState> mech_state_sub_ ;
-  DenseLaserMsgFilter dense_laser_filter_ ;
+  ros::NodeHandle n_;
+  ros::Publisher snapshot_pub_;
+  ros::Subscriber signal_sub_;
+  ros::Subscriber scan_sub_;
+  DenseLaserAssembler assembler_;
   pr2_msgs::LaserScannerSignal prev_signal_;
 
   bool first_time_ ;
-} ;
+};
 
 int main(int argc, char **argv)
 {

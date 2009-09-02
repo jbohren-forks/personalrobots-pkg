@@ -60,8 +60,9 @@ public:
    * \param start The earliest scan time to be included in the snapshot
    * \param end The latest scan time to be included in the snapshot
    * \param output: A populated snapshot message
+   * \return True on success
    */
-  void assembleSnapshot(const ros::Time& start, const ros::Time& end, calibration_msgs::DenseLaserSnapshot& snapshot);
+  bool assembleSnapshot(const ros::Time& start, const ros::Time& end, calibration_msgs::DenseLaserSnapshot& snapshot);
 
 private:
 
