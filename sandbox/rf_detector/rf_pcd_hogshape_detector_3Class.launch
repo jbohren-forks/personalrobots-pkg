@@ -2,8 +2,8 @@
 
  <!--param name="/use_sim_time" type="boolean" value="true"/-->
  <node pkg="rf_detector" name="rf_pcd_hogshape_detector" type="rf_pcd_hogshape_detector" respawn="false" output="screen">
-   <!-- table-top object related parameters -- >
-   <param name="~PrineTableFlag" type="bool" value="false" />
+   <!-- table-top object related parameters -->
+   <param name="~PrineTableFlag" type="bool" value="true" />
    <param name="~max_depth" type="double" value="1.5" />
    <param name="~min_depth" type="double" value="0.5" />
    <param name="~plane_axis_x" type="double" value="0" />
@@ -11,7 +11,7 @@
    <param name="~plane_axis_z" type="double" value="-0.4" />
    <param name="~eps_angle" type="double" value="4" />
 
-   <!-- patch sample related parameters -- >
+   <!-- patch sample related parameters -->
    <param name="~Radius" type="double" value="0.03" />
    <param name="~SampleStep" type="int" value="5" />
    <param name="~winStep" type="int" value="5" />
@@ -20,21 +20,21 @@
    <param name="~padding" type="int" value="0" />
    <param name="~ObjHeight2winHeightRatio" type="double" value="3." />
 
-   <!-- model related parameters -- >
-   <param name="~RFmodel_filename" type="str" value="/u/msun/Pcd_test_hogshape_RFV05/RF.model" />
-   <param name="~FgBgProb_filename" type="str" value="/u/msun/Pcd_test_hogshape_RFV05/FgBgProb.txt" />
-   <param name="~ClassIdBinary_filename" type="str" value="/u/msun/Pcd_test_hogshape_RFV05/ClassIdsBinary" />
-   <param name="~NormVotesBinary_filename" type="str" value="/u/msun/Pcd_test_hogshape_RFV05/NormVotesBinary" />
+   <!-- model related parameters -->
+   <param name="~RFmodel_filename" type="str" value="$(find rf_detector)/model/RF.model" />
+   <param name="~FgBgProb_filename" type="str" value="$(find rf_detector)/model/FgBgProb.txt" />
+   <param name="~ClassIdBinary_filename" type="str" value="$(find rf_detector)/model/ClassIdsBinary" />
+   <param name="~NormVotesBinary_filename" type="str" value="$(find rf_detector)/model/NormVotesBinary" />
+   <param name="~ClassId2ViewObjClassMapFile" type="str" value="$(find rf_detector)/model/ClassId2ViewObjClassMap.txt" />
    <param name="~MaxClassId" type="int" value="73" />
-   <param name="~ClassId2ViewObjClassMapFile" type="str" value="/pr/2/msun/ros/ros-pkg/sandbox/rf_detector/data/ClassId2ViewObjClassMap.txt" />
 
-   <!-- voting related parameters -- >
+   <!-- voting related parameters -->
    <param name="~hitThreshold" type="double" value="0." />
    <param name="~MeanShiftMaxIter" type="int" value="200" />
    <param name="~ObjHeightStep," type="int" value="8" />
    <param name="~ObjASStep" type="double" value="0.1" />
 
-   <!-- detection posprocessing related parameters -- >
+   <!-- detection posprocessing related parameters -->
    <param name="~RectOverlapRatio" type="double" value="0.2" />
    <param name="~ConfThre" type="double" value="10." />
    

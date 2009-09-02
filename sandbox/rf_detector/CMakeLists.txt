@@ -31,7 +31,24 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #include_directories(${PROJECT_SOURCE_DIR}/include)
 
-rospack_download_test_data(http://pr.willowgarage.com/data/rf_detector/model/Pcd_test_hogshape_RFV05/ClassId2ViewObjClassMap.txt model/ClassId2ViewObjClassMap.txt)
+macro(rosbuild_download_data _url _filename)
+ find_package(Wget REQUIRED)
+ add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/${_filename}
+                    COMMAND cmake -E echo "[rosbuild] Downloading ${_url} to ${_filename}..."
+                    COMMAND ${WGET_EXECUTABLE} -q ${_url} -O ${PROJECT_SOURCE_DIR}/${_filename}
+                    COMMAND cmake -E echo "[rosbuild] Done."
+                    VERBATIM)
+ # Create a legal target name, in case the target name has slashes in it
+ string(REPLACE "/" "_" _testname download_data_${_filename})
+ add_custom_target(${_testname} ALL
+                   DEPENDS ${PROJECT_SOURCE_DIR}/${_filename})
+endmacro(rosbuild_download_data)
+
+rosbuild_download_data(http://pr.willowgarage.com/data/rf_detector/model/Pcd_test_hogshape_RFV05/ClassId2ViewObjClassMap.txt model/ClassId2ViewObjClassMap.txt)
+rosbuild_download_data(http://pr.willowgarage.com/data/rf_detector/model/Pcd_test_hogshape_RFV05/ClassIdsBinary model/ClassIdsBinary)
+rosbuild_download_data(http://pr.willowgarage.com/data/rf_detector/model/Pcd_test_hogshape_RFV05/FgBgProb.txt model/FgBgProb.txt)
+rosbuild_download_data(http://pr.willowgarage.com/data/rf_detector/model/Pcd_test_hogshape_RFV05/NormVotesBinary model/NormVotesBinary)
+rosbuild_download_data(http://pr.willowgarage.com/data/rf_detector/model/Pcd_test_hogshape_RFV05/RF.model model/RF.model)
 
 rospack_add_executable (rf_pcd_hogshape_detector src/RFPcdHogShapeDetector.cpp src/write.cpp src/shape2.cpp src/Exehog.cpp src/RandomForest.cpp src/stdafx.cpp src/librf/discrete_dist.cpp src/librf/random_forest.cpp src/librf/tree_node.cpp src/librf/instance_set.cpp src/librf/tree.cpp)
 target_link_libraries (rf_pcd_hogshape_detector t2obj)

@@ -452,7 +452,7 @@ private:
 	
         // call detector
         if (image_patches.size()!=0){
-	       	//RunRFPcdDetector(); 
+	       	RunRFPcdDetector(); 
 	}
     }
 
