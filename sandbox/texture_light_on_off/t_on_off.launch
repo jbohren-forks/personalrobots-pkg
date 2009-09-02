@@ -2,8 +2,8 @@
  <include file="$(find stereo_image_proc)/narrow_stereoproc.launch"/>
  <node pkg="texture_light_on_off" name="t_on_off" type="t_on_off" respawn="false" output="screen">
  	<param name="~image_sequence" type="int" value="10" />
- 	<param name="~off_exposure" type="int" value="200" />
- 	<param name="~on_exposure" type="int" value="50" />
+ 	<param name="~off_exposure" type="int" value="80" />
+ 	<param name="~on_exposure" type="int" value="10" />
  </node>
 
 </launch>

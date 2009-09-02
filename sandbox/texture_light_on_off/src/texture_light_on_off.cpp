@@ -74,30 +74,21 @@ class texture_on_off
 public:
     ros::NodeHandle n;
 
-    IplImage* right;
-    IplImage* right_clone;
-    IplImage* disp;
-
     tf::TransformListener tf_;
     tf::TransformBroadcaster broadcaster_;
     TopicSynchronizer sync_;
     sensor_msgs::ImageConstPtr rimage;
-    sensor_msgs::ImageConstPtr dimage;
-    stereo_msgs::DisparityInfoConstPtr dispinfo;
     sensor_msgs::CvBridge rbridge;
-    sensor_msgs::CvBridge dbridge;
     sensor_msgs::CameraInfoConstPtr rcinfo_;
 
     ros::Subscriber right_image_sub_;
     ros::Subscriber right_caminfo_image_sub_;
     ros::Subscriber cloud_sub_;
-    ros::Subscriber disparity_sub_;
-    ros::Subscriber dispinfo_sub_;
 
     ros::Publisher get_params_pub_;
-    ros::Publisher cloud_pub_;
+    ros::Publisher dense_cloud_pub_;
+    ros::Publisher sparse_cloud_pub_;
     ros::Publisher image_pub_;
-    ros::Publisher disp_pub_;
     ros::Publisher caminfo_pub_;
 
     sensor_msgs::PointCloudConstPtr cloud;
@@ -121,20 +112,17 @@ public:
         right_image_sub_ = n.subscribe("narrow_stereo/left/image_rect", 1, sync_.synchronize(&texture_on_off::rightImageCallback, this));
         right_caminfo_image_sub_ = n.subscribe("narrow_stereo/left/cam_info", 1, sync_.synchronize(&texture_on_off::rightCameraInfoCallback, this));
         cloud_sub_ = n.subscribe( "narrow_stereo/cloud", 1, sync_.synchronize(&texture_on_off::cloudCallback, this) );
-	disparity_sub_ = n.subscribe("narrow_stereo/disparity", 1, sync_.synchronize(&texture_on_off::disparityImageCallback, this));
-	dispinfo_sub_ = n.subscribe("narrow_stereo/disparity_info", 1, sync_.synchronize(&texture_on_off::dispinfoCallback, this));
 
         get_params_pub_ = n.advertise<std_msgs::Empty>("/narrow_stereo/stereodcam/check_params",1);
-        cloud_pub_ = n.advertise<sensor_msgs::PointCloud>("~/cloud",1);
+        dense_cloud_pub_ = n.advertise<sensor_msgs::PointCloud>("~/dense_cloud",1);
+        sparse_cloud_pub_ = n.advertise<sensor_msgs::PointCloud>("~/sparse_cloud",1);
         image_pub_ = n.advertise<sensor_msgs::Image>("~/image",1);
-        disp_pub_ = n.advertise<sensor_msgs::Image>("~/disp",1);
         caminfo_pub_ = n.advertise<sensor_msgs::CameraInfo>("~/caminfo",1);
 
 	texture_light_on_flag = false;
 	image_sequence_count = 0;
 
 	cv::namedWindow("imgshow", 1);
-	right_clone = NULL;
     }
 
     bool spin()
@@ -168,14 +156,6 @@ private:
                 cout << " point cloud call back"<<endl;
 		cloud = point_cloud;
 	}
-    void disparityImageCallback(const sensor_msgs::Image::ConstPtr& image)
-	{
-		dimage = image;
-	}
-    void dispinfoCallback(const stereo_msgs::DisparityInfo::ConstPtr& dinfo)
-	{
-		dispinfo = dinfo;
-	}
 
     void syncCallback()
     {
@@ -201,44 +181,17 @@ private:
 		}
 		std_msgs::Empty tmp;
             	get_params_pub_.publish(tmp);
-	}else if( image_sequence_count == (int)(image_sequence/2)){
+	}else if( image_sequence_count == (image_sequence-1)){
 		if (texture_light_on_flag){
-			cout << "publish image" << endl;
+			cout << "publish image, caminfo, and sparse_clound" << endl;
 			image_pub_.publish(rimage);
                         caminfo_pub_.publish(rcinfo_);
-		    	if(rbridge.fromImage(*rimage, "bgr8")) {
-				right = rbridge.toIpl();
-				right_clone = cvCloneImage(right);
-		    	}
+			sparse_cloud_pub_.publish(cloud);
 		}else{
-			cout << "publish cloud" << endl;
-			if (right_clone!=NULL){
-				cloud_pub_.publish(cloud);
-				disp_pub_.publish(dimage);
-			if(dbridge.fromImage(*dimage) ) {
-				disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-				cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo->dpp);
-				cout << "disp.width"<<disp->width<<" height"<<disp->height<<endl;
-				cout << "right.width"<< right_clone->width <<" height"<< right_clone->height <<" nCh"<<right_clone->nChannels<<endl;
-				
-				for (unsigned int y=0; y<right_clone->height;y++){
-					char* dispPtr = (char*)(disp->imageData + y*disp->widthStep);;
-					char* imagePtr = (char*)(right_clone->imageData + y*right_clone->widthStep);;
-					for (unsigned int x=0; x<right_clone->width;x++){
-						if ( dispPtr[x] == 0)
-							for (unsigned int chid=0; chid< right_clone->nChannels; chid++){
-								imagePtr[right_clone->nChannels*x+chid] = 0;
-							}
-					}
-				}				
-				cv::imshow("imgshow", right_clone);
-				cv::waitKey(100);	
-			}
-			}
+			cout << "publish dense_cloud" << endl;
+			dense_cloud_pub_.publish(cloud);
 		}
 	}
-
-
     }
 
 };

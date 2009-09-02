@@ -17,6 +17,8 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rospack_add_executable (t_on_off src/texture_light_on_off.cpp)
+
+rospack_add_executable (extract_img_pcd src/ExtractImgPcd.cpp)
 #uncomment if you have defined messages
 #genmsg()
 #uncomment if you have defined services

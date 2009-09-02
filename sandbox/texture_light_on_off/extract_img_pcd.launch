@@ -1,0 +1,8 @@
+<launch>
+ <node pkg="texture_light_on_off" name="extract_img_pcd" type="extract_img_pcd" respawn="false" output="screen">
+ 	<param name="~img_folder" type="str" value="/bags/msun/data/mix_3d_object/trainset/pngs" />
+ 	<param name="~pcd_folder" type="str" value="/bags/msun/data/mix_3d_object/trainset/pcds" />
+ </node>
+
+</launch>
+
