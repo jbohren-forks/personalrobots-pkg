@@ -7,12 +7,10 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/simulator_gazebo</url>
   
-
-  <depend stack="geometry"/> <!-- bullet, tf --> 
+  <depend stack="geometry"/> <!-- bullet, angles --> 
   <depend stack="ros"/> <!-- roscpp, std_msgs --> 
-  <depend stack="visualization_common"/> <!-- ogre, ogre_tools --> 
-  <depend stack="common_msgs"/> <!-- sensor_msgs --> 
-  <depend stack="common"/> <!-- sensor_msgs --> 
-  <depend stack="robot_model"/> <!-- sensor_msgs, ivcon, convex_decomposition --> 
+  <depend stack="common"/> <!-- tinyxml --> 
+  <depend stack="robot_model"/> <!-- urdf --> 
+  <depend stack="visualization_common"/> <!-- ogre --> 
 
 </stack>

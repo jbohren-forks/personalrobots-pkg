@@ -3,9 +3,8 @@
   <author>John Hsu, Ioan Sucan</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/FIXME</url>
+  <url>http://ros.org/wiki/FIXME</url>
 
-  <depend package="pr2_defs"/>
   <depend package="pr2_ogre"/>
   <depend package="ikea_ogre"/>
 </package>

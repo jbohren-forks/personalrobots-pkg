@@ -2,8 +2,7 @@
 
   <description brief="Ikea Objects Ogre Mesh Files">
     
-    This package contains Ikea objects Ogre mesh files used for visualization and collision as
-    defined at Willow Garage.
+    This package contains Ikea objects Ogre mesh files used for simulation collision and visualization.
     
   </description>
   <author>John Hsu</author>
@@ -14,6 +13,6 @@
   <depend package="ivcon"/>
   <depend package="ogre_tools"/>
   <depend package="ikea_objects"/>
-  <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
+  <url>http://ros.org/wiki/urdf</url>
 
 </package>
