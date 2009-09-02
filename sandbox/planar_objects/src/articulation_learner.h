@@ -15,6 +15,7 @@
 
 #include "planar_objects/BoxObservations.h"
 #include "planar_objects/BoxTracks.h"
+#include "planar_objects/ArticulatedObjects.h"
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
@@ -52,6 +53,7 @@ public:
   // MESSAGES - OUTGOING
   ros::Publisher visualization_pub;
   ros::Publisher cloud_pub;
+  ros::Publisher articulated_pub;
 
   // Constructor
   ArticulationLearner();
@@ -69,6 +71,8 @@ public:
   void selectModels();
   void visualizeModels();
   void visualizeTracks();
+
+  void publishArticulatedObjects();
 
   void removeOldLines();
 };
