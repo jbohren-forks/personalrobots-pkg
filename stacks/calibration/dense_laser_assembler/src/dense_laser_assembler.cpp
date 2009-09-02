@@ -56,7 +56,7 @@ void DenseLaserAssembler::add(const sensor_msgs::LaserScanConstPtr& laser_scan)
 bool DenseLaserAssembler::assembleSnapshot(const ros::Time& start, const ros::Time& end, calibration_msgs::DenseLaserSnapshot& snapshot)
 {
   vector< sensor_msgs::LaserScanConstPtr > scan_vec;
-  cache_.getInterval(start, end);
+  scan_vec = cache_.getInterval(start, end);
   return flattenScanVec(scan_vec, snapshot);
 }
 
