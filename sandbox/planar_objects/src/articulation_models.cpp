@@ -80,8 +80,8 @@ void ManifoldModel::computeError() {
 
 	double sum_trans = 0, sum_rot = 0;
 	for (size_t j = 0; j < track->obs_history.size(); j++) {
-		btTransform pred = getPrediction(getConfiguration(
-				track->obs_history[j].tf));
+
+		btTransform pred = getPrediction(getConfiguration(track->obs_history[j].tf));
 		btTransform error = track->obs_history[j].tf.inverseTimes(pred);
 		sum_trans += error.getOrigin().length();
 		sum_rot += error.getRotation().getAngle();
@@ -117,6 +117,10 @@ std::vector<std::pair<double, double> > ManifoldModel::getRange() {
 	return (range);
 }
 
+bool ManifoldModel::isArticulated(double thres_trans,double thres_rot) {
+	return(false);
+}
+
 btBoxObservation ManifoldModel::getPredictedObservation(std::vector<double> q) {
 	btBoxObservation result;
 	result.w = w;
@@ -125,6 +129,52 @@ btBoxObservation ManifoldModel::getPredictedObservation(std::vector<double> q) {
 	result.recall = 1.0;
 	result.tf = getPrediction(q);
 	return (result);
+}
+
+RigidModel::RigidModel(btBoxTrack* track):ManifoldModel(track) {
+}
+
+void RigidModel::findParameters(ros::Publisher* pub) {
+	ManifoldModel::findParameters();
+
+	if (track->obs_history.size() == 0) {
+		ROS_ERROR("RigidModel::findParameters on empty history!!");
+		return;
+	}
+	// find center
+	btQuaternion o = track->obs_history[0].tf.getRotation();
+	btVector3 t = track->obs_history[0].tf.getOrigin();
+
+	for (size_t j = 1; j < track->obs_history.size(); j++) {
+		o = o.slerp(track->obs_history[j].tf.getRotation(), 1 / (j + 1.0));
+		t = t.lerp(track->obs_history[j].tf.getOrigin(), 1 / (j + 1.0));
+	}
+
+	center = btTransform(o, t);
+}
+
+size_t RigidModel::getDOFs() {
+	return(0);
+}
+
+size_t RigidModel::getComplexityClass() {
+	return(0);
+}
+
+std::vector<double> RigidModel::getConfiguration( btTransform transform) {
+	return(std::vector<double>());
+}
+
+btTransform RigidModel::getPrediction( std::vector<double> configuration ) {
+	return(center);
+}
+
+bool RigidModel::isValid() {
+	return(true);
+}
+
+bool RigidModel::isArticulated(double sigma_trans,double sigma_rot) {
+	return(false);
 }
 
 PrismaticModel::PrismaticModel(btBoxTrack* track) :
@@ -204,6 +254,10 @@ size_t PrismaticModel::getDOFs() {
 	return (1);
 }
 
+size_t PrismaticModel::getComplexityClass() {
+	return (1);
+}
+
 std::vector<double> PrismaticModel::getConfiguration(btTransform transform) {
 	std::vector<double> q;
 	q.resize(1);
@@ -242,6 +296,12 @@ bool PrismaticModel::isValid() {
 		return (false);
 	return (true);
 }
+
+bool PrismaticModel::isArticulated(double thres_trans,double thres_rot) {
+	std::pair<double,double> range = getRange()[0];
+	return(fabs(range.first -range.second) > thres_trans);
+}
+
 
 RotationalModel::RotationalModel(btBoxTrack* track) :
 	ManifoldModel(track) {
@@ -430,23 +490,25 @@ void RotationalModel::findParameters(ros::Publisher* pub) {
 	// radius
 	radius =  btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(model_coeff_circle[2],0,0));
 
-	// offset (t=0; r=avg)
-	btQuaternion o =
-		btTransform(btQuaternion(btVector3(0,0,1),-getConfiguration(track->obs_history[0].tf)[0] ),btVector3(0,0,0)) *
-		track->obs_history[0].tf.getRotation();
-	for (size_t j = 1; j < track->obs_history.size(); j++) {
-		btQuaternion o2 =
-			btTransform(btQuaternion(btVector3(0,0,1),-getConfiguration(track->obs_history[j].tf)[0] ),btVector3(0,0,0)) *
-			track->obs_history[j].tf.getRotation();
+//	// offset (t=0; r=avg)
+//	btQuaternion o =
+//		btQuaternion(btVector3(0,0,1),-getConfiguration(track->obs_history[0].tf)[0] ) *
+//						(center.inverse() *track->obs_history[0].tf).getRotation();
+//	for (size_t j = 1; j < track->obs_history.size(); j++) {
+//		btQuaternion o2 =
+//			btQuaternion(btVector3(0,0,1),-getConfiguration(track->obs_history[j].tf)[0] ) *
+//							(center.inverse() *track->obs_history[j].tf).getRotation();
 //		cout << o2.x() << " "<<o2.y()<<" "<<o2.z()<<" "<<o2.w() << endl;
-		o = o.slerp( o2	, 1 / (j + 1.0));
-	}
-	offset = btTransform(o, btVector3(0,0,0));
+//		o = o.slerp( o2	, 0 / (j + 1.0));
+//	}
+//	offset = btTransform(o, btVector3(0,0,0));
+//	cout << o.x() << " "<<o.y()<<" "<<o.z()<<" "<<o.w() << endl;
 	offset =
 		btTransform(
 				btTransform(btQuaternion(btVector3(0,0,1),-getConfiguration(track->obs_history[0].tf)[0] ),btVector3(0,0,0)) *
-				(center.inverse() *track->obs_history[0].tf).getRotation(),
+			(center.inverse() *track->obs_history[0].tf).getRotation(),
 				btVector3(0,0,0));
+//	cout << o.x() << " "<<o.y()<<" "<<o.z()<<" "<<o.w() << endl;
 
 
 
@@ -468,6 +530,10 @@ size_t RotationalModel::getDOFs() {
 	return (1);
 }
 
+size_t RotationalModel::getComplexityClass() {
+	return (1);
+}
+
 std::vector<double> RotationalModel::getConfiguration(btTransform transform) {
 	std::vector<double> q;
 	btTransform rel = center.inverseTimes(transform);
@@ -483,5 +549,11 @@ btTransform RotationalModel::getPrediction(std::vector<double> configuration) {
 bool RotationalModel::isValid() {
 	return (true);
 }
+
+bool RotationalModel::isArticulated(double thres_trans,double thres_rot) {
+	std::pair<double,double> range = getRange()[0];
+	return(fabs(range.first -range.second) > thres_rot);
+}
+
 
 }

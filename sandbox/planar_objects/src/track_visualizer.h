@@ -5,44 +5,26 @@
  *      Author: sturm
  */
 
-#ifndef ARTICULATED_OBJECTS_H_
-#define ARTICULATED_OBJECTS_H_
+#ifndef TRACK_VISUALIZER_H_
+#define TRACK_VISUALIZER_H_
 
 #include "ros/ros.h"
-#include "topic_synchronizer2/topic_synchronizer.h"
 
 #include "visualization_msgs/Marker.h"
 
 #include "planar_objects/BoxObservations.h"
 #include "planar_objects/BoxTracks.h"
-#include <tf/transform_listener.h>
-#include <tf/transform_broadcaster.h>
 
 #include "vis_utils.h"
 #include "track_utils.h"
-#include "articulation_models.h"
 
 namespace planar_objects
 {
 
-class ArticulationLearner
+class TrackVisualizer
 {
 public:
   ros::NodeHandle nh;
-  TopicSynchronizer sync;
-
-  std::vector<ManifoldModel*> models;
-
-  // PARAMETERS
-  bool visualize;
-  bool verbose;
-  double dist_vis;
-
-  double thres_trans;
-  double thres_rot;
-
-  int oldLines;
-  int newLines;
 
   // MESSAGES - INCOMING
   ros::Subscriber tracks_sub;
@@ -51,23 +33,15 @@ public:
 
   // MESSAGES - OUTGOING
   ros::Publisher visualization_pub;
-  ros::Publisher cloud_pub;
+
+  int oldLines,newLines;
 
   // Constructor
-  ArticulationLearner();
+  TrackVisualizer();
 
   // Callbacks
   void tracksCallback(const BoxTracks::ConstPtr& tracks);
-  void syncCallback();
 
-  void releaseModels();
-  void createModels();
-  void updateModels();
-  void thresholdModels();
-  void selectSimpleModels();
-  void suppressUnarticulatedModels();
-  void selectModels();
-  void visualizeModels();
   void visualizeTracks();
 
   void removeOldLines();

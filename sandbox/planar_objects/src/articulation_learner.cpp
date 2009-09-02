@@ -67,14 +67,16 @@ void ArticulationLearner::syncCallback()
 
   tracks.clear();       // forget everything
   for(size_t i =0; i<tracks_msg->tracks.size();i++) {
-	  for(int j=0;j<4;j++) {
+	  for(int j=0;j<1;j++) {
 		  tracks.push_back( btBoxTrack(tracks_msg->tracks[i], tracks_msg->header.stamp,j) );
 	  }
   }
 
   createModels();
   updateModels();
-  filterModels();
+  thresholdModels();
+  selectSimpleModels();
+//  suppressUnarticulatedModels();
   selectModels();
 
   if(visualize) {
@@ -104,22 +106,24 @@ void ArticulationLearner::createModels() {
 
   // create models for all tracks
   for(size_t i =0; i<tracks.size();i++) {
-	    models.push_back(new PrismaticModel(&tracks[i]));
-	    models.push_back(new RotationalModel(&tracks[i]));
+	  if(tracks[i].obs_history.size()==0) continue;
+	  models.push_back(new RigidModel(&tracks[i]));
+	  models.push_back(new PrismaticModel(&tracks[i]));
+	  models.push_back(new RotationalModel(&tracks[i]));
   }
 }
 
 void ArticulationLearner::updateModels() {
   for(size_t i =0; i<models.size();i++) {
     models[i]->findParameters(&visualization_pub);
+    models[i]->computeError();
   }
 }
 
-void ArticulationLearner::filterModels() {
+void ArticulationLearner::thresholdModels() {
   size_t i =0;
   while(i<models.size()) {
     double err_rot=DBL_MAX, err_trans=DBL_MAX;
-    models[i]->computeError();
     models[i]->getError(err_trans,err_rot);
     cout << "model "<<i<<" error is: "<<err_rot << " " << err_trans <<" from "<<models[i]->track->obs_history.size()<<"obs."<< endl;
     if(err_trans > thres_trans || err_rot > thres_rot) {
@@ -129,6 +133,40 @@ void ArticulationLearner::filterModels() {
     }
   }
   cout << "valid models: "<< models.size()<< endl;
+}
+
+void ArticulationLearner::suppressUnarticulatedModels() {
+  size_t i =0;
+  while(i<models.size()) {
+    if(!models[i]->isArticulated(thres_trans*3,thres_rot*3)) {
+      models.erase( models.begin() + i );
+    } else {
+      i++;
+    }
+  }
+  cout << "articulated models: "<< models.size()<< endl;
+}
+
+void ArticulationLearner::selectSimpleModels() {
+  std::map<int,size_t> m;
+  for(size_t i=0;i<models.size();i++) {
+	  size_t complexity = models[i]->getComplexityClass();
+    if( (m.find(models[i]->track->id)==m.end()) || (m[models[i]->track->id] > complexity) )
+      m[models[i]->track->id] = complexity;
+  }
+
+  size_t i =0;
+  while(i<models.size()) {
+	  size_t complexity = models[i]->getComplexityClass();
+    if( m[models[i]->track->id] != complexity ) {
+        cout << "deleting model "<<i<<endl;
+        models.erase( models.begin() + i );
+    } else {
+    	i++;
+    }
+  }
+
+  cout << "selected simple models: "<< models.size()<< endl;
 }
 
 void ArticulationLearner::selectModels() {
@@ -183,6 +221,7 @@ void ArticulationLearner::visualizeTracks() {
 
 void ArticulationLearner::visualizeModels() {
   for(size_t i =0; i<models.size();i++) {
+	cout << "model "<< i <<", track "<<models[i]->track->id<<", type "<<typeid(*models[i]).name()<<endl;
     std::vector<std::pair<double,double> > range = models[i]->getRange();
     std::vector<double> q_mean;
     q_mean.resize(models[i]->getDOFs());
@@ -223,11 +262,17 @@ void ArticulationLearner::visualizeModels() {
                        newLines++,HSV_to_RGB(j/((double)n),1.0,1.0));
       }
     }
-    std::vector<double> q = models[i]->getConfiguration( models[i]->track->obs_history.rbegin()->tf );
-    btBoxObservation predObs = models[i]->getPredictedObservation( q );
-    visualizeLines(
-                   predObs.visualize(),
-                   newLines++,HSV_to_RGB( (q[0]-range[0].first)/(range[0].second-range[0].first),1.0,1.0),0.01);
+
+    if(models[i]->track->obs_history.size()>0) {
+		std::vector<double> q = models[i]->getConfiguration( models[i]->track->obs_history.rbegin()->tf );
+		btBoxObservation predObs = models[i]->getPredictedObservation( q );
+		double r=1.0;
+		if(q.size()>0)
+			r=(q[0]-range[0].first)/(range[0].second-range[0].first);
+		visualizeLines(
+					   predObs.visualize(),
+					   newLines++,HSV_to_RGB(r,1.0,1.0),0.01);
+    }
   }
 }
 
