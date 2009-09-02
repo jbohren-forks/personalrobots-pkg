@@ -874,7 +874,7 @@ public:
         diagnostic_,
         diagnostic_updater::FrequencyStatusParam(&driver_.desired_freq_, &driver_.desired_freq_, 0.05), 
         diagnostic_updater::TimeStampStatusParam()),
-    camera_info_pub_(ros::Publisher(), 
+    camera_info_pub_(node_handle_.advertise<sensor_msgs::CameraInfo>("~camera_info", 1),
         diagnostic_,
         diagnostic_updater::FrequencyStatusParam(&driver_.desired_freq_, &driver_.desired_freq_, 0.05), 
         diagnostic_updater::TimeStampStatusParam()),
@@ -929,13 +929,11 @@ private:
     if (calibrated_)
       ROS_INFO("Loaded intrinsics from camera");
     else
+    {
       ROS_WARN("Failed to load intrinsics from camera");
-
+      camera_info_ = sensor_msgs::CameraInfo();
+    }
     // Receive frames through callback
-    if (calibrated_)
-      camera_info_pub_.set_publisher(node_handle_.advertise<sensor_msgs::CameraInfo>("~camera_info", 1));
-    else
-      camera_info_pub_.set_publisher(ros::Publisher());
   }
 
   virtual void addDiagnostics()
