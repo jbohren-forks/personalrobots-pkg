@@ -8,10 +8,10 @@ set (ROS_BUILD_TYPE Release)
 #set (ROS_BUILD_TYPE Debug)
 include ($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 add_definitions (-Wall)
-rospack (mpglue)
+rosbuild_init ()
 
-##genmsg ()
-gensrv ()
+##rosbuild_genmsg ()
+rosbuild_gensrv ()
 
 list (APPEND MPGLUE_SRCS
       src/setup.cpp
@@ -45,16 +45,16 @@ else (MPGLUE_HAVE_ESTAR)
   message (STATUS "E* not found (optional)")
 endif (MPGLUE_HAVE_ESTAR)
 
-rospack_add_library (mpglue ${MPGLUE_SRCS})
+rosbuild_add_library (mpglue ${MPGLUE_SRCS})
 target_link_libraries (mpglue ${MPGLUE_LIBS})
 
-rospack_add_gtest (test/mpglue_test test/mpglue_test.cpp)
+rosbuild_add_gtest (test/mpglue_test test/mpglue_test.cpp)
 target_link_libraries (test/mpglue_test mpglue)
 
-rospack_add_executable (bin/costmap_planner_node src/costmap_planner_node.cpp)
+rosbuild_add_executable (bin/costmap_planner_node src/costmap_planner_node.cpp)
 target_link_libraries (bin/costmap_planner_node mpglue)
 
-rospack_add_executable(bin/test_costmap_planner_node src/test_costmap_planner_node.cpp)
+rosbuild_add_executable(bin/test_costmap_planner_node src/test_costmap_planner_node.cpp)
 rosbuild_add_gtest_build_flags(bin/test_costmap_planner_node)
 target_link_libraries (bin/test_costmap_planner_node mpglue)
 rosbuild_add_rostest(test/test_costmap_planner_node.launch)
