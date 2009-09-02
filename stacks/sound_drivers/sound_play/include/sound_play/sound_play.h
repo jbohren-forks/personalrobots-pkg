@@ -11,8 +11,8 @@ namespace sound_play
 
 /** 
  * This class is a helper class for communicating with the sound_play node
- * via the sound_play::SoundRequest message. There is a one-to-one mapping
- * between methods and invocations of the sound_play::SoundRequest message.
+ * via the \ref sound_play::SoundRequest message. There is a one-to-one mapping
+ * between methods and invocations of the \ref sound_play::SoundRequest message.
  */
 
 class SoundHandle
@@ -104,7 +104,7 @@ public:
 /** \brief Play a buildin sound
  *
  * Starts playing one of the built-in sounds. built-ing sounds are documented
- * in SoundRequest.msg. Playback can be stopped by stopall.
+ * in \ref SoundRequest.msg. Playback can be stopped by stopall.
  *
  * \param sound Identifier of the sound to play.
  */
@@ -117,7 +117,7 @@ public:
 /** \brief Play a buildin sound repeatedly
  *
  * Starts playing one of the built-in sounds repeatedly until stop or stopall 
- * is used. Built-in sounds are documented in SoundRequest.msg.
+ * is used. Built-in sounds are documented in \ref SoundRequest.msg.
  *
  * \param sound Identifier of the sound to play.
  */
