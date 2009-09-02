@@ -150,6 +150,11 @@ void CommStateMachine<ActionSpec>::updateStatus(GoalHandleT& gh, const actionlib
 {
   const actionlib_msgs::GoalStatus* goal_status = findGoalStatus(status_array->status_list);
 
+  // It's possible to receive old GoalStatus messages over the wire, even after receiving Result with a terminal state.
+  //   Thus, we want to ignore all status that we get after we're done, because it is irrelevant. (See trac #2721)
+  if (state_ == CommState::DONE)
+    return;
+
   if (goal_status)
     latest_goal_status_ = *goal_status;
   else
