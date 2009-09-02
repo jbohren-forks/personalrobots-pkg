@@ -2,6 +2,8 @@
 \mainpage
 \htmlinclude manifest.html
 
+\section codeapi Code API
+
 All implementations derive from the distance_field::DistanceField class. There are two implementations
 currently available - distance_field::PropagationDistanceField and distance_field::PFDistanceField (see the docs on individual
 classes for details). The main functions you will need to use these are:
