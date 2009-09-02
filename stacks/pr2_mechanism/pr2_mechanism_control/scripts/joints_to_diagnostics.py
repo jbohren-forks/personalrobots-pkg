@@ -29,8 +29,8 @@
 import roslib; roslib.load_manifest('pr2_mechanism_control')
 import rospy
 
-from pr2_mechanism_msgs.msg import JointStates
-from diagnostic_msgs.msg import *
+from pr2_mechanism_msgs.msg import MechanismState
+from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
 def joint_to_diag(js):
     d = DiagnosticStatus()
@@ -52,15 +52,15 @@ rospy.init_node('joints_to_diagnostics')
 pub_diag = rospy.Publisher('/diagnostics', DiagnosticArray)
 
 last_publish_time = rospy.Time(0.0)
-def state_cb(j):
+def state_cb(msg):
     global last_publish_time
     now = rospy.get_rostime()
     if (now - last_publish_time).to_seconds() > 1.0:
         d = DiagnosticArray()
-        d.header.stamp = j.header.stamp
-        d.status = [joint_to_diag(js) for js in j.joints]
+        d.header.stamp = msg.header.stamp
+        d.status = [joint_to_diag(js) for js in msg.joint_states]
         pub_diag.publish(d)
         last_publish_time = now
 
-rospy.Subscriber('/joint_states', JointStates, state_cb)
+rospy.Subscriber('/mechanism_state', MechanismState, state_cb)
 rospy.spin()
