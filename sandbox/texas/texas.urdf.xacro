@@ -4,7 +4,7 @@
   <include filename="$(find pr2_defs)/defs/materials.urdf.xacro" />
 
   <pr2_caster_alpha2 suffix="bl" parent="base_link" ref_position="-0.785">
-    <origin xyz="0 0 0" rpy="0 0 0" />
+    <origin xyz="-0.43 0 0" rpy="0 0 0" />
   </pr2_caster_alpha2>
 
   <!-- Solid Base for visualizer -->
