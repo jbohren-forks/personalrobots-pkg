@@ -23,6 +23,5 @@ uint32 num_scans            # (Height)
 float32[] ranges            # (Image data)
 float32[] intensities       # (Image data)
 
-# 1D Data storing meta information for each scan/row
-geometry_msgs/PoseStamped[] start_pose
-geometry_msgs/PoseStamped[] end_pose
+# Store the start time of each scan
+time[] scan_start
