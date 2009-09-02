@@ -377,8 +377,6 @@ DoorController::UnlatchingHandle{
 
 DoorController::OpenDoor{
   contained_by(doorman.Active);
-  // We will be moving the base thru the doorway. It must succeed, eventually, as we have no implemented recovery
-  // for failure.
   contains(move_base_door.Active cmd_move_base_door);
   cmd_move_base_door.max_duration <= MOVE_BASE_DOOR_DURATION_BOUND;
   // Introduce a stop action that will preempt children

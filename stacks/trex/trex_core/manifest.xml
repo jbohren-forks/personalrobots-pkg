@@ -12,7 +12,7 @@
   <export>
     <cpp lflags="-Wl,-rpath,${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib" 
       cflags="-I${prefix}/include/TREX -I${prefix}/include/PLASMA -O3 -DEUROPA_FAST"/>
-    <trex_libs libs="Utils TREX"/>
+    <trex_libs libs="ConstraintEngine NDDL PlanDatabase Resource RulesEngine Solvers TemporalNetwork TinyXml Utils TREX"/>
     <nddl iflags="-I${prefix}/TREX/agent/base"/>
     <doxymaker external="https://babelfish.arc.nasa.gov/trac/europa/wiki"/>
   </export>

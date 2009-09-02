@@ -27,17 +27,14 @@ PACKAGES="TREX PLASMA"
 
 
 for PACKAGE in $PACKAGES; do
-    cd `rospack find trex_core`/$PACKAGE
-    mkdir $INCLUDE_DIR/$PACKAGE
-    DIRS=`find \`pwd\` -type d`
-    mkdir -p include
-    for d in $DIRS; do
-	HEADERS=`find $d -maxdepth 1 -type f -regex ".*\.hh?$"`
+	cd `rospack find trex_core`/$PACKAGE
+	mkdir $INCLUDE_DIR/$PACKAGE
+	HEADERS=`find . -type f | egrep "\.h{1,2}$"`
 	if [ "$HEADERS" ]; then
-	    cp -p $HEADERS $INCLUDE_DIR/$PACKAGE/
+		echo $HEADERS
+		cp -p $HEADERS $INCLUDE_DIR/$PACKAGE/
 	fi
-    done
-    echo "Warning, this is not the real include directory. It will be deleted and recreated by make every run. Includes should be next to .cc files." > $INCLUDE_DIR/$PACKAGE/WARNING.txt
+	echo "Warning, this is not the real include directory. It will be deleted and recreated by make every run. Includes should be next to .cc files." > $INCLUDE_DIR/$PACKAGE/WARNING.txt
 done
 
 
