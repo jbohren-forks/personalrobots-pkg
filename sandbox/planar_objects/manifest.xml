@@ -19,6 +19,7 @@
   <depend package="tf"/>
   <depend package="eigen"/>
   <depend package="stereo_msgs"/>
+  <depend package="mocap_msgs"/>
 </package>
 
 

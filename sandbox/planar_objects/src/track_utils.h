@@ -39,6 +39,7 @@ public:
   btBoxObservation getAmbiguity(int num=0);
   LineVector visualize();
   BoxObservation getBoxObservation();
+  std::string toString();
 };
 
 class TrackParameters {

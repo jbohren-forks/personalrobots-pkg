@@ -18,6 +18,19 @@ btBoxObservation::btBoxObservation( ) {
   recall = 0;
 }
 
+std::string btBoxObservation::toString() {
+	std::stringstream s;
+	s <<"w="<<w<<" h="<<h<<
+	" x="<<tf.getOrigin().x()<<
+	" y="<<tf.getOrigin().y()<<
+	" z="<<tf.getOrigin().z()<<
+	" rx="<<tf.getRotation().x()<<
+	" ry="<<tf.getRotation().y()<<
+	" rz="<<tf.getRotation().z()<<
+	" rw="<<tf.getRotation().w();
+	return(s.str());
+}
+
 btBoxObservation::btBoxObservation(const BoxObservation &obs , const ros::Time stamp, int disambiguation ) {
   setObservation(obs,stamp);
   *this = this->getAmbiguity(disambiguation);
