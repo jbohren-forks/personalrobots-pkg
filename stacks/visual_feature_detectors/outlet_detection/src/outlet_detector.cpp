@@ -78,11 +78,9 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     cvReleaseImage(&red1);
     cvSetImageCOI(src, 0);
 #endif //_RED
-#if defined (_ONE_WAY_POSES)
-	detect_outlets_one_way_2(red, outlet_templ, outlets, src, output_path, filename);
-#else
+
     detect_outlets_one_way(red, outlet_templ, outlets, src, output_path, filename);
-#endif
+
 
 #endif
     
@@ -148,6 +146,108 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     cvReleaseMat(&inv_homography);
 #endif
     
+    return ret;
+}
+
+//Modification of detect outlet tuple
+int detect_outlet_tuple_2(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
+	vector<outlet_t>& outlets, const outlet_template_t& outlet_templ,
+	const char* output_path, const char* filename)
+{
+    if (distortion_params) {
+        // correcting for distortion
+        IplImage* _img = cvCloneImage(src);
+        //		int64 _t1 = cvGetTickCount();
+        cvUndistort2(_img, src, intrinsic_matrix, distortion_params);
+        //		int64 _t2 = cvGetTickCount();
+        //		printf("Undistort time elapsed: %f", double(_t2 - _t1)/cvGetTickFrequency()*1e-6);
+        cvReleaseImage(&_img);
+    }
+    
+    int ret = 1;
+    
+    IplImage* red = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
+#if defined(_RED)
+    cvSetImageCOI(src, 3);
+    cvCopy(src, red);
+    cvSetImageCOI(src, 0);
+#else
+    cvSetZero(red);
+    cvSetImageCOI(src, 3);
+    cvCopy(src, red);
+    cvConvertScale(red, red, 0.5);
+    IplImage* red1 = cvCloneImage(red);
+    cvSetImageCOI(src, 2);
+    cvCopy(src, red1);
+    cvConvertScale(red1, red1, 0.5);
+    cvAdd(red, red1, red);
+    cvReleaseImage(&red1);
+    cvSetImageCOI(src, 0);
+#endif //_RED
+
+	detect_outlets_one_way_2(red, outlet_templ, outlets, src, output_path, filename);
+
+
+    
+    if(outlets.size() != (size_t)outlet_templ.get_count())
+    {
+        // template not found
+        return 0;
+    }
+    
+
+    // now find 3d coordinates of the outlet in the camera reference frame
+    // first, calculate homography
+    CvPoint3D32f* object_holes_3d = new CvPoint3D32f[outlet_templ.get_count()*3];
+    CvPoint2D32f* object_holes_2d = new CvPoint2D32f[outlet_templ.get_count()*3];
+    CvPoint2D32f* image_holes = new CvPoint2D32f[outlet_templ.get_count()*3];
+
+    outlet_templ.get_holes_2d(object_holes_2d);
+    outlet_templ.get_holes_3d(object_holes_3d);
+    for(size_t i = 0; i < outlets.size(); i++)
+    {
+        image_holes[3*i] = cvPoint2D32f(outlets[i].hole1.x, outlets[i].hole1.y); // power left
+        image_holes[3*i + 1] = cvPoint2D32f(outlets[i].hole2.x, outlets[i].hole2.y); // power right
+        image_holes[3*i + 2] = cvPoint2D32f(outlets[i].ground_hole.x, outlets[i].ground_hole.y); // ground hole
+    }
+    
+    CvMat* homography = cvCreateMat(3, 3, CV_32FC1);
+    CvMat* inv_homography = cvCreateMat(3, 3, CV_32FC1);
+    
+    CvMat* image_holes_mat = cvCreateMat(outlet_templ.get_count()*3, 2, CV_32FC1);
+    CvMat* object_holes_mat = cvCreateMat(outlet_templ.get_count()*3, 2, CV_32FC1);
+    for(int i = 0; i < outlet_templ.get_count()*3; i++)
+    {
+        cvmSet(image_holes_mat, i, 0, image_holes[i].x);
+        cvmSet(image_holes_mat, i, 1, image_holes[i].y);
+        cvmSet(object_holes_mat, i, 0, object_holes_2d[i].x);
+        cvmSet(object_holes_mat, i, 1, object_holes_2d[i].y);
+    }
+    cvFindHomography(image_holes_mat, object_holes_mat, homography);
+    cvFindHomography(object_holes_mat, image_holes_mat, inv_homography);
+    cvReleaseMat(&image_holes_mat);
+    cvReleaseMat(&object_holes_mat);
+    
+    CvPoint3D32f origin;
+    CvPoint2D32f origin_2d;
+    map_point_homography(image_holes[0], homography, origin_2d);
+    origin = cvPoint3D32f(origin_2d.x, origin_2d.y, 0.0);
+    CvPoint2D32f scale = cvPoint2D32f(1.0, 1.0);
+
+	CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);
+	CvMat* translation_vector = cvCreateMat(3, 1, CV_32FC1);
+    calc_camera_pose(intrinsic_matrix, 0, outlet_templ.get_count()*3, object_holes_3d, image_holes, 
+                     rotation_vector, translation_vector);
+    calc_outlet_coords(outlets, homography, origin, scale, rotation_vector, translation_vector, inv_homography);
+    
+    delete[] object_holes_2d;
+    delete[] object_holes_3d;
+    delete[] image_holes;
+    cvReleaseMat(&rotation_vector);
+    cvReleaseMat(&translation_vector);
+    cvReleaseMat(&homography);
+    cvReleaseMat(&inv_homography);
+
     return ret;
 }
 	

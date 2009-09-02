@@ -662,6 +662,51 @@ void runOneWayOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_para
 		cvReleaseImage(&img);
 	}	
 }
+//----------------------------
+//Run one way detector based on one way poses
+
+void runOneWayPosesOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
+							const outlet_template_t& outlet_templ,vector<outlet_test_elem>& test_data, char* output_path)
+{
+	IplImage* img1 = cvLoadImage(test_data[0].filename);
+	char filename[1024];
+
+	for (int i=0;i<(size_t)test_data.size();i++)
+	{
+		IplImage* img = cvLoadImage(test_data[i].filename);
+		if (test_data[i].n_matches == DETECT_SKIP)
+			continue;
+		if (output_path)
+		{
+			char* name = strrchr(test_data[i].filename,'/');
+			name++;
+			sprintf(filename,"%s",name);
+		}
+		//printf("%s",test_data[i].filename);
+		
+		if (img == NULL)
+		{
+			printf("Unable to load image %s\n",test_data[i].filename);
+			continue;
+		}
+		printf("%s\n",filename);
+		if (output_path)
+		{
+			detect_outlet_tuple_2(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ,output_path,filename);
+
+		}
+		else
+			detect_outlet_tuple_2(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ);
+
+		if (((int)test_data[i].test_outlet.size() > 0)&&((int)test_data[i].real_outlet.size() > 0))
+		{
+			printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
+				test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
+		}
+
+		cvReleaseImage(&img);
+	}	
+}
 
 //----------------------------
 //run Ferns+L Detector test

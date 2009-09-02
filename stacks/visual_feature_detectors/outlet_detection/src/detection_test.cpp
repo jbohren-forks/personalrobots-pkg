@@ -15,6 +15,7 @@
 #define L_DETECTOR 1
 #define FERNS_L_DETECTOR 2
 #define FERNS_ONE_WAY_DETECTOR 3
+#define ONE_WAY_POSES_DETECTOR 4
 
 
 int _LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortion_coeffs)
@@ -202,6 +203,13 @@ int run_detection_test(int detector_id, char* mode, char* test_path, char* confi
 				}
 				runOneWayOutletDetectorTest(intrinsic_matrix, distortion_params, outlet_template, test_data, output_path);
 				break;
+			case ONE_WAY_POSES_DETECTOR:
+				if (train_config)
+				{
+					outlet_template.load(train_config);
+				}
+				runOneWayPosesOutletDetectorTest(intrinsic_matrix, distortion_params, outlet_template, test_data, output_path);
+				break;
 			case L_DETECTOR:
 				runLOutletDetectorTest(intrinsic_matrix, distortion_params, train_config, test_data, output_path);
 				break;
@@ -284,9 +292,11 @@ int main(int argc,char** argv)
 			detector_id = L_DETECTOR;
 		if (strcmp(detector,"ferns_one_way_detector")==0)
 			detector_id = FERNS_ONE_WAY_DETECTOR;
+		if (strcmp(detector,"one_way_poses_detector")==0)
+			detector_id = ONE_WAY_POSES_DETECTOR;
 		if (detector_id < 0)
 		{
-			printf("Available detectors:\n one_way_detector\n ferns_l_detector\n l_detector\n ferns_one_way_detector\n");
+			printf("Available detectors:\n one_way_detector\n one_way_poses_detector\n ferns_l_detector\n l_detector\n ferns_one_way_detector\n");
 			return 0;
 		}
 		strcpy(mode, argv[2]);

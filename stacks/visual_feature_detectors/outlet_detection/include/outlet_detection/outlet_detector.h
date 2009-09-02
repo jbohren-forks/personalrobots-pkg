@@ -29,6 +29,10 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 	vector<outlet_t>& outlets, const outlet_template_t& outlet_templ = outlet_template_t(), 
 	const char* output_path = 0, const char* filename = 0);
 
+int detect_outlet_tuple_2(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
+	vector<outlet_t>& outlets, const outlet_template_t& outlet_templ = outlet_template_t(), 
+	const char* output_path = 0, const char* filename = 0);
+
 int detect_outlet_tuple_2x2_orange(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
                                    vector<outlet_t>& outlets, const outlet_template_t& outlet_templ,
                                    const char* output_path, const char* filename);
