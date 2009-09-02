@@ -46,8 +46,9 @@ var MapViewer = Class.create({
     initialize: function(domobj) {
         this.viewer = domobj;
         //this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan'];
+        this.topics = ['/robot_pose_visualization', '/simple_plan'];
         //this.topics = ['/robot_pose_visualization', '/move_base/TrajectoryPlannerROS/robot_footprint'];
-        this.topics = ['/robot_pose_visualization'];
+        //this.topics = ['/robot_pose_visualization'];
     },
 
     init: function() {
@@ -105,7 +106,10 @@ var MapViewer = Class.create({
         if (Event.isLeftClick(e)) {
             this.panning = true;
         } else if (Event.isMiddleClick(e)) {
-            this.settingGoal = true;
+            if (e.ctrlKey)
+              this.settingPose = true;
+            else
+              this.settingGoal = true;
         }
     },
 
@@ -113,18 +117,21 @@ var MapViewer = Class.create({
         if (Event.isLeftClick(e)) {
             this.panning = false;
         } else if (Event.isMiddleClick(e)) {
-            this.settingGoal = false;
-            var dx = Event.pointerX(e) - this.mark[0];
-            var dy = Event.pointerY(e) - this.mark[1];
-            var angle = Math.atan2(-dy, dx);
-            var off = this.viewer.cumulativeOffset();
-            var pos = this.pixelToMap([this.mark[0]-off.left, this.mark[1]-off.top]);
-            var url = 'http://' + window.location.hostname + ':8080';
-            url += '/map/set_goal';
-            url += '?x=' + pos.x;
-            url += '&y=' + pos.y;
-            url += '&angle=' + angle;
-            getDataFromServer('_set_goal_pump', url);
+            if (this.settingGoal || this.settingPose) {
+                var dx = Event.pointerX(e) - this.mark[0];
+                var dy = Event.pointerY(e) - this.mark[1];
+                var angle = Math.atan2(-dy, dx);
+                var off = this.viewer.cumulativeOffset();
+                var pos = this.pixelToMap([this.mark[0]-off.left, this.mark[1]-off.top]);
+                var url = 'http://' + window.location.hostname + ':8080';
+                url += this.settingGoal ? '/map/set_goal' : '/map/set_pose';
+                url += '?x=' + pos.x;
+                url += '&y=' + pos.y;
+                url += '&angle=' + angle;
+                getDataFromServer('_set_goal_pump', url);
+                this.settingGoal = false;
+                this.settingPose = false;
+            }
         }
     },
 
@@ -302,8 +309,8 @@ var MapViewer = Class.create({
           this.robot = {'x': msg.pose.position.x,
                         'y': msg.pose.position.y,
                         'angle': angle};
-        } else if (topic == '/move_base/NavfnROS/plan') {
-            ros_debug('new plan: ' + msg.poses.length + ' poses');
+        } else if (topic == '/move_base/NavfnROS/plan' ||
+                   topic == '/simple_plan') {
             this.plan = msg.poses;
         } else if (topic == '/move_base/TrajectoryPlannerROS/robot_footprint') {
             this.footprint = msg.polygon.points;

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import math
 import rospy
 import rosservice
 import Image
@@ -9,15 +10,17 @@ import unavail
 import tf
 import tf.transformations
 
-from geometry_msgs.msg import PoseStamped, Pose, Quaternion, Point
+from geometry_msgs.msg import PoseWithCovariance, PoseWithCovarianceStamped, PoseStamped, Pose, Quaternion, Point
+from numpy import float64
 
 _map_cache = {}
 _scale_cache = {}
 _tile_cache = {}
 
 def config_plugin():
-  global goal_publisher
+  global goal_publisher, pose_publisher
   goal_publisher = rospy.Publisher('/move_base/activate', PoseStamped)
+  pose_publisher = rospy.Publisher('/initialpose', PoseWithCovarianceStamped)
   return [{'url': '/map', 'handler': map_tiler_handler}]
 
 def get_map(service_name):
@@ -87,18 +90,34 @@ def get_tile_handler(self, path, qdict):
     jpeg = base64.decodestring(unavail.unavail)
   send_image(self, jpeg)
 
-def set_goal_handler(self, path, qdict):
+def get_pose(self, qdict):
   x = float(qdict.get('x', [0])[0])
   y = float(qdict.get('y', [0])[0])
   angle = float(qdict.get('angle', [0])[0])
-  h = rospy.Header()
-  h.stamp= rospy.get_rostime()
-  h.frame_id = '/map'
   p = Point(x, y, 0)
   q = tf.transformations.quaternion_from_euler(0, 0, angle)
   q = Quaternion(q[0], q[1], q[2], q[3])
-  goal = PoseStamped(h, Pose(p, q))
+  return Pose(p, q)
+
+def set_goal_handler(self, path, qdict):
+  pose = get_pose(self, qdict)
+  h = rospy.Header()
+  h.stamp= rospy.get_rostime()
+  h.frame_id = '/map'
+  goal = PoseStamped(h, pose)
   goal_publisher.publish(goal)
+  self.send_success()
+
+def set_pose_handler(self, path, qdict):
+  pose = get_pose(self, qdict)
+  h = rospy.Header()
+  h.stamp= rospy.get_rostime()
+  h.frame_id = '/map'
+  cov = [float64(0)] * 36
+  cov[6*0+0] = 0.5 * 0.5;
+  cov[6*1+1] = 0.5 * 0.5;
+  cov[6*3+3] = math.pi/12.0 * math.pi/12.0;
+  pose_publisher.publish(PoseWithCovarianceStamped(h, PoseWithCovariance(pose, cov)))
   self.send_success()
 
 def get_extents_handler(self, path, qdict):
@@ -121,6 +140,8 @@ def map_tiler_handler(self, path, qdict):
     get_extents_handler(self, path, qdict)
   elif path == '/map/set_goal':
     set_goal_handler(self, path, qdict)
+  elif path == '/map/set_pose':
+    set_pose_handler(self, path, qdict)
   else:
     return False
   return True
