@@ -20,9 +20,9 @@
   <!-- for laser scan -->
   <depend package="pr2_mechanism_control"/>
   <depend package="pr2_mechanism_controllers"/>
-  <depend package="semantic_point_annotator"/>
-  <depend package="laser_filters"/>
-  <depend package="mux"/>
-  <depend package="robot_self_filter"/>
+  <depend package="semantic_point_annotator"/> <!-- in semantic_mapping -->
+  <depend package="laser_filters"/> <!-- in laser_pipeline -->
+  <depend package="robot_self_filter"/> <!-- in motion_planning/non-stack -->
+  <depend package="mux"/> <!-- deprecated, udpate 2dnav_pr2 launch scripts? -->
 
 </package>

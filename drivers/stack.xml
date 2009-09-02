@@ -16,7 +16,6 @@
   <depend stack="controllers"/> <!-- pr2_mechanism_controllers, robot_mechanism_controllers -->
   <depend stack="opencv"/> <!-- opencv_latest -->
   <depend stack="3rdparty"/> <!-- player -->
-  <depend stack="pr2_simulator"/> <!-- gazebo_plugin -->
   <depend stack="diagnostics"/> <!-- diagnostic_updater -->
   <depend stack="calibration_experimental"/> <!-- mocap_msgs -->
   <depend stack="pr2_common"/> <!-- pr2_ogre, pr2_msgs -->
