@@ -21,6 +21,21 @@ from pyclearsilver import hdfhelp
 
 from launchman import app
 
+import urllib
+
+def grabTopics(hdf, topics):
+  topics = topics + ["/battery_state", "/power_board_state", "/app_status"]
+  topicList = []
+  for topic in topics: topicList.append("topic=%s" % topic)
+  topics = string.join(topicList, "&")
+
+  url = "http://localhost:8080/ros/receive?since=0&" + topics
+  fp = urllib.urlopen(url)
+  body = fp.read()
+  fp.close()
+
+  hdf.setValue("CGI.cur.messages", body)
+
 def path2taskid(path):
   p = []
   package = None

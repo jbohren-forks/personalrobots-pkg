@@ -1,7 +1,7 @@
 <html>
   <head>
     <?cs include:"includes.cs" ?>
-</head>
+  </head>
 
 <body onload="ros_handleOnLoad('/ros')">
 <?cs include:"header.cs" ?>
@@ -21,5 +21,6 @@
 
 <br>
 
+<?cs include:"rosfooter.cs"?>
 </body>
 </html>

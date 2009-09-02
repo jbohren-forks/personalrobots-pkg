@@ -366,7 +366,8 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       try:
         self.send_response(retcode)
         if callback:
-          buf = callback + "(" + buf + ");"
+          #buf = callback + "(" + buf + "); var _xsajax$transport_status=200;"
+          buf = callback + "=" + buf + ";\nvar _xsajax$transport_status=200;"
           self.send_header('Content-Type', 'text/javascript')
         else:
           self.send_header('Content-Type', 'application/json')
@@ -386,7 +387,8 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         self.send_header('Content-Length', str(len(buf)))
 
-        self.send_header('Connection', 'keep-alive')
+        if self.headers.get("Connection", '').lower() == "keep-alive":
+          self.send_header('Connection', 'keep-alive')
         self.end_headers()
 
 

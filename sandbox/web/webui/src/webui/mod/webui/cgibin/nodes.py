@@ -25,7 +25,7 @@ class MyPage(MBPage.MBPage):
     pass
     
   def display(self, hdf):
-    return
+    db_webui.grabTopics(hdf, ["/topics"])
 
 def run(context):
   return MyPage(context, pagename="nodes", nologin=1)

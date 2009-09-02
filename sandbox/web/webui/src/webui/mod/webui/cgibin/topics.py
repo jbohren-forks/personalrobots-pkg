@@ -22,10 +22,10 @@ import roslib.scriptutil
 
 class MyPage(MBPage.MBPage):
   def setup(self, hdf):
-    self.db = db_webui.initSchema()
-    
+    pass
+
   def display(self, hdf):
-    return
+    db_webui.grabTopics(hdf, ["/topics"])
 
 
 def run(context):

@@ -24,10 +24,10 @@ import roslib.scriptutil
 
 class MyPage(MBPage.MBPage):
   def setup(self, hdf):
-    self.db = db_webui.initSchema()
+    pass
     
   def display(self, hdf):
-    pass
+    db_webui.grabTopics(hdf, ["/rosout", "/users"])
 
 def run(context):
   return MyPage(context, pagename="status", nologin=1)

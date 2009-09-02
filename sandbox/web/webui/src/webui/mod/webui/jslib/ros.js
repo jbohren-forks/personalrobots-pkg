@@ -71,17 +71,16 @@ var MessagePump = Class.create({
 
  receive: function(json_result) {
    try {
-     this.lastTime = json_result.since;
      this.evalMessages(json_result);
    } catch (e) {
      ros_debug("Error with evalMessages.");
    }
-   setTimeout("gPump.pump();", 200);
+   setTimeout("gPump.pump();", 100);
  },
       
  evalMessages: function(json_result) {
       //       ros_debug("evalMessages()");
-
+  this.lastTime = json_result.since;
   for(var i=0; i<json_result.msgs.length; i++) {
     var msgEnv = json_result.msgs[i];
     //    ros_debug(msgEnv.topic);
@@ -132,7 +131,7 @@ var MessagePump = Class.create({
     });
   },
 
-  service_call: function(service_name, parameterList) {
+  service_call_xss: function(service_name, parameterList) {
     var parameters = {args: parameterList};
 
     var uri = this.urlprefix + "/service/" + service_name;
@@ -140,16 +139,52 @@ var MessagePump = Class.create({
     uri = uri + "?callback=gPump.receive_service&json=" + Object.toJSON(parameterList);
     getDataFromServer("_ros_service_pump", uri);
   },
+
+
+  service_call: function(service_name, parameterList) {
+    var parameters = {args: parameterList};
+
+    var uri = this.urlprefix + "/service/" + service_name;
+    uri = uri + "?callback=gPump.receive_service&json=" + Object.toJSON(parameterList);
+    var parameters = {json: Object.toJSON(parameterList)};
+    new Ajax.Request(uri, {parameters: parameters, crossSite: true, method: 'get'});
+  },
+
   receive_server: function(msg) {
     alert('receive_server');
   },
 
-  pump: function() {
+  pump_xs: function() {
       var uri = this.urlprefix + "/receive?callback=gPump.receive&since=" + this.lastTime;
       this.topicListeners.each(function(pair) {uri = uri + "&topic=" + pair.key; });
 
       getDataFromServer("_ros_pump", uri);
     },
+
+  pump: function() {
+    var uri = this.urlprefix + "/receive?callback=gMessage&since=" + this.lastTime;
+    this.topicListeners.each(function(pair) {
+      uri = uri + "&topic=" + pair.key;
+    });
+
+    var obj = this;
+    new Ajax.Request(uri, {
+      method: 'get',
+      crossSite: true,
+      onSuccess: function(transport) {
+        try {
+	  var json = gMessage;
+	  obj.evalMessages(json);
+          obj.pump();
+        } catch(e) {
+          obj.pump();
+        }
+      },
+      onFailure: function(transport) {
+        obj.pump();
+      }
+    });
+  },
 
   pump_old: function() {
     var uri = this.urlprefix + "/receive?since=" + this.lastTime;
@@ -164,9 +199,8 @@ var MessagePump = Class.create({
       onSuccess: function(transport) {
         try {
           var json = transport.responseText.evalJSON();
-  	  obj.lastTime = json.since;
-          obj.pump();
 	  obj.evalMessages(json);
+          obj.pump();
         } catch(e) {
           obj.pump();
         }
@@ -185,7 +219,9 @@ function ros_handleOnLoad(prefix)
   gPump = new MessagePump("http://" + window.location.hostname + ":8080" + prefix);
   gPump.setupWidgets();
 
-  //setTimeout("gPump.pump();", 10);
+  if(window.gMessage) {
+    gPump.evalMessages(window.gMessage);
+  }
   gPump.pump();
 }
 

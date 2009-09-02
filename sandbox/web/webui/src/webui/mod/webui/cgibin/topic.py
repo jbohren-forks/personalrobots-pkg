@@ -30,6 +30,8 @@ class MyPage(MBPage.MBPage):
     topic = hdf.getValue("Query.topic", "")
     hdf.setValue("CGI.cur.topic", topic)
 
+    db_webui.grabTopics(hdf, ["/topics", topic, "/battery_state", "/power_board_state", "/app_status"])
+
 def run(context):
   return MyPage(context, pagename="topic", nologin=1)
 

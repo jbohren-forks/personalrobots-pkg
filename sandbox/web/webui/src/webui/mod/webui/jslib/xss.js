@@ -1,4 +1,10 @@
 scriptTransport = Class.create();
+//
+//Written by Thierry Schellenbach
+//http://www.mellowmorning.com/2007/10/25/introducing-a-cross-site-ajax-plugin-for-prototype/
+//Version 0.8.0 for Prototype 1.5.0
+//Developed for www.commenthub.com
+//
 //modeled after XmlHttpRequest http://en.wikipedia.org/wiki/XMLHttpRequest
 //functions open, send (setRequestHeader) - variable readyState, status
 //
@@ -7,6 +13,14 @@ scriptTransport = Class.create();
 //    * 2 = sent - send() has been called, headers and status are available.
 //    * 3 = receiving - Downloading, responseText holds partial data.
 //    * 4 = loaded - Finished.
+//
+//    for which prototype does this:
+//    ['Uninitialized', 'Loading', 'Loaded', 'Interactive', 'Complete']
+//    unfortunately the onreadystatechange only works for the last 3, because 
+//    prototype 1.5.0 assigns it too late, for our usage and prevents status 1
+//    Prototype uses a timer, which in tests lead onSuccess to occur before onLoading
+//    We use respondToReadyState to make a direct instruction and bypass the filter
+//
 
 //TODO:
 //Removal of <script> nodes?
@@ -23,11 +37,12 @@ scriptTransport.prototype.open = function(method, url, asynchronous) {
     if (method != 'GET')
     alert('Method should be set to GET when using cross site ajax');
     this.readyState = 1;
+    /* little hack to get around the late assignment of onreadystatechange */
+    this.respondToReadyState(1);
     this.onreadystatechange();
     this.url = url;
     this.userAgent = navigator.userAgent.toLowerCase();
     this.setBrowser();
-    this.prepareGetScriptXS();
 }
 
 scriptTransport.prototype.send = function(body) {
@@ -51,25 +66,24 @@ scriptTransport.prototype.setBrowser = function(body) {
         };
 }
 
-scriptTransport.prototype.prepareGetScriptXS = function() {
-    if (this.browser.safari || this.browser.konqueror) {
-        _xsajax$node = [];
-        _xsajax$nodes = 0;
-    }
-}
-
 scriptTransport.prototype.callback = function() {
-    this.status = (_xsajax$transport_status) ? _xsajax$transport_status : 200;
+    try{
+    this.status = _xsajax$transport_status;
+    } catch(e) {
+    return;
+    //to prevent people from writing code, which is not cross browser compatible
+    }
     this.readyState = 4;
     this.onreadystatechange();
+    _xsajax$transport_status = null;
 }
 
 scriptTransport.prototype.getScriptXS = function() {
 
     /* determine arguments */
     var arg = {
-        'url': null
-    };
+    'url':      null
+    }
     arg.url = arguments[0];
 
     /* generate <script> node */
@@ -77,13 +91,10 @@ scriptTransport.prototype.getScriptXS = function() {
     this.node.type = 'text/javascript';
     this.node.src = arg.url;
 
-    /* optionally apply event handler to <script> node for
-   garbage collecting <script> node after loading and/or
-   calling a custom callback function */
-    var node_helper = null;
+    /* FF and Opera properly support onload. MSIE has its own implementation. Safari and Konqueror need some polling */
 
     if (this.browser.msie) {
-
+        
         function mybind(obj) {
             temp = function() {
                 if (this.readyState == "complete" || this.readyState == "loaded") {
@@ -101,24 +112,23 @@ scriptTransport.prototype.getScriptXS = function() {
            to "loaded". So, we check for both here... */
         this.node.onreadystatechange = mybind(this);
 
-        } else if (this.browser.safari || this.browser.konqueror) {
+    } else if (this.browser.safari || this.browser.konqueror) {
+        this.timepassed = 0;
         /* Safari/WebKit and Konqueror/KHTML do not emit
-           _any_ events at all, but we can exploit the fact
-           that dynamically generated <script> DOM nodes
-           are executed in sequence (although the scripts
-           theirself are still loaded in parallel) */
-        _xsajax$nodes++;
-
-        var helper = 'var ctx = _xsajax$node[' + _xsajax$nodes + '];' + 'ctx.callback.call(ctx.node);' + 'setTimeout(function () {' + '    ctx.node_helper.parentNode.removeChild(ctx.node_helper);' + '}, 100);';
-        node_helper = document.createElement('SCRIPT');
-        node_helper.type = 'text/javascript';
-        node_helper.appendChild(document.createTextNode(helper));
-        _xsajax$node[_xsajax$nodes] = {
-            callback: this.callback.bind(this),
-            node: this.node,
-            node_helper: node_helper
-        };
+           _any_ events at all, so we need to use some primitive polling */
+        this.checkTimer = setInterval(function()
+            {
+			this.timepassed = this.timepassed+100;
+            if(typeof(eval(_xsajax$transport_status)) != 'undefined' && eval(_xsajax$transport_status) != null)
+            {
+					this.callback();
+					clearInterval(this.checkTimer);
+            }
+			if(this.timepassed > 20000)
+				clearInterval(this.checkTimer);
+        }.bind(this),100);
     } else {
+        
         /* Firefox, Opera and other reasonable browsers can
            use the regular "onload" event... */
         this.node.onload = this.callback.bind(this);
@@ -130,18 +140,6 @@ scriptTransport.prototype.getScriptXS = function() {
     var head = document.getElementsByTagName('HEAD')[0];
     head.appendChild(this.node);
 
-    /* optionally inject helper <script> node into <head>
-   (Notice: we have to use a strange indirection via
-   setTimeout() to insert this second <script> node here or
-   at least Konqueror (and perhaps also Safari) for unknown
-   reasons will not execute the first <script> node at all) */
-    if (node_helper !== null) {
-        setTimeout(function() {
-            var head = document.getElementsByTagName('HEAD')[0];
-            head.appendChild(node_helper);
-        }, 100);
-    }
-
 }
 
 //
@@ -152,14 +150,36 @@ scriptTransport.prototype.setRequestHeader = function() {
 }
 scriptTransport.prototype.onreadystatechange = function() {
 }
+scriptTransport.prototype.respondToReadyState = function() {
+}
 
 //
 //------------------------------- Extend prototype a bit -----------------------
 //
 Ajax.Request.prototype = Object.extend(Ajax.Request.prototype,{
-    initialize: function(url, options) {
-        this.setOptions(options);
-        this.transport = (!this.options.crossSite) ? Ajax.getTransport() : new scriptTransport;
-        this.request(url);
-        }    
-});
+  initialize: function(url, options) {
+    this.options = {
+      method:       'post',
+      asynchronous: true,
+      contentType:  'application/x-www-form-urlencoded',
+      encoding:     'UTF-8',
+      parameters:   '',
+      evalJSON:     true,
+      evalJS:       true
+    };
+    Object.extend(this.options, options || { });
+
+    this.options.method = this.options.method.toLowerCase();
+
+    if (Object.isString(this.options.parameters))
+      this.options.parameters = this.options.parameters.toQueryParams();
+    else if (Object.isHash(this.options.parameters))
+      this.options.parameters = this.options.parameters.toObject();
+
+    this.transport = (!this.options.crossSite) ? Ajax.getTransport() : new scriptTransport;
+    this.options.asynchronous = (!this.options.crossSite) ? this.options.asynchronous : false;
+    //turns of the timed onLoad executer
+    this.transport.respondToReadyState = this.respondToReadyState.bind(this);
+    this.request(url);
+	}
+  });

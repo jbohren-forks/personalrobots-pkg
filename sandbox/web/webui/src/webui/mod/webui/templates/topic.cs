@@ -13,8 +13,7 @@
 <div style="border: 2px solid white; font-size: 10pt; font-family: courier; height: 40em; width: 60em;" objtype=ScrollingTextWidget topic="<?cs var:CGI.cur.topic ?>"></div><br>
 
 <br>
-<div id=ErrorDiv></div>
 
-
+<?cs include:"rosfooter.cs"?>
 </body>
 </html>
