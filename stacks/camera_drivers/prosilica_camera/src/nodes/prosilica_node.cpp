@@ -40,7 +40,7 @@
 #include <sensor_msgs/fill_image.h>
 #include <opencv_latest/CvBridge.h>
 #include <camera_calibration/pinhole.h>
-#include <image_publisher/image_publisher.h>
+#include <image_transport/image_publisher.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
 
@@ -62,8 +62,8 @@ class ProsilicaNode
 {
 private:
   ros::NodeHandle nh_;
-  ImagePublisher img_pub_;
-  ImagePublisher rect_pub_;
+  image_transport::ImagePublisher img_pub_;
+  image_transport::ImagePublisher rect_pub_;
   ros::Publisher info_pub_;
   ros::ServiceServer info_srv_;
   ros::ServiceServer poll_srv_;
@@ -102,8 +102,6 @@ private:
 public:
   ProsilicaNode(const ros::NodeHandle& node_handle)
     : nh_(node_handle),
-      img_pub_(nh_),
-      rect_pub_(nh_),
       cam_(NULL), running_(false),
       diagnostic_(this, nh_),
       count_(0),
@@ -244,9 +242,9 @@ public:
 
     cam_->setRoiToWholeFrame();
     
-    img_pub_.advertise("~image");
+    img_pub_.advertise(nh_, "~image", 1);
     if (calibrated_) {
-      rect_pub_.advertise("~image_rect");
+      rect_pub_.advertise(nh_, "~image_rect", 1);
       info_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("~cam_info", 1);
       info_srv_ = nh_.advertiseService<>("~cam_info_service", &ProsilicaNode::camInfoService, this);
     }

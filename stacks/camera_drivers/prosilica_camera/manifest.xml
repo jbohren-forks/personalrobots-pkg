@@ -11,7 +11,7 @@
   <depend package="diagnostic_msgs" />
   <depend package="image_view" />
   <depend package="camera_calibration" />
-  <depend package="image_publisher" />
+  <depend package="image_transport" />
   <export>
     <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lprosilica" cflags="-I${prefix}/include -I${prefix}/srv/cpp"/>
   </export>
