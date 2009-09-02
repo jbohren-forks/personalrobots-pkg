@@ -52,23 +52,46 @@ using namespace std;
 
 
 namespace mpglue_test {
-
+  
+  
+  template<typename service_type>
+  class CheckedServiceClient
+  {
+  public:
+    typedef service_type service_t;
+    
+    CheckedServiceClient(std::string const & name)
+      : name_(name),
+	client_(nh_.serviceClient<service_t>(name)) {}
+    
+    bool call(service_t & service) {
+      // Would have liked to use ASSERT_TRUE with a message, but that did not compile.
+      if (ros::service::waitForService(name_))
+	return client_.call(service);
+      std::cerr << "waitForService(" << name_ << ") failed";
+      return false;
+    }
+    
+    ros::NodeHandle nh_;
+    std::string const name_;
+    ros::ServiceClient client_;
+  };
+  
+  
   class CostmapPlannerNodeTest
     : public testing::Test {
   public:
     CostmapPlannerNodeTest()
-      : set_costmap_client(nh.serviceClient<SetCostmap>(PREFIX "set_costmap")),
-	set_index_transform_client(nh.serviceClient<SetIndexTransform>(PREFIX "set_index_transform")),
-	select_planner_client(nh.serviceClient<SelectPlanner>(PREFIX "select_planner")),
-	make_nav_plan_client(nh.serviceClient<MakeNavPlan>(PREFIX "make_nav_plan"))
+      : set_costmap_client(PREFIX "set_costmap"),
+	set_index_transform_client(PREFIX "set_index_transform"),
+	select_planner_client(PREFIX "select_planner"),
+	make_nav_plan_client(PREFIX "make_nav_plan")
     {}
-  
-    ros::NodeHandle nh;
-  
-    ros::ServiceClient set_costmap_client;
-    ros::ServiceClient set_index_transform_client;
-    ros::ServiceClient select_planner_client;
-    ros::ServiceClient make_nav_plan_client;
+    
+    CheckedServiceClient<SetCostmap> set_costmap_client;
+    CheckedServiceClient<SetIndexTransform> set_index_transform_client;
+    CheckedServiceClient<SelectPlanner> select_planner_client;
+    CheckedServiceClient<MakeNavPlan> make_nav_plan_client;
   
     SetCostmap set_costmap_srv;
     SetIndexTransform set_index_transform_srv;
@@ -79,6 +102,7 @@ namespace mpglue_test {
 }
 
 using namespace mpglue_test;
+
 
 TEST_F (CostmapPlannerNodeTest, set_costmap)
 {
