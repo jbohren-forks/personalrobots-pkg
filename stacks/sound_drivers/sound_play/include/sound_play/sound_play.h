@@ -146,7 +146,7 @@ public:
 
   void stopall()
 	{
-		stop(SoundRequest::ALL)
+		stop(SoundRequest::ALL);
 	}
 
 private:
