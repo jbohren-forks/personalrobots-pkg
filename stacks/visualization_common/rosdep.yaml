@@ -11,3 +11,9 @@ nvidia-cg:
     if ! pacman -Q nvidia-cg-toolkit ; then yaourt -S nvidia-cg-toolkit; fi
   gentoo: nvidia-cg-toolkit
   debian: nvidia-cg-toolkit
+libxrandr:
+  ubuntu: libxrandr-dev
+  debian: libxrandr-dev
+  arch: libxrandr
+  gentoo: x11-libs/libXrandr
+  macports: xorg-libXrandr

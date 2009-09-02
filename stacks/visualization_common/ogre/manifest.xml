@@ -32,6 +32,7 @@ We use Ogre 1.6.3 for a number of reasons:
 <rosdep name="libxaw"/>
 <rosdep name="opengl"/>
 <rosdep name="libxxf86vm"/>
+<rosdep name="libxrandr"/>
 <rosdep name="gtk2"/>
 <rosdep name="freeimage"/>
 <rosdep name="nvidia-cg"/>
