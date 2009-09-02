@@ -91,7 +91,7 @@ var MessagePump = Class.create({
         try {
           listeners[j].receive(msgEnv.topic, msgEnv.msg);
         } catch (e) {
-          ros_debug("Error with receiver.");
+          ros_debug("Error with receiver: " + e);
         }
       }
     } else {
