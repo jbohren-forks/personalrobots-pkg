@@ -378,7 +378,7 @@ void CommStateMachine<ActionSpec>::updateStatus(GoalHandleT& gh, const actionlib
 template <class ActionSpec>
 void CommStateMachine<ActionSpec>::processLost(GoalHandleT& gh)
 {
-  ROS_DEBUG("Processing LOST");
+  ROS_WARN("Transitioning goal to LOST");
   latest_goal_status_.status = actionlib_msgs::GoalStatus::LOST;
   transitionToState(gh, CommState::DONE);
 }
