@@ -104,7 +104,7 @@ RigidBodyInertia toKdl(boost::shared_ptr<urdf::Inertial> i)
 bool addChildrenToTree(boost::shared_ptr<const urdf::Link> root, Tree& tree)
 {
   std::vector<boost::shared_ptr<urdf::Link> > children = root->child_links;
-  cout << "Link " << root->name << " has " << children.size() << " children" << endl;
+  ROS_DEBUG("Link %s had %i children", root->name.c_str(), children.size());
 
   // constructs the inertia
   if (!root->inertial) return false;
@@ -147,7 +147,7 @@ bool treeFromXml(TiXmlDocument *xml_doc, Tree& tree)
 {
   urdf::Model robot_model;
   if (!robot_model.initXml(xml_doc)){
-    cerr << "Could not generate robot model" << endl; 
+    ROS_ERROR("Could not generate robot model");
     return false;
   }
   return treeFromRobotModel(robot_model, tree);
