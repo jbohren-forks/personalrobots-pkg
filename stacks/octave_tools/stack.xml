@@ -1,0 +1,14 @@
+<stack name="octave_tools" version="0.1.0">
+  <description brief="octave_tools">
+
+     Packages for using Octave libraries with ROS, such as filters.
+
+  </description>
+  <author>Maintained by Melonee Wise</author>
+  <license>BSD,BSD/GPL/LGPL</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/octave_tools</url>
+  <depend stack="ros"/> <!-- rosoct, rosconsole, rospy --> 
+  <depend stack="common"/> <!-- filters, tinyxml --> 
+
+</stack>
