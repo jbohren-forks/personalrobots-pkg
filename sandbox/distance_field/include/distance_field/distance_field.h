@@ -57,15 +57,23 @@ namespace distance_field
  * radius.
  *
  * This is an abstract base class, current implementations include PropagationDistanceField
- * and PFDistanceField
+ * and PFDistanceField.
  */
 template <typename T>
 class DistanceField: public VoxelGrid<T>
 {
 public:
-
   /**
-   * \brief Constructor for the DistanceField
+   * \brief Constructor for the VoxelGrid.
+   *
+   * @param size_x Size (x axis) of the container in meters
+   * @param size_y Size (y axis) of the container in meters
+   * @param size_z Size (z axis) of the container in meters
+   * @param resolution: resolution (size of a single cell) in meters
+   * @param origin_x Origin (x axis) of the container
+   * @param origin_y Origin (y axis) of the container
+   * @param origin_z Origin (z axis) of the container
+   * @param default_object The object to return for an out-of-bounds query
    */
   DistanceField(double size_x, double size_y, double size_z, double resolution,
       double origin_x, double origin_y, double origin_z, T default_object);
@@ -75,38 +83,44 @@ public:
 
 
   /**
-   * \brief Add (and expand) a set of points to the distance field
+   * \brief Add (and expand) a set of points to the distance field.
+   *
+   * This function will incrementally add the given points and update the distance field
+   * correspondingly. Use the reset() function if you need to remove all points and start
+   * afresh.
    */
   virtual void addPointsToField(const std::vector<btVector3> points)=0;
 
   /**
-   * \brief Adds the points in a collision map to the distance field
+   * \brief Adds the points in a collision map to the distance field.
    */
   void addCollisionMapToField(const mapping_msgs::CollisionMap &collision_map);
 
   /**
-   * \brief Resets the distance field to the max_distance
+   * \brief Resets the distance field to the max_distance.
    */
   virtual void reset()=0;
 
   /**
-   * \brief Gets the distance to the closest obstacle at the given location
+   * \brief Gets the distance to the closest obstacle at the given location.
    */
   double getDistance(double x, double y, double z) const;
 
   /**
-   * \brief Gets the distance at a location and the gradient of the field
+   * \brief Gets the distance at a location and the gradient of the field.
    */
   //virtual double getDistanceGradient(double x, double y, double z, double& gradient_x, double& gradient_y, double& gradient_z) const;
 
   /**
-   * \brief Gets the distance to the closest obstacle at the given integer cell location
+   * \brief Gets the distance to the closest obstacle at the given integer cell location.
    */
   double getDistanceFromCell(int x, int y, int z) const;
 
   /**
+   * \brief Publishes an iso-surface to rviz.
+   *
    * Publishes an iso-surface containing points between min_radius and max_radius
-   * as visualization markers for rviz
+   * as visualization markers for rviz.
    */
   void visualize(double min_radius, double max_radius, std::string frame_id, ros::Time stamp);
 

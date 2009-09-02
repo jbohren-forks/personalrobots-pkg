@@ -50,34 +50,43 @@ class VoxelGrid
 {
 public:
   /**
-   * Constructor for the VoxelGrid
+   * Constructor for the VoxelGrid.
+   *
+   * @param size_x Size (x axis) of the container in meters
+   * @param size_y Size (y axis) of the container in meters
+   * @param size_z Size (z axis) of the container in meters
+   * @param resolution: resolution (size of a single cell) in meters
+   * @param origin_x Origin (x axis) of the container
+   * @param origin_y Origin (y axis) of the container
+   * @param origin_z Origin (z axis) of the container
+   * @param default_object The object to return for an out-of-bounds query
    */
   VoxelGrid(double size_x, double size_y, double size_z, double resolution,
       double origin_x, double origin_y, double origin_z, T default_object);
   virtual ~VoxelGrid();
 
   /**
-   * \brief Gets the value at the given position (returns the value from the closest discretized location)
+   * \brief Gets the value at the given position (returns the value from the closest discretized location).
    */
   const T& operator()(double x, double y, double z) const;
 
   /**
-   * \brief Gets the value at a given integer location
+   * \brief Gets the value at a given integer location.
    */
   T& getCell(int x, int y, int z);
 
   /**
-   * \brief Sets the value at an integer location
+   * \brief Sets the value at an integer location.
    */
   void setCell(int x, int y, int z, T& obj);
 
   /**
-   * \brief Gets the value at a given integer location (const version)
+   * \brief Gets the value at a given integer location (const version).
    */
   const T& getCell(int x, int y, int z) const;
 
   /**
-   * Reset the entire grid to the given initial value
+   * \brief Reset the entire grid to the given initial value.
    */
   void reset(T initial);
 
@@ -89,38 +98,38 @@ public:
   };
 
   /**
-   * \brief Gets the size of the given dimension
+   * \brief Gets the size of the given dimension.
    */
   double getSize(Dimension dim) const;
 
   /**
-   * \brief Gets the resolution of the given dimension
+   * \brief Gets the resolution of the given dimension.
    */
   double getResolution(Dimension dim) const;
 
   /**
-   * \brief Gets the origin of the given dimension
+   * \brief Gets the origin of the given dimension.
    */
   double getOrigin(Dimension dim) const;
 
   /**
-   * \brief Gets the number of cells of the given dimension
+   * \brief Gets the number of cells of the given dimension.
    */
   int getNumCells(Dimension dim) const;
 
   /**
-   * \brief Converts grid coordinates to world coordinates
+   * \brief Converts grid coordinates to world coordinates.
    */
   bool gridToWorld(int x, int y, int z, double& world_x, double& world_y, double& world_z) const;
 
   /**
-   * \brief Converts world coordinates to grid coordinates
+   * \brief Converts world coordinates to grid coordinates.
    */
   bool worldToGrid(double world_x, double world_y, double world_z, int& x, int& y, int& z) const;
 
 protected:
-  T* data_;
-  T default_object_;
+  T* data_;			/**< Storage for data elements */
+  T default_object_;		/**< The default object to return in case of out-of-bounds query */
   T*** data_ptrs_;
   double size_[3];
   double resolution_[3];
@@ -146,12 +155,12 @@ protected:
   double getLocationFromCell(Dimension dim, int cell) const;
 
   /**
-   * Checks if the given cell is within the voxel grid
+   * \brief Checks if the given cell is within the voxel grid
    */
   bool isCellValid(int x, int y, int z) const;
 
   /**
-   * Checks validity of the given cell for a particular dimension
+   * \brief Checks validity of the given cell for a particular dimension
    */
   bool isCellValid(Dimension dim, int cell) const;
 };

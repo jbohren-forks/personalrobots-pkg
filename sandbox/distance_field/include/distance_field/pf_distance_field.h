@@ -43,6 +43,8 @@ namespace distance_field
 {
 
 /**
+ * \brief A DistanceField implementation that uses a raster scanning type method by Felzenszwalb et. al.
+ *
  * Implementation of "Distance Transforms of Sampled Functions", Pedro F. Felzenszwalb and
  * Daniel P. Huttenlocher, Cornell Computing and Information Science TR2004-1963
  */

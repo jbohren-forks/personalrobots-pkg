@@ -48,7 +48,7 @@ namespace distance_field
 {
 
 /**
- * \brief Structure that holds voxel information for the DistanceField
+ * \brief Structure that holds voxel information for the DistanceField.
  */
 struct PropDistanceFieldVoxel
 {
@@ -64,7 +64,7 @@ struct PropDistanceFieldVoxel
 };
 
 /**
- * \brief A VoxelGrid that can convert a set of obstacle points into a distance field.
+ * \brief A DistanceField implementation that uses a vector propagation method.
  *
  * It computes the distance transform of the input points, and stores the distance to
  * the closest obstacle in each voxel. Also available is the location of the closest point,
@@ -76,7 +76,7 @@ class PropagationDistanceField: public DistanceField<PropDistanceFieldVoxel>
 public:
 
   /**
-   * \brief Constructor for the DistanceField
+   * \brief Constructor for the DistanceField.
    */
   PropagationDistanceField(double size_x, double size_y, double size_z, double resolution,
       double origin_x, double origin_y, double origin_z, double max_distance);
@@ -84,18 +84,17 @@ public:
   virtual ~PropagationDistanceField();
 
   /**
-   * \brief Add (and expand) a set of points to the distance field
+   * \brief Add (and expand) a set of points to the distance field.
    */
   virtual void addPointsToField(const std::vector<btVector3> points);
 
   /**
-   * \brief Resets the distance field to the max_distance
+   * \brief Resets the distance field to the max_distance.
    */
   virtual void reset();
 
-
   /**
-   * \brief Gets the distance to the closest obstacle and the gradient of the field at a location
+   * \brief Gets the distance to the closest obstacle and the gradient of the field at a location.
    */
   double getDistanceGradient(double x, double y, double z, double& gradient_x, double& gradient_y, double& gradient_z) const;
 

@@ -2,18 +2,13 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b distance_field is ... 
+All implementations derive from the distance_field::DistanceField class. There are two implementations
+currently available - distance_field::PropagationDistanceField and distance_field::PFDistanceField (see the docs on individual
+classes for details). The main functions you will need to use these are:
 
-<!-- 
-In addition to providing an overview of your package,
-this is the section where the specification and design/architecture 
-should be detailed. While the original specification may be done on the
-wiki, it should be transferred here once your package starts to take shape.
-You can then link to this documentation page from the Wiki. 
--->
-
-
-\section codeapi Code API
+- distance_field::DistanceField::reset()
+- distance_field::DistanceField::addPointsToField()
+- distance_field::DistanceField::getDistance()
 
 <!--
 Provide links to specific auto-generated API documentation within your
@@ -28,6 +23,7 @@ example, the roscpp documentation has 'libros' group.
 
 \section rosapi ROS API
 
+This package is just a library and contains no ROS nodes.
 <!--
 Names are very important in ROS because they can be remapped on the
 command-line, so it is VERY IMPORTANT THAT YOU LIST NAMES AS THEY

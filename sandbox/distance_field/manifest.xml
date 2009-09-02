@@ -1,16 +1,19 @@
 <package>
   <description brief="distance_field">
 
-This package contains a data structure which maintains a discretized
-3D voxel grid. It also contains a Euclidean Distance Transform algorithm
-which can operate on a set of points and populate the voxel_grid with
-its corresponding distance map.
+This package contains algorithms that can compute the
+Euclidean Distance Transform (EDT) of a 3-D voxel grid. The input to these algorithms is
+an array of points (which could represent the positions of obstacles in the world). 
+The EDT provides a voxel grid in which in which each cell contains the distance to the
+closest obstacle.
+
+The VoxelGrid class can also be used as a generic, templatized container for a discretized 3-D voxel grid.
 
   </description>
-  <author>Mrinal Kalakrishnan</author>
+  <author>Mrinal Kalakrishnan / mail@mrinal.net</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/distance_field</url>
+  <url>http://ros.org/wiki/distance_field</url>
 
   <depend package="roscpp"/>
   <depend package="visualization_msgs" />
