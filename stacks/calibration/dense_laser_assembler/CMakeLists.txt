@@ -16,3 +16,5 @@ rospack_add_library(dense_laser_assembler src/dense_laser_assembler.cpp)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+
+add_subdirectory(test EXCLUDE_FROM_ALL)
