@@ -1,3 +1,7 @@
+# IMPORTANT: You should never have to generate this message yourself.
+# Use the sound_play::SoundHandle C++ helper or the
+# sound_play.libsoundplay.SoundHandle Python helper.
+
 # Sounds
 byte BACKINGUP = 1
 byte NEEDS_UNPLUGGING = 2
