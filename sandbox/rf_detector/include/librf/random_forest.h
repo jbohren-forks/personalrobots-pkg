@@ -28,7 +28,7 @@ namespace librf {
 
 		RandomForest(void)  {}
 		~RandomForest(void) {
-			for (int i = 0; i < vectrees_.size(); ++i) {
+			for (int i = 0; i < (int)(vectrees_.size()); ++i) {
 				delete vectrees_.at(i);
 			}
 		}

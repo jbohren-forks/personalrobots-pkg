@@ -34,7 +34,7 @@
 // modified by Min Sun from  Benjamin N Lee's  librf: C++ random forests library
 
 // RandomForest.cpp : Defines the entry point for the console application.
-//
+
 #include "librf/librf.h"
 #include <sstream>
 #include <iostream>

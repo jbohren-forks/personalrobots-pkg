@@ -36,7 +36,7 @@ namespace librf {
 		{
 			dist.resize(counter_.size());
 			assert(dist.size() == counter_.size());
-			for (int i = 0; i < dist.size(); i++)
+			for (int i = 0; i < (int)(dist.size()); i++)
 			{
 				dist[i] = counter_[i] / (float)sum_;
 			}

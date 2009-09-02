@@ -501,7 +501,7 @@ private:
     	MaxObjASBin = 0;
     	MinObjASBin = numeric_limits<int>::max();
     	int ObjASBin;
-    	for (int Id = 0; Id < vecNormVotes.at(2).size(); Id++)// loop through all MormVotes
+    	for (unsigned int Id = 0; Id < vecNormVotes.at(2).size(); Id++)// loop through all MormVotes
     	{
 	    ObjASBin = (int)(vecNormVotes.at(2).at(Id)/ObjASStep);
 	    if ( ObjASBin > MaxObjASBin){
@@ -529,7 +529,7 @@ private:
    	VotesMap.resize(MaxClassId);
 	MatObjHeightBin.resize(MaxClassId);
 	MatObjASBin.resize(MaxClassId);
-    	for (int k=0; k<unique_classIds.size(); k++){
+    	for (unsigned int k=0; k<unique_classIds.size(); k++){
         	int valid_classId = unique_classIds[k];
         	VotesMap.at(valid_classId) = cvCreateMat( ImgSize.height, ImgSize.width, CV_32FC1);
 		MatObjHeightBin[valid_classId] = cvCreateImage( cvSize(ImgSize.width, ImgSize.height), IPL_DEPTH_32F, MaxObjHeightBin-MinObjHeightBin+1);
@@ -560,7 +560,7 @@ private:
 	hog.blockStride = blockStride;
         hog.cellSize = cellSize;
         hog.nbins = nbins;
-        hog.derivAperture = hog.derivAperture;
+        hog.derivAperture = derivAperture;
         hog.winSigma = winSigma;
         hog.histogramNormType = histogramNormType;
         hog.L2HysThreshold = L2HysThreshold;
@@ -627,7 +627,7 @@ private:
 		
 		vector<float>* tmp = &ObjCenterConfAll;
 		sort( ObjCenterInd.begin(), ObjCenterInd.end(), index_cmp<vector<float>&>(*(tmp)) );
-		for( int i = 0; i < ObjCenterConfAll.size();i++)
+		for( unsigned int i = 0; i < ObjCenterConfAll.size();i++)
 		{
 			if ( ObjCenterPlanePPRatio[ObjCenterInd[i]] >0.2){
 				objBbxes_.push_back( ObjCenterWindowsAll[ObjCenterInd[i]]);

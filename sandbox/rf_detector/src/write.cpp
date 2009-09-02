@@ -82,6 +82,8 @@ bool readFloatBinPlain( string filename, int NDim, vector< vector<float> > & dat
     // pop_back one dummy element
     data.at(dim_count-1).pop_back();
     fp.close();
+
+    return true;
 }
 bool readIntegerBinPlain( string filename, vector< int > & data)
 {
@@ -96,6 +98,8 @@ bool readIntegerBinPlain( string filename, vector< int > & data)
     fin.close();
     // pop_back one dummy element
     data.pop_back();
+
+    return true;
 }
 void readClassId2ViewObjClassMapFile( string filename, vector<string>& ObjClassStr, vector<int>& ViewMap){
 
@@ -112,7 +116,7 @@ void readClassId2ViewObjClassMapFile( string filename, vector<string>& ObjClassS
     	int classId;
     	iss >> classId; 
 	//cout <<"classId" << classId <<endl;
-        if (classId >= ObjClassStr.size()){
+        if (classId >= (int)(ObjClassStr.size())){
 		ObjClassStr.resize(classId+1);
 		ViewMap.resize(classId+1);
 	}

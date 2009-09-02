@@ -1,3 +1,38 @@
+/*********************************************************************
+*
+*  Copyright (c) 2008, Willow Garage, Inc.
+*  All rights reserved.
+*
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+*
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+*
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*********************************************************************/
+
+// Author: Min Sun
+//
 #include <iostream>
 #include <math.h>
 #include <algorithm>
@@ -76,8 +111,8 @@ inline int LoadPcd2CvMat( string pcdfilename, Size ImgSize, CvMat* pcd_pc){
     unsigned int count_valid_points = 0;
     pcd_pc = cvCreateMat( ImgSize.height, ImgSize.width, CV_32FC4);
     unsigned int nChannels = 4;
-    for (unsigned int y=0; y< ImgSize.height; y++){
-        for (unsigned int x=0; x< ImgSize.width; x++){
+    for ( int y=0; y< ImgSize.height; y++){
+        for ( int x=0; x< ImgSize.width; x++){
             ptr = (float*) ( pcd_pc->data.ptr + y*pcd_pc->step);
             ptr[x*nChannels] = pcd_pc_tmp.points[count].x;
             ptr[x*nChannels+1] = pcd_pc_tmp.points[count].y;
@@ -132,9 +167,9 @@ inline void Sample_interest_point( sensor_msgs::PointCloud& object_pc, sensor_ms
     for (unsigned int q = 0; q < object_pp.size(); q++){
 	gridx_ori = object_pp[q].x/SampleSteps.width;
 	gridy_ori = object_pp[q].y/SampleSteps.height;
-	for (unsigned int gridx = std::max((int)(gridx_ori-neighbor_grid),0);		 
+	for ( int gridx = std::max((int)(gridx_ori-neighbor_grid),0);		 
 		gridx < std::min( (int)(gridx_ori+neighbor_grid+1),gridSize.width); gridx++){
-		for (unsigned int gridy = std::max((int)(gridy_ori-neighbor_grid),0); 
+		for ( int gridy = std::max((int)(gridy_ori-neighbor_grid),0); 
 			gridy < std::min((int)(gridy_ori+neighbor_grid+1),gridSize.height); gridy++){
 			uchar_ptr = (unsigned short int*) (valid_pp->data.ptr + gridy*valid_pp->step);
 			if (uchar_ptr[ gridx*chandim] ==0){
@@ -155,9 +190,9 @@ inline void Sample_interest_point( sensor_msgs::PointCloud& object_pc, sensor_ms
     for (unsigned int q = 0; q < plane_pp.size(); q++){
 	gridx_ori = plane_pp[q].x/SampleSteps.width;
 	gridy_ori = plane_pp[q].y/SampleSteps.height;
-	for (unsigned int gridx = std::max((int)(gridx_ori-neighbor_grid),0);		 
+	for ( int gridx = std::max((int)(gridx_ori-neighbor_grid),0);		 
 		gridx < std::min( (int)(gridx_ori+neighbor_grid+1),gridSize.width); gridx++){
-		for (unsigned int gridy = std::max((int)(gridy_ori-neighbor_grid),0); 
+		for ( int gridy = std::max((int)(gridy_ori-neighbor_grid),0); 
 			gridy < std::min((int)(gridy_ori+neighbor_grid+1),gridSize.height); gridy++){
 			uchar_ptr = (unsigned short int*) (valid_pp->data.ptr + gridy*valid_pp->step);
 			if (uchar_ptr[ gridx*chandim] ==0){
@@ -179,16 +214,16 @@ inline void Sample_interest_point( sensor_msgs::PointCloud& object_pc, sensor_ms
     // Sample interest_pts
     geometry_msgs::Point32 point32_tmp;
     bool nei_valid_pp_object_flag;
-    for (unsigned int y=0, gridy=0; y< ImgSize.height; gridy++, y+=SampleSteps.height){
+    for ( int y=0, gridy=0; y< ImgSize.height; gridy++, y+=SampleSteps.height){
         uchar_ptr = (unsigned short int*) (valid_pp->data.ptr + gridy*valid_pp->step);
-        for (unsigned int x=0, gridx=0; x< ImgSize.width; gridx++, x+=SampleSteps.width){
+        for ( int x=0, gridx=0; x< ImgSize.width; gridx++, x+=SampleSteps.width){
 	    //test if neighbor valid_pp is from object
 	    nei_valid_pp_object_flag = false;
             if ( uchar_ptr[chandim*gridx] != 0){
-		for (unsigned int gridy_nei = std::max((int)(gridy-neighbor_grid_object),0); 
+		for ( int gridy_nei = std::max((int)(gridy-neighbor_grid_object),0); 
 			gridy_nei < std::min((int)(gridy+neighbor_grid_object+1),gridSize.height); gridy_nei++){
 			uchar_ptr_tmp = (unsigned short int*) (valid_pp->data.ptr + gridy_nei*valid_pp->step);
-			for (unsigned int gridx_nei = std::max((int)(gridx-neighbor_grid_object),0);		 
+			for ( int gridx_nei = std::max((int)(gridx-neighbor_grid_object),0);		 
 				gridx_nei < std::min( (int)(gridx+neighbor_grid_object+1),gridSize.width); gridx_nei++){
 				if (uchar_ptr_tmp[chandim*gridx_nei+2] == 1){
 					nei_valid_pp_object_flag = true;
