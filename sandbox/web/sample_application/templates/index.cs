@@ -17,7 +17,7 @@
 <table width=80% align=center>
 <tr>
 <td>
-<div style="align: center; border: 1px solid black; font-size: 10pt; font-family: courier; height: 40em; width: 60em;" objtype=TerminalTextWidget topic="/chatter" key="data"></div><br>
+<div style="align: center; border: 1px solid black; font-size: 10pt; font-family: courier; height: 40em; width: 60em;" objtype=TerminalTextWidget topic="/chatter:more" key="data"></div><br>
 </td>
 </table>
 

@@ -15,6 +15,7 @@
   <depend package="rospy"/>
   <depend package="rosservice"/>
   <depend package="rosjson"/>
+  <depend package="std_msgs"/>
 </package>
 
 

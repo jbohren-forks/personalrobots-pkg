@@ -17,11 +17,12 @@ _map_cache = {}
 _scale_cache = {}
 _tile_cache = {}
 
-def config_plugin():
+def config_plugin(context):
   global goal_publisher, pose_publisher
   goal_publisher = rospy.Publisher('/move_base/activate', PoseStamped)
   pose_publisher = rospy.Publisher('/initialpose', PoseWithCovarianceStamped)
-  return [{'url': '/map', 'handler': map_tiler_handler}]
+
+  context.register_handler("/map", map_tiler_handler)
 
 def get_map(service_name):
   map_key = service_name

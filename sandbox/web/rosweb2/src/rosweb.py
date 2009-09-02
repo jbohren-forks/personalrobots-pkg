@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+"""
+usage: %(progname)s [--debug]
+"""
+
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2009, Willow Garage, Inc.
@@ -36,6 +40,7 @@
 PKG_NAME = 'rosweb2'
 import roslib; roslib.load_manifest(PKG_NAME)
 
+import getopt
 import cStringIO
 import os
 import signal
@@ -65,19 +70,21 @@ from roslib.message import ROSMessageException
 class ROSWebException(Exception): pass
 
 def splitTopic(topic):
-  parts = topic.split("/")
-  topic = "/" + parts[1]
+  parts = topic.split(":", 1)
+  topic = parts[0]
   subtopic = None
-  if len(parts) == 3: 
-    subtopic = parts[2]
+  if len(parts) == 2: 
+    subtopic = parts[1]
   return topic, subtopic
 
 
 ## Factory for ROSWebTopic instances
 class RWTFactory(object):
-    def __init__(self):
+    def __init__(self, webserver):
         self.map = {}
         self.lock = threading.Lock()
+
+        self.webserver = webserver
 
         self.counter = 1
         self.cond = threading.Condition()
@@ -104,7 +111,7 @@ class RWTFactory(object):
     def subscribe(self, topic):
         # Don't use 'subtopics' as they are currently implemented
         # because the nav stack has topic names with '/' in them.
-        if 0:
+        if 1:
             maintopic, subtopic = splitTopic(topic)
         else:
             maintopic = topic
@@ -118,7 +125,8 @@ class RWTFactory(object):
             self.map[maintopic] = main_rwt
             rwt = main_rwt
             if subtopic:
-              rwt = ROSWebSubTopic(topic, self, main_rwt)
+              handlerClass = self.webserver._subtopics[topic]
+              rwt = handlerClass(topic, self, main_rwt)
               self.map[topic] = rwt
         finally:
             self.lock.release()
@@ -218,22 +226,25 @@ class ROSWebSubTopic(object):
     def init(self):
       pass
 
-    def subtopic_callback(self, data):
+    def subtopic_callback(self, msg):
       ## no locks needed since this will be called from the main topic
 
-      if self.maintopic == "/diagnostics":
-        for _msg in data.status:
-          if _msg.name == self.subtopic:
-            self.messages.append((self.factory.counter, data))
-            self.factory.counter = self.factory.counter + 1
-            self.messages = self.messages[-20:]
+      newmsg = self.transform(msg)
 
+      if not newmsg: return
+
+      self.messages.append((self.factory.counter, newmsg))
+      self.factory.counter = self.factory.counter + 1
+      self.newmsg = self.messages[-20:]
+      
+      
     
 
 class VirtualTopic(object):
-  def __init__(self, topic, factory, thread):
+  def __init__(self, topic, factory, thread, intopics=[]):
     self.factory = factory
     self.topic = topic
+    self.intopics = intopics
 
     self.messages = []
 
@@ -242,6 +253,9 @@ class VirtualTopic(object):
 
   def init(self):
     if not self.initialized:
+      for _topic in self.intopics: 
+        self.factory.subscribe(_topic)
+
       self.initialized = True
       self.thread.setCallback(self.callback)
       self.thread.start()
@@ -269,15 +283,13 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
           rwt.init()
         except ROSWebException, e:
           self.server.factory.unsubscribe(topic)
+          logging.warning("Cannot subscribe to %s" % topic)
           #traceback.print_exc()
           return None
         return rwt
 
     def _do_GET_topic(self, topics, since, callback=None):
         rwttopics = []
-
-#        if "/topics" not in topics:
-#          topics.append("/topics")
 
         for topic in topics:
           rwt = self.server.factory.get(topic)
@@ -291,7 +303,31 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
           logging.warning("no valid topics")
           self.send_failure()
           return
+
+        (messages, lastSince) = self._get_messages(rwttopics, since)
+
+        buf = cStringIO.StringIO()
+        buf.write("{")
+        buf.write('"since": %s,' % lastSince)
+        buf.write('"msgs": [')
+        _i = 0
+        for (topic, msg) in messages:
+          _i = _i + 1
+          if _i > 1: buf.write(',')
+          buf.write("{")
+          buf.write('"topic": "%s",' % topic)
+          buf.write('"msg": ')
+          buf.write(rosjson.ros_message_to_json(msg))
+          buf.write("}")
+        buf.write(']')
+        buf.write('}')
           
+        buf = buf.getvalue()
+
+        self.send_success(buf, callback)
+
+
+    def _get_messages(self, rwttopics, since):
         messages = []
         lastSince = 0
         try:
@@ -325,26 +361,8 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     lastSince = max(t, lastSince)
         finally:
             self.server.factory.cond.release()
+        return (messages, lastSince)
 
-        buf = cStringIO.StringIO()
-        buf.write("{")
-        buf.write('"since": %s,' % lastSince)
-        buf.write('"msgs": [')
-        _i = 0
-        for (topic, msg) in messages:
-          _i = _i + 1
-          if _i > 1: buf.write(',')
-          buf.write("{")
-          buf.write('"topic": "%s",' % topic)
-          buf.write('"msg": ')
-          buf.write(rosjson.ros_message_to_json(msg))
-          buf.write("}")
-        buf.write(']')
-        buf.write('}')
-          
-        buf = buf.getvalue()
-
-        self.send_success(buf, callback)
 
     def _connect_to(self, netloc, soc):
         i = netloc.find(':')
@@ -479,8 +497,7 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         self.log_request()
 
-        global handlers
-        for handler in handlers:
+        for handler in self.server._handlers:
           if path.startswith(handler['url']):
             handler['handler'](self, path, qdict)
             return
@@ -563,13 +580,43 @@ class ThreadingHTTPServer (threading.Thread,
     threading.Thread.__init__(self)
     SocketServer.TCPServer.__init__(self, hostport, handlerClass)
 
-    self.factory = RWTFactory()
-    
-    self.registerVirtualTopics()
+    self.factory = RWTFactory(self)
 
     self.accesslog_fp = open("access_log", "a+")
 
-  def registerVirtualTopics(self):
+    self._handlers = []
+    self.register_handler('/ros', ROSWebHandler.handle_ROS)
+
+    self._subtopics = {}
+
+    self.__load_plugins()
+    self.__registerVirtualTopics()
+
+  def register_handler(self, urlprefix, handler):
+    h = {'url': urlprefix, 'handler': handler}
+    self._handlers.append(h)
+
+  def register_subtopic(self, topic, handlerClass):
+    self._subtopics[topic] = handlerClass
+
+  def __load_plugins(self):
+    plugins = roslib.scriptutil.rospack_plugins(PKG_NAME)
+    for (package, plugin) in plugins:
+      try:
+        roslib.load_manifest(package)
+        mods = plugin.split('.')
+        mod = __import__(plugin)
+        for sub_mod in mods[1:]:
+          mod = getattr(mod, sub_mod)
+
+        mod.config_plugin(self)
+
+      except Exception, reason:
+        logging.error("got exception %s" % reason)
+        sys.exit(-1)
+
+
+  def __registerVirtualTopics(self):
     import users
     ut = users.UsersThread()
     ut.setDaemon(True)
@@ -589,6 +636,7 @@ def rosweb_start():
     mm = None
 
     web_server = ThreadingHTTPServer(('', 8080), ROSWebHandler)
+
     web_server.setDaemon(True)
     web_server.start()
     logging.info("starting Web server")
@@ -609,34 +657,31 @@ def signal_handler(signal, frame):
   global running
   running = False
 
-handlers = [{'url': '/ros', 'handler': ROSWebHandler.handle_ROS}]
-def load_plugins():
-  global handlers
-  plugins = roslib.scriptutil.rospack_plugins(PKG_NAME)
-  for (package, plugin) in plugins:
-    try:
-      roslib.load_manifest(package)
-      mods = plugin.split('.')
-      mod = __import__(plugin)
-      for sub_mod in mods[1:]:
-        mod = getattr(mod, sub_mod)
+def usage(progname):
+  print __doc__ % vars()
 
-      h = mod.config_plugin()
-      logging.info("Added handlers %s" % (h))
-      handlers.extend(h)
-      
-    except Exception, reason:
-      logging.error("got exception %s" % reason)
-      sys.exit(-1)
+def main(argv, stdout, environ):
+  progname = argv[0]
+  optlist, args = getopt.getopt(argv[1:], "", ["help", "debug"])
 
-def main():
+  debugFlag = False
+  for (field, val) in optlist:
+    if field == "--help":
+      usage(progname)
+      return
+    elif field == "--debug":
+      debugFlag = True
+
   global running, error_log
   running = True
-  logging.basicConfig(filename="error_log", level=logging.DEBUG)
+  if debugFlag:
+    logging.basicConfig(level=logging.DEBUG)
+    pass
+  else:
+    logging.basicConfig(filename="error_log", level=logging.DEBUG)
 
   signal.signal(signal.SIGINT, signal_handler)
 
-  load_plugins()
 
   while running:
     logging.info("starting")
@@ -644,12 +689,10 @@ def main():
       rosweb_start()
     except:
       import traceback
-      fp = open("error_log", "a+")
-      traceback.print_exc(file=fp)
-      fp.close()
+      traceback.print_exc()
     time.sleep(1)
 
   if error_log_fp: error_log_fp.close()
 
 if __name__ == '__main__':
-  main()
+  main(sys.argv, sys.stdout, os.environ)

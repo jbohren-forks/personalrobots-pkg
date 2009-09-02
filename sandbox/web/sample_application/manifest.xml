@@ -9,6 +9,11 @@
   <depend package="roslib"/>
   <depend package="rospy"/>
   <depend package="webui"/>
+  <depend package="rosweb2"/>
+  <depend package="std_msgs"/>
+  <export>
+    <rosweb2 plugin="sample_application.webhandler"/>
+  </export>
 </package>
 
 
