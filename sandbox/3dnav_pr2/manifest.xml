@@ -28,6 +28,7 @@
   <!-- mapping -->
   <depend package="laser_filters"/>
   <depend package="laser_assembler"/>
+  <depend package="pr2_laser_snapshotter" />
   <depend package="robot_self_filter"/>
   <depend package="collision_map"/>
 
