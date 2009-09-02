@@ -26,5 +26,5 @@ genmsg() # TexasCmd
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
-rospack_add_executable(teleop_texas_keyboard teleop_texas_keyboard.cpp)
+#rospack_add_executable(teleop_texas_keyboard teleop_texas_keyboard.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
