@@ -79,7 +79,7 @@ class MoveArmTools
 
 		void printPose(const btTransform &p);
 
-		void goalToState(const move_arm::MoveArmGoal &goal, planning_models::StateParams &sp);
+		void goalToState(const move_arm::MoveArmGoal &goal, planning_models::KinematicState &sp);
 
 		btTransform effPosition(const planning_environment::KinematicModelStateMonitor &km, const move_arm::MoveArmGoal &goal);
 
@@ -91,17 +91,17 @@ class MoveArmTools
 
 		void setupGoalEEf(const std::string &link, const std::vector<double> &pz, move_arm::MoveArmGoal &goal);
 
-		void getIK(bool r, ros::NodeHandle &nh, planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal, planning_models::StateParams &sp, const std::vector<std::string> &names, double x, double y, double z);
+		void getIK(bool r, ros::NodeHandle &nh, planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal, planning_models::KinematicState &sp, const std::vector<std::string> &names, double x, double y, double z);
 
 		void goToIK(ros::NodeHandle &nh,  planning_environment::KinematicModelStateMonitor &km, const std::vector<std::string> &names, double x, double y, double z);
 
 		void diffConfig(const planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal);
 
-		void viewState(ros::Publisher &view, const planning_environment::KinematicModelStateMonitor &km, const planning_models::StateParams &st);
+		void viewState(ros::Publisher &view, const planning_environment::KinematicModelStateMonitor &km, const planning_models::KinematicState &st);
 
 		void setConfigJoint(const unsigned int pos, const double value, move_arm::MoveArmGoal &goal);
 		
-		void setConfig(const planning_models::StateParams *_sp, const std::vector<std::string> &names, move_arm::MoveArmGoal &goal);
+		void setConfig(const planning_models::KinematicState *_sp, const std::vector<std::string> &names, move_arm::MoveArmGoal &goal);
 				
 		void spinThread(void);
 };
