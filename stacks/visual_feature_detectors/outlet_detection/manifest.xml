@@ -27,7 +27,7 @@
   <depend package="visualization_msgs" />
   <depend package="stereo_msgs"/>
 
-
+  <depend package="topic_synchronizer2"/>
   
   <!--depend package="fast_detector"/>
   <depend package="calonder_descriptor"/>
