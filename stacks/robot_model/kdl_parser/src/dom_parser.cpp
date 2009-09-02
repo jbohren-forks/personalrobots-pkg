@@ -106,9 +106,10 @@ bool addChildrenToTree(boost::shared_ptr<const urdf::Link> root, Tree& tree)
   std::vector<boost::shared_ptr<urdf::Link> > children = root->child_links;
   ROS_DEBUG("Link %s had %i children", root->name.c_str(), children.size());
 
-  // constructs the inertia
-  if (!root->inertial) return false;
-  RigidBodyInertia inert = toKdl(root->inertial);
+  // constructs the optional inertia
+  RigidBodyInertia inert(0);
+  if (root->inertial) 
+    inert = toKdl(root->inertial);
 
   // constructs the kdl joint
   Joint jnt = toKdl(root->parent_joint);
