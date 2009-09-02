@@ -43,6 +43,7 @@ import string
 import sys
 import threading
 import time
+import gzip
 import traceback
 import BaseHTTPServer
 import logging
@@ -369,8 +370,25 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
           self.send_header('Content-Type', 'text/javascript')
         else:
           self.send_header('Content-Type', 'application/json')
+
+        if len(buf) > 500:
+          acceptEncoding = self.headers.get('Accept-Encoding', '')
+          if acceptEncoding.find('gzip') != -1:
+            zbuf = cStringIO.StringIO()
+            zfile = gzip.GzipFile(None, "wb", 9, zbuf)
+            zfile.write(buf)
+            zfile.close()
+
+            nbuf = len(buf)
+            buf = zbuf.getvalue()
+            self.send_header('Content-encoding', 'gzip')
+            print "%d/%d" % (len(buf), nbuf)
+
         self.send_header('Content-Length', str(len(buf)))
+
+        self.send_header('Connection', 'keep-alive')
         self.end_headers()
+
 
         self.wfile.write(buf)
       except socket.error, (ecode, reason):

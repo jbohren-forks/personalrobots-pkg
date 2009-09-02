@@ -3,6 +3,7 @@
 <title>RosWeb: <?cs var:CGI.ServerName?></title>
 
 <script type="text/javascript" src="<?cs var:CGI.ScriptName?>/webui/jslib/prototype.js"></script>
+<script type="text/javascript" src="<?cs var:CGI.ScriptName?>/webui/jslib/xss.js"></script>
 <script type="text/javascript" src="<?cs var:CGI.ScriptName?>/webui/jslib/ros.js"></script> 
 <script type="text/javascript" src="<?cs var:CGI.ScriptName?>/webui/jslib/ros_toolbar.js"></script> 
 <script type="text/javascript" src="<?cs var:CGI.ScriptName?>/webui/jslib/pr2_graph.js"></script> 

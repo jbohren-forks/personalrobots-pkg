@@ -24,8 +24,9 @@ function getDataFromServer(id, url, callback) {
   var oScript = document.getElementById(id); 
   var head = document.getElementsByTagName("head").item(0); 
   if (oScript) { 
-    // Destory object 
+    // Destroy object 
     head.removeChild(oScript); 
+    delete oScript;
   }
   // Create object 
   oScript = document.createElement("script"); 
@@ -45,6 +46,8 @@ var MessagePump = Class.create({
    this.topicListeners = new Hash();
    this.widgets = [];
    this.http_request = [];
+
+   this.totalReceivedBytes = 0;
  },
 
  registerWidget: function(widget) {
@@ -73,7 +76,7 @@ var MessagePump = Class.create({
    } catch (e) {
      ros_debug("Error with evalMessages.");
    }
-   setTimeout("gPump.pump();", 500);
+   setTimeout("gPump.pump();", 200);
  },
       
  evalMessages: function(json_result) {

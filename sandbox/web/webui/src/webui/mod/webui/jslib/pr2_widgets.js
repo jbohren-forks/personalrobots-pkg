@@ -40,7 +40,7 @@ var BatteryMonitor = Class.create({
     else height = parseInt(height);
 
     this.percent = 0;
-    this.draw();
+    //this.draw();
   },
 
   receive: function(topic, msg) {
