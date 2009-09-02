@@ -40,20 +40,25 @@
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
-#include <pr2_robot_actions/Pose2D.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <move_base_msgs/MoveBaseAction.h>
+#include <tf/transform_datatypes.h>
+#include <actionlib/client/simple_action_client.h>
 
 #define foreach BOOST_FOREACH
 
+namespace gm=geometry_msgs;
 namespace po=boost::program_options;
+namespace al=actionlib;
+namespace mbm=move_base_msgs;
 using namespace std;
-using pr2_robot_actions::Pose2D;
+
 
 int main (int argc, char** argv)
 {
-  vector<Pose2D> waypoints;
+  vector<gm::PoseStamped> waypoints;
 
-
-  // Process command-line arguments
+  // Process command line args
   {
     vector<string> waypoint_strings;
     po::options_description desc("Allowed options");
@@ -77,24 +82,36 @@ int main (int argc, char** argv)
       foreach (string str, waypoint_strings) {
         Tokenizer tok(str, sep);
         Tokenizer::iterator iter=tok.begin();
-        Pose2D waypoint;
-        waypoint.x = atof((*iter++).c_str());
-        waypoint.y = atof((*iter++).c_str());
-        waypoint.th = atof((*iter++).c_str());
+        gm::PoseStamped waypoint;
+        waypoint.pose.position.x = atof((*iter++).c_str());
+        waypoint.pose.position.y = atof((*iter++).c_str());
+        waypoint.pose.orientation = tf::createQuaternionMsgFromYaw(atof((*iter++).c_str()));
+        waypoint.header.frame_id = "map";
         waypoints.push_back(waypoint);
       }
     }
   }
 
+  // Start ros
+  ros::init (argc, argv, "m3_waypoint_executive");
 
+  // Create action client
+  al::SimpleActionClient<mbm::MoveBaseAction> action_client("move_base", true);
 
-  foreach (Pose2D waypoint, waypoints)
-    cout << "Waypoint " << waypoint.x << " " << waypoint.y << " " << waypoint.th << endl;
-      
-  // Start executive
-  //ros::init (argc, argv, "m3_waypoint_executive");
-  //WaypointExecutive exec;
-  //exec.run();
+  ROS_INFO ("Waiting for action server to come up.");
+  action_client.waitForActionServerToStart();
 
+  foreach (gm::PoseStamped waypoint, waypoints) {
+    ROS_INFO_STREAM ("Initiating move to " << waypoint.pose.position.x << ", " <<
+                     waypoint.pose.position.y << ", " << 
+                     tf::getYaw(waypoint.pose.orientation));
+    mbm::MoveBaseGoal goal;
+    goal.target_pose = waypoint;
+    action_client.sendGoal(goal);
+
+    action_client.waitForGoalToFinish();
+    if (action_client.getTerminalState() != al::TerminalState::SUCCEEDED)
+      ROS_WARN("Did not reach the goal.  Moving on to the next one.");
+  }
   return 0;
 } 

@@ -7,7 +7,10 @@ Miscellaneous launch files and scripts for m3 simulator use case.
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/m3_simulator</url>
   <depend package="pr2_gazebo"/>
-  <depend package="pr2_robot_actions" />
+  <depend package="geometry_msgs"/>
+  <depend package="tf"/>
+  <depend package="move_base_msgs"/>
+  <depend package="actionlib"/>
 
 </package>
 
