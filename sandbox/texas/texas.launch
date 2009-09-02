@@ -4,7 +4,7 @@
 
   <!-- Definitions for calibration controllers -->
   <rosparam command="load" file="$(find pr2_default_controllers)/pr2_calibration_controllers.yaml" />
-  <node pkg="mechanism_bringup" type="calibrate.py" args="cal_caster_bl"/>
+  <node pkg="mechanism_bringup" type="calibrate.py" args="cal_caster_bl_alpha2"/>
 
   <!-- Uses special defs file for DallasBot -->
   <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find texas)/texas.urdf.xacro'" />
