@@ -11,6 +11,43 @@ Index: cmake/SearchForStuff.cmake
    IF (NOT PLAYER_FOUND)
      SET (INCLUDE_PLAYER OFF CACHE BOOL "Build gazebo plugin for player" FORCE)
      MESSAGE (STATUS "Warning: Player not found. The gazebo plugin for player will not be built. See the following website: http://playerstage.sourceforge.net")
+Index: libgazebo/Client.cc
+===================================================================
+--- libgazebo/Client.cc	(revision 8232)
++++ libgazebo/Client.cc	(working copy)
+@@ -128,7 +128,7 @@
+ 
+     this->filename = stream.str();
+ 
+-    std::cout << "opening " << this->filename << "\n";
++    //std::cout << "opening " << this->filename << "\n";
+ 
+     // Connect to gazebo::SimulationIface and check for changing realTime,
+     // if simulationIface->data->realTime is not changing, the server might
+Index: libgazebo/Iface.cc
+===================================================================
+--- libgazebo/Iface.cc	(revision 8232)
++++ libgazebo/Iface.cc	(working copy)
+@@ -313,14 +313,12 @@
+   std::ios_base::fmtflags origFlags = std::cout.flags();
+ 
+   // Print the name, version info
+-  std::cout << "opening " << this->filename.c_str() << " "
++  // std::cout << "opening " << this->filename.c_str() << " "
++  //<< std::setiosflags(std::ios::hex | std::ios::showbase)
++  //<< std::setw(3) << ((GazeboData*) this->mMap)->version << " "
++  //<< std::setiosflags(std::ios::dec | ~std::ios::showbase)
++  //<< ((GazeboData*) this->mMap)->size << "\n";
+ 
+-  << std::setiosflags(std::ios::hex | std::ios::showbase)
+-  << std::setw(3) << ((GazeboData*) this->mMap)->version << " "
+-
+-  << std::setiosflags(std::ios::dec | ~std::ios::showbase)
+-  << ((GazeboData*) this->mMap)->size << "\n";
+-
+   std::cout.setf(origFlags);
+ 
+   this->Lock(1);
 Index: libgazebo/bindings/ruby/CMakeLists.txt
 ===================================================================
 --- libgazebo/bindings/ruby/CMakeLists.txt	(revision 8232)
@@ -24,6 +61,22 @@ Index: libgazebo/bindings/ruby/CMakeLists.txt
  endif (RUBY_LIBRARY AND RUBY_INCLUDE_PATH)
  
    IF(RUBY_FOUND)
+Index: server/rendering/OgreHeightmap.cc
+===================================================================
+--- server/rendering/OgreHeightmap.cc	(revision 8232)
++++ server/rendering/OgreHeightmap.cc	(working copy)
+@@ -108,6 +108,11 @@
+   float nf = (float)(log(terrainVertSize-1)/log(2));
+   int ni = (int)(log(terrainVertSize-1)/log(2));
+ 
++  //std::cout << "debug: imageFilename " << imageFilename << std::endl;
++  //std::cout << "debug: nf " << nf << std::endl;
++  //std::cout << "debug: ni " << ni << std::endl;
++  //std::cout << "debug: terrainVertSize " << terrainVertSize << std::endl;
++
+   // Make sure the heightmap image size is (2^n)+1 in size
+   if ( nf - ni != 0)
+   {
 Index: server/rendering/CMakeLists.txt
 ===================================================================
 --- server/rendering/CMakeLists.txt	(revision 8232)
