@@ -44,7 +44,7 @@ from time import sleep
 roslib.load_manifest('mechanism_bringup')
 import rospy
 from std_msgs.msg import *
-from mechanism_msgs.srv import *
+from pr2_mechanism_msgs.srv import SpawnController, KillController, SwitchController, SwitchControllerRequest
 from robot_mechanism_controllers.srv import *
 from imu_node.srv import GetBoolStatus
 
