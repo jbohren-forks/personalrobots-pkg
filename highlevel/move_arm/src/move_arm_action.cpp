@@ -104,9 +104,9 @@ namespace move_arm
 	/// A state with a cost attached to it. Used internally to sort states by cost
 	struct CostState
 	{
-	    boost::shared_ptr<planning_models::StateParams> state;
-	    double                                          cost;
-	    unsigned int                                    index;
+	    boost::shared_ptr<planning_models::KinematicState> state;
+	    double                                             cost;
+	    unsigned int                                       index;
 	};
 	
 	/// Ordering function for states with cost attached
@@ -135,7 +135,7 @@ namespace move_arm
 	/// Representation of a state and its corresponding joint constraints
 	struct StateAndConstraint
 	{
-	    boost::shared_ptr<planning_models::StateParams>    state;
+	    boost::shared_ptr<planning_models::KinematicState> state;
 	    std::vector<motion_planning_msgs::JointConstraint> constraints;	    
 	};
 	
@@ -186,7 +186,7 @@ namespace move_arm
 	}
 	
 	/** \brief Evaluate the cost of a state, in terms of collisions */
-	double computeStateCollisionCost(const planning_models::StateParams *sp)
+	double computeStateCollisionCost(const planning_models::KinematicState *sp)
 	{
 	    CollisionCost ccost;
 	    
@@ -207,7 +207,7 @@ namespace move_arm
 	bool findValidNearJointConstraint(const std::vector<motion_planning_msgs::KinematicJoint> &start_state,
 					  const motion_planning_msgs::KinematicSpaceParameters &params,
 					  const motion_planning_msgs::KinematicConstraints &constraints,
-					  const std::vector< boost::shared_ptr<planning_models::StateParams> > &hint_states,
+					  const std::vector< boost::shared_ptr<planning_models::KinematicState> > &hint_states,
 					  StateAndConstraint &sac)
 	{
 	    bool result = false;
@@ -233,7 +233,7 @@ namespace move_arm
 		if (!c_res.joint_constraint.empty())
 		{
 		    // construct a state representation from our found joint constraints
-		    sac.state.reset(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+		    sac.state.reset(new planning_models::KinematicState(*planningMonitor_->getRobotState()));
 		    
 		    for (unsigned int i = 0 ; i < c_res.joint_constraint.size() ; ++i)
 		    {
@@ -252,7 +252,7 @@ namespace move_arm
 	}
 	
 	/** \brief If we have a complex goal for which we have not yet found a valid goal state, we use this function*/
-	ArmActionState solveGoalComplex(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
+	ArmActionState solveGoalComplex(std::vector< boost::shared_ptr<planning_models::KinematicState> > &states,
 					motion_planning_msgs::GetMotionPlan::Request &req)
 	{
 	    ROS_DEBUG("Acting on goal with unknown valid goal state ...");
@@ -317,7 +317,7 @@ namespace move_arm
 	    ROS_DEBUG("Acting on goal to set of joints ...");
 	    
 	    // construct a state representation from our goal joint
-	    boost::shared_ptr<planning_models::StateParams> sp(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+	    boost::shared_ptr<planning_models::KinematicState> sp(new planning_models::KinematicState(*planningMonitor_->getRobotState()));
 	    
 	    for (unsigned int i = 0 ; i < req.goal_constraints.joint_constraint.size() ; ++i)
 	    {
@@ -332,13 +332,13 @@ namespace move_arm
 	    else
 	    {
 		// if we can't, go to the more generic joint solver
-		std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+		std::vector< boost::shared_ptr<planning_models::KinematicState> > states;
 		states.push_back(sp);
 		return solveGoalJoints(states, req);
 	    }
 	}
 	
-	void updateRequest(motion_planning_msgs::GetMotionPlan::Request &req, const planning_models::StateParams *sp)
+	void updateRequest(motion_planning_msgs::GetMotionPlan::Request &req, const planning_models::KinematicState *sp)
 	{
 	    // update request
 	    for (unsigned int i = 0 ; i < setup_.groupJointNames_.size() ; ++i)
@@ -359,7 +359,7 @@ namespace move_arm
 	}
 	
 	/** \brief Find a plan to given request, given a set of hint states in the goal region */
-	ArmActionState solveGoalJoints(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
+	ArmActionState solveGoalJoints(std::vector< boost::shared_ptr<planning_models::KinematicState> > &states,
 				       motion_planning_msgs::GetMotionPlan::Request &req)
 	{
 	    ROS_DEBUG("Acting on goal to set of joints pointing to potentially invalid state ...");
@@ -391,7 +391,7 @@ namespace move_arm
 	    else
 	    {
 		// order the states by cost before passing them forward
-		std::vector< boost::shared_ptr<planning_models::StateParams> > backup = states;
+		std::vector< boost::shared_ptr<planning_models::KinematicState> > backup = states;
 		for (unsigned int i = 0 ; i < cstates.size() ; ++i)
 		    states[i] = backup[cstates[i].index];
 		return solveGoalComplex(states, req);
@@ -414,7 +414,7 @@ namespace move_arm
 	    
 	    // we do IK to find corresponding states
 	    ros::ServiceClient ik_client = nh_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
-	    std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	    std::vector< boost::shared_ptr<planning_models::KinematicState> > states;
 	    
 	    // find an IK solution
 	    for (int step = 0 ; step < 10 ; ++step)
@@ -436,7 +436,7 @@ namespace move_arm
 		if (computeIK(ik_client, tpose, solution))
 		{
 		    // check if it is a valid state
-		    boost::shared_ptr<planning_models::StateParams> spTest(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+		    boost::shared_ptr<planning_models::KinematicState> spTest(new planning_models::KinematicState(*planningMonitor_->getRobotState()));
 		    spTest->setParamsJoints(solution, setup_.groupJointNames_);
 		    spTest->enforceBounds();
 		    
@@ -472,17 +472,17 @@ namespace move_arm
 		return solveGoalJoints(req);
 	    
 	    // otherwise, more complex constraints, run a generic method; we have no hint states
-	    std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	    std::vector< boost::shared_ptr<planning_models::KinematicState> > states;
 	    return solveGoalComplex(states, req);
 	}
 	
 	ArmActionState runLRplanner(motion_planning_msgs::GetMotionPlan::Request &req)
 	{
-	    std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	    std::vector< boost::shared_ptr<planning_models::KinematicState> > states;
 	    return runLRplanner(states, req);
 	}
 	
-	ArmActionState runLRplanner(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
+	ArmActionState runLRplanner(std::vector< boost::shared_ptr<planning_models::KinematicState> > &states,
 				    motion_planning_msgs::GetMotionPlan::Request &req)
 	{
 	    ROS_DEBUG("Running long range planner...");
@@ -507,11 +507,11 @@ namespace move_arm
 	
 	ArmActionState runSRplanner(motion_planning_msgs::GetMotionPlan::Request &req)
 	{
-	    std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	    std::vector< boost::shared_ptr<planning_models::KinematicState> > states;
 	    return runSRplanner(states, req);
 	}
 	
-	ArmActionState runSRplanner(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
+	ArmActionState runSRplanner(std::vector< boost::shared_ptr<planning_models::KinematicState> > &states,
 				    motion_planning_msgs::GetMotionPlan::Request &req)
 	{
 	    ROS_DEBUG("Running short range planner...");
@@ -803,7 +803,7 @@ namespace move_arm
 	    ROS_DEBUG("Trying to use short range planner to move to a valid state...");
 
 	    // construct a state representation + kinematic constraints from our start state
-	    boost::shared_ptr<planning_models::StateParams> sp(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+	    boost::shared_ptr<planning_models::KinematicState> sp(new planning_models::KinematicState(*planningMonitor_->getRobotState()));
 	    motion_planning_msgs::KinematicConstraints constraints;
 	    
 	    for (unsigned int i = 0 ; i < req.start_state.size() ; ++i)
@@ -819,7 +819,7 @@ namespace move_arm
 		jc.tolerance_below.resize(jc.value.size(), 0.0);
 		constraints.joint_constraint.push_back(jc);
 	    }
-	    std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	    std::vector< boost::shared_ptr<planning_models::KinematicState> > states;
 	    states.push_back(sp);
 	    
 	    // find valid state near by
@@ -941,7 +941,7 @@ namespace move_arm
 	    }
 	    
 	    // add the actual path
-	    planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
+	    planning_models::KinematicState *sp = new planning_models::KinematicState(planningMonitor_->getKinematicModel());
 	    for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	    {
 		traj.points[i + includeFirst].time = offset + path.times[i];
@@ -958,11 +958,11 @@ namespace move_arm
 		std::stringstream ss;
 		for (unsigned int j = 0 ; j < path.states[i].vals.size() ; ++j)
 		    ss << path.states[i].vals[j] << " ";
-		ROS_DEBUG(ss.str().c_str());
+		ROS_DEBUG("%s", ss.str().c_str());
 	    }
 	}
 	
-	bool fixStartState(planning_models::StateParams &st)
+	bool fixStartState(planning_models::KinematicState &st)
 	{
 	    bool result = true;
 	    
@@ -973,7 +973,7 @@ namespace move_arm
 	    if (!planningMonitor_->isStateValidOnPath(&st))
 	    {
 		// try 2% change in each component
-		planning_models::StateParams temp(st);
+		planning_models::KinematicState temp(st);
 		int count = 0;
 		do
 		{
@@ -993,14 +993,14 @@ namespace move_arm
 	bool fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start_state)
 	{
 	    // get the current state
-	    planning_models::StateParams st(*planningMonitor_->getRobotState());
+	    planning_models::KinematicState st(*planningMonitor_->getRobotState());
 	    bool result = fixStartState(st);
 	    
 	    if (!result)
 		ROS_DEBUG("Starting state for the robot is in collision and attempting to fix it failed.");
 	    
 	    // fill in start state with current one
-	    std::vector<planning_models::KinematicModel::Joint*> joints;
+	    std::vector<const planning_models::KinematicModel::Joint*> joints;
 	    planningMonitor_->getKinematicModel()->getJoints(joints);
 	    
 	    start_state.resize(joints.size());
@@ -1024,7 +1024,7 @@ namespace move_arm
 	    request.data.pose_stamped = pose_stamped_msg;
 	    request.data.joint_names = setup_.groupJointNames_;
 	    
-	    planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
+	    planning_models::KinematicState *sp = new planning_models::KinematicState(planningMonitor_->getKinematicModel());
 	    sp->randomStateGroup(setup_.group_);
 	    for(unsigned int i = 0; i < setup_.groupJointNames_.size() ; ++i)
 	    {

@@ -37,8 +37,7 @@
 #ifndef PLANNING_ENVIRONMENT_MODELS_ROBOT_MODELS_
 #define PLANNING_ENVIRONMENT_MODELS_ROBOT_MODELS_
 
-#include <planning_models/kinematic.h>
-#include <planning_models/kinematic_state_params.h>
+#include <planning_models/kinematic_model.h>
 #include <ros/ros.h>
 #include <ros/node.h>
 #include <boost/shared_ptr.hpp>
@@ -106,7 +105,7 @@ namespace planning_environment
 	}
 
 	/** \brief Return the instance of the parsed robot description */
-	const boost::shared_ptr<robot_desc::URDF> &getParsedDescription(void) const
+	const boost::shared_ptr<urdf::Model> &getParsedDescription(void) const
 	{
 	    return urdf_;
 	}
@@ -158,7 +157,7 @@ namespace planning_environment
 	
 	bool                                               loaded_models_;
 	boost::shared_ptr<planning_models::KinematicModel> kmodel_;
-	boost::shared_ptr<robot_desc::URDF>                urdf_;
+	boost::shared_ptr<urdf::Model>                     urdf_;
 	
 	std::map< std::string, std::vector<std::string> >  planning_groups_;
 	std::vector<std::string>                           collision_check_links_;

@@ -7,6 +7,8 @@
   <depend package="rosconsole" />
   <depend package="motion_planning_msgs" />
   <depend package="planning_environment"/>  
+  <depend package="collision_space"/>  
+  <depend package="planning_models"/>  
   <depend package="ompl" />
 
   <export>

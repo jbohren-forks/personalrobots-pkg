@@ -156,7 +156,7 @@ protected:
     boost::shared_ptr<planning_environment::KinematicModelStateMonitor> m_stateMonitor;
 
     // the complete robot state
-    const planning_models::StateParams                                 *m_robotState;
+    const planning_models::KinematicState                              *m_robotState;
 
     // the kinematic model
     boost::shared_ptr<planning_models::KinematicModel>                  m_kmodel;

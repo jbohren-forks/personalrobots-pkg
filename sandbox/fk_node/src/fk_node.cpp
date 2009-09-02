@@ -28,7 +28,7 @@
 #include <boost/shared_ptr.hpp>
 #include <ros/ros.h>
 #include <planning_environment/monitors/planning_monitor.h>
-#include <planning_models/kinematic.h>
+#include <planning_models/kinematic_model.h>
 #include <boost/foreach.hpp>
 #include <boost/scoped_array.hpp>
 #include <tf/tf.h>
@@ -50,9 +50,9 @@ namespace pe=planning_environment;
 namespace pm=planning_models;
 namespace mpm=motion_planning_msgs;
 
-typedef boost::shared_ptr<pm::StateParams> State;
+typedef boost::shared_ptr<pm::KinematicState> State;
 typedef boost::shared_ptr<pm::KinematicModel> KinModelPtr;
-typedef pm::KinematicModel::Link* LinkPtr;
+typedef const pm::KinematicModel::Link* LinkPtr;
 typedef boost::scoped_array<double> DoubleArray;
 
 class ForwardKinematicsNode
@@ -75,7 +75,7 @@ private:
 
 unsigned getDimension(const KinModelPtr& model)
 {
-  State state(model->newStateParams());
+  State state(new planning_models::KinematicState(model.get()));
   vector<double> params;
   state->copyParams(params);
   return params.size();
@@ -103,7 +103,7 @@ ForwardKinematicsNode::ForwardKinematicsNode () :
 
 bool ForwardKinematicsNode::computeForwardKinematics(ForwardKinematics::Request& req, ForwardKinematics::Response& resp)
 {
-  State state(kinematic_model_->newStateParams());
+  State state(new planning_models::KinematicState(kinematic_model_.get()));
   state->defaultState();
   
   foreach (mpm::KinematicJoint joint, req.joints) {

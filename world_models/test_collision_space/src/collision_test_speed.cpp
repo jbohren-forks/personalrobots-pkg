@@ -289,9 +289,9 @@ int main(int argc, char **argv)
     
     CollisionTestSpeed cts;
     
-    cts.testPointCloud();
+    //    cts.testPointCloud();
     cts.testCollision();    
-    cts.testThreads();
+    //    cts.testThreads();
     
     ROS_INFO("Done");
     ros::spin();

@@ -63,16 +63,15 @@ bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::
 	planning_monitor_ = new planning_environment::PlanningMonitor(collision_model_, tfl, planning_frame_);
 
 	//error checking
-	groupID_ = planning_monitor_->getKinematicModel()->getGroupID(group_name_);\
-	ROS_DEBUG("groupID = %i", groupID_);
-	std::vector<std::string> joint_names;
-	planning_monitor_->getKinematicModel()->getJointsInGroup(joint_names, groupID_);
+	group_ = planning_monitor_->getKinematicModel()->getGroup(group_name_); 
+
+	std::vector<std::string> joint_names = group_->jointNames;
 	if(joint_names.empty())
 	{
-		ROS_WARN("[pm_wrapper] joint group %i is empty", groupID_);
+	        ROS_WARN("[pm_wrapper] joint group %s is empty", group_name_.c_str());
 		return false;
 	}
-	ROS_DEBUG("[pm_wrapper] joint names in group #%i",groupID_);
+	ROS_DEBUG("[pm_wrapper] joint names in group %s",group_name_.c_str());
 	for(unsigned int i = 0; i < joint_names.size(); i++)
 		ROS_DEBUG("[pm_wrapper]%i: %s", i, joint_names[i].c_str());
 
@@ -91,9 +90,9 @@ bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::
 	return true;
 }
 
-planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given)
+planning_models::KinematicState* pm_wrapper::fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given)
 {
-	planning_models::StateParams *s = planning_monitor_->getKinematicModel()->newStateParams();
+    planning_models::KinematicState *s = new planning_models::KinematicState(planning_monitor_->getKinematicModel());
 	for (unsigned int i = 0 ; i < given.size() ; ++i)
 	{
 		if (!planning_monitor_->getTransformListener()->frameExists(given[i].header.frame_id))
@@ -113,7 +112,7 @@ planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motio
 		if (planning_monitor_->haveState())
 		{
 			ROS_INFO("Using the current state to fill in the starting state for the motion plan");
-			std::vector<planning_models::KinematicModel::Joint*> joints;
+			std::vector<const planning_models::KinematicModel::Joint*> joints;
 			planning_monitor_->getKinematicModel()->getJoints(joints);
 			for (unsigned int i = 0 ; i < joints.size() ; ++i)
 				if (!s->seenJoint(joints[i]->name))
@@ -144,7 +143,7 @@ void pm_wrapper::updatePM(const motion_planning_msgs::GetMotionPlan::Request &re
 
 void pm_wrapper::updateRobotState(const std::vector <motion_planning_msgs::KinematicJoint> &robot_state)
 {
-	planning_models::StateParams *start_state = fillStartState(robot_state);
+	planning_models::KinematicState *start_state = fillStartState(robot_state);
 	
 	if(start_state == NULL)
 		ROS_WARN("start_state_ == NULL");
@@ -163,8 +162,8 @@ void pm_wrapper::updateRobotState(const std::vector <motion_planning_msgs::Kinem
 bool pm_wrapper::areLinksValid(const double * angles)
 {
 //   ROS_INFO("checking %.3f %.3f %.3f %.3f %.3f %.3f %.3f",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
-
-	planning_monitor_->getKinematicModel()->computeTransformsGroup(angles, groupID_);
+    
+        group_->computeTransforms(angles);
 	planning_monitor_->getEnvironmentModel()->updateRobotModel();
 
 	return !(planning_monitor_->getEnvironmentModel()->isCollision());
@@ -181,7 +180,7 @@ void pm_wrapper::setRobotJointStates(const std::vector<std::string> &joint_names
 {
 	// planar links have 3 params {x,y,theta} and joints have 1 param
 	
-	planning_models::StateParams robot_state = *(planning_monitor_->getRobotState());
+	planning_models::KinematicState robot_state = *(planning_monitor_->getRobotState());
 	
 	if(!robot_state.setParamsJoints(params, joint_names))
 	{
@@ -274,14 +273,14 @@ std::vector<std::vector<double> >  pm_wrapper::smoothPath(std::vector<std::vecto
 		ompl::base::State *st = new ompl::base::State(dim);
 
 
-		planning_models::StateParams *sp = planning_monitor_->getKinematicModel()->newStateParams();
+		planning_models::KinematicState *sp = new planning_models::KinematicState(planning_monitor_->getKinematicModel());
 
 		//fill the stateparams with the joint angles and joint names
 		if(!sp->setParamsJoints(path[i], joint_names))
 			ROS_WARN("joint values didn't change");
 
 		//copy the state params
-		sp->copyParamsGroup(st->values, model_kinematic_->groupID);
+		sp->copyParamsGroup(st->values, group_);
 
 		//add the state to the path
 		path_kinematic->states.push_back(st);
@@ -347,9 +346,9 @@ bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::
   return true;
 }
 
-planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given)
+planning_models::KinematicState* pm_wrapper::fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given)
 {
-  planning_models::StateParams *s = planning_monitor_->getKinematicModel()->newStateParams();
+planning_models::KinematicState *s = new planning_models::KinematicState(planning_monitor_->getKinematicModel());
   for (unsigned int i = 0 ; i < given.size() ; ++i)
   {	
     if (!planning_monitor_->getTransformListener()->frameExists(given[i].header.frame_id))
@@ -384,7 +383,7 @@ planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motio
 
 void pm_wrapper::updateRobotState(const std::vector <motion_planning_msgs::KinematicJoint> &robot_state)
 {
-	planning_models::StateParams *start_state = fillStartState(robot_state);
+	planning_models::KinematicState *start_state = fillStartState(robot_state);
 	
 	if(start_state == NULL)
 		ROS_WARN("start_state_ == NULL");
@@ -404,7 +403,7 @@ void pm_wrapper::setRobotJointStates(const std::vector<std::string> &joint_names
 {
 	// planar links have 3 params {x,y,theta} and joints have 1 param
 	
-	planning_models::StateParams robot_state = *(planning_monitor_->getRobotState());
+	planning_models::KinematicState robot_state = *(planning_monitor_->getRobotState());
 	
 	if(!robot_state.setParamsJoints(params, joint_names))
 	{
@@ -425,7 +424,7 @@ bool pm_wrapper::areLinksValid(const double * angles)
 {
 //   ROS_INFO("checking %.3f %.3f %.3f %.3f %.3f %.3f %.3f",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
 
-  planning_monitor_->getKinematicModel()->computeTransformsGroup(angles, groupID_);
+  group_->computeTransforms(angles);
   planning_monitor_->getEnvironmentModel()->updateRobotModel();
 
   return !(planning_monitor_->getEnvironmentModel()->isCollision());

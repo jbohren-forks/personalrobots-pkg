@@ -38,7 +38,7 @@
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_
 
 #include "collision_space/environment_objects.h"
-#include <planning_models/kinematic.h>
+#include <planning_models/kinematic_model.h>
 #include <geometric_shapes/bodies.h>
 #include <LinearMath/btVector3.h>
 #include <boost/thread/mutex.hpp>

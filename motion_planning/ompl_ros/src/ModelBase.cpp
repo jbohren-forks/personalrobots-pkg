@@ -49,7 +49,7 @@ ompl_ros::ModelBase::ModelBase(planning_environment::PlanningMonitor *pMonitor, 
     si = NULL;
     groupName = gName;
     planningMonitor = pMonitor;
-    groupID = planningMonitor->getKinematicModel()->getGroupID(groupName);
+    group = planningMonitor->getKinematicModel()->getGroup(groupName);
 }
 
 ompl_ros::ModelBase::~ModelBase(void)
@@ -79,6 +79,7 @@ ompl_ros::EnvironmentDescription* ompl_ros::ModelBase::getEnvironmentDescription
 	    result->collisionSpace = planningMonitor->getEnvironmentModel();
 	    result->kmodel = result->collisionSpace->getRobotModel().get();
 	    result->constraintEvaluator = &constraintEvaluator;
+	    result->group = group;
 	}
 	else
 	{
@@ -86,6 +87,7 @@ ompl_ros::EnvironmentDescription* ompl_ros::ModelBase::getEnvironmentDescription
 	    result = new EnvironmentDescription();
 	    result->collisionSpace = planningMonitor->getEnvironmentModel()->clone();
 	    result->kmodel = result->collisionSpace->getRobotModel().get();
+	    result->group = result->kmodel->getGroup(groupName);
 	    planning_environment::KinematicConstraintEvaluatorSet *kce = new planning_environment::KinematicConstraintEvaluatorSet();
 	    kce->add(result->kmodel, constraintEvaluator.getPoseConstraints());
 	    kce->add(result->kmodel, constraintEvaluator.getJointConstraints());

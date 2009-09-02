@@ -73,15 +73,15 @@ namespace move_arm
 	
     private:
 	
-      bool tryTwist(const geometry_msgs::Twist &tw, double frac)
-      {
-	bool res = true;
-	planning_models::KinematicModel *kmodel = planningMonitor_->getKinematicModel()->clone();
+	bool tryTwist(const geometry_msgs::Twist &tw, double frac)
+	{
+	    bool res = true;
+	    planning_models::KinematicModel *kmodel = new planning_models::KinematicModel(*planningMonitor_->getKinematicModel());
 	    
-	    boost::shared_ptr<planning_models::StateParams> start(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+	    boost::shared_ptr<planning_models::KinematicState> start(new planning_models::KinematicState(*planningMonitor_->getRobotState()));
 	    start->enforceBounds();
 	    kmodel->computeTransforms(start->getParams());
-
+	    
 	    tf::Pose currentEff = kmodel->getJoint(setup_.groupJointNames_.back())->after->globalTrans;
 	    geometry_msgs::Pose currentEffMsg;
 	    tf::poseTFToMsg(currentEff, currentEffMsg);
@@ -100,7 +100,7 @@ namespace move_arm
 	    if (computeIK(ik_client, destEffMsgStmp, solution))
 	      {
 		ROS_INFO("Starting at %f, %f, %f", currentEff.getOrigin().x(), currentEff.getOrigin().y(), currentEff.getOrigin().z());
-		boost::shared_ptr<planning_models::StateParams> goal(new planning_models::StateParams(*start));
+		boost::shared_ptr<planning_models::KinematicState> goal(new planning_models::KinematicState(*start));
 		goal->setParamsJoints(solution, setup_.groupJointNames_);
 		goal->enforceBounds();
 		
@@ -108,7 +108,7 @@ namespace move_arm
 		tf::Pose goalEff = kmodel->getJoint(setup_.groupJointNames_.back())->after->globalTrans;
 		ROS_INFO("Going to %f, %f, %f", goalEff.getOrigin().x(), goalEff.getOrigin().y(), goalEff.getOrigin().z());
 		
-		std::vector< boost::shared_ptr<planning_models::StateParams> > path;
+		std::vector< boost::shared_ptr<planning_models::KinematicState> > path;
 		interpolatePath(start, goal, 20, path);
 		
 		ROS_INFO("Generated path with %d states", (int)path.size());
@@ -213,11 +213,11 @@ namespace move_arm
 	    vizPub_.publish(marker);
 	}
 	
-	void interpolatePath(boost::shared_ptr<planning_models::StateParams> &start, boost::shared_ptr<planning_models::StateParams> &goal, unsigned int count,
-			     std::vector< boost::shared_ptr<planning_models::StateParams> > &path)
+	void interpolatePath(boost::shared_ptr<planning_models::KinematicState> &start, boost::shared_ptr<planning_models::KinematicState> &goal, unsigned int count,
+			     std::vector< boost::shared_ptr<planning_models::KinematicState> > &path)
 	{
 	    path.clear();
-	    unsigned int dim = planningMonitor_->getKinematicModel()->getModelInfo().stateDimension;
+	    unsigned int dim = planningMonitor_->getKinematicModel()->getDimension();
 	    std::vector<double> startv;
 	    start->copyParams(startv);
 	    std::vector<double> goalv;
@@ -230,7 +230,7 @@ namespace move_arm
 	    path.push_back(start);
 	    for (unsigned int i = 1 ; i < count ; ++i)
 	    {
-		boost::shared_ptr<planning_models::StateParams> sp(planningMonitor_->getKinematicModel()->newStateParams());
+		boost::shared_ptr<planning_models::KinematicState> sp(new planning_models::KinematicState(planningMonitor_->getKinematicModel()));
 		std::vector<double> v(dim);
 		for (unsigned int j = 0 ; j < dim ; ++j)
 		    v[j] = startv[j] + inc[j] * i;
@@ -240,7 +240,7 @@ namespace move_arm
 	    path.push_back(goal);
 	}
 	
-	unsigned int findFirstInvalid(std::vector< boost::shared_ptr<planning_models::StateParams> > &path)
+	unsigned int findFirstInvalid(std::vector< boost::shared_ptr<planning_models::KinematicState> > &path)
 	{
 	    for (unsigned int i = 0 ; i < path.size() ; ++i)
 		if (!planningMonitor_->isStateValid(path[i].get(), planning_environment::PlanningMonitor::COLLISION_TEST))
@@ -248,7 +248,7 @@ namespace move_arm
 	    return path.size();
 	}
 	
-	void executePath(std::vector< boost::shared_ptr<planning_models::StateParams> > &path)
+	void executePath(std::vector< boost::shared_ptr<planning_models::KinematicState> > &path)
 	{
 	    manipulation_msgs::JointTraj traj;
 	    traj.names = setup_.groupJointNames_;
@@ -287,7 +287,7 @@ namespace move_arm
 	    request.data.pose_stamped = pose_stamped_msg;
 	    request.data.joint_names = setup_.groupJointNames_;
 	    
-	    planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
+	    planning_models::KinematicState *sp = new planning_models::KinematicState(planningMonitor_->getKinematicModel());
 	    sp->defaultState();
 	    for(unsigned int i = 0; i < setup_.groupJointNames_.size() ; ++i)
 	    {

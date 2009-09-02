@@ -83,10 +83,11 @@ void ompl_ros::GoalToState::setup(ModelBase *model, const std::vector<motion_pla
     for (unsigned int i = 0 ; i < jc.size() ; ++i)
     {
 	// get the index at which the joint parameters start
-	int idx = model->planningMonitor->getKinematicModel()->getJointIndexInGroup(jc[i].joint_name, model->groupID);
-	if (idx >= 0)
+	const planning_models::KinematicModel::Joint *jnt = model->planningMonitor->getKinematicModel()->getJoint(jc[i].joint_name);
+       	if (jnt)
 	{
-	    unsigned int usedParams = model->planningMonitor->getKinematicModel()->getJoint(jc[i].joint_name)->usedParams;
+	    unsigned int usedParams = jnt->usedParams;
+	    int idx = model->group->getJointPosition(jnt->name);
 	    
 	    if (jc[i].tolerance_above.size() != jc[i].tolerance_below.size() || jc[i].value.size() != jc[i].tolerance_below.size() || jc[i].value.size() != usedParams)
 		ROS_ERROR("Constraint on joint %s has incorrect number of parameters. Expected %u.", jc[i].joint_name.c_str(), usedParams);
@@ -169,7 +170,7 @@ void ompl_ros::GoalToPosition::print(std::ostream &out) const
 double ompl_ros::GoalToPosition::evaluateGoalAux(const ompl::base::State *state, std::vector<bool> *decision) const
 {
     EnvironmentDescription *ed = model_->getEnvironmentDescription();
-    ed->kmodel->computeTransformsGroup(state->values, model_->groupID);
+    ed->group->computeTransforms(state->values);
     
     if (decision)
 	decision->resize(pce_.size());

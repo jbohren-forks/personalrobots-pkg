@@ -87,12 +87,12 @@ namespace ompl_search
 	bool isRequestValid(ModelMap &models, motion_planning_msgs::ConvertToJointConstraint::Request &req);
 	
 	/** \brief Find a state in the specified goal region. Return true if state was found */
-	bool findState(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::ConvertToJointConstraint::Request &req, motion_planning_msgs::ConvertToJointConstraint::Response &res);
+	bool findState(ModelMap &models, const planning_models::KinematicState *start, motion_planning_msgs::ConvertToJointConstraint::Request &req, motion_planning_msgs::ConvertToJointConstraint::Response &res);
 
     private:
 
 	/** \brief Set up all the data needed by inverse kinematics based on a request */
-	void configure(const planning_models::StateParams *startState, motion_planning_msgs::ConvertToJointConstraint::Request &req, SearchModel *model);
+	void configure(const planning_models::KinematicState *startState, motion_planning_msgs::ConvertToJointConstraint::Request &req, SearchModel *model);
 
 	/** \brief Set the workspace bounds based on the request */
 	void setWorkspaceBounds(motion_planning_msgs::KinematicSpaceParameters &params, ompl_ros::ModelKinematic *model);

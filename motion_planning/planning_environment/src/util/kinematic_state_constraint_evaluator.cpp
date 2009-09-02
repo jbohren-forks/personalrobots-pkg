@@ -41,7 +41,7 @@
 
 bool planning_environment::KinematicConstraintEvaluator::decide(const double *params) const
 {
-    return decide(params, -1);
+    return decide(params, NULL);
 }
 
 bool planning_environment::JointConstraintEvaluator::use(const planning_models::KinematicModel *kmodel, const ros::Message *kc)
@@ -70,9 +70,9 @@ void planning_environment::JointConstraintEvaluator::use(const planning_models::
     }
 }
 
-bool planning_environment::JointConstraintEvaluator::decide(const double *params, const int groupID) const
+bool planning_environment::JointConstraintEvaluator::decide(const double *params, const planning_models::KinematicModel::JointGroup *group) const
 {
-    const double *val = params + (groupID >= 0 ? m_kmodel->getJointIndexInGroup(m_joint->name, groupID) : m_kmodel->getJointIndex(m_joint->name));
+    const double *val = params + (group ? group->getJointPosition(m_joint->name) : m_joint->stateIndex);
     assert(m_jc.value.size() == m_jc.tolerance_below.size() && m_jc.value.size() == m_jc.tolerance_above.size());
     
     for (unsigned int i = 0 ; i < m_jc.value.size() ; ++i)
@@ -152,7 +152,7 @@ void planning_environment::PoseConstraintEvaluator::clear(void)
     m_link = NULL;
 }
 
-bool planning_environment::PoseConstraintEvaluator::decide(const double *, int) const
+bool planning_environment::PoseConstraintEvaluator::decide(const double*, const planning_models::KinematicModel::JointGroup*) const
 {
     double dPos, dAng;
     evaluate(&dPos, &dAng);
@@ -330,17 +330,17 @@ bool planning_environment::KinematicConstraintEvaluatorSet::add(const planning_m
     return result;
 }
 
-bool planning_environment::KinematicConstraintEvaluatorSet::decide(const double *params, int groupID) const
+bool planning_environment::KinematicConstraintEvaluatorSet::decide(const double *params, const planning_models::KinematicModel::JointGroup *group) const
 {
     for (unsigned int i = 0 ; i < m_kce.size() ; ++i)
-	if (!m_kce[i]->decide(params, groupID))
+	if (!m_kce[i]->decide(params, group))
 	    return false;
     return true;
 }
 
 bool planning_environment::KinematicConstraintEvaluatorSet::decide(const double *params) const
 {
-    return decide(params, -1);
+    return decide(params, NULL);
 }
 
 void planning_environment::KinematicConstraintEvaluatorSet::use(const planning_models::KinematicModel *kmodel)

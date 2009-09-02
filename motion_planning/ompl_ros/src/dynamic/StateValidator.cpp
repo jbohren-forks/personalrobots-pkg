@@ -42,7 +42,7 @@ bool ompl_ros::ROSStateValidityPredicateDynamic::operator()(const ompl::base::St
 	return false;
 
     EnvironmentDescription *ed = model_->getEnvironmentDescription();
-    return check(s, ed->collisionSpace, ed->kmodel, ed->constraintEvaluator);
+    return check(s, ed->collisionSpace, ed->group, ed->constraintEvaluator);
 }
 
 void ompl_ros::ROSStateValidityPredicateDynamic::setConstraints(const motion_planning_msgs::KinematicConstraints &kc)
@@ -62,12 +62,12 @@ void ompl_ros::ROSStateValidityPredicateDynamic::printSettings(std::ostream &out
     model_->constraintEvaluator.print(out);
 }
 
-bool ompl_ros::ROSStateValidityPredicateDynamic::check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
+bool ompl_ros::ROSStateValidityPredicateDynamic::check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel::JointGroup *jg,
 						       const planning_environment::KinematicConstraintEvaluatorSet *kce) const
 {
-    km->computeTransformsGroup(s->values, model_->groupID);
+    jg->computeTransforms(s->values);
     
-    bool valid = kce->decide(s->values, model_->groupID);
+    bool valid = kce->decide(s->values, jg);
     if (valid)
     {
 	em->updateRobotModel();

@@ -842,9 +842,9 @@ void collision_space::EnvironmentModelODE::updateAllowedTouch(void)
 	{
  	    kg->allowedTouch[k + 1].clear();
 	    kg->allowedTouch[k + 1].resize(n, false);
-	    for (unsigned int j = 0 ; j < kg->link->attachedBodies[k]->touch_links.size() ; ++j)
+	    for (unsigned int j = 0 ; j < kg->link->attachedBodies[k]->touchLinks.size() ; ++j)
 	    {
-	        const std::string &tlink = kg->link->attachedBodies[k]->touch_links[j];
+	        const std::string &tlink = kg->link->attachedBodies[k]->touchLinks[j];
 	        std::map<std::string, unsigned int>::const_iterator it = m_collisionLinkIndex.find(tlink);
 		if (it != m_collisionLinkIndex.end())
 		    kg->allowedTouch[k + 1][it->second] = true;
@@ -1057,7 +1057,7 @@ collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(v
     env->m_verbose = m_verbose;
     env->m_robotScale = m_robotScale;
     env->m_robotPadd = m_robotPadd;
-    env->m_robotModel = boost::shared_ptr<planning_models::KinematicModel>(m_robotModel->clone());
+    env->m_robotModel = boost::shared_ptr<planning_models::KinematicModel>(new planning_models::KinematicModel(*m_robotModel));
     env->createODERobotModel();
     for (unsigned int j = 0 ; j < m_modelGeom.linkGeom.size() ; ++j)
 	env->m_modelGeom.linkGeom[j]->enabled = m_modelGeom.linkGeom[j]->enabled;

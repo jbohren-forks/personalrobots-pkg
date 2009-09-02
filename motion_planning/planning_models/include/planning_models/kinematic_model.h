@@ -268,31 +268,34 @@ namespace planning_models
 	    ~JointGroup(void);
 	    
 	    /** \brief The kinematic model that owns the group */
-	    KinematicModel           *owner;	    
+	    KinematicModel                     *owner;	    
 
 	    /** \brief Name of group */
-	    std::string               name;
+	    std::string                         name;
 
 	    /** \brief Names of joints in the order they appear in the group state */
-	    std::vector<std::string>  jointNames;
+	    std::vector<std::string>            jointNames;
 
 	    /** \brief Joint instances in the order they appear in the group state */
-	    std::vector<Joint*>       joints;
+	    std::vector<Joint*>                 joints;
 
 	    /** \brief Index where each joint starts within the group state */
-	    std::vector<unsigned int> jointIndex;
+	    std::vector<unsigned int>           jointIndex;
+
+	    /** \brief Easy way of finding the position of a joint in the list of joints contained in the group */
+	    std::map<std::string, unsigned int> jointMap;
 
 	    /** \brief The dimension of the group */
-	    unsigned int              dimension;
+	    unsigned int                        dimension;
 
 	    /** \brief The bounds for the state corresponding to the group */
-	    std::vector<double>       stateBounds;
+	    std::vector<double>                 stateBounds;
 	    
 	    /** \brief An array containing the index in the global state for each dimension of the state of the group */
-	    std::vector<unsigned int> stateIndex;
+	    std::vector<unsigned int>           stateIndex;
 	    
 	    /** \brief The list of joints that are roots in this group */
-	    std::vector<Joint*>       jointRoots;
+	    std::vector<Joint*>                 jointRoots;
 
 	    /** \brief Perform forward kinematics starting at the roots
 		within a group. Links that are not in the group are also
@@ -303,12 +306,13 @@ namespace planning_models
 	    /** \brief Check if a joint is part of this group */
 	    bool hasJoint(const std::string &joint) const;
 	    
-	private:
-	    
-	    std::map<std::string, unsigned int> jointMap_;
+	    /** \brief Get the position of a joint inside this group */
+	    int  getJointPosition(const std::string &joint) const;
 	    
 	};
 	
+	/** \brief Construct a kinematic model from another one */
+	KinematicModel(const KinematicModel &source);
 
 	/** \brief Construct a kinematic model from a parsed description and a list of planning groups */
 	KinematicModel(const urdf::Model &model, const std::map< std::string, std::vector<std::string> > &groups);
@@ -316,9 +320,6 @@ namespace planning_models
 	/** \brief Destructor. Clear all memory. */
 	~KinematicModel(void);
 
-	/** \brief Return a new instance of the same model */
-	KinematicModel* clone(void) const;
-	
 	/** \brief Bring the robot to a default state */
 	void defaultState(void);
 	
@@ -380,6 +381,12 @@ namespace planning_models
 	
 	/** \brief Set the global transform applied to the entire tree of links */
 	void setRootTransform(const btTransform &transform);
+
+	/** \brief Get the root joint */
+	const Joint* getRoot(void) const;
+
+	/** \brief Get the root joint */
+	Joint* getRoot(void);
 	
 	/** \brief Get the dimension of the entire model */
 	unsigned int getDimension(void) const;
@@ -450,8 +457,13 @@ namespace planning_models
 	void buildGroups(const std::map< std::string, std::vector<std::string> > &groups);
 	Joint* buildRecursive(Link *parent, const urdf::Link *link);
 	Joint* constructJoint(const urdf::Joint *urdfJoint, std::vector<double> &bounds);
-	Link*  constructLink(const urdf::Link *urdfLink);
+	Link* constructLink(const urdf::Link *urdfLink);
 	shapes::Shape* constructShape(const urdf::Geometry *geom);
+
+	Joint* copyJoint(const Joint *joint);
+	Link* copyLink(const Link *link);
+	Joint* copyRecursive(Link *parent, const Link *link);
+
 	void printTransform(const std::string &st, const btTransform &t, std::ostream &out = std::cout) const;
 	
     };

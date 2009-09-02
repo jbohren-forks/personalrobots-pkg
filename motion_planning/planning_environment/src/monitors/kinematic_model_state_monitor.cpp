@@ -54,39 +54,31 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     if (rm_->loadedModels())
     {
 	kmodel_ = rm_->getKinematicModel().get();
-	robotState_ = kmodel_->newStateParams();
+	robotState_ = new planning_models::KinematicState(kmodel_);
 
-	if (kmodel_->getRobotCount() > 1)
+	// joints to update based on received pose
+	if (dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(kmodel_->getRoot()))
 	{
-	    ROS_WARN("Using more than one robot. A frame_id cannot be set (there multiple frames) and pose cannot be maintained");
-	    includePose_ = false;
+	    planarJoint_ = kmodel_->getRoot()->name;
+	    double params[3] = { 0.0, 0.0, 0.0 };
+	    robotState_->setParamsJoint(params, planarJoint_);
 	}
+	
+	if (dynamic_cast<planning_models::KinematicModel::FloatingJoint*>(kmodel_->getRoot()))
+	{
+	    floatingJoint_ = kmodel_->getRoot()->name;
+	    double params[7] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 };
+	    robotState_->setParamsJoint(params, floatingJoint_);
+	}
+	
+	robot_frame_ = kmodel_->getRoot()->after->name;
+	ROS_DEBUG("Robot frame is '%s'", robot_frame_.c_str());
+	
+	if (includePose_)
+	    ROS_DEBUG("Maintaining robot pose in frame '%s'", frame_id_.c_str());
 	else
-	{
-	    // joints to update based on received pose
-	    if (dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(kmodel_->getRobot(0)->chain))
-	    {
-		planarJoint_ = kmodel_->getRobot(0)->chain->name;
-		double params[3] = { 0.0, 0.0, 0.0 };
-		robotState_->setParamsJoint(params, planarJoint_);
-	    }
-	    
-	    if (dynamic_cast<planning_models::KinematicModel::FloatingJoint*>(kmodel_->getRobot(0)->chain))
-	    {
-		floatingJoint_ = kmodel_->getRobot(0)->chain->name;
-		double params[7] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 };
-		robotState_->setParamsJoint(params, floatingJoint_);
-	    }
-	    kmodel_->getRobot(0)->rootTransform.setIdentity();
-	    
-	    robot_frame_ = kmodel_->getRobot(0)->chain->after->name;
-	    ROS_DEBUG("Robot frame is '%s'", robot_frame_.c_str());
+	    frame_id_ = robot_frame_;
 
-	    if (includePose_)
-		ROS_DEBUG("Maintaining robot pose in frame '%s'", frame_id_.c_str());
-	    else
-		frame_id_ = robot_frame_;
-	}
     }
     
     startStateMonitor();
@@ -138,9 +130,9 @@ void planning_environment::KinematicModelStateMonitor::jointStateCallback(const 
     }
     for (unsigned int i = 0 ; i < n ; ++i)
     {
-	planning_models::KinematicModel::Joint* joint = kmodel_->getJoint(jointState->name[i]);
-	if (joint)
+	if (kmodel_->hasJoint(jointState->name[i]))
 	{
+	    planning_models::KinematicModel::Joint* joint = kmodel_->getJoint(jointState->name[i]);
 	    if (joint->usedParams == 1)
 	    {
 		double pos = jointState->position[i];
@@ -195,7 +187,7 @@ void planning_environment::KinematicModelStateMonitor::jointStateCallback(const 
 		if (!(pose_ == transf))
 		{
 		    pose_ = transf;
-		    kmodel_->getRobot(0)->rootTransform = pose_;
+		    kmodel_->setRootTransform(pose_);
 		    change = true;
 		}
 		
@@ -259,7 +251,7 @@ bool planning_environment::KinematicModelStateMonitor::attachObject(const mappin
 		link->attachedBodies.push_back(new planning_models::KinematicModel::AttachedBody(link));
 		tf::poseMsgToTF(poseP.pose, link->attachedBodies[j]->attachTrans);
 		link->attachedBodies[j]->shape = shape;
-		link->attachedBodies[j]->touch_links = attachedObject->touch_links;
+		link->attachedBodies[j]->touchLinks = attachedObject->touch_links;
 	    }
 	    
 	    result = true;	    

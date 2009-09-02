@@ -37,7 +37,7 @@
 #ifndef PLANNING_ENVIRONMENT_UTIL_KINEMATIC_STATE_CONSTRAINT_EVALUATOR_
 #define PLANNING_ENVIRONMENT_UTIL_KINEMATIC_STATE_CONSTRAINT_EVALUATOR_
 
-#include <planning_models/kinematic.h>
+#include <planning_models/kinematic_model.h>
 #include <motion_planning_msgs/KinematicConstraints.h>
 #include <iostream>
 #include <vector>
@@ -67,7 +67,7 @@ namespace planning_environment
 	virtual void use(const planning_models::KinematicModel *kmodel) = 0;
 
 	/** \brief Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
-	virtual bool decide(const double *params, const int groupID) const = 0;
+	virtual bool decide(const double *params, const planning_models::KinematicModel::JointGroup *group) const = 0;
 
 	/** \brief Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
 	virtual bool decide(const double *params) const;
@@ -98,7 +98,7 @@ namespace planning_environment
 	virtual void use(const planning_models::KinematicModel *kmodel);
 
 	/** \brief Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
-	virtual bool decide(const double *params, const int groupID) const;
+	virtual bool decide(const double *params, const planning_models::KinematicModel::JointGroup *group) const;
 
 	/** \brief Clear the stored constraint */
 	virtual void clear(void);
@@ -111,9 +111,9 @@ namespace planning_environment
 
     protected:
 	
-	motion_planning_msgs::JointConstraint   m_jc;
-	planning_models::KinematicModel::Joint *m_joint;    
-	const planning_models::KinematicModel  *m_kmodel;
+	motion_planning_msgs::JointConstraint         m_jc;
+	const planning_models::KinematicModel::Joint *m_joint;    
+	const planning_models::KinematicModel        *m_kmodel;
 	
     };
     
@@ -140,7 +140,7 @@ namespace planning_environment
 	virtual void clear(void);
 	
 	/** \brief Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
-	virtual bool decide(const double *params, int groupID) const;
+	virtual bool decide(const double *params, const planning_models::KinematicModel::JointGroup *group) const;
 
 	/** \brief Evaluate the distances to the position and to the orientation are given. */
 	void evaluate(double *distPos, double *distAng) const;
@@ -156,10 +156,10 @@ namespace planning_environment
 	
     protected:
 	
-	motion_planning_msgs::PoseConstraint   m_pc;
-	double                                 m_x, m_y, m_z;
-	double                                 m_roll, m_pitch, m_yaw;
-	planning_models::KinematicModel::Link *m_link;    
+	motion_planning_msgs::PoseConstraint         m_pc;
+	double                                       m_x, m_y, m_z;
+	double                                       m_roll, m_pitch, m_yaw;
+	const planning_models::KinematicModel::Link *m_link;    
 	
     };
     
@@ -190,7 +190,7 @@ namespace planning_environment
 	void use(const planning_models::KinematicModel *kmodel);
 
 	/** \brief Decide whether the set of constraints is satisfied  */
-	bool decide(const double *params, int groupID) const;
+	bool decide(const double *params, const planning_models::KinematicModel::JointGroup *group) const;
 
 	/** \brief Decide whether the set of constraints is satisfied  */
 	bool decide(const double *params) const;

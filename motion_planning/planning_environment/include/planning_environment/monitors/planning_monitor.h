@@ -84,13 +84,13 @@ namespace planning_environment
 	bool isEnvironmentSafe(void) const;
 	
 	/** \brief Check if the full state of the robot is valid */
-	bool isStateValid(const planning_models::StateParams *state, const int test, bool verbose = false) const;
+	bool isStateValid(const planning_models::KinematicState *state, const int test, bool verbose = false) const;
 
 	/** \brief Check if the full state of the robot is valid including path constraints (wrapper for isStateValid) */
-	bool isStateValidOnPath(const planning_models::StateParams *state, bool verbose = false) const;
+	bool isStateValidOnPath(const planning_models::KinematicState *state, bool verbose = false) const;
 
 	/** \brief Check if the full state of the robot is valid including path constraints (wrapper for isStateValid) */
-	bool isStateValidAtGoal(const planning_models::StateParams *state, bool verbose = false) const;
+	bool isStateValidAtGoal(const planning_models::KinematicState *state, bool verbose = false) const;
 
 	/** \brief Check if the path is valid. Path constraints are considered, but goal constraints are not  */
 	bool isPathValid(const motion_planning_msgs::KinematicPath &path, const int test, bool verbose = false) const;
@@ -99,10 +99,10 @@ namespace planning_environment
 	bool isPathValid(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const int test, bool verbose = false) const;
 	
 	/** \brief Find the index of the state on the path that is closest to a given state */
-	int  closestStateOnPath(const motion_planning_msgs::KinematicPath &path, const planning_models::StateParams *state) const;
+	int  closestStateOnPath(const motion_planning_msgs::KinematicPath &path, const planning_models::KinematicState *state) const;
 
 	/** \brief Find the index of the state on the path segment that is closest to a given state */
-	int  closestStateOnPath(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::StateParams *state) const;
+	int  closestStateOnPath(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::KinematicState *state) const;
 	
 	/** \brief Set the kinematic constraints the monitor should use when checking a path */
 	void setPathConstraints(const motion_planning_msgs::KinematicConstraints &kc);
@@ -189,7 +189,7 @@ namespace planning_environment
 	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const int test, bool verbose) const;
 
 	/** \brief Find the index of the state on the path that is closest to a given state assuming the path is in the frame of the model */
-	int closestStateOnPathAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::StateParams *state) const;
+	int closestStateOnPathAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::KinematicState *state) const;
 	
 	/** \brief User callback when a collision is found */
 	boost::function<void(collision_space::EnvironmentModel::Contact&)> onCollisionContact_;

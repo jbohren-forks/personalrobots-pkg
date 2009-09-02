@@ -38,6 +38,7 @@
 #define PLANNING_ENVIRONMENT_MONITORS_KINEMATIC_MODEL_STATE_MONITOR_
 
 #include "planning_environment/models/robot_models.h"
+#include "planning_models/kinematic_state.h"
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
@@ -121,7 +122,7 @@ namespace planning_environment
 	}
 
 	/** \brief Return a pointer to the maintained robot state */
-	const planning_models::StateParams* getRobotState(void) const
+	const planning_models::KinematicState* getRobotState(void) const
 	{
 	    return robotState_;
 	}
@@ -210,7 +211,7 @@ namespace planning_environment
 	tf::MessageNotifier<mapping_msgs::AttachedObject>
 	                                *attachedBodyNotifier_;
 
-	planning_models::StateParams    *robotState_;
+	planning_models::KinematicState *robotState_;
  	double                           robotVelocity_;
 	tf::Pose                         pose_;
 	std::string                      robot_frame_;

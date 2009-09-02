@@ -169,7 +169,7 @@ void ompl_planning::RequestHandler::setWorkspaceBounds(motion_planning_msgs::Kin
 	ROS_DEBUG("No workspace bounding volume was set");
 }
 
-void ompl_planning::RequestHandler::configure(const planning_models::StateParams *startState, motion_planning_msgs::GetMotionPlan::Request &req, PlannerSetup *psetup)
+void ompl_planning::RequestHandler::configure(const planning_models::KinematicState *startState, motion_planning_msgs::GetMotionPlan::Request &req, PlannerSetup *psetup)
 {
     /* clear memory */
     psetup->ompl_model->si->clearGoal();           // goal definitions
@@ -191,19 +191,13 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
     const unsigned int dim = psetup->ompl_model->si->getStateDimension();
     ompl::base::State *start = new ompl::base::State(dim);
     
-    if (psetup->ompl_model->groupID >= 0)
-    {
-	/* set the pose of the whole robot */
-	ompl_ros::EnvironmentDescription *ed = psetup->ompl_model->getEnvironmentDescription();
-	ed->kmodel->computeTransforms(startState->getParams());
-	ed->collisionSpace->updateRobotModel();
-	
-	/* extract the components needed for the start state of the desired group */
-	startState->copyParamsGroup(start->values, psetup->ompl_model->groupID);
-    }
-    else
-	/* the start state is the complete state */
-	startState->copyParams(start->values);
+    /* set the pose of the whole robot */
+    ompl_ros::EnvironmentDescription *ed = psetup->ompl_model->getEnvironmentDescription();
+    ed->kmodel->computeTransforms(startState->getParams());
+    ed->collisionSpace->updateRobotModel();
+    
+    /* extract the components needed for the start state of the desired group */
+    startState->copyParamsGroup(start->values, psetup->ompl_model->group);
     
     psetup->ompl_model->si->addStartState(start);
     
@@ -255,7 +249,7 @@ bool ompl_planning::RequestHandler::fixInputStates(PlannerSetup *psetup, double 
     return result;
 }
 
-bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning_models::StateParams *start, double stateDelay,
+bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning_models::KinematicState *start, double stateDelay,
 						motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res)
 {
     if (!isRequestValid(models, req))
@@ -311,10 +305,10 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     return true;
 }
 
-void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, double stateDelay,
+void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::KinematicState *start, double stateDelay,
 					       motion_planning_msgs::GetMotionPlan::Response &res, const Solution &sol)
 {   
-    std::vector<planning_models::KinematicModel::Joint*> joints;
+    std::vector<const planning_models::KinematicModel::Joint*> joints;
     psetup->ompl_model->planningMonitor->getKinematicModel()->getJoints(joints);
     res.path.start_state.resize(joints.size());
     for (unsigned int i = 0 ; i < joints.size() ; ++i)
@@ -329,8 +323,7 @@ void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const plann
     {
 	res.path.states.resize(kpath->states.size());
 	res.path.times.resize(kpath->states.size());
-	res.path.names.clear();
-	psetup->ompl_model->planningMonitor->getKinematicModel()->getJointsInGroup(res.path.names, psetup->ompl_model->groupID);
+	res.path.names = psetup->ompl_model->group->jointNames;
 	
 	const unsigned int dim = psetup->ompl_model->si->getStateDimension();
 	for (unsigned int i = 0 ; i < kpath->states.size() ; ++i)
@@ -347,8 +340,7 @@ void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const plann
     {
 	res.path.states.resize(dpath->states.size());
 	res.path.times.resize(dpath->states.size());
-	res.path.names.clear();
-	psetup->ompl_model->planningMonitor->getKinematicModel()->getJointsInGroup(res.path.names, psetup->ompl_model->groupID);
+	res.path.names = psetup->ompl_model->group->jointNames;
 	
 	const unsigned int dim = psetup->ompl_model->si->getStateDimension();
 	for (unsigned int i = 0 ; i < dpath->states.size() ; ++i)

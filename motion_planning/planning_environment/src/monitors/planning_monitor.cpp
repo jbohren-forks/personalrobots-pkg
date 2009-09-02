@@ -119,7 +119,7 @@ bool planning_environment::PlanningMonitor::transformConstraintsToFrame(motion_p
     }
     
     // if there are any floating or planar joints, transform them
-    if (getKinematicModel()->getModelInfo().planarJoints.size() > 0 || getKinematicModel()->getModelInfo().floatingJoints.size() > 0)
+    if (getKinematicModel()->getPlanarJoints().size() > 0 || getKinematicModel()->getFloatingJoints().size() > 0)
     {
 	for (unsigned int i = 0; i < kc.joint_constraint.size() ; ++i)
 	    if (!transformJoint(kc.joint_constraint[i].joint_name, 0, kc.joint_constraint[i].value, kc.joint_constraint[i].header, target))
@@ -131,7 +131,7 @@ bool planning_environment::PlanningMonitor::transformConstraintsToFrame(motion_p
 bool planning_environment::PlanningMonitor::transformPathToFrame(motion_planning_msgs::KinematicPath &kp, const std::string &target) const
 {    
     // if there are no planar of floating transforms, there is nothing to do
-    if (getKinematicModel()->getModelInfo().planarJoints.empty() && getKinematicModel()->getModelInfo().floatingJoints.empty())
+    if (getKinematicModel()->getPlanarJoints().empty() && getKinematicModel()->getFloatingJoints().empty())
     {
 	kp.header.frame_id = target;
 	return true;
@@ -286,17 +286,17 @@ bool planning_environment::PlanningMonitor::transformJoint(const std::string &na
     return true;
 }
 
-bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_models::StateParams *state, bool verbose) const
+bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_models::KinematicState *state, bool verbose) const
 {
     return isStateValid(state, COLLISION_TEST | PATH_CONSTRAINTS_TEST, verbose);    
 }
 
-bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_models::StateParams *state, bool verbose) const
+bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_models::KinematicState *state, bool verbose) const
 {
     return isStateValid(state, COLLISION_TEST | PATH_CONSTRAINTS_TEST | GOAL_CONSTRAINTS_TEST, verbose);    
 }
 
-bool planning_environment::PlanningMonitor::isStateValid(const planning_models::StateParams *state, const int test, bool verbose) const
+bool planning_environment::PlanningMonitor::isStateValid(const planning_models::KinematicState *state, const int test, bool verbose) const
 {   
     getEnvironmentModel()->lock();
     getKinematicModel()->lock();
@@ -345,12 +345,12 @@ bool planning_environment::PlanningMonitor::isStateValid(const planning_models::
     return valid;    
 }
 
-int planning_environment::PlanningMonitor::closestStateOnPath(const motion_planning_msgs::KinematicPath &path, const planning_models::StateParams *state) const
+int planning_environment::PlanningMonitor::closestStateOnPath(const motion_planning_msgs::KinematicPath &path, const planning_models::KinematicState *state) const
 {
     return closestStateOnPath(path, 0, path.states.size() - 1, state);
 }
 
-int planning_environment::PlanningMonitor::closestStateOnPath(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::StateParams *state) const
+int planning_environment::PlanningMonitor::closestStateOnPath(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::KinematicState *state) const
 {
     if (end >= path.states.size())
 	end = path.states.size() - 1;
@@ -369,7 +369,7 @@ int planning_environment::PlanningMonitor::closestStateOnPath(const motion_plann
 	return closestStateOnPathAux(path, start, end, state);  
 }
 
-int planning_environment::PlanningMonitor::closestStateOnPathAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::StateParams *state) const
+int planning_environment::PlanningMonitor::closestStateOnPathAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::KinematicState *state) const
 {
     double dist = 0.0;
     int    pos  = -1;
@@ -442,7 +442,7 @@ bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_ms
 
 bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const int test, bool verbose) const
 {    
-    boost::scoped_ptr<planning_models::StateParams> sp(getKinematicModel()->newStateParams());
+    boost::scoped_ptr<planning_models::KinematicState> sp(new planning_models::KinematicState(getKinematicModel()));
     
     for (unsigned int i = 0 ; i < path.start_state.size() ; ++i)
 	sp->setParamsJoint(path.start_state[i].value, path.start_state[i].joint_name);
@@ -475,6 +475,7 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     
     // get the joints this path is for
     std::vector<planning_models::KinematicModel::Joint*> joints(path.names.size());
+    unsigned int sdim = 0;
     for (unsigned int j = 0 ; j < joints.size() ; ++j)
     {
 	joints[j] = getKinematicModel()->getJoint(path.names[j]);
@@ -484,9 +485,9 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	    valid = false;
 	    break;
 	}
+	sdim += joints[j]->usedParams;
     }
-
-    unsigned int sdim = getKinematicModel()->getJointsDimension(path.names);
+    
     unsigned int remainingContacts = maxCollisionContacts_;
     
     // check every state

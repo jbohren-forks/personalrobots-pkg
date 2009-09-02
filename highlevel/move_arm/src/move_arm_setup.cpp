@@ -55,7 +55,7 @@ bool move_arm::MoveArmSetup::configure(void)
     if (!collisionModels_->loadedModels())
 	return false;
 
-    if (collisionModels_->getKinematicModel()->getGroupID(group_) < 0)
+    if (!collisionModels_->getKinematicModel()->hasGroup(group_))
     {
 	ROS_ERROR("Group '%s' is not known", group_.c_str());
 	return false;
@@ -99,28 +99,38 @@ bool move_arm::MoveArmSetup::getControlJointNames(std::vector<std::string> &join
     }
 
     joint_names = res_query.jointnames;
-
+    
+    planning_models::KinematicModel::JointGroup *jg = planningMonitor_->getKinematicModel()->getGroup(group_);
+    
     // make sure we have the right joint names
     for(unsigned int i = 0; i < joint_names.size() ; ++i)
     {
 	if (planning_models::KinematicModel::Joint *j = planningMonitor_->getKinematicModel()->getJoint(joint_names[i]))
 	{
-	    ROS_DEBUG("Using joing '%s' with %u parameters", j->name.c_str(), j->usedParams);
-	    if (planningMonitor_->getKinematicModel()->getJointIndexInGroup(j->name, group_) < 0)
+	    if (!jg->hasJoint(j->name))
+	    {
+		ROS_ERROR("Joint '%s' is not in group '%s'", j->name.c_str(), group_.c_str());
 		return false;
+	    }
+	    ROS_DEBUG("Using joing '%s' with %u parameters", j->name.c_str(), j->usedParams);
 	}
 	else
-	{
-	    ROS_ERROR("Joint '%s' is not known", joint_names[i].c_str());
 	    return false;
-	}
     }
 
-    std::vector<std::string> groupNames;
-    planningMonitor_->getKinematicModel()->getJointsInGroup(groupNames, group_);
-    if (groupNames.size() != joint_names.size())
+    if (jg->jointNames.size() != joint_names.size())
     {
 	ROS_ERROR("The group '%s' does not have the same number of joints as the controller can handle", group_.c_str());
+	std::stringstream ss1;
+	for (unsigned int i = 0 ; i < jg->jointNames.size() ; ++i)
+	    ss1 << jg->jointNames[i] << " ";
+	ROS_ERROR("Group '%s': %s", group_.c_str(), ss1.str().c_str());
+	
+	std::stringstream ss2;
+	for (unsigned int i = 0 ; i < joint_names.size() ; ++i)
+	    ss2 << joint_names[i] << " ";
+	ROS_ERROR("Controller joints: %s", ss2.str().c_str());
+	
 	return false;
     }
 

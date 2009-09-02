@@ -44,6 +44,7 @@
 #include <mapping_msgs/AttachedObject.h>
 
 #include <planning_environment/monitors/kinematic_model_state_monitor.h>
+#include <planning_models/kinematic_state.h>
 #include <motion_planning_msgs/KinematicPath.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_srvs/IKService.h>
@@ -87,12 +88,12 @@ void printHelp(void)
 
 void printJoints(const planning_environment::KinematicModelStateMonitor &km, const std::vector<std::string> &names)
 {
-    const planning_models::KinematicModel::ModelInfo &mi = km.getKinematicModel()->getModelInfo();
+    const std::vector<double> &bounds = km.getKinematicModel()->getStateBounds();
 
     for (unsigned int i = 0 ; i < names.size(); ++i)
     {
-	int idx = km.getKinematicModel()->getJointIndex(names[i]);
-	std::cout << "  " << i << " = " << names[i] << "  [" << mi.stateBounds[idx * 2] << ", " << mi.stateBounds[idx * 2 + 1] << "]" << std::endl;
+	int idx = km.getKinematicModel()->getJoint(names[i])->stateIndex;
+	std::cout << "  " << i << " = " << names[i] << "  [" << bounds[idx * 2] << ", " << bounds[idx * 2 + 1] << "]" << std::endl;
     }
 }
 
@@ -103,7 +104,7 @@ void printPose(const btTransform &p)
     std::cout << "  -rotation [x, y, z, w] = [" << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << "]" << std::endl;
 }
 
-void goalToState(const move_arm::MoveArmGoal &goal, planning_models::StateParams &sp)
+void goalToState(const move_arm::MoveArmGoal &goal, planning_models::KinematicState &sp)
 {
     for (unsigned int i = 0 ; i < goal.goal_constraints.joint_constraint.size() ; ++i)
     {
@@ -114,7 +115,7 @@ void goalToState(const move_arm::MoveArmGoal &goal, planning_models::StateParams
 
 btTransform effPosition(const planning_environment::KinematicModelStateMonitor &km, const move_arm::MoveArmGoal &goal)
 {
-    planning_models::StateParams sp(*km.getRobotState());
+    planning_models::KinematicState sp(*km.getRobotState());
     goalToState(goal, sp);
     km.getKinematicModel()->computeTransforms(sp.getParams());
     return km.getKinematicModel()->getJoint(goal.goal_constraints.joint_constraint.back().joint_name)->after->globalTrans;
@@ -223,10 +224,10 @@ void setupGoalEEf(const std::string &link, const std::vector<double> &pz, move_a
     goal.contacts[1].pose = goal.goal_constraints.pose_constraint[0].pose;
 }
 
-void setConfig(const planning_models::StateParams *_sp, const std::vector<std::string> &names, move_arm::MoveArmGoal &goal)
+void setConfig(const planning_models::KinematicState *_sp, const std::vector<std::string> &names, move_arm::MoveArmGoal &goal)
 {
     setupGoal(names, goal);
-    planning_models::StateParams sp(*_sp);
+    planning_models::KinematicState sp(*_sp);
     sp.enforceBounds();
     for (unsigned int i = 0 ; i < names.size() ; ++i)
     {
@@ -235,7 +236,7 @@ void setConfig(const planning_models::StateParams *_sp, const std::vector<std::s
     }
 }
 
-void getIK(bool r, ros::NodeHandle &nh, planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal, planning_models::StateParams &sp,
+void getIK(bool r, ros::NodeHandle &nh, planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal, planning_models::KinematicState &sp,
 	   const std::vector<std::string> &names, double x, double y, double z)
 {
     ros::ServiceClient client = nh.serviceClient<manipulation_srvs::IKService>("arm_ik");
@@ -252,7 +253,7 @@ void getIK(bool r, ros::NodeHandle &nh, planning_environment::KinematicModelStat
     request.data.pose_stamped.pose.orientation.w = 1;
     request.data.joint_names = names;
 
-    planning_models::StateParams rs(*km.getRobotState());
+    planning_models::KinematicState rs(*km.getRobotState());
     if (r)
 	rs.randomState();
 
@@ -308,7 +309,7 @@ void diffConfig(const planning_environment::KinematicModelStateMonitor &km, move
     std::cout << "  -rotation distance: " << angle << std::endl;
 }
 
-void viewState(ros::Publisher &view, const planning_environment::KinematicModelStateMonitor &km, const planning_models::StateParams &st)
+void viewState(ros::Publisher &view, const planning_environment::KinematicModelStateMonitor &km, const planning_models::KinematicState &st)
 {
     motion_planning_msgs::KinematicPath kp;
 
@@ -316,7 +317,7 @@ void viewState(ros::Publisher &view, const planning_environment::KinematicModelS
     kp.header.stamp = km.lastJointStateUpdate();
 
     // fill in start state with current one
-    std::vector<planning_models::KinematicModel::Joint*> joints;
+    std::vector<const planning_models::KinematicModel::Joint*> joints;
     km.getKinematicModel()->getJoints(joints);
 
     kp.start_state.resize(joints.size());
@@ -503,7 +504,7 @@ int main(int argc, char **argv)
 	else
 	if (cmd == "view")
 	{
-	    planning_models::StateParams st(*km.getRobotState());
+	    planning_models::KinematicState st(*km.getRobotState());
 	    viewState(view, km, st);
 	}
 	else
@@ -528,7 +529,7 @@ int main(int argc, char **argv)
 		setConfig(km.getRobotState(), names, temp);
 		btTransform p = effPosition(km, temp);
 
-		planning_models::StateParams sp(*km.getRobotState());
+		planning_models::KinematicState sp(*km.getRobotState());
 		getIK(false, nh, km, temp, sp, names, p.getOrigin().x() + fwd, p.getOrigin().y(), p.getOrigin().z());
 
 		sp.copyParamsJoints(traj.points[1].positions, names);
@@ -571,7 +572,7 @@ int main(int argc, char **argv)
 		setConfig(km.getRobotState(), names, temp);
 		btTransform p = effPosition(km, temp);
 		
-		planning_models::StateParams sp(*km.getRobotState());
+		planning_models::KinematicState sp(*km.getRobotState());
 		getIK(false, nh, km, temp, sp, names, p.getOrigin().x(), p.getOrigin().y(), p.getOrigin().z() + up);
 		
 		sp.copyParamsJoints(traj.points[1].positions, names);
@@ -601,7 +602,7 @@ int main(int argc, char **argv)
 		std::cout << "Configuration '" << config << "' not found" << std::endl;
 	    else
 	    {
-		planning_models::StateParams st(*km.getRobotState());
+		planning_models::KinematicState st(*km.getRobotState());
 		goalToState(goals[config], st);
 		viewState(view, km, st);
 	    }
@@ -643,7 +644,7 @@ int main(int argc, char **argv)
 	{
 	    std::string config = cmd.substr(5);
 	    boost::trim(config);
-	    planning_models::StateParams *sp = km.getKinematicModel()->newStateParams();
+	    planning_models::KinematicState *sp = new planning_models::KinematicState(km.getKinematicModel());
 	    sp->randomState();
 	    setConfig(sp, names, goals[config]);
 	    delete sp;
@@ -675,7 +676,7 @@ int main(int argc, char **argv)
 			    ss >> z;
 			    err = false;
 			    std::cout << "Performing IK to " << x << ", " << y << ", " << z << ", 0, 0, 0, 1..." << std::endl;
-			    planning_models::StateParams sp(*km.getRobotState());
+			    planning_models::KinematicState sp(*km.getRobotState());
 			    getIK(true, nh, km, goals[config], sp, names, x, y, z);
 			}
 		    }
@@ -692,7 +693,7 @@ int main(int argc, char **argv)
 	    std::string fnm = getenv("HOME") + ("/states/" + state);
 	    std::ifstream in(fnm.c_str());
 
-	    planning_models::StateParams sp(*km.getRobotState());
+	    planning_models::KinematicState sp(*km.getRobotState());
 	    std::vector<double> params;
 	    while (in.good() && !in.eof())
 	    {

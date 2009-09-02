@@ -57,16 +57,16 @@ void spinThread(void)
 
 void printJoints(const planning_environment::KinematicModelStateMonitor &km, const std::vector<std::string> &names)
 {
-    const planning_models::KinematicModel::ModelInfo &mi = km.getKinematicModel()->getModelInfo();
-    
+    const std::vector<double> &bounds = km.getKinematicModel()->getStateBounds();
+
     for (unsigned int i = 0 ; i < names.size(); ++i)
     {
-	int idx = km.getKinematicModel()->getJointIndex(names[i]);
-	std::cout << "  " << i << " = " << names[i] << "  [" << mi.stateBounds[idx * 2] << ", " << mi.stateBounds[idx * 2 + 1] << "]" << std::endl;
+	int idx = km.getKinematicModel()->getJoint(names[i])->stateIndex;
+	std::cout << "  " << i << " = " << names[i] << "  [" << bounds[idx * 2] << ", " << bounds[idx * 2 + 1] << "]" << std::endl;
     }
 }
 
-void recordThread(planning_environment::KinematicModelStateMonitor *km, bool *stop, std::vector<planning_models::StateParams> *states)
+void recordThread(planning_environment::KinematicModelStateMonitor *km, bool *stop, std::vector<planning_models::KinematicState> *states)
 {
     while (*stop == false)
     {
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 	
 	std::cout << "Hit <Enter> to stop recording... ";
 	bool stop = false;
-	std::vector<planning_models::StateParams> states;
+	std::vector<planning_models::KinematicState> states;
 	boost::thread rec(boost::bind(recordThread, &km, &stop, &states));
 	std::string dummy;
 	std::getline(std::cin, dummy);

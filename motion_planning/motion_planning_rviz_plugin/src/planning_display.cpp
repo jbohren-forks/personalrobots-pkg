@@ -41,7 +41,7 @@
 
 #include <tf/transform_listener.h>
 #include <planning_environment/models/robot_models.h>
-
+#include <planning_models/kinematic_state.h>
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
 
@@ -60,7 +60,7 @@ public:
   {
     apply_offset_transforms = false;
 
-    planning_models::KinematicModel::Link* link = kinematic_model_->getLink( link_name );
+    const planning_models::KinematicModel::Link* link = kinematic_model_->getLink( link_name );
 
     if ( !link )
     {
@@ -271,7 +271,7 @@ void PlanningDisplay::update(float wall_dt, float ros_dt)
     current_state_ = -1;
     current_state_time_ = state_display_time_ + 1.0f;
 
-    planning_models::StateParams *sp = kinematic_model_->newStateParams();
+    planning_models::KinematicState *sp = new planning_models::KinematicState(kinematic_model_);
     for (unsigned int i = 0; i < displaying_kinematic_path_message_->start_state.size(); ++i)
       if (displaying_kinematic_path_message_->start_state[i].header.frame_id == displaying_kinematic_path_message_->header.frame_id)
         sp->setParamsJoint(displaying_kinematic_path_message_->start_state[i].value, displaying_kinematic_path_message_->start_state[i].joint_name);
@@ -294,12 +294,12 @@ void PlanningDisplay::update(float wall_dt, float ros_dt)
 
       if ((size_t) current_state_ < displaying_kinematic_path_message_->get_states_size())
       {
-        int group_id = kinematic_model_->getGroupID(displaying_kinematic_path_message_->model_id);
-        if (group_id >= 0)
+	planning_models::KinematicModel::JointGroup *jg = kinematic_model_->getGroup(displaying_kinematic_path_message_->model_id);
+        if (jg)
         {
-          unsigned int dim = kinematic_model_->getGroupDimension(group_id);
-          if (displaying_kinematic_path_message_->states[current_state_].vals.size() == dim)
-            kinematic_model_->computeTransformsGroup(&displaying_kinematic_path_message_->states[current_state_].vals[0], group_id);
+	  unsigned int dim = jg->dimension;
+	  if (displaying_kinematic_path_message_->states[current_state_].vals.size() == dim)
+            jg->computeTransforms(&displaying_kinematic_path_message_->states[current_state_].vals[0]);
           robot_->update(PlanningLinkUpdater(kinematic_model_));
         }
         causeRender();

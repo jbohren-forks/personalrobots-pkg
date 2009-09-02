@@ -39,7 +39,6 @@
 #include <geometric_shapes/bodies.h>
 #include <planning_environment/models/robot_models.h>
 #include <planning_environment/monitors/kinematic_model_state_monitor.h>
-#include <planning_models/kinematic.h>
 #include <sensor_msgs/JointState.h>
 #include "visualization_msgs/Marker.h"
 

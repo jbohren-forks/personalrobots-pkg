@@ -160,15 +160,15 @@ bool ChompRobotModel::init()
         {
           joint.wrap_around_ = revolute_joint->continuous;
           joint.has_joint_limits_ = !(joint.wrap_around_);
-          joint.joint_limit_min_ = revolute_joint->limit[0];
-          joint.joint_limit_max_ = revolute_joint->limit[1];
+          joint.joint_limit_min_ = revolute_joint->lowLimit;
+          joint.joint_limit_max_ = revolute_joint->hiLimit;
         }
         else if (planning_models::KinematicModel::PrismaticJoint* prismatic_joint = dynamic_cast<planning_models::KinematicModel::PrismaticJoint*>(kin_model_joint))
         {
           joint.wrap_around_ = false;
           joint.has_joint_limits_ = true;
-          joint.joint_limit_min_ = prismatic_joint->limit[0];
-          joint.joint_limit_max_ = prismatic_joint->limit[1];
+          joint.joint_limit_min_ = prismatic_joint->lowLimit;
+          joint.joint_limit_max_ = prismatic_joint->hiLimit;
         }
         else
         {

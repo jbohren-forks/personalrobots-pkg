@@ -77,15 +77,20 @@ bool ompl_search::SearchRequestHandler::isRequestValid(ModelMap &models, motion_
     
     if (!req.states.empty())
     {
+	unsigned int jdim = 0;
+	
 	// make sure all joints are in the group
 	for (unsigned int i = 0 ; i < req.names.size() ; ++i)
 	{
-	    int idx = m->mk->planningMonitor->getKinematicModel()->getJointIndexInGroup(req.names[i], m->mk->groupID);
-	    if (idx < 0)
+	    if (!m->mk->group->hasJoint(req.names[i]))
+	    {
+		ROS_ERROR("Joint '%s' is not in group '%s'", req.names[i].c_str(), m->mk->groupName.c_str());
 		return false;
+	    }
+	    jdim += m->mk->planningMonitor->getKinematicModel()->getJoint(req.names[i])->usedParams;
 	}
 	
-	if (m->mk->si->getStateDimension() != m->mk->planningMonitor->getKinematicModel()->getJointsDimension(req.names))
+	if (m->mk->si->getStateDimension() != jdim)
 	{
 	    ROS_ERROR("The state dimension for model '%s' does not match the dimension of the joints defining the hint states", req.params.model_id.c_str());
 	    return false;
@@ -95,7 +100,7 @@ bool ompl_search::SearchRequestHandler::isRequestValid(ModelMap &models, motion_
     return true;
 }
 
-void ompl_search::SearchRequestHandler::configure(const planning_models::StateParams *startState, motion_planning_msgs::ConvertToJointConstraint::Request &req, SearchModel *model)
+void ompl_search::SearchRequestHandler::configure(const planning_models::KinematicState *startState, motion_planning_msgs::ConvertToJointConstraint::Request &req, SearchModel *model)
 {
     /* clear memory */
     model->mk->si->clearGoal();
@@ -159,7 +164,7 @@ void ompl_search::SearchRequestHandler::printSettings(ompl::base::SpaceInformati
     ROS_DEBUG("%s", ss.str().c_str());
 }
 
-bool ompl_search::SearchRequestHandler::findState(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::ConvertToJointConstraint::Request &req,
+bool ompl_search::SearchRequestHandler::findState(ModelMap &models, const planning_models::KinematicState *start, motion_planning_msgs::ConvertToJointConstraint::Request &req,
 						  motion_planning_msgs::ConvertToJointConstraint::Response &res)
 {    
     if (!isRequestValid(models, req))
@@ -172,8 +177,8 @@ bool ompl_search::SearchRequestHandler::findState(ModelMap &models, const planni
     const unsigned int dim = m->mk->si->getStateDimension();
     ompl::base::State *goal = new ompl::base::State(dim);
     std::vector<ompl::base::State*> hints;
-    planning_models::StateParams hs(*start);
-    unsigned int sdim = m->mk->planningMonitor->getKinematicModel()->getJointsDimension(req.names);
+    planning_models::KinematicState hs(*start);
+    unsigned int sdim = m->mk->si->getStateDimension();
     for (unsigned int i = 0 ; i < req.states.size() ; ++i)
     {
 	if (req.states[i].vals.size() != sdim)
@@ -183,7 +188,7 @@ bool ompl_search::SearchRequestHandler::findState(ModelMap &models, const planni
 	}
 	ompl::base::State *st = new ompl::base::State(dim);
 	hs.setParamsJoints(req.states[i].vals, req.names);
-	hs.copyParamsGroup(st->values, m->mk->groupID);
+	hs.copyParamsGroup(st->values, m->mk->group);
 	std::stringstream ss;
 	ss << "Hint state: ";
 	m->mk->si->printState(st, ss);	
@@ -206,16 +211,15 @@ bool ompl_search::SearchRequestHandler::findState(ModelMap &models, const planni
     if (found)
     {
 	int u = 0;
-	std::vector<std::string> jnames;
+	const std::vector<std::string> &jnames = m->mk->group->jointNames;
 	std::stringstream ss;
-	m->mk->planningMonitor->getKinematicModel()->getJointsInGroup(jnames, m->mk->groupID);
 	res.joint_constraint.resize(jnames.size());
 	for (unsigned int i = 0; i < jnames.size() ; ++i)
 	{
 	    res.joint_constraint[i].header.frame_id = m->mk->planningMonitor->getFrameId();
 	    res.joint_constraint[i].header.stamp = m->mk->planningMonitor->lastMapUpdate();
 	    res.joint_constraint[i].joint_name = jnames[i];
-	    planning_models::KinematicModel::Joint *joint = m->mk->planningMonitor->getKinematicModel()->getJoint(jnames[i]);
+	    planning_models::KinematicModel::Joint *joint = m->mk->group->joints[i];
 	    res.joint_constraint[i].value.resize(joint->usedParams);
 	    res.joint_constraint[i].tolerance_above.resize(joint->usedParams, 0.0);
 	    res.joint_constraint[i].tolerance_below.resize(joint->usedParams, 0.0);

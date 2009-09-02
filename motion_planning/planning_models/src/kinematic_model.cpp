@@ -41,6 +41,27 @@
 #include <cmath>
 
 /* ------------------------ KinematicModel ------------------------ */
+planning_models::KinematicModel::KinematicModel(const KinematicModel &source)
+{
+    dimension_ = 0;
+    modelName_ = source.modelName_;
+    rootTransform_ = source.rootTransform_;
+    
+    if (source.root_)
+    {
+	root_ = copyRecursive(NULL, source.root_->after);
+	stateBounds_ = source.stateBounds_;
+	
+	std::vector<const JointGroup*> groups;
+	source.getGroups(groups);
+	std::map< std::string, std::vector<std::string> > groupContent;
+	for (unsigned int i = 0 ; i < groups.size() ; ++i)
+	    groupContent[groups[i]->name] = groups[i]->jointNames;
+	buildGroups(groupContent);
+    }
+    else
+	root_ = NULL;
+}
 
 planning_models::KinematicModel::KinematicModel(const urdf::Model &model, const std::map< std::string, std::vector<std::string> > &groups)
 {    
@@ -54,6 +75,13 @@ planning_models::KinematicModel::KinematicModel(const urdf::Model &model, const 
 	
 	if (root->name == "world")
 	{
+	    if (root->child_links.size() > 1)
+	    {
+		std::stringstream ss;
+		for (unsigned int i = 0 ; i < root->child_links.size() ; ++i)
+		    ss << " " << root->child_links[i]->name;		
+		ROS_WARN("More than one link connected to the world:%s. Only considering the first one", ss.str().c_str());
+	    }
 	    if (root->child_links.empty())
 	    {
 		root = NULL;
@@ -61,8 +89,6 @@ planning_models::KinematicModel::KinematicModel(const urdf::Model &model, const 
 	    }
 	    else
 		root = root->child_links[0].get();
-	    if (root->child_links.size() > 1)
-		ROS_WARN("More than one link connected to the world. Only considering the first one");
 	}
 	
 	if (root)
@@ -391,6 +417,16 @@ void planning_models::KinematicModel::computeTransforms(const double *params)
     }
 }
 
+const planning_models::KinematicModel::Joint* planning_models::KinematicModel::getRoot(void) const
+{
+    return root_;
+}
+
+planning_models::KinematicModel::Joint* planning_models::KinematicModel::getRoot(void)
+{						
+    return root_;
+}
+
 bool planning_models::KinematicModel::hasJoint(const std::string &name) const
 {
     return jointMap_.find(name) != jointMap_.end();
@@ -524,6 +560,105 @@ void planning_models::KinematicModel::getJointNames(std::vector<std::string> &jo
     joints.reserve(jointList_.size());
     for (unsigned int i = 0 ; i < jointList_.size() ; ++i)
 	joints.push_back(jointList_[i]->name);
+}
+
+planning_models::KinematicModel::Joint* planning_models::KinematicModel::copyRecursive(Link *parent, const Link *link)
+{
+    Joint *joint = copyJoint(link->before);
+    joint->stateIndex = dimension_;
+    jointMap_[joint->name] = joint;
+    jointList_.push_back(joint);
+    jointIndex_.push_back(dimension_);
+    dimension_ += joint->usedParams;
+    joint->before = parent;
+    joint->after = copyLink(link);
+    linkMap_[joint->after->name] = joint->after;
+    joint->after->before = joint;
+    
+    if (dynamic_cast<FloatingJoint*>(joint))
+	floatingJoints_.push_back(joint->name);
+    if (dynamic_cast<PlanarJoint*>(joint))
+	planarJoints_.push_back(joint->name);
+    
+    for (unsigned int i = 0 ; i < link->after.size() ; ++i)
+	joint->after->after.push_back(copyRecursive(joint->after, link->after[i]->after));
+    
+    return joint;
+}
+
+planning_models::KinematicModel::Link* planning_models::KinematicModel::copyLink(const Link *link)
+{
+    Link *newLink = new Link(this);
+    
+    newLink->name = link->name;
+    newLink->constTrans = link->constTrans;
+    newLink->constGeomTrans = link->constGeomTrans;
+    newLink->globalTransFwd = link->globalTransFwd;
+    newLink->globalTrans = link->globalTrans;
+    newLink->shape = shapes::cloneShape(link->shape);
+    
+    for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
+    {
+        AttachedBody *ab = new AttachedBody(newLink);
+        ab->attachTrans = link->attachedBodies[i]->attachTrans;
+        ab->shape = shapes::cloneShape(link->attachedBodies[i]->shape);
+        ab->globalTrans = link->attachedBodies[i]->globalTrans;
+        ab->touchLinks = link->attachedBodies[i]->touchLinks;
+        newLink->attachedBodies.push_back(ab);
+    }
+    
+    return newLink;
+}
+
+planning_models::KinematicModel::Joint* planning_models::KinematicModel::copyJoint(const Joint *joint)
+{
+    Joint *newJoint = NULL;
+
+    if (dynamic_cast<const FixedJoint*>(joint))
+    {
+        newJoint = new FixedJoint(this);
+    }
+    else
+    if (dynamic_cast<const FloatingJoint*>(joint))
+    {
+        newJoint = new FloatingJoint(this);
+    }
+    else
+    if (dynamic_cast<const PlanarJoint*>(joint))
+    {
+        newJoint = new PlanarJoint(this);
+    }
+    else
+    if (dynamic_cast<const PrismaticJoint*>(joint))
+    {
+        PrismaticJoint *pj = new PrismaticJoint(this);
+        const PrismaticJoint *src = static_cast<const PrismaticJoint*>(joint);
+        pj->axis = src->axis;
+        pj->hiLimit = src->hiLimit;
+        pj->lowLimit = src->lowLimit;
+        newJoint = pj;
+    }
+    else
+    if (dynamic_cast<const RevoluteJoint*>(joint))
+    {
+        RevoluteJoint *pj = new RevoluteJoint(this);
+        const RevoluteJoint *src = static_cast<const RevoluteJoint*>(joint);
+        pj->axis = src->axis;
+        pj->continuous = src->continuous;
+	pj->hiLimit = src->hiLimit;
+        pj->lowLimit = src->lowLimit;
+        newJoint = pj;
+    }
+    else
+        ROS_FATAL("Unimplemented type of joint");
+    
+    if (newJoint)
+    {
+        newJoint->name = joint->name;
+        newJoint->varTrans = joint->varTrans;
+    }
+    
+    return newJoint;
 }
 
 void planning_models::KinematicModel::printModelInfo(std::ostream &out) const
@@ -710,7 +845,7 @@ planning_models::KinematicModel::JointGroup::JointGroup(KinematicModel *model, c
 	jointNames[i] = joints[i]->name;
 	jointIndex[i] = dimension;
 	dimension += joints[i]->usedParams;
-	jointMap_[jointNames[i]] = i;
+	jointMap[jointNames[i]] = i;
 
 	for (unsigned int k = 0 ; k < joints[i]->usedParams ; ++k)
 	{
@@ -746,7 +881,19 @@ planning_models::KinematicModel::JointGroup::~JointGroup(void)
 
 bool planning_models::KinematicModel::JointGroup::hasJoint(const std::string &joint) const
 {
-    return jointMap_.find(joint) != jointMap_.end();
+    return jointMap.find(joint) != jointMap.end();
+}
+
+int planning_models::KinematicModel::JointGroup::getJointPosition(const std::string &joint) const
+{
+    std::map<std::string, unsigned int>::const_iterator it = jointMap.find(joint);
+    if (it != jointMap.end())
+	return it->second;
+    else
+    {
+	ROS_ERROR("Joint '%s' is not part of group '%s'", joint.c_str(), name.c_str());
+	return -1;
+    }
 }
 
 void planning_models::KinematicModel::JointGroup::computeTransforms(const double *params)

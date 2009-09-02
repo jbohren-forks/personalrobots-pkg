@@ -57,15 +57,14 @@ void spinThread(void)
 
 void printJoints(const planning_environment::KinematicModelStateMonitor &km, const std::vector<std::string> &names)
 {
-    const planning_models::KinematicModel::ModelInfo &mi = km.getKinematicModel()->getModelInfo();
-    
+    const std::vector<double> &bounds = km.getKinematicModel()->getStateBounds();
+
     for (unsigned int i = 0 ; i < names.size(); ++i)
     {
-	int idx = km.getKinematicModel()->getJointIndex(names[i]);
-	std::cout << "  " << i << " = " << names[i] << "  [" << mi.stateBounds[idx * 2] << ", " << mi.stateBounds[idx * 2 + 1] << "]" << std::endl;
+	int idx = km.getKinematicModel()->getJoint(names[i])->stateIndex;
+	std::cout << "  " << i << " = " << names[i] << "  [" << bounds[idx * 2] << ", " << bounds[idx * 2 + 1] << "]" << std::endl;
     }
 }
-
 
 int main(int argc, char **argv)
 {

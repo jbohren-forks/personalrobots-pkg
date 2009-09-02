@@ -67,7 +67,7 @@ namespace ompl_planning
 	bool isRequestValid(ModelMap &models, motion_planning_msgs::GetMotionPlan::Request &req);
 
 	/** \brief Check and compute a motion plan. Return true if the plan was succesfully computed */
-	bool computePlan(ModelMap &models, const planning_models::StateParams *start, double stateDelay,
+	bool computePlan(ModelMap &models, const planning_models::KinematicState *start, double stateDelay,
 			 motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res);
 
 	/** \brief Enable callback for when a motion plan computation is completed */
@@ -83,7 +83,7 @@ namespace ompl_planning
 	};	
 	
 	/** \brief Set up all the data needed by motion planning based on a request */
-	void configure(const planning_models::StateParams *startState, motion_planning_msgs::GetMotionPlan::Request &req, PlannerSetup *psetup);
+	void configure(const planning_models::KinematicState *startState, motion_planning_msgs::GetMotionPlan::Request &req, PlannerSetup *psetup);
 
 	/** \brief Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
 	bool callPlanner(PlannerSetup *psetup, int times, double allowed_time, Solution &sol);
@@ -92,7 +92,7 @@ namespace ompl_planning
 	void setWorkspaceBounds(motion_planning_msgs::KinematicSpaceParameters &params, ompl_ros::ModelBase *ompl_model);
 	
 	/** \brief Fill the response with solution data */
-	void fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, double stateDelay,
+	void fillResult(PlannerSetup *psetup, const planning_models::KinematicState *start, double stateDelay,
 			motion_planning_msgs::GetMotionPlan::Response &res, const Solution &sol);
 
 	/** \brief Fix the input states, if they are not valid */

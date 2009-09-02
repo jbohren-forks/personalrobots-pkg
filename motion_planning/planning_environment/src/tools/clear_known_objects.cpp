@@ -116,7 +116,7 @@ private:
 	    body = NULL;
 	}
 	
-	void usePose(btTransform &pose)
+	void usePose(const btTransform &pose)
 	{
 	    body->setPose(pose);
 	    body->computeBoundingSphere(bsphere);
@@ -340,7 +340,7 @@ private:
     {
 	updateObjects_.lock();
 	attached_.clear();
-	std::vector<planning_models::KinematicModel::Link*> links;
+	std::vector<const planning_models::KinematicModel::Link*> links;
 	rm_->getKinematicModel()->getLinks(links);
 	for (unsigned int i = 0 ; i < links.size() ; ++i)
 	    for (unsigned int j = 0 ; j < links[i]->attachedBodies.size() ; ++j)
@@ -357,22 +357,22 @@ private:
 	updateObjects_.unlock();
     }
     
-    ros::NodeHandle                                              nh_;
-    tf::TransformListener                                        tf_;
-    planning_environment::RobotModels                           *rm_;
-    planning_environment::KinematicModelStateMonitor            *kmsm_;
-    tf::MessageNotifier<sensor_msgs::PointCloud>                 *cloudNotifier_;
-    tf::MessageNotifier<mapping_msgs::ObjectInMap>              *objectInMapNotifier_;
-    std::string                                                  fixed_frame_;
-    boost::mutex                                                 updateObjects_;
-    ros::Publisher                                               cloudPublisher_;    
+    ros::NodeHandle                                                    nh_;
+    tf::TransformListener                                              tf_;
+    planning_environment::RobotModels                                 *rm_;
+    planning_environment::KinematicModelStateMonitor                  *kmsm_;
+    tf::MessageNotifier<sensor_msgs::PointCloud>                      *cloudNotifier_;
+    tf::MessageNotifier<mapping_msgs::ObjectInMap>                    *objectInMapNotifier_;
+    std::string                                                        fixed_frame_;
+    boost::mutex                                                       updateObjects_;
+    ros::Publisher                                                     cloudPublisher_;    
 
-    std::string                                                  sensor_frame_;
-    double                                                       scale_;
-    double                                                       padd_;
-    std::vector<planning_models::KinematicModel::AttachedBody*>  attached_;
-    std::vector<KnownObject>                                     attachedObjects_;
-    std::map<std::string, KnownObject>                           objectsInMap_;
+    std::string                                                        sensor_frame_;
+    double                                                             scale_;
+    double                                                             padd_;
+    std::vector<const planning_models::KinematicModel::AttachedBody*>  attached_;
+    std::vector<KnownObject>                                           attachedObjects_;
+    std::map<std::string, KnownObject>                                 objectsInMap_;
 };
 
    

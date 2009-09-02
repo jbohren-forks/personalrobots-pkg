@@ -41,49 +41,52 @@
 void ompl_ros::ROSSpaceInformationKinematic::configureOMPLSpace(ModelBase *model)
 {	   
     kmodel_ = model->planningMonitor->getKinematicModel();
-    groupID_ = model->groupID;
+    groupName_ = model->groupName;
     divisions_ = 100;
     
     /* compute the state space for this group */
-    m_stateDimension = kmodel_->getModelInfo().groupStateIndexList[groupID_].size();
+    m_stateDimension = model->group->dimension;
     m_stateComponent.resize(m_stateDimension);
-    
+
     for (unsigned int i = 0 ; i < m_stateDimension ; ++i)
     {	
-	int p = kmodel_->getModelInfo().groupStateIndexList[groupID_][i] * 2;
-	
+	int p = model->group->stateIndex[i] * 2;
+	m_stateComponent[i].minValue = kmodel_->getStateBounds()[p    ];
+	m_stateComponent[i].maxValue = kmodel_->getStateBounds()[p + 1];
+	m_stateComponent[i].resolution = (m_stateComponent[i].maxValue - m_stateComponent[i].minValue) / divisions_;
+    }
+    
+    for (unsigned int i = 0 ; i < model->group->joints.size() ; ++i)
+    {	
 	if (m_stateComponent[i].type == ompl::base::StateComponent::UNKNOWN)
 	{
+	    unsigned int k = model->group->jointIndex[i];
 	    planning_models::KinematicModel::RevoluteJoint *rj = 
-		dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(kmodel_->getJoint(kmodel_->getModelInfo().parameterName[p]));
+		dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(model->group->joints[i]);
 	    if (rj && rj->continuous)
-		m_stateComponent[i].type = ompl::base::StateComponent::WRAPPING_ANGLE;
+		m_stateComponent[k].type = ompl::base::StateComponent::WRAPPING_ANGLE;
 	    else
-		m_stateComponent[i].type = ompl::base::StateComponent::LINEAR;
+		m_stateComponent[k].type = ompl::base::StateComponent::LINEAR;
 	}
 	
-	m_stateComponent[i].minValue   = kmodel_->getModelInfo().stateBounds[p    ];
-	m_stateComponent[i].maxValue   = kmodel_->getModelInfo().stateBounds[p + 1];
-	m_stateComponent[i].resolution = (m_stateComponent[i].maxValue - m_stateComponent[i].minValue) / divisions_;
+	if (dynamic_cast<planning_models::KinematicModel::FloatingJoint*>(model->group->joints[i]))
+	{
+	    unsigned int k = model->group->jointIndex[i];
+	    floatingJoints_.push_back(k);
+	    m_stateComponent[k + 3].type = ompl::base::StateComponent::QUATERNION;
+	    m_stateComponent[k + 4].type = ompl::base::StateComponent::QUATERNION;
+	    m_stateComponent[k + 5].type = ompl::base::StateComponent::QUATERNION;
+	    m_stateComponent[k + 6].type = ompl::base::StateComponent::QUATERNION;
+	    break;
+	}
 	
-	for (unsigned int j = 0 ; j < kmodel_->getModelInfo().floatingJoints.size() ; ++j)
-	    if (kmodel_->getModelInfo().floatingJoints[j] == p)
-	    {
-		floatingJoints_.push_back(i);
-		m_stateComponent[i + 3].type = ompl::base::StateComponent::QUATERNION;
-		m_stateComponent[i + 4].type = ompl::base::StateComponent::QUATERNION;
-		m_stateComponent[i + 5].type = ompl::base::StateComponent::QUATERNION;
-		m_stateComponent[i + 6].type = ompl::base::StateComponent::QUATERNION;
-		break;
-	    }
-	
-	for (unsigned int j = 0 ; j < kmodel_->getModelInfo().planarJoints.size() ; ++j)
-	    if (kmodel_->getModelInfo().planarJoints[j] == p)
-	    {
-		planarJoints_.push_back(i);
-		m_stateComponent[i + 2].type = ompl::base::StateComponent::WRAPPING_ANGLE;
-		break;		    
-	    }
+	if (dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(model->group->joints[i]))
+	{
+	    unsigned int k = model->group->jointIndex[i];
+	    planarJoints_.push_back(k);
+	    m_stateComponent[k + 2].type = ompl::base::StateComponent::WRAPPING_ANGLE;
+	    break;		    
+	}
     }
     
     // create a backup of this, in case it gets bound by joint constraints
@@ -164,7 +167,7 @@ void ompl_ros::ROSSpaceInformationKinematic::setPathConstraints(const motion_pla
     for (unsigned int i = 0 ; i < jc.size() ; ++i)
     {
 	// get the index at which the joint parameters start
-	int idx = kmodel_->getJointIndexInGroup(jc[i].joint_name, groupID_);
+	int idx = kmodel_->getGroup(groupName_)->getJointPosition(jc[i].joint_name);
 	if (idx >= 0)
 	{
 	    unsigned int usedParams = kmodel_->getJoint(jc[i].joint_name)->usedParams;

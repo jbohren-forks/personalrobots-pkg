@@ -53,6 +53,9 @@ namespace ompl_ros
     {
 	collision_space::EnvironmentModel                           *collisionSpace;
 	planning_models::KinematicModel                             *kmodel;
+	
+	/** \brief The group instance */
+	planning_models::KinematicModel::JointGroup                 *group;
 	const planning_environment::KinematicConstraintEvaluatorSet *constraintEvaluator;	
     };
     
@@ -79,9 +82,9 @@ namespace ompl_ros
 	
 	/** \brief The group name */
 	std::string                                                 groupName;
-
-	/** \brief The group ID */
-	int                                                         groupID;
+	
+	/** \brief The group instance */
+	planning_models::KinematicModel::JointGroup                *group;
 	
 	/** \brief The instance of the space information maintained for this group. si->setup() will need to be called after configure() */
 	ompl::base::SpaceInformation                               *si;

@@ -37,6 +37,7 @@
 #include <ros/ros.h>
 #include <motion_planning_msgs/GetMotionPlan.h>
 #include <planning_environment/models/robot_models.h>
+#include <planning_models/kinematic_state.h>
 
 class FakeMotionPlanner
 {
@@ -63,10 +64,10 @@ private:
 	    if (req.goal_constraints.joint_constraint.empty())
 		return false;
 	    
-	    std::vector<std::string> joints;
-	    rm_.getKinematicModel()->getJointsInGroup(joints, req.params.model_id.c_str());
-	    if (joints.empty())
+	    const planning_models::KinematicModel::JointGroup *jg = rm_.getKinematicModel()->getGroup(req.params.model_id);
+	    if (!jg)
 		return false;
+	    std::vector<std::string> joints = jg->jointNames;
 	    
 	    res.approximate = 0;
 	    res.distance = 0.0;
@@ -76,7 +77,7 @@ private:
 	    res.path.names = joints;
 	    res.path.states.resize(2);
 	    
-	    planning_models::StateParams *sp = rm_.getKinematicModel()->newStateParams();
+	    planning_models::KinematicState *sp = new planning_models::KinematicState(rm_.getKinematicModel().get());
 	    
 	    for (unsigned int i = 0 ; i < req.start_state.size() ; ++i)
 		sp->setParamsJoint(req.start_state[i].value, req.start_state[i].joint_name);

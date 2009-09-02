@@ -109,9 +109,9 @@ public:
 
 private:
 
-    planning_models::StateParams* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given)
+    planning_models::KinematicState* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given)
     {
-	planning_models::StateParams *s = planningMonitor_->getKinematicModel()->newStateParams();
+	planning_models::KinematicState *s = new planning_models::KinematicState(planningMonitor_->getKinematicModel());
 	for (unsigned int i = 0 ; i < given.size() ; ++i)
 	{	
 	    if (!planningMonitor_->getTransformListener()->frameExists(given[i].header.frame_id))
@@ -131,7 +131,7 @@ private:
 	    if (planningMonitor_->haveState())
 	    {
 		ROS_INFO("Using the current state to fill in the starting state for the motion plan");
-		std::vector<planning_models::KinematicModel::Joint*> joints;
+		std::vector<const planning_models::KinematicModel::Joint*> joints;
 		planningMonitor_->getKinematicModel()->getJoints(joints);
 		for (unsigned int i = 0 ; i < joints.size() ; ++i)
 		    if (!s->seenJoint(joints[i]->name))
@@ -158,7 +158,7 @@ private:
 	res.distance = -1.0;
 	res.approximate = 0;
 	
-	planning_models::StateParams *startState = fillStartState(req.start_state);
+	planning_models::KinematicState *startState = fillStartState(req.start_state);
 	
 	if (startState)
 	{

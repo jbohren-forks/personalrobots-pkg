@@ -35,56 +35,10 @@
 /** \author Ioan Sucan */
 
 #include "planning_environment/models/robot_models.h"
-#include <planning_models/output.h>
 #include <ros/console.h>
 
 #include <boost/algorithm/string.hpp>
 #include <sstream>
-
-// make sure messages from planning_environments & collision_space go to ROS console
-namespace planning_environment
-{    
-    class OutputHandlerROScon : public planning_models::msg::OutputHandler
-    {
-    public:
-	
-	OutputHandlerROScon(void) : OutputHandler()
-	{
-	    planning_models::msg::useOutputHandler(this);		
-	}
-	
-	~OutputHandlerROScon(void)
-	{
-	    planning_models::msg::noOutputHandler();
-	}
-	
-	/** Issue a ROS error */
-	virtual void error(const std::string &text)
-	{
-	    ROS_ERROR("%s", text.c_str());
-	}	    
-	
-	/** Issue a ROS warning */
-	virtual void warn(const std::string &text)
-	{
-	    ROS_WARN("%s", text.c_str());
-	}
-	
-	/** Issue ROS info */
-	virtual void inform(const std::string &text)
-	{
-	    ROS_INFO("%s", text.c_str());
-	}	    
-	
-	/** Issue ROS debug */
-	virtual void message(const std::string &text)
-	{
-	    ROS_DEBUG("%s", text.c_str());
-	}
-    };
-    
-    static OutputHandlerROScon _outputROS;
-}
 
 void planning_environment::RobotModels::reload(void)
 {
@@ -101,20 +55,13 @@ void planning_environment::RobotModels::loadRobot(void)
     std::string content;
     if (nh_.getParam(description_, content))
     {
-	urdf_ = boost::shared_ptr<robot_desc::URDF>(new robot_desc::URDF());
-	if (urdf_->loadString(content.c_str()))
+	urdf_ = boost::shared_ptr<urdf::Model>(new urdf::Model());
+	if (urdf_->initString(content))
 	{
 	    loaded_models_ = true;
 	    getPlanningGroups(planning_groups_);
-	    kmodel_ = boost::shared_ptr<planning_models::KinematicModel>(new planning_models::KinematicModel());
-	    kmodel_->setVerbose(false);
-	    kmodel_->build(*urdf_, planning_groups_);
-
-	    // make sure the kinematic model is in the frame of the link that connects it to the environment
-	    // (remove all transforms caused by planar or floating
-	    // joints)
+	    kmodel_ = boost::shared_ptr<planning_models::KinematicModel>(new planning_models::KinematicModel(*urdf_, planning_groups_));
 	    kmodel_->defaultState();
-
 	    getCollisionCheckLinks(collision_check_links_);	
 	    getSelfCollisionGroups(self_collision_check_groups_);
 	}
@@ -141,18 +88,18 @@ void planning_environment::RobotModels::getPlanningGroups(std::map< std::string,
 	group_list_stream >> name;
 	if (name.size() == 0)
 	    continue;
-	nh_.param(description_ + "_planning/groups/" + name + "/links", group_elems, std::string(""));	
+	nh_.param(description_ + "_planning/groups/" + name + "/joints", group_elems, std::string(""));	
 	std::stringstream group_elems_stream(group_elems);
 	while (group_elems_stream.good() && !group_elems_stream.eof())
 	{
-	    std::string link_name;
-	    group_elems_stream >> link_name;
-	    if (link_name.size() == 0)
+	    std::string joint_name;
+	    group_elems_stream >> joint_name;
+	    if (joint_name.size() == 0)
 		continue;
-	    if (urdf_->getLink(link_name))
-		groups[name].push_back(link_name);
+	    if (urdf_->getJoint(joint_name))
+		groups[name].push_back(joint_name);
 	    else
-		ROS_ERROR("Unknown link: '%s'", link_name.c_str());
+		ROS_ERROR("Unknown joint: '%s'", joint_name.c_str());
 	}
     }
 }

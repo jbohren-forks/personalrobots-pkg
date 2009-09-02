@@ -52,8 +52,8 @@ TEST(ForwardKinematics, RuntimeArm)
     planning_environment::RobotModels m("robot_description");
     planning_models::KinematicModel* kmodel = m.getKinematicModel().get();
     
-    int gid = kmodel->getGroupID("right_arm");
-    unsigned int dim = kmodel->getGroupDimension(gid);
+    planning_models::KinematicModel::JointGroup *group = kmodel->getGroup("right_arm");
+    unsigned int dim = group->dimension;
     double params[dim];
     for (unsigned int i = 0 ; i < dim ; ++i)
 	params[dim] = 0.1;
@@ -61,7 +61,7 @@ TEST(ForwardKinematics, RuntimeArm)
     ros::WallTime tm = ros::WallTime::now();
     const unsigned int NT = 100000;  
     for (unsigned int i = 0 ; i < NT ; ++i)
-	kmodel->computeTransformsGroup(params, gid);
+	group->computeTransforms(params);
     double fps = (double)NT / (ros::WallTime::now() - tm).toSec();
     ROS_INFO("%f forward kinematics steps per second", fps);
     

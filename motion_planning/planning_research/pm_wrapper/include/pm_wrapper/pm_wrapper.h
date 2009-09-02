@@ -51,7 +51,6 @@ This package is only temporary. I'll eventually replace it with a better solutio
 #include <planning_environment/models/collision_models.h>
 #include <motion_planning_msgs/KinematicJoint.h>
 #include <motion_planning_msgs/GetMotionPlan.h>
-#include <planning_models/kinematic_state_params.h>
 #include <mapping_msgs/CollisionMap.h>
 #include <collision_space/environment.h>
 #include <geometric_shapes/shapes.h>
@@ -59,7 +58,7 @@ This package is only temporary. I'll eventually replace it with a better solutio
 #include <ompl_ros/ModelKinematic.h>
 #include <ompl/extension/kinematic/PathSmootherKinematic.h>
 #include <ompl/extension/kinematic/PathKinematic.h>
-#include <planning_models/kinematic_state_params.h>
+#include <planning_models/kinematic_state.h>
 #include <ompl/base/State.h>
 
 class pm_wrapper
@@ -112,13 +111,13 @@ class pm_wrapper
 		
 		mapping_msgs::CollisionMap col_map_;
 
-		planning_models::StateParams *start_state_;
+		planning_models::KinematicState *start_state_;
 
 		std::string group_name_;
 
 		std::string robot_description_;
 		
-		int groupID_;
+		planning_models::KinematicModel::JointGroup *group_;
 
 		std::string planning_frame_;
 		
@@ -139,7 +138,7 @@ class pm_wrapper
 		void publishMapWithoutObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
 
 		/** \brief Fill the start state of the planning monitor with the current state of the robot in the request message */
-		planning_models::StateParams* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given);
+		planning_models::KinematicState* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given);
 
 		void setRobotJointStates(const std::vector<std::string> &joint_names, const std::vector<double> &params);
 };
