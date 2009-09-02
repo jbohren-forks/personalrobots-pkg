@@ -1,0 +1,18 @@
+<launch>
+
+<include file="$(find stereo_image_proc)/narrow_stereoproc.launch" />
+
+<node pkg="planar_objects" type="box_tracker" name="box_tracker" output="screen">
+</node>
+
+<node pkg="planar_objects" type="track_visualizer" name="track_visualizer" output="screen">
+</node>
+
+<node pkg="planar_objects" type="articulation_learner" name="articulation_learner" output="screen">
+</node>
+
+<node pkg="rosrecord" type="rosplay" name="rosplay" args="-r 10 /home/lollypop/sturm/bags/output/door-simple_2009-08-28-18-01-24-topic.bag"/>
+
+<node pkg="rviz" type="rviz"/>
+
+</launch>

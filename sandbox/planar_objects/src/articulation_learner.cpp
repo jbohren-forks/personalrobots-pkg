@@ -38,8 +38,8 @@ ArticulationLearner::ArticulationLearner() :
 
 	nh.param("~dist_vis", dist_vis, 0.02);
 
-	nh.param("~thres_trans", thres_trans, 0.1);
-	nh.param("~thres_rot", thres_rot, 360.0 / 180.0 * M_PI);
+	nh.param("~thres_trans", thres_trans, 0.05);
+	nh.param("~thres_rot", thres_rot, 10.0 / 180.0 * M_PI);
 
 	// subscribe to topics
 	tracks_sub = nh.subscribe("box_tracker/tracks", 1, sync.synchronize(
@@ -66,7 +66,7 @@ void ArticulationLearner::syncCallback() {
 
 	tracks.clear(); // forget everything
 	for (size_t i = 0; i < tracks_msg->tracks.size(); i++) {
-		for (int j = 0; j < 1; j++) {
+		for (int j = 0; j < 4; j++) {
 			tracks.push_back(btBoxTrack(tracks_msg->tracks[i],
 					tracks_msg->header.stamp, j));
 		}
