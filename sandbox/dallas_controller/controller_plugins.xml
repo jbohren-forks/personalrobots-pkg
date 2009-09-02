@@ -1,3 +1,0 @@
-<library path="lib/libdallas_controller">
-  <class name="DallasController" type="controller::DallasController" base_class_type="controller::Controller" />
-</library>
