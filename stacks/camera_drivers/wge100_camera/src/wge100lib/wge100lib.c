@@ -383,10 +383,11 @@ int wge100Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddre
     ifNames[0] = ifName;
   else
   {
-    for (i = 0, curif = ifaces; curif; i++, curif = curif->ifa_next)
-    {
-      //fprintf(stderr, "Adding %s to discover list.\n", curif->ifa_name);
-      ifNames[i] = curif->ifa_name;
+     for (numif = 0, curif = ifaces; curif; curif = curif->ifa_next)
+     {
+       //fprintf(stderr, "Adding %s to discover list.\n", curif->ifa_name);
+       if (curif->ifa_addr->sa_family == AF_INET)
+         ifNames[numif++] = curif->ifa_name;
     }
   }
 
