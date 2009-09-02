@@ -23,7 +23,7 @@ var LaunchButtonWidget = Class.create({
     //this.pump.service_call("status_update", []);
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     if(msg.taskid != this.taskid) return;
 
     var prev_state = this.state;
@@ -81,7 +81,7 @@ var LaunchButtonWidget2 = Class.create({
     this.set_state();
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     if(msg.taskid != this.taskid) return;
 
     var prev_state = this.state;
@@ -138,7 +138,7 @@ var ActiveTasks = Class.create({
     this.domobj.innerHTML = "";
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
       var s = "";
       for(var i=0; i<msg.active.length; i++) {
         s = s + "|" + "<a href='/webui/app/" + msg.active[i].taskid + "'>" + msg.active[i].name + "</a>";

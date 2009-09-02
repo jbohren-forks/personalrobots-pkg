@@ -18,7 +18,7 @@
 <table width=80% align=center>
 <tr>
 <td>
-<div style="position:absolute;overflow:hidden;width:80%;height:600;border:red 2px solid" objtype=MapViewer topic="/move_base/TrajectoryPlannerROS/robot_footprint,/move_base/NavfnROS/plan"></div><br>
+<div style="position:absolute;overflow:hidden;width:80%;height:600;border:2px solid" objtype=MapViewer></div><br>
 </td>
 </table>
 

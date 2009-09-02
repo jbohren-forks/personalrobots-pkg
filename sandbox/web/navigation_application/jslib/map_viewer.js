@@ -45,7 +45,9 @@ var MapTile = Class.create({
 var MapViewer = Class.create({
     initialize: function(domobj) {
         this.viewer = domobj;
-        this.topics = domobj.getAttribute("topic").split(',');
+        //this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan'];
+        //this.topics = ['/robot_pose_visualization', '/move_base/TrajectoryPlannerROS/robot_footprint'];
+        this.topics = ['/robot_pose_visualization'];
     },
 
     init: function() {
@@ -84,12 +86,15 @@ var MapViewer = Class.create({
         this.panning = false;
         this.settingGoal = false;
         this.settingPose = false;
+
+        this.robot_img = new Image();
+        this.robot_img.src = window.location.pathname + '/images/pr2_small.png';
     },
 
     handleDblClick : function(e) {
         if (Event.isLeftClick(e)) {
             var off = this.viewer.cumulativeOffset();
-            this.zoom(-0.25,
+            this.zoom(e.ctrlKey ? 0.25 : -0.25,
                       Event.pointerX(e) - off.left,
                       Event.pointerY(e) - off.top);
         }
@@ -137,31 +142,41 @@ var MapViewer = Class.create({
             this.panMap(-10, 0);
         } else if (e.keyCode == 38) { // Up
             if (e.ctrlKey)
-                this.zoom(-0.25, 0, 0);
+                this.zoom(-0.25, this.dim.width/2, this.dim.height/2);
             else
                 this.panMap(0, -10);
         } else if (e.keyCode == 39) { // Right
             this.panMap(10, 0);
         } else if (e.keyCode == 40) { // Down
             if (e.ctrlKey)
-                this.zoom(0.25, 0, 0);
+                this.zoom(0.25, this.dim.width/2, this.dim.height/2);
             else
                 this.panMap(0, 10);
         }
     },
 
     zoom : function(factor, center_x, center_y) {
+        var center = this.pixelToMap([center_x, center_y]);
         this.scale += factor;
+
+        var x = Math.floor(center.x / this.scale / this.sourceResolution);
+        var y = this.sourceHeight / this.scale - Math.floor(center.y / this.scale / this.sourceResolution);
+
+        this.panMap(this.dim.width/2-x, this.dim.height/2-y, false);
         for (var i = 0; i < this.tiles.length; ++i) {
             var tile = this.tiles[i];
             tile.rescale(this.scale);
         }
-        this.drawRobot();
+        this.updateCanvas();
     }, 
 
-    panMap : function(x, y) {
-        var left = parseInt(this.panner.style.left) + x;
-        var top = parseInt(this.panner.style.top) + y;
+    panMap : function(x, y, relative) {
+        var left = x;
+        var top = y;
+        if (typeof(relative) != 'undefined' ? relative : true) {
+            left = parseInt(this.panner.style.left) + x;
+            top = parseInt(this.panner.style.top) + y;
+        }
         if (left > 0) left = 0;
         if (top > 0) top = 0;
         if (left < (this.dim.width - this.sourceWidth/this.scale))
@@ -186,7 +201,7 @@ var MapViewer = Class.create({
                 dy -= this.tilesHigh * this.tileHeight;
             if (dx || dy) tile.move(dx, dy);
         }
-        this.drawRobot();
+        this.updateCanvas();
     },
 
     pixelToMap: function(p) {
@@ -206,9 +221,31 @@ var MapViewer = Class.create({
         return [x, y];
     },
 
-    drawRobot: function() {
+    updateCanvas: function() {
         var ctx = this.canvas.getContext('2d');
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (0) {
+            ctx.strokeStyle = "rgb(0, 0, 255)";
+            ctx.beginPath();
+            ctx.moveTo(this.canvas.width/2 - 5, this.canvas.height/2 - 0);
+            ctx.lineTo(this.canvas.width/2 + 5, this.canvas.height/2 - 0);
+            ctx.moveTo(this.canvas.width/2 - 0, this.canvas.height/2 - 5);
+            ctx.lineTo(this.canvas.width/2 - 0, this.canvas.height/2 + 5);
+            ctx.stroke();
+        }
+
+        if (this.robot) {
+            var coords = this.mapToPixel(this.robot);
+            ctx.save();
+            ctx.translate(coords[0], coords[1]);
+            ctx.rotate(this.robot.angle);
+            var sx = 0.65 / (this.robot_img.width * this.sourceResolution * this.scale);
+            var sy = 0.65 / (this.robot_img.height * this.sourceResolution * this.scale);
+            ctx.scale(sx, sy);
+            ctx.drawImage(this.robot_img, -this.robot_img.width / 2, -this.robot_img.height / 2);
+            ctx.restore();
+        }
 
         // Draw plan
         if (this.plan) {
@@ -238,15 +275,40 @@ var MapViewer = Class.create({
         }
     },
 
-    receive: function(msg) {
-        var ctx = this.canvas.getContext('2d');
-        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        if (msg.polygon) {
-            this.footprint = msg.polygon.points;
-        } else if (msg.poses) {
+    quaternionToEuler: function (q)
+    {
+        result = {'r':0.0, 'p':0.0, 'y':0.0};
+
+        var sqw = q.w * q.w;
+        var sqx = q.x * q.x;
+        var sqy = q.y * q.y;
+        var sqz = q.z * q.z;
+
+        // Roll
+        result.r = Math.atan2(2 * (q.y*q.z + q.w*q.x), sqw - sqx - sqy + sqz);
+
+        // Pitch
+        result.p = Math.asin(-2 * (q.x*q.z - q.w * q.y));
+
+        // Yaw
+        result.y = Math.atan2(2 * (q.x*q.y + q.w*q.z), sqw + sqx - sqy - sqz);
+
+        return result;
+    },
+
+    receive: function(topic, msg) {
+        if (topic == '/robot_pose_visualization') {
+          var angle = -this.quaternionToEuler(msg.pose.orientation).y;
+          this.robot = {'x': msg.pose.position.x,
+                        'y': msg.pose.position.y,
+                        'angle': angle};
+        } else if (topic == '/move_base/NavfnROS/plan') {
+            ros_debug('new plan: ' + msg.poses.length + ' poses');
             this.plan = msg.poses;
+        } else if (topic == '/move_base/TrajectoryPlannerROS/robot_footprint') {
+            this.footprint = msg.polygon.points;
         }
-        this.drawRobot();
+        this.updateCanvas();
     },
 
 });

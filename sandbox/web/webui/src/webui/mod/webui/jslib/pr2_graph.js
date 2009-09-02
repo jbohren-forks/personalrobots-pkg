@@ -36,7 +36,7 @@ var PowerboardGraphWidget = Class.create({
     this.chart.draw(this.data, this.options);
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     var pbmsg = msg.status[0]
     if(pbmsg.name == "Power board 0") {
       if(this.data.getNumberOfRows() > 60) {
@@ -93,7 +93,7 @@ var PowerboardGraph2Widget = Class.create({
     this.chart.draw(this.data, this.options);
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     var pbmsg = msg.status[0]
     if(pbmsg.name == "Power board 0") {
       if(this.data.getNumberOfRows() > 60) {
@@ -153,7 +153,7 @@ var PowerboardGraph3Widget = Class.create({
     this.chart.draw(this.data, this.options);
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     if(this.data.getNumberOfRows() > 60) {
       this.data.removeRow(0);
     }
@@ -181,7 +181,7 @@ var PowerboardWidget = Class.create({
   init: function() {
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     var pbmsg = msg.status[0]
     if(pbmsg.name == "Power board 0") {
         var cb0 = pbmsg.strings[1].value + " @ " + pbmsg.values[4].value.toFixed(2) + "V";
@@ -235,7 +235,7 @@ var BatteryGauge = Class.create({
     this.chart.draw(this.data, this.options);
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     if(msg[this.key] != null) {
       var percent = 100. * parseFloat(msg[this.key]) / parseFloat(msg[this.key2]);
       this.data.setValue(0, 1, percent|0);

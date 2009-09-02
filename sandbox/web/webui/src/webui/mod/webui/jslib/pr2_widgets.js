@@ -43,7 +43,7 @@ var BatteryMonitor = Class.create({
     this.draw();
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     if(msg['energy_remaining'] != null) {
       this.percent = Math.round(100. * parseFloat(msg['energy_remaining']) / parseFloat(msg['energy_capacity']));
       if (this.percent > 100) this.percent = 100;
@@ -69,7 +69,7 @@ var CircuitMonitor = Class.create({
     this.domobj.innerHTML = html;
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     var html = '<span style="font-size:11px;position:relative;top:-3">Circuits:</span><span>';
     var states = msg['circuit_state'];
     for (var i = 0; i < 3; ++i) {
@@ -100,7 +100,7 @@ var ChargeMonitor = Class.create({
   init: function() {
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     var voltage = msg['input_voltage'];
     var src;
 

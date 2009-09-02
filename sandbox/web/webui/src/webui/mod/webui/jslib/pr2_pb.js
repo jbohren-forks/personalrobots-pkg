@@ -9,7 +9,7 @@ var PowerboardBreakerWidget = Class.create({
   init: function() {
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     var pbmsg = msg.status[0]
     if(pbmsg.name == "Power board 0") {
 	var state = null;
@@ -52,7 +52,7 @@ var PowerboardRunStopWidget = Class.create({
   init: function() {
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     var pbmsg = msg.status[0]
     if(pbmsg.name == "Power board 0") {
 	var estop_button_status = null;
@@ -112,7 +112,7 @@ var PowerboardRunStopWidget_Single = Class.create({
   init: function() {
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     var pbmsg = msg.status[0]
     if(pbmsg.name == "Power board 0") {
 	var estop_button_status = null;

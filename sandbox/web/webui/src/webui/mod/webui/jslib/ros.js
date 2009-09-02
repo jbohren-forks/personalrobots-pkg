@@ -87,7 +87,7 @@ var MessagePump = Class.create({
     if(listeners) {
       for(var j=0; j<listeners.length; j++) {
         try {
-          listeners[j].receive(msgEnv.msg);
+          listeners[j].receive(msgEnv.topic, msgEnv.msg);
         } catch (e) {
           ros_debug("Error with receiver.");
         }
@@ -215,7 +215,7 @@ var OnOffButtonWidget = Class.create({
     }
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     if(this.selector && this.selectorValue) {
       if(msg[this.selector] != this.selectorValue) return;
     }
@@ -260,7 +260,7 @@ var TextWidget = Class.create({
   init: function() {
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     if(!this.selector || !this.selectorValue) return;
 
     if(this.selector && this.selectorValue) {
@@ -290,7 +290,7 @@ var PercentTextWidget = Class.create({
   init: function() {
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     if(msg[this.key] != null) {
       var percent = parseFloat(msg[this.key]) / parseFloat(msg[this.key2]);
       this.domobj.innerHTML = (100. * percent).toFixed(2) + "%";
@@ -330,7 +330,7 @@ var ScrollingTextWidget = Class.create({
      this.textdiv.appendChild(d);      
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     this.new_message(msg);
     if(this.textdiv.childNodes.length > this.maxlines) {
       this.textdiv.removeChild(this.textdiv.childNodes[0]);
@@ -380,7 +380,7 @@ var ListWidget = Class.create({
     this.domobj.innerHTML = "";
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     if(msg[this.key] != null) {
       var lst = msg[this.key];
       var s = "";
@@ -413,7 +413,7 @@ var MessageWidget = Class.create({
     this.domobj.innerHTML = "";
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
       var s = "<ul>";
       for(var key in msg) {
         s = s + "<li>" + key + ": " + msg[key];
@@ -497,7 +497,7 @@ var RosOut_Widget = Class.create({
       //c.appendChild(tn);
   },
 
-  receive: function(msg) {
+  receive: function(topic, msg) {
     this.new_message(msg);
     if(this.tbl.rows.length > this.maxlines) {
       this.tbl.deleteRow(0);
