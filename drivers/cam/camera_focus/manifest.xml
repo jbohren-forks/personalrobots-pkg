@@ -9,7 +9,7 @@
   <url>http://pr.willowgarage.com/wiki/camera_focus</url>
   <depend package="wge100_camera"/>
   <depend package="dcam"/>
-  <rosdepend name="gnuplot"/>
+  <rosdep name="gnuplot"/>
 </package>
 
 

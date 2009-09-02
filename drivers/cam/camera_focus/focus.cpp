@@ -156,7 +156,7 @@ void callback2(const sensor_msgs::ImageConstPtr& msg)
     if (base[i] > msg->uint8_data.data[i])
       base[i] = msg->uint8_data.data[i];
   */
-  fprintf(gnuplotfile, "set yrange [0:255]\n");
+  fprintf(gnuplotfile, "set yrange [-1:255]\n");
   fprintf(gnuplotfile, "set terminal x11\n");
   fprintf(gnuplotfile, "plot \"-\" using 0:1 with lines\n");
   for (int y = sy + 1; y < ey - 1; y++)
