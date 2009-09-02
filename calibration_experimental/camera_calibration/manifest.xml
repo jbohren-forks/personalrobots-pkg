@@ -14,7 +14,7 @@
   <depend package="std_srvs"/>
   <depend package="sensor_msgs"/>
   <depend package="camera_calibration_parsers"/>
-  <depend package="topic_synchronizer2"/>
+  <!--depend package="topic_synchronizer2"/-->
 
   <export>
     <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcamera_calibration" cflags="-I${prefix}/include -I${prefix}/msg/cpp"/>
