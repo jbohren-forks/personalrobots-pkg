@@ -616,17 +616,19 @@ bool MechanismControl::listControllersSrv(
   getControllerNames(controllers);
   getControllerSchedule(schedule);
   assert(controllers.size() == schedule.size());
+  resp.set_controllers_size(controllers.size());
+  resp.set_state_size(controllers.size());
 
-  for (size_t i=0; i<controllers.size(); i++){
+  for (size_t i=0; i<schedule.size(); i++){
     // add controller state
     Controller* c = getControllerByName(controllers[schedule[i]]);
     assert(c);
+    resp.controllers[i] = controllers[schedule[i]];
     if (c->isRunning())
-      controllers[schedule[i]] += " (Running)";
+      resp.state[i] = "running";
     else
-      controllers[schedule[i]] += "  (Stopped)";
+      resp.state[i] = "stopped";
   }
-  resp.set_controllers_vec(controllers);
   return true;
 }
 

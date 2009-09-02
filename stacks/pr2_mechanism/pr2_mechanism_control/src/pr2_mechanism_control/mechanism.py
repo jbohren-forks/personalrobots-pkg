@@ -21,8 +21,8 @@ def list_controllers():
     if len(resp.controllers) == 0:
         print "No controllers are loaded in mechanism control"
     else:
-        for c in resp.controllers:
-            print c
+        for c, s in zip(resp.controllers, resp.state):
+            print c, "(",s,")"
 
 def spawn_controller(name, autostart):
     rospy.wait_for_service('spawn_controller')
