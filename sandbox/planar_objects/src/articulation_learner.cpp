@@ -39,7 +39,7 @@ ArticulationLearner::ArticulationLearner() :
 	nh.param("~dist_vis", dist_vis, 0.02);
 
 	nh.param("~thres_trans", thres_trans, 0.1);
-	nh.param("~thres_rot", thres_rot, 10.0 / 180.0 * M_PI);
+	nh.param("~thres_rot", thres_rot, 360.0 / 180.0 * M_PI);
 
 	// subscribe to topics
 	tracks_sub = nh.subscribe("box_tracker/tracks", 1, sync.synchronize(
