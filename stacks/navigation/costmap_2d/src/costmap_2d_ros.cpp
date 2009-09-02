@@ -72,7 +72,7 @@ namespace costmap_2d {
     while(!tf_.waitForTransform(global_frame_, robot_base_frame_, ros::Time(), ros::Duration(0.1), ros::Duration(0.01), &tf_error)){
       ros::spinOnce();
       if(last_error + ros::Duration(5.0) < ros::Time::now()){
-        ROS_ERROR("Waiting on transform from %s to %s to become available before running costmap, tf error: %s", 
+        ROS_WARN("Waiting on transform from %s to %s to become available before running costmap, tf error: %s", 
             robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
         last_error = ros::Time::now();
       }
