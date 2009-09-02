@@ -23,7 +23,7 @@ ColorTracker::ColorTracker(ros::NodeHandle &nh)
   statusPublisher_ = nodeHandle_.advertise<hanoi::ColorTrackStatus>("~/status",1,true);
 
   // Publisher that controls the head
-  headPublisher_ = nodeHandle_.advertise<pr2_mechanism_msgs::JointStates>("pan_tilt", 1, true);
+  headPublisher_ = nodeHandle_.advertise<pr2_mechanism_msgs::MechanismState>("pan_tilt", 1, true);
 
   if (!nodeHandle_.getParam("~/start_tilt", start_tilt))
     start_tilt = 0.5;
@@ -31,7 +31,7 @@ ColorTracker::ColorTracker(ros::NodeHandle &nh)
   if (!nodeHandle_.getParam("~/start_pan", start_pan))
     start_pan = 0.5;
 
-  this->MoveHead(start_pan, start_tilt);
+  this->PosHead(start_pan, start_tilt);
 
   trackRed_ = 0;
   trackGreen_ = 0;
@@ -120,17 +120,37 @@ void ColorTracker::BlobCB(const cmvision::BlobsConstPtr &msg)
     newTilt += y * .2;
 
     printf("New[%f %f]\n",newPan, newTilt);
-    this->MoveHead(newPan, newTilt);
+    //this->PosHead(newPan, newTilt);
+    this->VelHead(x*.2, y*.2);
   }
   else
-    this->MoveHead(newPan, newTilt+0.2);
+    this->PosHead(newPan, newTilt+0.2);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Velocity control of head
+void ColorTracker::VelHead(float pan, float tilt)
+{
+  pr2_mechanism_msgs::MechanismState mechState;
+  pr2_mechanism_msgs::JointState panState, tiltState;
+
+  panState.name = "head_pan_joint";
+  panState.velocity = pan;
+
+  tiltState.name = "head_tilt_joint";
+  tiltState.velocity = tilt;
+
+  mechState.joint_states.push_back(panState);
+  mechState.joint_states.push_back(tiltState);
+
+  headPublisher_.publish( mechState );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Pan and tilt the head
-void ColorTracker::MoveHead(float pan, float tilt)
+void ColorTracker::PosHead(float pan, float tilt)
 {
-  pr2_mechanism_msgs::JointStates jointStatesMsg;
+  pr2_mechanism_msgs::MechanismState jointStatesMsg;
   pr2_mechanism_msgs::JointState panState, tiltState;
 
   panState.name = "head_pan_joint";
@@ -139,8 +159,8 @@ void ColorTracker::MoveHead(float pan, float tilt)
   tiltState.name = "head_tilt_joint";
   tiltState.position = tilt;
 
-  jointStatesMsg.joints.push_back(panState);
-  jointStatesMsg.joints.push_back(tiltState);
+  jointStatesMsg.joint_states.push_back(panState);
+  jointStatesMsg.joint_states.push_back(tiltState);
 
   headPublisher_.publish( jointStatesMsg );
 }

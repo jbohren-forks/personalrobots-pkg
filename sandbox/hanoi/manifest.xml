@@ -22,6 +22,7 @@
   <depend package="move_arm_tools"/>
   <depend package="actionlib"/>
   <depend package="robot_mechanism_controllers"/>
+  <depend package="planning_environment"/>
 
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>

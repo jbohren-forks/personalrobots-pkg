@@ -1,13 +1,13 @@
 #include <ros/ros.h>
 
-#include "ColorTracker.h"
+#include "ArmController.h"
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "color_tracker");
+  ros::init(argc, argv, "arm_controller");
   ros::NodeHandle nh;
 
-  ColorTracker ct(nh);
+  ArmController ac(nh);
 
   ros::spin();
 }

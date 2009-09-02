@@ -3,7 +3,7 @@
 
 #include <ros/ros.h>
 
-#include <pr2_mechanism_msgs/JointStates.h>
+#include <pr2_mechanism_msgs/MechanismState.h>
 #include <pr2_mechanism_msgs/JointState.h>
 #include <robot_mechanism_controllers/JointControllerState.h>
 #include <cmvision/Blobs.h>
@@ -29,11 +29,11 @@ class ColorTracker
 
   public: void TiltStateCB(const robot_mechanism_controllers::JointControllerStateConstPtr &msg);
 
-  /// \brief Pan and tilt the head
-  private: void MoveHead(float pan, float tilt);
+  /// \brief Pan and tilt the head using position control
+  private: void PosHead(float pan, float tilt);
 
   /// \brief Velocity control of the head
-  private: void VelCmd(float pan, float tilt);
+  private: void VelHead(float pan, float tilt);
 
   private: ros::NodeHandle nodeHandle_;
 
