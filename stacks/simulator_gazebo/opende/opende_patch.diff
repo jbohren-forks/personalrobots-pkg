@@ -1,6 +1,6 @@
 Index: ode/src/quickstep.cpp
 ===================================================================
---- ode/src/quickstep.cpp	(revision 1689)
+--- ode/src/quickstep.cpp	(revision 1690)
 +++ ode/src/quickstep.cpp	(working copy)
 @@ -63,6 +63,9 @@
  
@@ -102,7 +102,7 @@ Index: ode/src/quickstep.cpp
        // solve the LCP problem and get lambda and invM*constraint_force
 Index: ode/src/util.h
 ===================================================================
---- ode/src/util.h	(revision 1689)
+--- ode/src/util.h	(revision 1690)
 +++ ode/src/util.h	(working copy)
 @@ -23,6 +23,7 @@
  #ifndef _ODE_UTIL_H_
