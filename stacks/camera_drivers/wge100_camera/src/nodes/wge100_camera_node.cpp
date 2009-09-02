@@ -901,10 +901,8 @@ private:
     
     image_.header.stamp = t;
     cam_pub_.publish(image_);
-    if (calibrated_) {
-      camera_info_.header.stamp = t;
-      camera_info_pub_.publish(camera_info_);
-    }
+    camera_info_.header.stamp = t;
+    camera_info_pub_.publish(camera_info_);
 
     return 0;
   }
