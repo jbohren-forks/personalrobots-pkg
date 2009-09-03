@@ -303,7 +303,7 @@ class PR2Frame(wx.Frame):
             pass
         
         icons_path = path.join(roslib.packages.get_pkg_dir('pr2_dashboard2'), "icons/")
-        self._diagnostics_bitmap = wx.Bitmap(path.join(icons_path, "stethoscope-32.png"), wx.BITMAP_TYPE_PNG)
+        self._diagnostics_bitmap = wx.Bitmap(path.join(icons_path, "diagnostics.png"), wx.BITMAP_TYPE_PNG)
         self._rosout_bitmap = wx.Bitmap(path.join(icons_path, "speech_bubble.png"), wx.BITMAP_TYPE_PNG)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
