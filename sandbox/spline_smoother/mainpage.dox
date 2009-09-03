@@ -24,6 +24,9 @@ for each of these is available in the code API:
 - spline_smoother::NumericalDifferentiationSplineSmoother
 - spline_smoother::ClampedCubicSplineSmoother
 
+Additionally, splines.h contains some useful functions for converting back and forth
+between waypoints and spline coefficients, and for sampling from cubic and quintic splines.
+
 <!--
 Provide links to specific auto-generated API documentation within your
 package that is of particular interest to a reader. Doxygen will
@@ -36,6 +39,8 @@ example, the roscpp documentation has 'libros' group.
 -->
 
 \section rosapi ROS API
+
+This package is just a library and does not have any ROS nodes.
 
 <!--
 Names are very important in ROS because they can be remapped on the
