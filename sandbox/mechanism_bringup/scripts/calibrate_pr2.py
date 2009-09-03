@@ -131,11 +131,12 @@ def hold(joint, command):
                     switch_controller([controller], [], SwitchControllerRequest.BEST_EFFORT)
 
                     break
+                else:
+                    print 'Error spawning %s' % controller
             except Exception, ex:
                 rospy.logerr("Failed to spawn holding controller %s on try %d: %s" % (controller, i+1, str(ex)))
 
-    print "SENDING HOLD", controller, command
-    pub = rospy.Publisher("%s/set_command" % controller, Float64,
+    pub = rospy.Publisher("%s/command" % controller, Float64,
                           SendMessageOnSubscribe(Float64(command)))
     pub.publish(Float64(command))
 
@@ -212,6 +213,7 @@ def main():
     hold('l_shoulder_lift', 1.0)
 
     hold('torso_lift', 0.0)
+    sleep(1.0)
 
     # Everything else
 
