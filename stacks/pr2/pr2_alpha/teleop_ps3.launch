@@ -2,13 +2,13 @@
   <include file="$(find pr2_alpha)/pre.machine" />
 
   <!-- Start up pairing thing -->
-  <node machine="realtime_root" pkg="ps3joy" output="screen"
+  <node machine="two_root" pkg="ps3joy" output="screen"
         type="ps3joy.py" name="ps3_connector" />
   
   <!-- PS3 joy node -->
-  <node machine="realtime" respawn="true" pkg="ps3joy"
+  <node machine="two" respawn="true" pkg="ps3joy"
         type="ps3_joy_node" name="ps3_joy" >
-    <param name="dev" type="string" value="/dev/input/js1" />
+    <param name="dev" type="string" value="/dev/sensors/ps3joy" />
     <param name="deadzone" value="0.12" />
   </node>
 

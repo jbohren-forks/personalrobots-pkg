@@ -2,6 +2,9 @@
   <machine name="realtime_root" user="root" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never">
     <env name="PATH" value="$(env PATH):$(env ROS_ROOT)/bin" /> <!-- HACK.  Depends on ROS bug #1586.  Remove when closed -->
   </machine>
+  <machine name="two_root" user="root" address="pre2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never">
+    <env name="PATH" value="$(env PATH):$(env ROS_ROOT)/bin" /> <!-- HACK.  Depends on ROS bug #1586.  Remove when closed -->
+  </machine>
 
   <machine name="realtime" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="true"/>
   <machine name="two"      address="pre2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
