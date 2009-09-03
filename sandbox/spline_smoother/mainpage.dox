@@ -1,9 +1,7 @@
 /**
 \mainpage
 \htmlinclude manifest.html
-
-\b spline_smoother is ... 
-
+ 
 <!-- 
 In addition to providing an overview of your package,
 this is the section where the specification and design/architecture 
@@ -12,8 +10,19 @@ wiki, it should be transferred here once your package starts to take shape.
 You can then link to this documentation page from the Wiki. 
 -->
 
-
 \section codeapi Code API
+
+All spline smoothers are derived from a common base class, spline_smoother::SplineSmoother.
+Each derived class just overrides a single method: spline_smoother::SplineSmoother::smooth().
+These smoothers are "filters" (filters::FilterBase), so they can be dynamically loaded from a
+library file, and a chain of such filters can be instantiated from an XML file using filters::FilterChain.
+
+There are currently three implementations of smoothers in the library. Detailed documentation 
+for each of these is available in the code API:
+
+- spline_smoother::FritschButlandSplineSmoother
+- spline_smoother::NumericalDifferentiationSplineSmoother
+- spline_smoother::ClampedCubicSplineSmoother
 
 <!--
 Provide links to specific auto-generated API documentation within your

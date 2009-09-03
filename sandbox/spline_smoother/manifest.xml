@@ -1,13 +1,12 @@
 <package>
-  <description brief="spline_smoother">
+  <description brief="Converts a position trajectory to a smooth spline trajectory">
 
 This package takes in position trajectories (with times), and can fill in
 velocities and accelerations at the knot points using various schemes, like
-natural cubic splines, clamped cubic splines, or other general optimization-
-based criteria.
+numerical differentiation, clamped cubic splines, or the Fritsch-Butland monotonic cubic interpolator.
 
   </description>
-  <author>Mrinal Kalakrishnan / kalakris@willowgarage.com</author>
+  <author>Mrinal Kalakrishnan / mail@mrinal.net</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/spline_smoother</url>
