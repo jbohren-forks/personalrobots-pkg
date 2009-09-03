@@ -60,8 +60,46 @@ MocapEval::MocapEval() {
 	                   "box_detector/observations", "base_link", 50);
 	notifier->setTolerance(ros::Duration(0.03));
 
+	deltaSteps.push_back(btTransform( btQuaternion(0.000,0.000,0.000),btVector3(0.001,0.000,0.000) ));
+	deltaSteps.push_back(btTransform( btQuaternion(0.000,0.000,0.000),btVector3(0.000,0.001,0.000) ));
+	deltaSteps.push_back(btTransform( btQuaternion(0.000,0.000,0.000),btVector3(0.000,0.000,0.001) ));
+	deltaSteps.push_back(btTransform( btQuaternion(0.001,0.000,0.000),btVector3(0.000,0.000,0.000) ));
+	deltaSteps.push_back(btTransform( btQuaternion(0.000,0.001,0.000),btVector3(0.000,0.000,0.000) ));
+	deltaSteps.push_back(btTransform( btQuaternion(0.000,0.000,0.001),btVector3(0.000,0.000,0.000) ));
+	deltaSteps.push_back(btTransform( btQuaternion(0.000,0.000,0.000),btVector3(-0.001,0.000,0.000) ));
+	deltaSteps.push_back(btTransform( btQuaternion(0.000,0.000,0.000),btVector3(0.000,-0.001,0.000) ));
+	deltaSteps.push_back(btTransform( btQuaternion(0.000,0.000,0.000),btVector3(0.000,0.000,-0.001) ));
+	deltaSteps.push_back(btTransform( btQuaternion(-0.001,0.000,0.000),btVector3(0.000,0.000,0.000) ));
+	deltaSteps.push_back(btTransform( btQuaternion(0.000,-0.001,0.000),btVector3(0.000,0.000,0.000) ));
+	deltaSteps.push_back(btTransform( btQuaternion(0.000,0.000,-0.001),btVector3(0.000,0.000,0.000) ));
+
+	bestDelta = btTransform(btQuaternion( -0.00920145,-0.0676328,0.99763,-0.00869427),btVector3(0.341151,1.15905,1.36682));
+	//btTransform(btQuaternion( -0.0104521,-0.0714886,0.997351,-0.00845141),btVector3(0.341271,1.15465,1.38563))
 }
 
+
+double deltaError(btTransform t) {
+	return(t.getOrigin().length() + t.getRotation().getAngle());
+}
+
+double deltaError(std::vector<btTransform> delta, btTransform t) {
+	std::map<double,double> map;
+	btTransform tinv = t.inverse();
+	double e;
+	for(size_t i=0;i<delta.size();i++) {
+		e=deltaError(delta[i]*tinv);
+		map[e] = e;
+	}
+	std::map<double,double>::iterator it=map.begin();
+	int i=0;
+	double sum=0;
+	while(i<map.size()*0.9){
+		sum += SQR(it->first);
+		i++;
+		it++;
+	}
+	return sqrt(sum/i);
+}
 void MocapEval::mocapCallback(const mocap_msgs::MocapSnapshotConstPtr& msg) {
 	this->mocap_msg = msg;
 
@@ -99,6 +137,8 @@ void MocapEval::mocapCallback(const mocap_msgs::MocapSnapshotConstPtr& msg) {
 
 	if( mocap_bodies.find(1) != mocap_bodies.end() ) {
 		btTransform t(btQuaternion( 0.0200151,0.718508,0.695192,0.00731243),btVector3(0.468977,1.24,-0.570441));
+		t=btTransform(btQuaternion( -0.0150934,-0.0836269,0.996365,-0.00600029),btVector3(0.344019,1.14318,1.42422));
+		t = btTransform::getIdentity();
 		mocap_obs.tf = t * mocap_bodies[1];
 //		mocap_obs.tf = mocap_bodies[1];
 
@@ -120,9 +160,9 @@ void MocapEval::sendPointCloud() {
 	std::map<int,btVector3>::iterator it = mocap_markers.begin();
 	int j=0;
 	for (; it !=mocap_markers.end(); it++) {
-		points.points[j].x = it->second.x();
-		points.points[j].y = it->second.y();
-		points.points[j].z = it->second.z();
+		points.points[j].x = (bestDelta*it->second).x();
+		points.points[j].y = (bestDelta*it->second).y();
+		points.points[j].z = (bestDelta*it->second).z();
 		int rgb=0xffffff;
 		points.channels[0].values[j]=*(float*) &rgb;
 		points.channels[1].values[j]=it->first;
@@ -181,7 +221,7 @@ void MocapEval::callback(
 
 	observations_msg = new_observations;
 	header = observations_msg->header;
-	header.frame_id="base_link";
+//	header.frame_id="base_link";
 	setVisualization(&visualization_pub, NULL, header);
 	ROS_INFO("BoxTracker::syncCallback(), received %d observations, %d markers, %d bodies",observations_msg->get_obs_size(),mocap_markers.size(),mocap_bodies.size());
 	observations.clear();
@@ -192,7 +232,7 @@ void MocapEval::callback(
 		btBoxObservation obs = btBoxObservation(observations_msg->obs[i],
 				observations_msg->header.stamp);
 
-		obs.tf = transformToBaseLink(  observations_msg->header.frame_id,"base_link",obs.tf );
+//		obs.tf = transformToBaseLink(  observations_msg->header.frame_id,"base_link",obs.tf );
 
 
 		std::vector<btBoxObservation> ambiguity;
@@ -201,16 +241,20 @@ void MocapEval::callback(
 		ambiguity.push_back( obs.getAmbiguity(2) );
 		ambiguity.push_back( obs.getAmbiguity(3) );
 
-		// has smallest or second-smallest x axis
-		std::map<double, btBoxObservation> sortX;
-		for(size_t i=0;i<ambiguity.size();i++)
-			sortX[ ambiguity[i].tf.getOrigin().x() ] =  ambiguity[i];
+//		// has smallest or second-smallest x axis
+//		std::map<double, btBoxObservation> sortX;
+//		for(size_t i=0;i<ambiguity.size();i++)
+//			sortX[ ambiguity[i].tf.getOrigin().x() ] =  ambiguity[i];
+//
+//		// of the remaining two, has smallest z axis
+//		std::map<double, btBoxObservation> sortZ;
+//		sortZ[ -sortX.begin()->second.tf.getOrigin().y() ] = sortX.begin()->second;
+//		sortX.erase(sortX.begin());
+//		sortZ[ -sortX.begin()->second.tf.getOrigin().y() ] = sortX.begin()->second;
 
-		// of the remaining two, has smallest z axis
 		std::map<double, btBoxObservation> sortZ;
-		sortZ[ sortX.begin()->second.tf.getOrigin().z() ] = sortX.begin()->second;
-		sortX.erase(sortX.begin());
-		sortZ[ sortX.begin()->second.tf.getOrigin().z() ] = sortX.begin()->second;
+		for(size_t i=0;i<ambiguity.size();i++)
+			sortZ[ deltaError( ambiguity[i].tf * (bestDelta*mocap_obs.tf).inverse() ) ] =  ambiguity[i];
 
 		obs = sortZ.begin()->second;
 		if(obs.w > mocap_obs.w*1.5 || obs.w < mocap_obs.w*0.5 ) continue;
@@ -219,19 +263,53 @@ void MocapEval::callback(
 		observations.push_back( obs );
 	}
 
+	btBoxObservation mocap_obs2 = mocap_obs;
+	mocap_obs2.tf = bestDelta * mocap_obs2.tf;
+
+
 	for (size_t i = 0; i < observations.size(); i++) {
-		btTransform uncalibrated = observations[i].tf.inverse() * mocap_obs.tf;
+		evaluateData( mocap_obs2, observations[i] );
+//		btTransform uncalibrated = observations[i].tf.inverse() * mocap_obs.tf;
 
 //		cout << "uncalibrated: "<<PRINTTF(uncalibrated) << endl;
 //		btTransform t(btQuaternion( 0.0200151,0.718508,0.695192,0.00731243),btVector3(0.468977,1.24,-0.570441));
-//		cout << PRINTTF( observations[i].tf * mocap_obs.tf.inverse() ) << endl;
+//		cout << PRINTTF( observations[i].tf * (bestDelta*mocap_obs.tf).inverse() ) << endl;
 //		btTransform calibrated = observations[i].tf.inverse() * (t*mocap_obs.tf);
 //		cout << "calibrated: "<<PRINTTF(calibrated) << endl;
 //		observations[i].tf = observations[i].tf;
+
+		delta.push_back(observations[i].tf * mocap_obs.tf.inverse());
 	}
+
+//	findBestDelta();
 
 	visualizeObservations();
 	removeOldLines();
+}
+
+
+void MocapEval::findBestDelta() {
+	if(delta.size()==0) return;
+
+	double currentError = deltaError( delta,bestDelta );
+
+	// strategy 1: find delta that yields smallest error in list
+	for(size_t i=0;i<delta.size();i++) {
+		if( deltaError( delta,delta[i] ) < currentError ) {
+			bestDelta = delta[i];
+			currentError = deltaError( delta,bestDelta );
+		}
+	}
+
+	// strategy 2: optimize individual dimensions in small steps
+	for(size_t i=0;i<deltaSteps.size();i++) {
+		if( deltaError( delta,bestDelta*deltaSteps[i] ) < currentError ) {
+			bestDelta = bestDelta*deltaSteps[i];
+			currentError = deltaError( delta,bestDelta );
+		}
+	}
+	cout << "currentError="<<currentError<<endl;
+	cout << PRINTTF(bestDelta) << endl;
 }
 
 void MocapEval::removeOldLines() {
@@ -249,8 +327,14 @@ void MocapEval::visualizeObservations() {
 		visualizeLines(observations[i].visualize(), newLines++, HSV_to_RGB(0.5,
 				1.0, 1.0));
 	}
-	visualizeLines(mocap_obs.visualize(), newLines++, HSV_to_RGB(0.0,
+	btBoxObservation mocap_obs2 = mocap_obs;
+	mocap_obs2.tf = bestDelta * mocap_obs2.tf;
+	visualizeLines(mocap_obs2.visualize(), newLines++, HSV_to_RGB(0.0,
 			1.0, 1.0));
+}
+
+void MocapEval::evaluateData( btBoxObservation mocap_obs, btBoxObservation visual_obs) {
+
 }
 
 }

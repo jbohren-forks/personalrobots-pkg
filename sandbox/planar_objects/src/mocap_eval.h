@@ -53,6 +53,10 @@ public:
   tf::MessageNotifier<BoxObservations>* notifier;
 
 
+  std::vector<btTransform> delta;
+  std::vector<btTransform> deltaSteps;
+  btTransform bestDelta;
+
   // Constructor
   MocapEval();
 
@@ -66,6 +70,9 @@ public:
   void sendPointCloud();
   void visualizeObservations();
   void removeOldLines();
+
+  void findBestDelta();
+  void evaluateData( btBoxObservation mocap_obs, btBoxObservation visual_obs);
 };
 
 }
