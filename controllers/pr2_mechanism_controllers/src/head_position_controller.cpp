@@ -35,7 +35,6 @@
 
 #include "pr2_mechanism_controllers/head_position_controller.h"
 #include <cmath>
-#include "pr2_mechanism_control/mechanism_control.h"
 #include "pluginlib/class_list_macros.h"
 
 using namespace tf;
