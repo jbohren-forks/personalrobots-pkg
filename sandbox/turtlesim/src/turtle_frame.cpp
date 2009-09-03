@@ -127,11 +127,16 @@ void TurtleFrame::updateTurtle()
 
   Vector2 old_pos = pos_;
 
+#if 0
   ros::WallTime now = ros::WallTime::now();
   double dt = (now - last_turtle_update_).toSec();
   last_turtle_update_ = now;
+#else
+  // just use a 60hz step, to avoid the randomness that using real time brings.
+  double dt = 0.016;
+#endif
 
-  orient_ += ang_vel_ * dt;
+  orient_ = fmod(orient_ + ang_vel_ * dt, 2*PI);
   pos_.x += sin(orient_ + PI) * lin_vel_ * dt;
   pos_.y += cos(orient_ + PI) * lin_vel_ * dt;
 

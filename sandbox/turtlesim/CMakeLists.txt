@@ -29,3 +29,4 @@ rosbuild_link_boost(turtlesim thread)
 target_link_libraries(turtlesim ${wxWidgets_LIBRARIES})
 
 rosbuild_add_executable(draw_square tutorials/draw_square.cpp)
+rosbuild_add_executable(mimic tutorials/mimic.cpp)
