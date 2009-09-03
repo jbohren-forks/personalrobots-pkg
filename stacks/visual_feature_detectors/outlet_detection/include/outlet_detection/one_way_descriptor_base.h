@@ -69,7 +69,7 @@ class CvOneWayDescriptorBase
         // - pca_desc_config: the name of the file that contains descriptors of PCA components
         CvOneWayDescriptorBase(CvSize patch_size, int pose_count, const char* train_path = 0, const char* pca_config = 0, 
                                const char* pca_hr_config = 0, const char* pca_desc_config = 0, int pyr_levels = 2, 
-                                int pca_dim_high = 100, int pca_dim_low = 1000);
+                                int pca_dim_high = 100, int pca_dim_low = 100);
         
         ~CvOneWayDescriptorBase();
         
