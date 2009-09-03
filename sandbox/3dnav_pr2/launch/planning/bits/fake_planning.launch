@@ -3,7 +3,7 @@
   <include file="$(find 3dnav_pr2)/launch/prX.machine" />
 
   <node machine="two" pkg="fake_motion_planning" type="fake_motion_planner" respawn="true" output="screen">
-    <remap from="robot_description" to="robot_description_new" />  
+    <remap from="robot_description" to="robot_description" />  
   </node>
   
 </launch>	 

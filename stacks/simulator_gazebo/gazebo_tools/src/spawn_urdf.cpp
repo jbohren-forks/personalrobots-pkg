@@ -52,7 +52,7 @@ void usage(const char *progname)
     printf("\nUsage: %s urdf_param_name [options]\n", progname);
     printf("  Note: model name in Gazebo defaults to the robot description parameter name.\n");
     printf("  Example: spawn_urdf --help\n\n");
-    printf("  Example: spawn_urdf robot_description_new -x 10\n\n");
+    printf("  Example: spawn_urdf robot_description -x 10\n\n");
 }
 
 namespace po = boost::program_options;

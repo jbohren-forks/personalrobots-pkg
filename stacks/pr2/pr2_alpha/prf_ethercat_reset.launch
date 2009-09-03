@@ -9,7 +9,7 @@
   <include file="$(find pr2_alpha)/prf.machine" />
 
 <!-- pr2_etherCAT -->
-  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robot_description_new"/>
+  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robot_description"/>
 
 <!-- PR2 Calibration -->
   <rosparam command="load" file="$(find pr2_default_controllers)/pr2_calibration_controllers.yaml" />

@@ -45,7 +45,7 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
   active_ = false;
   int free_angle;
   std::string urdf_xml,full_urdf_xml;
-  node_handle_.param("~urdf_xml", urdf_xml,std::string("robot_description_new"));
+  node_handle_.param("~urdf_xml", urdf_xml,std::string("robot_description"));
 
   node_handle_.searchParam(urdf_xml,full_urdf_xml);
 

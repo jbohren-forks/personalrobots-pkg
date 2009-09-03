@@ -1,6 +1,6 @@
 <launch>
     <!-- load robot -->
-    <param name="robot_description_new" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.urdf.xacro'" />
+    <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.urdf.xacro'" />
 
     <!-- test -->
     <test test-name="pr2_ik_test"  pkg="pr2_ik" type="pr2_ik_regression_test"  time-limit="180" >

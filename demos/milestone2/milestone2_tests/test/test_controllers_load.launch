@@ -2,7 +2,7 @@
 
   <include file="$(find pr2_defs)/launch/upload_pr2.launch" />
   <include file="$(find milestone2_actions)/config/controllers.xml" />
-  <node pkg="mechanism_control_test" type="mechanism_controller_test" args="-x /robot_description_new" />
+  <node pkg="mechanism_control_test" type="mechanism_controller_test" args="-x /robot_description" />
 
   <test test-name="test_controllers_loaded" pkg="mechanism_control_test" type="test_controllers_loaded.py"
         args="pr2_base_controller pr2_base_odometry head_controller r_gripper_effort_controller r_gripper_position_controller torso_lift_velocity_controller r_arm_constraint_cartesian_wrench_controller r_arm_constraint_cartesian_twist_controller r_arm_constraint_cartesian_pose_controller r_arm_constraint_cartesian_trajectory_controller r_arm_cartesian_tff_controller r_arm_cartesian_wrench_controller r_arm_cartesian_twist_controller r_arm_cartesian_pose_controller r_arm_cartesian_trajectory_controller r_arm_hybrid_controller laser_tilt_controller r_arm_joint_trajectory_controller" />
