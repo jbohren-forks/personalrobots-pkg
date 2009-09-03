@@ -33,7 +33,6 @@
 
 #include "robot_mechanism_controllers/cartesian_twist_controller.h"
 #include <algorithm>
-#include "pr2_mechanism_control/mechanism_control.h"
 #include "kdl/chainfksolvervel_recursive.hpp"
 #include "pluginlib/class_list_macros.h"
 
