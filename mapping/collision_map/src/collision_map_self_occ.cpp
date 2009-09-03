@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include <ros/ros.h>
+#include <mapping_msgs/Empty.h>
 #include <sensor_msgs/PointCloud.h>
 #include <mapping_msgs/CollisionMap.h>
 #include <tf/transform_listener.h>
@@ -92,6 +93,8 @@ public:
 	    frames.push_back(robotFrame_);
 	mnCloud_->setTargetFrame(frames);
 	mnCloudIncremental_->setTargetFrame(frames);
+
+	resetService_ = nh_.advertiseService("~reset", &CollisionMapperOcc::reset, this);
     }
     
     ~CollisionMapperOcc(void)
@@ -319,6 +322,14 @@ private:
 	}
     }
     
+    bool reset(mapping_msgs::Empty::Request &req, mapping_msgs::Empty::Response &res)
+    {
+	mapProcessing_.lock();
+	currentMap_.clear();
+	mapProcessing_.unlock();
+	return true;
+    }
+    
     bool transformMap(CMap &map, const roslib::Header &from, const roslib::Header &to)
     {
 	tf::Stamped<btTransform> transf;
@@ -412,6 +423,7 @@ private:
     ros::Publisher                                cmapPublisher_;
     ros::Publisher                                cmapUpdPublisher_;
     ros::Publisher                                occPublisher_;
+    ros::ServiceServer                            resetService_;
     roslib::Header                                header_;
     bool                                          publishOcclusion_;
     
