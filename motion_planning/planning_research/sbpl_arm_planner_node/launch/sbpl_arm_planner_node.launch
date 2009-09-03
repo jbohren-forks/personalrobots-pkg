@@ -6,7 +6,7 @@
     <param name="env_config" textfile="$(find sbpl_arm_planner)/env_examples/robarm3d/r_arm.cfg" />
     <param name="planner_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
 
-    <param name="allocated_time" value="20.0" />
+    <param name="allocated_time" value="40.0" />
     <param name="forward_search" value="true" />
     <param name="search_mode" value="true" />
     <param name="num_joints" value="7" />
@@ -22,9 +22,12 @@
     <param name="lowres_cc" value="true" />
     <param name="use_collision_map" value="true" />
     <param name="use_collision_map_occ_to_update_voxel" value="true" />
-    <param name="use_exact_gripper_collision_checking" value="true" />
+    <param name="use_exact_gripper_collision_checking" value="false" />
     <param name="use_voxel3d_grid" value="true" />
-
+    <param name="seconds_per_waypoint" value="0.240" />
+    <param name="padding" value="0.03" />
+    <param name="num_smoothing_iterations" value="5" />
+    
     <!-- planning monitor -->
     <remap from="robot_description" to="robot_description" />
     <remap from="collision_map" to="collision_map_occ" />

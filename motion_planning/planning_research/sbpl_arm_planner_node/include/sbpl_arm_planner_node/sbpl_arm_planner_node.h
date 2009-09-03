@@ -40,12 +40,13 @@
 
 /** stuffZ **/
 #include <boost/bind.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 #include <tf/transform_datatypes.h>
-#include <boost/thread/mutex.hpp>
-#include <boost/shared_ptr.hpp>
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
@@ -63,16 +64,13 @@
 #include <pr2_mechanism_msgs/MechanismState.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <boost/numeric/ublas/matrix.hpp>
-
-#include <robot_voxelizer/robot_voxelizer.h>
 
 /** Services **/
 #include <manipulation_srvs/IKService.h>
 
 /** Planner **/
 #include <sbpl_arm_planner/headers.h>
-// #include <bullet/btQuaternion.h>
+#include <robot_voxelizer/robot_voxelizer.h>
 
 namespace sbpl_arm_planner_node
 {
@@ -100,7 +98,6 @@ class SBPLArmPlannerNode
       ros::Publisher sbpl_map_publisher_;
 			ros::Publisher marker_array_publisher_;
       ros::ServiceServer planning_service_;
-//       ros::Subscriber mechanism_subscriber_;
 			ros::Subscriber joint_states_subscriber_;
       ros::Subscriber col_map_subscriber_;
       ros::Subscriber point_cloud_subscriber_;
@@ -164,6 +161,8 @@ class SBPLArmPlannerNode
 			bool use_jacobian_mp_;
 
       int num_joints_;
+			
+			int num_smoothing_iter_;
 
       std::string collision_map_topic_;
 

@@ -64,7 +64,7 @@ bool SBPLArmPlannerNode::init()
 	node_.param ("~print_out_path", print_path_, false);
   node_.param<std::string>("~planner_type", planner_type_, "cartesian"); //"cartesian" or "joint_space"
   node_.param<std::string>("~planning_frame", planning_frame_, std::string("torso_lift_link"));
-	node_.param ("~seconds_per_waypoint", waypoint_time_, 0.2);
+	node_.param ("~seconds_per_waypoint", waypoint_time_, 0.06);
 
   // robot parameters
   node_.param<std::string>("~arm_name", arm_name_, "right_arm");
@@ -100,55 +100,34 @@ bool SBPLArmPlannerNode::init()
   node_.param ("~voxel_grid_resolution_", env_resolution_, 0.01);
   node_.param ("~upright_gripper_only", upright_gripper_only_, false);
   node_.param ("~use_jacobian_motion_primitive", use_jacobian_mp_, false);
-
+	node_.param ("~num_smoothing_iterations", num_smoothing_iter_, 3);
+	
   // topic names
   node_.param<std::string>("~point_cloud", point_cloud_topic_, "full_cloud_filtered");
   node_.param<std::string>("~collision_map_topic", collision_map_topic_, "collision_map_occ");
 
   // visualization parameters
-  node_.param ("~visualize_goal", visualize_goal_, false);
+  node_.param ("~visualize_goal", visualize_goal_, true);
 
 	//initialize the planning monitor
 	initializePM();
 
-// 	col_map_subscriber_ = node_.subscribe(collision_map_topic_, 1, &SBPLArmPlannerNode::collisionMapCallback, this);
 	collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_, boost::bind(&SBPLArmPlannerNode::collisionMapCallback, this, _1), collision_map_topic_, planning_frame_, 1);
 	ROS_INFO("Listening to %s with message notifier for target frame %s", collision_map_topic_.c_str(), collision_map_notifier_->getTargetFramesString().c_str());
 
   // main planning service
   planning_service_ = node_.advertiseService("/sbpl_planning/plan_kinematic_path", &SBPLArmPlannerNode::planKinematicPath,this);
 
-//   mechanism_subscriber_ = node_.subscribe("/mechanism_state", 1, &SBPLArmPlannerNode::dummyCallback, this);
 	joint_states_subscriber_ = node_.subscribe("/joint_states", 1, &SBPLArmPlannerNode::jointStatesCallback, this);
-
-  if(visualize_goal_)
-	{
-    marker_publisher_ = node_.advertise<visualization_msgs::Marker>("visualization_marker", 3);
-		marker_array_publisher_ = node_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 3);
-	}
-	
+	marker_publisher_ = node_.advertise<visualization_msgs::Marker>("visualization_marker", 3);
+	marker_array_publisher_ = node_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 3);
+	sbpl_map_publisher_ = node_.advertise<mapping_msgs::CollisionMap> ("sbpl_collision_map", 1);
+		
   //initialize voxel grid  & subscribe to correct collision map topic
   if(use_voxel3d_grid_)
   {
     createOccupancyGrid();
-
-
-/*    else
-		{
-      point_cloud_subscriber_ = node_.subscribe(point_cloud_topic_, 1, &SBPLArmPlannerNode::pointCloudCallback, this);
-			point_cloud_notifier_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&SBPLArmPlannerNode::pointCloudCallback, this, _1), point_cloud_topic_, planning_frame_, 1);
-			ROS_DEBUG("Listening to %s with message notifier for target frame %s", point_cloud_topic_.c_str(), point_cloud_notifier_->getTargetFramesString().c_str());
-		}*/
   }
-//   else
-//   {
-//     col_map_subscriber_ = node_.subscribe(collision_map_topic_, 1, &SBPLArmPlannerNode::collisionMapCallback, this);
-    // sbpl_map_publisher_ = node_.advertise<mapping_msgs::CollisionMap> ("sbpl_collision_map", 1);
-//   }
-
-
-	sbpl_map_publisher_ = node_.advertise<mapping_msgs::CollisionMap> ("sbpl_collision_map", 1);
-	
 	
   //initialize planner
   planner_ = new ARAPlanner(&sbpl_arm_env_, forward_search_);
@@ -1045,8 +1024,6 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   // if a path is returned, then pack it into msg form
   if(b_ret)
   {
-		// planner_->print_searchpath(fPaths);
-
 		ROS_INFO("*** a path was found ***");
 
 		ROS_DEBUG("extending path... from %i waypoints", solution_state_ids_v.size());
@@ -1063,8 +1040,13 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 				i, path_in[i][0],path_in[i][1],path_in[i][2],path_in[i][3],path_in[i][4],path_in[i][5],path_in[i][6]);
 		}
 
-		ROS_INFO("the path has %i states. calling smooth path.", path_in.size());
-		path_out = pm_->smoothPath(path_in, joint_names_);
+		ROS_INFO("calling smooth path %d times.", num_smoothing_iter_);
+		for(int j = 0; j < num_smoothing_iter_; ++j)
+		{
+			path_out = pm_->smoothPath(path_in, joint_names_);
+			ROS_INFO("%d: input_length: %d output_length: %d", j, path_in.size(),path_out.size());
+			path_in = path_out;
+		}
 
 //		if(!interpolatePath(path_in, path_out, 0.2))
 //			ROS_WARN("Couldn't add waypoints to path");
@@ -1723,9 +1705,8 @@ void SBPLArmPlannerNode::displayExpandedStates()
 */
 	
 	visualization_msgs::MarkerArray marker_array;
-	//marker_array.set_markers_size(states.size()*2);
 	unsigned int mind = 0;
-	for(unsigned int i = 0; i < states.size(); i=i+10)
+	for(unsigned int i = 0; i < states.size(); ++i)
 	{
 		marker_array.set_markers_size(marker_array.get_markers_size()+2);
 		marker_array.markers[mind].header.frame_id = planning_frame_;
@@ -1737,8 +1718,8 @@ void SBPLArmPlannerNode::displayExpandedStates()
 		marker_array.markers[mind].scale.x = 3*env_resolution_;
 		marker_array.markers[mind].scale.y = 3*env_resolution_;
 		marker_array.markers[mind].scale.z = 3*env_resolution_;
-		marker_array.markers[mind].color.r = 1.0 - double(i)/double(states.size());
-		marker_array.markers[mind].color.g = 0.0 + double(i)/double(states.size());
+		marker_array.markers[mind].color.r = 1.0 - (i)/states.size();
+		marker_array.markers[mind].color.g = 0.0 + (i)/states.size();
 		marker_array.markers[mind].color.b = 0.0;
 		marker_array.markers[mind].color.a = 0.5;
 		marker_array.markers[mind].lifetime = ros::Duration(60.0);
