@@ -401,7 +401,6 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             nbuf = len(buf)
             buf = zbuf.getvalue()
             self.send_header('Content-encoding', 'gzip')
-            print "%d/%d" % (len(buf), nbuf)
 
         self.send_header('Content-Length', str(len(buf)))
 
