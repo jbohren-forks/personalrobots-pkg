@@ -45,10 +45,8 @@ var MapTile = Class.create({
 var MapViewer = Class.create({
     initialize: function(domobj) {
         this.viewer = domobj;
+        //this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan:simplified', '/base_pose_ground_truth'];
         this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan:simplified'];
-        //this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan'];
-        //this.topics = ['/robot_pose_visualization', '/move_base/TrajectoryPlannerROS/robot_footprint'];
-        //this.topics = ['/robot_pose_visualization'];
     },
 
     init: function() {
@@ -58,6 +56,7 @@ var MapViewer = Class.create({
 
         // Create a div to contain the image tiles
         this.panner = new Element('div', {'id': 'map_panner', 'style': 'padding:0;position:absolute;top:0px;left:0px;z-index:0'});
+        this.panner.left = this.panner.top = 0;
         this.viewer.appendChild(this.panner);
 
         this.sourceWidth = 2332;
@@ -132,6 +131,7 @@ var MapViewer = Class.create({
                 this.settingGoal = false;
                 this.settingPose = false;
                 delete this.robot_est;
+                delete this.plan;
             }
         }
     },
@@ -147,7 +147,7 @@ var MapViewer = Class.create({
             var pos = this.pixelToMap([this.mark[0]-off.left, this.mark[1]-off.top]);
             var dx = Event.pointerX(e) - this.mark[0];
             var dy = Event.pointerY(e) - this.mark[1];
-            var angle = Math.atan2(-dy, dx);
+            var angle = Math.atan2(dy, dx);
             this.robot_est = {'x': pos.x, 'y': pos.y, 'angle': angle};
             this.updateCanvas();
         }
@@ -190,8 +190,8 @@ var MapViewer = Class.create({
         var left = x;
         var top = y;
         if (typeof(relative) != 'undefined' ? relative : true) {
-            left = parseInt(this.panner.style.left) + x;
-            top = parseInt(this.panner.style.top) + y;
+            left = this.panner.left + x;
+            top = this.panner.top + y;
         }
         if (left > 0) left = 0;
         if (top > 0) top = 0;
@@ -199,8 +199,8 @@ var MapViewer = Class.create({
             left = this.dim.width - this.sourceWidth/this.scale;
         if (top < (this.dim.height - this.sourceHeight/this.scale))
             top = this.dim.height - this.sourceHeight/this.scale;
-        this.panner.style.left = left;
-        this.panner.style.top  = top;
+        this.panner.style.left = this.panner.left = left;
+        this.panner.style.top  = this.panner.top = top;
 
         for (var i = 0; i < this.tiles.length; ++i) {
             var tile = this.tiles[i];
@@ -222,8 +222,8 @@ var MapViewer = Class.create({
 
     pixelToMap: function(p) {
         result = {'x': 0, 'y': 0};
-        var x = p[0] - parseInt(this.panner.style.left);
-        var y = p[1] - parseInt(this.panner.style.top);
+        var x = p[0] - this.panner.left;
+        var y = p[1] - this.panner.top;
         result.x = x * this.sourceResolution * this.scale;
         result.y = (this.sourceHeight / this.scale - y) * this.sourceResolution * this.scale;
         return result;
@@ -232,47 +232,29 @@ var MapViewer = Class.create({
     mapToPixel: function(p) {
         var x = Math.floor(p.x / this.scale / this.sourceResolution);
         var y = this.sourceHeight / this.scale - Math.floor(p.y / this.scale / this.sourceResolution);
-        x += parseInt(this.panner.style.left);
-        y += parseInt(this.panner.style.top);
+        x += this.panner.left;
+        y += this.panner.top;
         return [x, y];
+    },
+
+    drawRobot: function(ctx, position, alpha) {
+        if (this.robot_img.complete) {
+            var coords = this.mapToPixel(position);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(coords[0], coords[1]);
+            ctx.rotate(position.angle);
+            var sx = 0.65 / (this.robot_img.width * this.sourceResolution * this.scale);
+            var sy = 0.65 / (this.robot_img.height * this.sourceResolution * this.scale);
+            ctx.scale(sx, sy);
+            ctx.drawImage(this.robot_img, -this.robot_img.width / 2, -this.robot_img.height / 2);
+            ctx.restore();
+        }
     },
 
     updateCanvas: function() {
         var ctx = this.canvas.getContext('2d');
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        if (0) {
-            ctx.strokeStyle = "rgb(0, 0, 255)";
-            ctx.beginPath();
-            ctx.moveTo(this.canvas.width/2 - 5, this.canvas.height/2 - 0);
-            ctx.lineTo(this.canvas.width/2 + 5, this.canvas.height/2 - 0);
-            ctx.moveTo(this.canvas.width/2 - 0, this.canvas.height/2 - 5);
-            ctx.lineTo(this.canvas.width/2 - 0, this.canvas.height/2 + 5);
-            ctx.stroke();
-        }
-
-        if (this.robot) {
-            var coords = this.mapToPixel(this.robot);
-            ctx.save();
-            ctx.translate(coords[0], coords[1]);
-            ctx.rotate(this.robot.angle);
-            var sx = 0.65 / (this.robot_img.width * this.sourceResolution * this.scale);
-            var sy = 0.65 / (this.robot_img.height * this.sourceResolution * this.scale);
-            ctx.scale(sx, sy);
-            ctx.drawImage(this.robot_img, -this.robot_img.width / 2, -this.robot_img.height / 2);
-            ctx.restore();
-        }
-        if (this.robot_est) {
-            var coords = this.mapToPixel(this.robot_est);
-            ctx.save();
-            ctx.translate(coords[0], coords[1]);
-            ctx.rotate(-this.robot_est.angle);
-            var sx = 0.65 / (this.robot_img.width * this.sourceResolution * this.scale);
-            var sy = 0.65 / (this.robot_img.height * this.sourceResolution * this.scale);
-            ctx.scale(sx, sy);
-            ctx.drawImage(this.robot_img, -this.robot_img.width / 2, -this.robot_img.height / 2);
-            ctx.restore();
-        }
 
         // Draw plan
         if (this.plan) {
@@ -300,6 +282,17 @@ var MapViewer = Class.create({
             ctx.closePath();
             ctx.stroke();
         }
+
+        if (this.ground_truth) {
+            this.drawRobot(ctx, this.ground_truth, 0.25);
+        }
+        if (this.robot) {
+            this.drawRobot(ctx, this.robot, 1.0);
+        }
+        if (this.robot_est) {
+            this.drawRobot(ctx, this.robot_est, 0.75);
+        }
+
     },
 
     quaternionToEuler: function (q)
@@ -326,6 +319,10 @@ var MapViewer = Class.create({
     receive: function(topic, msg) {
         if (topic == '/robot_pose_visualization') {
           var angle = -this.quaternionToEuler(msg.pose.orientation).y;
+          var coords = this.mapToPixel(msg.pose.position);
+          coords[0] -= this.panner.left;
+          coords[1] -= this.panner.top;
+          //this.panMap(this.dim.width/2-coords[0], this.dim.height/2-coords[1], false);
           this.robot = {'x': msg.pose.position.x,
                         'y': msg.pose.position.y,
                         'angle': angle};
@@ -334,6 +331,11 @@ var MapViewer = Class.create({
             this.plan = msg.poses;
         } else if (topic == '/move_base/TrajectoryPlannerROS/robot_footprint') {
             this.footprint = msg.polygon.points;
+        } else if (topic == '/base_pose_ground_truth') {
+            var angle = -this.quaternionToEuler(msg.pose.pose.orientation).y;
+            this.ground_truth = {'x': msg.pose.pose.position.x,
+                                 'y': msg.pose.pose.position.y,
+                                 'angle': angle};
         }
         this.updateCanvas();
     },
