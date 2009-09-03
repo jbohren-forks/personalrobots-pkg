@@ -9,6 +9,7 @@
   <depend package="roslib"/>
   <depend package="rospy"/>
   <depend package="webui"/>
+  <depend package="move_base_stage"/>
 </package>
 
 
