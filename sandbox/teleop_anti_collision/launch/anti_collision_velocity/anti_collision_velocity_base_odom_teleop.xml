@@ -1,43 +1,33 @@
 <launch>
 
  <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
- <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_odometry" />
-<node pkg="pr2_mechanism_control" type="spawner.py" args="pr2_base_controller" output="screen"/>
-<node pkg="pr2_mechanism_control" type="spawner.py" args="pr2_odometry" output="screen"/>
+ <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_base_odometry" />
+ <node pkg="pr2_mechanism_control" type="spawner.py" args="pr2_base_controller" output="screen"/>
+ <node pkg="pr2_mechanism_control" type="spawner.py" args="pr2_base_odometry" output="screen"/>
 
-<node pkg="backup_safetysound" type="backingup.py" machine="four" />
+ <!-- The robot pose EKF is launched with the base controller-->
+ <include file="$(find robot_pose_ekf)/robot_pose_ekf.launch" />
 
-<!-- The robot pose EKF is launched with the base controller-->
-<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf">
-  <param name="freq" value="30.0"/>
-  <param name="sensor_timeout" value="1.0"/>  
-  <param name="publish_tf" value="true"/>
-  <param name="odom_used" value="true"/>
-  <param name="imu_used" value="true"/>
-  <param name="vo_used" value="false"/>
-</node>
+ <param name="axis_vx" value="3" type="int"/>
+ <param name="axis_vy" value="2" type="int"/>
+ <param name="axis_vw" value="0" type="int"/>
+ <param name="pan" value="4" type="int"/>
+ <param name="tilt" value="5" type="int"/>
+ <param name="max_vw" value="1.0" />
+ <param name="max_vx" value="0.6" />
+ <param name="max_vy" value="0.6" />
 
+ <param name="max_vw_run" value="1.4" />
+ <param name="max_vx_run" value="1.0" />
+ <param name="max_vy_run" value="1.0" />
+ <param name="run_button" value="5" type="int" />
+ <param name="torso_dn_button" value="1" type="int" />
+ <param name="torso_up_button" value="3" type="int" />
 
-<param name="axis_vx" value="3" type="int"/>
-<param name="axis_vy" value="2" type="int"/>
-<param name="axis_vw" value="0" type="int"/>
-<param name="pan" value="4" type="int"/>
-<param name="tilt" value="5" type="int"/>
-<param name="max_vw" value="1.0" />
-<param name="max_vx" value="0.6" />
-<param name="max_vy" value="0.6" />
-
-<param name="max_vw_run" value="1.4" />
-<param name="max_vx_run" value="1.0" />
-<param name="max_vy_run" value="1.0" />
-<param name="run_button" value="5" type="int" />
-<param name="torso_dn_button" value="1" type="int" />
-<param name="torso_up_button" value="3" type="int" />
-
-<param name="joy_msg_timeout" value="10.0"/>
-<param name="deadman_button" value="4" type="int"/>
-<node pkg="teleop_base" type="teleop_base" output="screen" args="--deadman_no_publish" respawn="true" machine="four">
-<remap from="cmd_vel" to="joy_cmd_vel"/>
-</node>
+ <param name="joy_msg_timeout" value="10.0"/>
+ <param name="deadman_button" value="4" type="int"/>
+ <node pkg="teleop_base" type="teleop_base" output="screen" args="--deadman_no_publish" respawn="true" machine="four">
+ <remap from="cmd_vel" to="teleop_cmd_vel"/>
+ </node>
 
 </launch>
