@@ -3,8 +3,8 @@
   <!-- start gazebo with an empty plane -->
   <param name="/use_sim_time" value="true" />
 
-  <node pkg="gazebo" launch-prefix="xvfb-run" type="gazebo" args="-g $(find gazebo_worlds)/worlds/empty.world" respawn="false" output="screen">
-    <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(optenv LD_LIBRARY_PATH)" />
+  <node name="gazebo" pkg="gazebo" launch-prefix="xvfb-run" type="gazebo" args="-g $(find gazebo_worlds)/worlds/empty.world" respawn="false" output="screen">
+    <env name="LD_LIBRARY_PATH" value="$(find pr2_gazebo_plugins)/lib:$(find gazebo)/gazebo/lib:$(optenv LD_LIBRARY_PATH)" />
     <env name="GAZEBO_RESOURCE_PATH" value="$(find pr2_ogre):$(find ikea_ogre):$(find gazebo_worlds):$(find gazebo)/gazebo/share/gazebo" />
     <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
   </node>

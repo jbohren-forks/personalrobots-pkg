@@ -8,7 +8,7 @@
 <!-- start Gazebo -->
   <include file="$(find gazebo)/launch/empty_world.launch" />
   <include file="$(find pr2_defs)/launch/upload_prf.launch" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen" />
+  <node pkg="gazebo_tools" type="urdf2factory" args="robot_description" respawn="false" output="screen" />
 
 
 <!-- Joystick -->
@@ -28,22 +28,22 @@
   <!-- battery plugin in gazebo -->
 
 <!-- Base Laser -->
-  <!-- as gazebo_plugin -->
+  <!-- as pr2_gazebo_plugins -->
 
 <!-- Tilt Laser -->
-  <!-- as gazebo_plugin -->
+  <!-- as pr2_gazebo_plugins -->
 
 <!-- imu -->
-  <!-- as gazebo_plugin -->
+  <!-- as pr2_gazebo_plugins -->
 
   <!-- Videre Stereo cam -->
-  <!-- as gazebo_plugin -->
+  <!-- as pr2_gazebo_plugins -->
 
   <!-- Prosilica camera setup -->
-  <!-- as gazebo_plugin -->
+  <!-- as pr2_gazebo_plugins -->
 
 <!-- Forearm Camera -->
-  <!-- can be loaded as gazebo_plugin, if you want this, add the map/verbatim blocks in urdf -->
+  <!-- can be loaded as pr2_gazebo_plugins, if you want this, add the map/verbatim blocks in urdf -->
 
 <!-- Sound  -->
   <!-- n/a in gazebo -->

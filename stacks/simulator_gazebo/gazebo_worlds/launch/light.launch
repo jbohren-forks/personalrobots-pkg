@@ -1,0 +1,12 @@
+<launch>
+  <param name="/use_sim_time" value="true" />
+  <!-- send xml to param server -->
+  <param name="light"      textfile="$(find gazebo_worlds)/objects/light.model" />
+  <param name="light2"      textfile="$(find gazebo_worlds)/objects/light2.model" />
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_tools" type="xml2factory" args="light" respawn="false" />
+  <node pkg="gazebo_tools" type="xml2factory" args="light2" respawn="false" />
+  
+</launch>
+

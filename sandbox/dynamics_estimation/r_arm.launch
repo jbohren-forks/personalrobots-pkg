@@ -8,7 +8,7 @@
     <include file="$(find pr2_defs)/launch/upload_r_arm.launch" />
 
     <!-- push robot_description to factory and spawn robot in gazebo -->
-    <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
+    <node pkg="gazebo_tools" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
 
     <!-- Robot state publisher -->
     <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher" output="screen">
@@ -19,7 +19,7 @@
 
     <!-- start arm controller -->
     <!--
-    <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find arm_gazebo)/l_arm_default_controller.xml" respawn="false"  />
+    <node pkg="pr2_mechanism_control" type="spawner.py" args="$(find pr2_arm_gazebo)/l_arm_default_controller.xml" respawn="false"  />
     -->
 
     <!-- send arm a command -->
@@ -30,7 +30,7 @@
     <!-- for visualization -->
     <!--
     <node pkg="rviz" type="rviz" respawn="false" output="screen" />
-    <include file="$(find arm_gazebo)/debug_plot.launch"/>
+    <include file="$(find pr2_arm_gazebo)/debug_plot.launch"/>
     -->
 
 </launch>

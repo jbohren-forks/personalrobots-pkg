@@ -1,7 +1,7 @@
 #! /bin/bash
 
 XACRO=`rospack find xacro`/xacro.py
-URDF2GAZEBO=`rospack find gazebo_plugin`/bin/urdf2file
+URDF2GAZEBO=`rospack find gazebo_tools`/bin/urdf2file
 
 if [ -z "$1" ]; then
     echo "$0 <world> <urdf>"

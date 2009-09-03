@@ -2,7 +2,7 @@
 export GAZ_TOP=`rospack find gazebo`/gazebo
 export OGRE_TOP=`rospack find ogre`/ogre
 export BOOST_TOP=`rosboost-cfg --root`
-export SIM_PLUGIN=`rospack find gazebo_plugin`
+export SIM_PLUGIN=`rospack find pr2_gazebo_plugins`
 export PR2MEDIA=`rospack find gazebo_worlds`
 export PR2MEDIA=`rospack find pr2_ogre`:`rospack find gazebo_worlds`
 export GAZMEDIA=`rospack find gazebo`/gazebo/share/gazebo

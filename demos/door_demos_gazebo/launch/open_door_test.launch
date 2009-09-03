@@ -4,7 +4,7 @@
   <include file="$(find milestone2_actions)/milestone2.launch" />
 
   <!-- assign localization for amcl -->
-  <node pkg="test_2dnav_gazebo" type="set_goal.py" args="-amcl 14.75 22.125 -3.142 -x 14.75 -y 22.125 -t -3.142" output="screen" />
+  <node pkg="test_pr2_2dnav_gazebo" type="set_goal.py" args="-amcl 14.75 22.125 -3.142 -x 14.75 -y 22.125 -t -3.142" output="screen" />
 
   <!-- visualization
   <include file="$(find 2dnav_pr2)/rviz/rviz_move_base.launch" />

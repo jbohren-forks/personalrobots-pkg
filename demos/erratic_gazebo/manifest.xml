@@ -4,7 +4,7 @@
   <license>BSD</license>
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki/Simulator</url>
-  <depend package="gazebo_plugin"/>
+  <depend package="pr2_gazebo_plugins"/>
   <depend package="gazebo_worlds"/>
   <depend package="erratic_defs"/>
   <depend package="robot_mechanism_controllers"/>

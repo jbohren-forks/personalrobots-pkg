@@ -2,7 +2,7 @@
 setenv GAZ_TOP `rospack find gazebo`/gazebo
 setenv OGRE_TOP `rospack find ogre`/ogre
 setenv BOOST_TOP `rosboost-cfg --root`
-setenv SIM_PLUGIN `rospack find gazebo_plugin`
+setenv SIM_PLUGIN `rospack find pr2_gazebo_plugins`
 setenv PR2MEDIA `rospack find pr2_ogre`:`rospack find gazebo_worlds`
 setenv GAZMEDIA `rospack find gazebo`/gazebo/share/gazebo
 
