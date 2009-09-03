@@ -1,0 +1,15 @@
+<stack name="physics" version="0.1.0">
+  <description brief="physics">
+
+     Physics Engines for Simulation and Manipulation.
+     Currently this contains the Open Dynamics Engine (ODE).
+
+  </description>
+  <author>Maintained by John Hsu</author>
+  <license>LGPL</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/physics</url>
+
+  <depend stack="geometry" /> <!-- bullet -->
+
+</stack>
