@@ -4,7 +4,7 @@ for bagfile in "$@"
 do
 
 #bagfile=$1
-time_per_frame="10.00"
+time_per_frame="40.00"
 save_to="$HOME/bags/output"
 record_topics="/box_detector/observations"
 
@@ -72,7 +72,7 @@ start 80x6-0-0 "roscore"
 
 sleep 3
 
-start 80x6-0-200 "rosrun rosrecord rosrecord -f $newbag $topics $record_topics"
+start 80x6-0-200 "rosrun rosrecord rosrecord -f $newbag $topics $record_topics /mocap_eval/eval"
 
 sleep 1
 
@@ -80,7 +80,11 @@ start 80x6-0-400 "roslaunch $HOME/ros/ros-pkg/stacks/imaging_pipeline/stereo_ima
 
 sleep 1
 
-start 80x22-0-800 "roslaunch $HOME/ros/ros-pkg/sandbox/planar_objects/narrow_box_detector$launchsuffix.launch"
+start 80x6-0-600 "roslaunch $HOME/ros/ros-pkg/sandbox/planar_objects/narrow_box_detector$launchsuffix.launch"
+
+sleep 1
+
+start 80x6-0-800 "roslaunch $HOME/ros/ros-pkg/sandbox/planar_objects/narrow_mocap_eval$launchsuffix.launch"
 
 sleep 1
 

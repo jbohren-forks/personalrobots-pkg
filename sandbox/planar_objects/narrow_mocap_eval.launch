@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="planar_objects" type="mocap_eval" respawn="true" output="screen" name="mocap_eval">
+      <remap from="stereo" to="narrow_stereo" />
+    </node>
+</launch>
+

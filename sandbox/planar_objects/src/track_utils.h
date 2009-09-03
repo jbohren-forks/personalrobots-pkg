@@ -32,6 +32,7 @@ public:
   double h;
   double precision;
   double recall;
+  int plane_id;
   btBoxObservation();
   btBoxObservation(const BoxObservation &obs , const ros::Time stamp, int disambiguation=0 );
   void setObservation(const BoxObservation &obs , const ros::Time stamp );

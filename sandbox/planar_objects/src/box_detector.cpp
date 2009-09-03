@@ -625,6 +625,8 @@ void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree,
     candidate.updatePoints3d();
     candidate.updatePoints2d();
 
+    candidate.plane_id = current_plane;
+
     corner.push_back(candidate);
   }
 

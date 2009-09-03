@@ -4,10 +4,10 @@
       <param name="verbose" type="bool" value="false"/>
       <param name="scaling" type="double" value="1.00"/>
 
-      <param name="n_planes_max" type="int" value="5"/>
+      <param name="n_planes_max" type="int" value="10"/>
       <param name="point_plane_distance" value="0.02"/>
       
-      <param name="n_seeds_per_plane" type="int" value="5"/>
+      <param name="n_seeds_per_plane" type="int" value="10"/>
       <param name="cost_pix_in_front" value="0.2"/>
       <param name="cost_pix_unknown" value="0.5"/>
 

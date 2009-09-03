@@ -53,6 +53,7 @@ void btBoxObservation::setObservation(const BoxObservation &obs, const ros::Time
   h = obs.h;
   precision = obs.precision;
   recall = obs.recall;
+  plane_id = obs.plane_id;
 }
 
 
@@ -152,6 +153,7 @@ BoxObservation btBoxObservation::getBoxObservation() {
   obs.h = h;
   obs.precision = precision;
   obs.recall = recall;
+  obs.plane_id = plane_id;
 
   return(obs);
 }
