@@ -281,48 +281,6 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     int patch_width = descriptors->GetPatchSize().width/2;
     int patch_height = descriptors->GetPatchSize().height/2; 
 
-//--------
-	//PCA_coeffs precalculating
-	CvMat* m_pca_eigenvectors;
-	CvMat* m_pca_avg;
-	int m_pca_dim_low = descriptors->GetLowPCA(&m_pca_avg, &m_pca_eigenvectors);
-	CvMat* pca_coeffs = cvCreateMat(1, m_pca_dim_low, CV_32FC1);
-
-	if (m_pca_avg)
-	{
-		CvRect _roi = cvGetImageROI((IplImage*)test_image);
-		IplImage* test_img = cvCreateImage(cvSize(patch_width,patch_height), IPL_DEPTH_8U, 1);
-		if(_roi.width != patch_width|| _roi.height != patch_height)
-		{
-			
-			cvResize(test_image, test_img);
-			_roi = cvGetImageROI(test_img);
-		}
-		else
-		{
-			cvCopy(test_image,test_img);
-		}
-		IplImage* patch_32f = cvCreateImage(cvSize(_roi.width, _roi.height), IPL_DEPTH_32F, 1);
-		float sum = cvSum(test_img).val[0];
-		cvConvertScale(test_img, patch_32f, 1.0f/sum);
-
-		//ProjectPCASample(patch_32f, m_pca_avg, m_pca_eigenvectors, pca_coeffs);
-		//Projecting PCA
-		CvMat* patch_mat = ConvertImageToMatrix(patch_32f);
-		CvMat* temp = cvCreateMat(1, m_pca_eigenvectors->cols, CV_32FC1);
-		cvProjectPCA(patch_mat, m_pca_avg, m_pca_eigenvectors, temp);
-		CvMat temp1;
-		cvGetSubRect(temp, &temp1, cvRect(0, 0, pca_coeffs->cols, 1));
-		cvCopy(&temp1, pca_coeffs);   
-		cvReleaseMat(&temp);
-		cvReleaseMat(&patch_mat);
-		//End of projecting
-
-		cvReleaseImage(&patch_32f);
-		cvReleaseImage(&test_img);
-	}
-		
-	//--------
     for(int i = 0; i < (int)features.size(); i++)
 	{
         CvPoint center = features[i].pt;
@@ -362,14 +320,9 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
         }
 #endif
 
-		if (m_pca_avg)
-		{
-			descriptors->FindDescriptor(pca_coeffs, desc_idx, pose_idx, distance);
-		}
-		else
-		{
-			descriptors->FindDescriptor(test_image, desc_idx, pose_idx, distance);
-		}
+
+		descriptors->FindDescriptor(test_image, desc_idx, pose_idx, distance);
+
 
 #if 0  
         if(abs(center.x - 433) < 10 && abs(center.y - 177) < 10)
@@ -697,6 +650,9 @@ void detect_outlets_one_way_2(IplImage* test_image, const outlet_template_t& out
                             vector<outlet_t>& holes, IplImage* color_image, 
                             const char* output_path, const char* output_filename)
 {
+	float time_det = 0;
+	float time_match = 0;
+	float time_total = 0;
 	holes.clear();
     IplImage* image = cvCreateImage(cvSize(test_image->width, test_image->height), IPL_DEPTH_8U, 3);
     cvCvtColor(test_image, image, CV_GRAY2RGB);
@@ -710,7 +666,10 @@ void detect_outlets_one_way_2(IplImage* test_image, const outlet_template_t& out
     
     int64 time2 = cvGetTickCount();
     
-    printf("Found %d test features, time elapsed: %f\n", (int)features.size(), float(time2 - time1)/cvGetTickFrequency()*1e-6);
+	time_det = float(time2 - time1)/cvGetTickFrequency()*1e-6;
+
+    printf("Found %d test features, time elapsed: %f\n", (int)features.size(), time_det);
+
     
     
     CvOneWayDescriptorObject* descriptors = const_cast<CvOneWayDescriptorObject*>(outlet_template.get_one_way_descriptor_base());
@@ -719,49 +678,6 @@ void detect_outlets_one_way_2(IplImage* test_image, const outlet_template_t& out
 	vector<int> desc_idx_vec;
     int patch_width = descriptors->GetPatchSize().width/2;
     int patch_height = descriptors->GetPatchSize().height/2; 
-
-//--------
-	//PCA_coeffs precalculating
-	CvMat* m_pca_eigenvectors;
-	CvMat* m_pca_avg;
-	int m_pca_dim_low = descriptors->GetLowPCA(&m_pca_avg, &m_pca_eigenvectors);
-	CvMat* pca_coeffs = cvCreateMat(1, m_pca_dim_low, CV_32FC1);
-
-	if (m_pca_avg)
-	{
-		CvRect _roi = cvGetImageROI((IplImage*)test_image);
-		IplImage* test_img = cvCreateImage(cvSize(patch_width,patch_height), IPL_DEPTH_8U, 1);
-		if(_roi.width != patch_width|| _roi.height != patch_height)
-		{
-			
-			cvResize(test_image, test_img);
-			_roi = cvGetImageROI(test_img);
-		}
-		else
-		{
-			cvCopy(test_image,test_img);
-		}
-		IplImage* patch_32f = cvCreateImage(cvSize(_roi.width, _roi.height), IPL_DEPTH_32F, 1);
-		float sum = cvSum(test_img).val[0];
-		cvConvertScale(test_img, patch_32f, 1.0f/sum);
-
-		//ProjectPCASample(patch_32f, m_pca_avg, m_pca_eigenvectors, pca_coeffs);
-		//Projecting PCA
-		CvMat* patch_mat = ConvertImageToMatrix(patch_32f);
-		CvMat* temp = cvCreateMat(1, m_pca_eigenvectors->cols, CV_32FC1);
-		cvProjectPCA(patch_mat, m_pca_avg, m_pca_eigenvectors, temp);
-		CvMat temp1;
-		cvGetSubRect(temp, &temp1, cvRect(0, 0, pca_coeffs->cols, 1));
-		cvCopy(&temp1, pca_coeffs);   
-		cvReleaseMat(&temp);
-		cvReleaseMat(&patch_mat);
-		//End of projecting
-
-		cvReleaseImage(&patch_32f);
-		cvReleaseImage(&test_img);
-	}
-		
-	//--------
 
 
     for(int i = 0; i < (int)features.size(); i++)
@@ -788,14 +704,9 @@ void detect_outlets_one_way_2(IplImage* test_image, const outlet_template_t& out
         CvMat* eigenvectors = 0;
         descriptors->GetLowPCA(&avg, &eigenvectors);
 
-		if (m_pca_avg)
-		{
-			descriptors->FindDescriptor(pca_coeffs, desc_idx, pose_idx, distance);
-		}
-		else
-		{
-			descriptors->FindDescriptor(test_image, desc_idx, pose_idx, distance);
-		}
+
+		descriptors->FindDescriptor(test_image, desc_idx, pose_idx, distance);
+
 
         if(desc_idx < 0)
         {
@@ -832,10 +743,11 @@ void detect_outlets_one_way_2(IplImage* test_image, const outlet_template_t& out
         
         cvResetImageROI(test_image);          
     }
-	cvReleaseMat(&pca_coeffs);
     
     int64 time3 = cvGetTickCount();
-    printf("Features matched. Time elapsed: %f\n", float(time3 - time2)/cvGetTickFrequency()*1e-6);       
+	time_match = float(time3 - time2)/cvGetTickFrequency()*1e-6;
+    printf("Features matched. Time elapsed: %f\n", time_match);     
+	
     
     //        printf("%d features before filtering\n", (int)hole_candidates.size());
     vector<feature_t> hole_candidates_filtered;
@@ -871,13 +783,24 @@ void detect_outlets_one_way_2(IplImage* test_image, const outlet_template_t& out
     
     int64 time4 = cvGetTickCount();
     printf("Object detection completed. Time elapsed: %f\n", float(time4 - time3)/cvGetTickFrequency()*1e-6);
-    printf("Total time elapsed: %f\n", float(time4 - time1)/cvGetTickFrequency()*1e-6);
+	time_total = float(time4 - time1)/cvGetTickFrequency()*1e-6;
+    printf("Total time elapsed: %f\n", time_total);
+	
     
     CvScalar color_parts[] = {CV_RGB(255, 255, 0), CV_RGB(0, 255, 255)};
     for(int i = 0; i < (int)hole_candidates.size(); i++)
     {
         cvCircle(image2, hole_candidates[i].pt, hole_candidates[i].size, color_parts[hole_candidates[i].class_id], 2);
     }
+	//FILE* f = fopen("d:/detect.txt","a");
+	//fprintf(f,"%f\n",time_det);
+	//fclose(f);
+	//f = fopen("d:/match.txt","a");
+	//fprintf(f,"%f\n",time_match);
+	//fclose(f);
+	//f = fopen("d:/total.txt","a");
+	//fprintf(f,"%f\n",time_total);
+	//fclose(f);
     
     
     

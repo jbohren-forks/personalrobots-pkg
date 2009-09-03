@@ -69,7 +69,7 @@ class CvOneWayDescriptorBase
         // - pca_desc_config: the name of the file that contains descriptors of PCA components
         CvOneWayDescriptorBase(CvSize patch_size, int pose_count, const char* train_path = 0, const char* pca_config = 0, 
                                const char* pca_hr_config = 0, const char* pca_desc_config = 0, int pyr_levels = 2, 
-                                int pca_dim_high = 100, int pca_dim_low = 100);
+                                int pca_dim_high = 100, int pca_dim_low = 1000);
         
         ~CvOneWayDescriptorBase();
         
@@ -107,7 +107,7 @@ class CvOneWayDescriptorBase
         // - desc_idx: output index of the closest descriptor to the input patch
         // - pose_idx: output index of the closest pose of the closest descriptor to the input patch
         // - distance: distance from the input patch to the closest feature pose
-        void FindDescriptor(CvArr* patch, int& desc_idx, int& pose_idx, float& distance) const;
+        void FindDescriptor(IplImage* patch, int& desc_idx, int& pose_idx, float& distance) const;
         
         // FindDescriptor: finds the closest descriptor
         // - src: input image 
@@ -115,7 +115,7 @@ class CvOneWayDescriptorBase
         // - desc_idx: output index of the closest descriptor to the input patch
         // - pose_idx: output index of the closest pose of the closest descriptor to the input patch
         // - distance: distance from the input patch to the closest feature pose
-        void FindDescriptor(CvArr* src, Point2f pt, int& desc_idx, int& pose_idx, float& distance) const;
+        void FindDescriptor(IplImage* src, Point2f pt, int& desc_idx, int& pose_idx, float& distance) const;
         
         // InitializePoses: generates random poses
         void InitializePoses();

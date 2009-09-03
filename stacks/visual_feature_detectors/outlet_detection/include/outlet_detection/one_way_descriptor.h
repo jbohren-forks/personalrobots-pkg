@@ -243,6 +243,9 @@ public:
     void SetPCADimHigh(int pca_dim_high) {m_pca_dim_high = pca_dim_high;};
     void SetPCADimLow(int pca_dim_low) {m_pca_dim_low = pca_dim_low;};
 
+	const int GetPCADimLow() const;
+	const int GetPCADimHigh() const;
+
 protected:
     int m_pose_count; // the number of poses
     CvSize m_patch_size; // size of each image
@@ -260,10 +263,10 @@ protected:
     int m_pca_dim_low; // the number of pca components to use for comparison
 };
 
-void FindOneWayDescriptor(int desc_count, const CvOneWayDescriptor* descriptors, CvArr* patch, int& desc_idx, int& pose_idx, float& distance, 
+void FindOneWayDescriptor(int desc_count, const CvOneWayDescriptor* descriptors, IplImage* patch, int& desc_idx, int& pose_idx, float& distance, 
                           CvMat* avg = 0, CvMat* eigenvalues = 0);
 
-void FindOneWayDescriptorEx(int desc_count, const CvOneWayDescriptor* descriptors, CvArr* patch, 
+void FindOneWayDescriptorEx(int desc_count, const CvOneWayDescriptor* descriptors, IplImage* patch, 
                             float scale_min, float scale_max, float scale_step,
                             int& desc_idx, int& pose_idx, float& distance, float& scale, 
                             CvMat* avg, CvMat* eigenvectors);

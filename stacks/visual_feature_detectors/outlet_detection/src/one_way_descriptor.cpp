@@ -591,12 +591,56 @@ CvAffinePose CvOneWayDescriptor::GetPose(int index) const
     return m_affine_poses[index];
 }
 
-void FindOneWayDescriptor(int desc_count, const CvOneWayDescriptor* descriptors, CvArr* patch, int& desc_idx, int& pose_idx, float& distance, 
+void FindOneWayDescriptor(int desc_count, const CvOneWayDescriptor* descriptors, IplImage* patch, int& desc_idx, int& pose_idx, float& distance, 
     CvMat* avg, CvMat* eigenvectors)
 {
     desc_idx = -1;
     pose_idx = -1;
     distance = 1e10;
+//--------
+	//PCA_coeffs precalculating
+	int m_pca_dim_low = descriptors[0].GetPCADimLow();
+	CvMat* pca_coeffs = cvCreateMat(1, m_pca_dim_low, CV_32FC1);
+	int patch_width = descriptors[0].GetPatchSize().width;
+	int patch_height = descriptors[0].GetPatchSize().height;
+	if (avg)
+	{
+		CvRect _roi = cvGetImageROI((IplImage*)patch);
+		IplImage* test_img = cvCreateImage(cvSize(patch_width,patch_height), IPL_DEPTH_8U, 1);
+		if(_roi.width != patch_width|| _roi.height != patch_height)
+		{
+			
+			cvResize(patch, test_img);
+			_roi = cvGetImageROI(test_img);
+		}
+		else
+		{
+			cvCopy(patch,test_img);
+		}
+		IplImage* patch_32f = cvCreateImage(cvSize(_roi.width, _roi.height), IPL_DEPTH_32F, 1);
+		float sum = cvSum(test_img).val[0];
+		cvConvertScale(test_img, patch_32f, 1.0f/sum);
+
+		//ProjectPCASample(patch_32f, avg, eigenvectors, pca_coeffs);
+		//Projecting PCA
+		CvMat* patch_mat = ConvertImageToMatrix(patch_32f);
+		CvMat* temp = cvCreateMat(1, eigenvectors->cols, CV_32FC1);
+		cvProjectPCA(patch_mat, avg, eigenvectors, temp);
+		CvMat temp1;
+		cvGetSubRect(temp, &temp1, cvRect(0, 0, pca_coeffs->cols, 1));
+		cvCopy(&temp1, pca_coeffs);   
+		cvReleaseMat(&temp);
+		cvReleaseMat(&patch_mat);
+		//End of projecting
+
+		cvReleaseImage(&patch_32f);
+		cvReleaseImage(&test_img);
+	}
+		
+//--------
+
+
+
     for(int i = 0; i < desc_count; i++)
     {
         int _pose_idx = -1;
@@ -605,7 +649,14 @@ void FindOneWayDescriptor(int desc_count, const CvOneWayDescriptor* descriptors,
 #if 0
         descriptors[i].EstimatePose(patch, _pose_idx, _distance);
 #else
-        descriptors[i].EstimatePosePCA(patch, _pose_idx, _distance, avg, eigenvectors);
+		if (!avg)
+		{
+			descriptors[i].EstimatePosePCA(patch, _pose_idx, _distance, avg, eigenvectors);
+		}
+		else
+		{
+			descriptors[i].EstimatePosePCA(pca_coeffs, _pose_idx, _distance, avg, eigenvectors);
+		}
 #endif
         
         if(_distance < distance)
@@ -615,26 +666,21 @@ void FindOneWayDescriptor(int desc_count, const CvOneWayDescriptor* descriptors,
             distance = _distance;
         }
     }
+	cvReleaseMat(&pca_coeffs);
 }
 
-void FindOneWayDescriptorEx(int desc_count, const CvOneWayDescriptor* descriptors, CvArr* patch, 
+void FindOneWayDescriptorEx(int desc_count, const CvOneWayDescriptor* descriptors, IplImage* patch, 
                             float scale_min, float scale_max, float scale_step,
                             int& desc_idx, int& pose_idx, float& distance, float& scale, 
                             CvMat* avg, CvMat* eigenvectors)
 {
     CvSize patch_size = descriptors[0].GetPatchSize();
-    CvArr* input_patch;
+    IplImage* input_patch;
 	CvRect roi;
-	if (!CV_IS_MAT(patch))
-	{
-		input_patch= cvCreateImage(patch_size, IPL_DEPTH_8U, 1);
-		roi = cvGetImageROI((IplImage*)patch);
-	}
-	else
-	{
-		input_patch = cvCreateMat(((CvMat*)patch)->rows, ((CvMat*)patch)->cols, CV_32FC1);
-		cvCopy(patch,input_patch);		
-	}
+	
+	input_patch= cvCreateImage(patch_size, IPL_DEPTH_8U, 1);
+	roi = cvGetImageROI((IplImage*)patch);
+		
     float min_distance = 1e10;
     int _desc_idx, _pose_idx;
     float _distance;
@@ -642,12 +688,11 @@ void FindOneWayDescriptorEx(int desc_count, const CvOneWayDescriptor* descriptor
     for(float cur_scale = scale_min; cur_scale < scale_max; cur_scale *= scale_step)
     {
 //        printf("Scale = %f\n", cur_scale);
-		if (!CV_IS_MAT(patch))
-		{
+
 			CvRect roi_scaled = resize_rect(roi, cur_scale);
-			cvSetImageROI((IplImage*)patch, roi_scaled);
+			cvSetImageROI(patch, roi_scaled);
 			cvResize(patch, input_patch);
-		}
+
         
 #if 0
         if(roi.x > 244 && roi.y < 200)
@@ -668,17 +713,10 @@ void FindOneWayDescriptorEx(int desc_count, const CvOneWayDescriptor* descriptor
         }
     }
     
-    if (!CV_IS_MAT(patch))
-	{
+
 		cvSetImageROI((IplImage*)patch, roi);
-		IplImage* temp = (IplImage*)input_patch;
-		cvReleaseImage(&temp);
-	}
-	else
-	{
-		CvMat* temp = (CvMat*)input_patch;
-		cvReleaseMat(&temp);
-	}
+		cvReleaseImage(&input_patch);
+
 }
 
 const char* CvOneWayDescriptor::GetFeatureName() const
@@ -689,6 +727,16 @@ const char* CvOneWayDescriptor::GetFeatureName() const
 CvPoint CvOneWayDescriptor::GetCenter() const
 {
     return m_center;
+}
+
+const int CvOneWayDescriptor::GetPCADimLow() const
+{
+	return m_pca_dim_low;
+}
+
+const int CvOneWayDescriptor::GetPCADimHigh() const
+{
+	return m_pca_dim_high;
 }
 
 

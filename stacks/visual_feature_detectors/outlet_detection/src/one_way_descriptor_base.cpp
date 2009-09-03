@@ -177,23 +177,20 @@ void CvOneWayDescriptorBase::InitializeDescriptor(int desc_idx, IplImage* train_
     }
 }
 
-void CvOneWayDescriptorBase::FindDescriptor(CvArr* src, Point2f pt, int& desc_idx, int& pose_idx, float& distance) const
+void CvOneWayDescriptorBase::FindDescriptor(IplImage* src, Point2f pt, int& desc_idx, int& pose_idx, float& distance) const
 {
-	if (!CV_IS_MAT(src))
-	{
-		CvRect roi = cvRect(pt.x - m_patch_size.width/4, pt.y - m_patch_size.height/4, m_patch_size.width/2, m_patch_size.height/2);
-		cvSetImageROI((IplImage*)src, roi);
-	}
+
+	CvRect roi = cvRect(pt.x - m_patch_size.width/4, pt.y - m_patch_size.height/4, m_patch_size.width/2, m_patch_size.height/2);
+	cvSetImageROI(src, roi);
+
     
     FindDescriptor(src, desc_idx, pose_idx, distance);
-    
-	if (!CV_IS_MAT(src))
-	{
-		cvResetImageROI((IplImage*)src);
-	}
+ 
+	cvResetImageROI(src);
+
 }
 
-void CvOneWayDescriptorBase::FindDescriptor(CvArr* patch, int& desc_idx, int& pose_idx, float& distance) const
+void CvOneWayDescriptorBase::FindDescriptor(IplImage* patch, int& desc_idx, int& pose_idx, float& distance) const
 {
 #if 0
     ::FindOneWayDescriptor(m_train_feature_count, m_descriptors, patch, desc_idx, pose_idx, distance, m_pca_avg, m_pca_eigenvectors);
@@ -271,13 +268,13 @@ int CvOneWayDescriptorBase::LoadPCADescriptors(const char* filename)
     if(node != 0)
     {
         CvMat* poses = (CvMat*)cvRead(fs, node);
-        if(poses->rows != m_pose_count)
-        {
-            printf("Inconsistency in the number of poses between the class instance and the file! Exiting...\n");
-            cvReleaseMat(&poses);
-            cvReleaseFileStorage(&fs);
-            cvReleaseMemStorage(&storage);
-        }
+        //if(poses->rows != m_pose_count)
+        //{
+        //    printf("Inconsistency in the number of poses between the class instance and the file! Exiting...\n");
+        //    cvReleaseMat(&poses);
+        //    cvReleaseFileStorage(&fs);
+        //    cvReleaseMemStorage(&storage);
+        //}
         
         if(m_poses)
         {
