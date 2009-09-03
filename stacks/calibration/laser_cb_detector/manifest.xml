@@ -1,0 +1,17 @@
+<package>
+  <description brief="laser_cb_detector">
+
+     laser_cb_detector
+
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/laser_cb_detector</url>
+  <depend package="calibration_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="opencv_latest" />
+
+</package>
+
+
