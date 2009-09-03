@@ -3,12 +3,15 @@
   <include file="$(find pr2_alpha)/prg.machine" />
   <include file="$(find pr2_alpha)/prg_ethercat_reset.launch" />
 
-<!-- Joystick -->
-  <param name="joy/deadzone" value="5000"/> 
-  <node machine="four" pkg="joy" type="joy"  respawn="true"/> 
+  <!-- Watts Commenting out until joystick driver works all the way, and python dev selector is tested. Launch joy with teleop_ps3.launch from machine two.
+  <node machine="realtime" pkg="ps3joy" type="ps3_joy_node" name="joy" respawn="true" >
+    <param name="deadzone" value="0.10" />
+    <param name="dev" value="/dev/sensors/ps3joy" />
+  </node>
+-->
 
 <!-- Power Board Control Node -->
-  <param name="power_board_serial" value="1007"/>  
+  <param name="power_board_serial" value="1023"/>  
   <node pkg="pr2_power_board" type="power_node"  respawn="true"/>
 
 <!-- Robot state publisher -->
@@ -40,7 +43,6 @@
 
 
 <!-- Tilt Laser -->
-
   <node  machine="realtime" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="laser_tilt_link" />
@@ -57,7 +59,7 @@
   <param name="imu/frameid"  type="string" value="imu" />
   <param name="imu/angular_velocity_stdev" type="double" value="0.00017" />
   <param name="imu/autocalibrate" type="bool" value="true" />
-  <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
+  <node machine="realtime" pkg="imu_node" type="imu_node" output="screen"/>
 
 <!-- Prosilica camera setup -->
   <!--group ns="prosilica">
@@ -65,11 +67,12 @@
     <param name="acquisition_mode" type="str" value="Triggered"/>
     <param name="ip_address" type="str" value="10.68.7.20"/>
   </group>
-
   <node machine="three" name="prosilica" pkg="prosilica_camera" type="prosilica_node" output="screen" respawn="true"/-->
 
+  <!-- Watts: Need to get driver working for stereo on servers -->
 <!-- Double stereo setup -->
-  <!-- Wide is on robot right, goes to four -->
+<!-- Wide is on robot right, goes to four -->
+<!--
   <group ns="wide_stereo">
     <node machine="four" pkg="dcam" type="stereodcam" name="stereodcam" respawn="false" >
       <param name="videre_mode" type="str" value="none"/>
@@ -80,8 +83,10 @@
       <param name="gain_auto" type="bool" value="true"/>
     </node>  
   </group>
+  -->
 
-  <!-- Narrow is on robot left, goes to three -->
+<!-- Narrow is on robot left, goes to three -->
+<!--
   <group ns="narrow_stereo">
     <node machine="three" pkg="dcam" type="stereodcam" name="stereodcam" respawn="false" >
       <param name="videre_mode" type="str" value="none"/>
@@ -93,6 +98,7 @@
       <param name="gain_auto" type="bool" value="true"/>
     </node> 
   </group>
+  -->
 
 
 <!-- Forearm Camera -->
@@ -125,11 +131,14 @@
 <!-- NTP monitoring script Warns to console if sync error -->
   <node pkg="pr2_computer_monitor" type="ntp_monitor.py" args="prg2" machine="realtime"/>
   <node pkg="pr2_computer_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two"/> 
-  <node pkg="pr2_computer_monitor" type="ntp_monitor.py" args="prg2" machine="three"/>
-  <node pkg="pr2_computer_monitor" type="ntp_monitor.py" args="prg2" machine="four"/>
 
-<!-- Disk, CPU monitoring scripts. -->
-  <include file="$(find pr2_alpha)/pr2_monitors.launch" />
+  <!-- Disk usage monitoring script Warns to console if disk full -->
+  <node pkg="pr2_computer_monitor" name="realtime_hd_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="realtime"/>
+  <node pkg="pr2_computer_monitor" name="two_hd_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="two"/> 
+
+  <!-- Monitor CPU temp, usage -->
+  <node pkg="pr2_computer_monitor" name="realtime_cpu_monitor" type="cpu_monitor.py" machine="realtime" />
+  <node pkg="pr2_computer_monitor" name="two_cpu_monitor" type="cpu_monitor.py" machine="two" />
 
   <!-- Joint states diagnostics logging -->
   <node pkg="pr2_mechanism_control" type="joints_to_diagnostics.py" machine="realtime" />
