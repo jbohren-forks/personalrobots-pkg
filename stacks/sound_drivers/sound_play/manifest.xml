@@ -16,7 +16,6 @@ This node has been tested on the Logitech USB speakers on the PR2 and on some bu
   <depend package="roslib" />
   <rosdep name="python-pygame" />
   <rosdep name="festival" />
-  <rosdep name="festvox-kallpc16k" />
   <export>
     <cpp cflags="-I${prefix}/msg/cpp" />
   </export>
