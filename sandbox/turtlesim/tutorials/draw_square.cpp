@@ -27,7 +27,6 @@ void poseCallback(const turtlesim::PoseConstPtr& pose)
 
 bool hasReachedGoal()
 {
-  printf("%f, %f, %f\n", fabsf(g_pose->x - g_goal.x), fabsf(g_pose->y - g_goal.y), fabsf(g_pose->theta - g_goal.theta));
   return fabsf(g_pose->x - g_goal.x) < 1 && fabsf(g_pose->y - g_goal.y) < 1 && fabsf(g_pose->theta - g_goal.theta) < 0.01;
 }
 
@@ -57,7 +56,7 @@ void stopForward(ros::Publisher vel_pub)
     g_state = TURN;
     g_goal.x = g_pose->x;
     g_goal.y = g_pose->y;
-    g_goal.theta = g_pose->theta + PI/2.0;
+    g_goal.theta = g_pose->theta + PI/4.0;
     printGoal();
   }
   else

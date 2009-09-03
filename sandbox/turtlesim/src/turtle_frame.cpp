@@ -62,8 +62,7 @@ TurtleFrame::TurtleFrame(wxWindow* parent)
   wxPen pen(*wxRED_PEN);
   pen.SetWidth(3);
   path_dc_.SetPen(pen);
-  path_dc_.SetBackground(wxBrush(wxColour(0, 144, 255)));
-  path_dc_.Clear();
+  clear();
 
   velocity_sub_ = nh_.subscribe("command_velocity", 1, &TurtleFrame::velocityCallback, this);
   pose_pub_ = nh_.advertise<Pose>("turtle_pose", 1);
@@ -75,6 +74,20 @@ TurtleFrame::TurtleFrame(wxWindow* parent)
 TurtleFrame::~TurtleFrame()
 {
   delete update_timer_;
+}
+
+void TurtleFrame::clear()
+{
+  int r = 0;
+  int g = 144;
+  int b = 255;
+
+  nh_.param("background_r", r, r);
+  nh_.param("background_g", g, g);
+  nh_.param("background_b", b, b);
+
+  path_dc_.SetBackground(wxBrush(wxColour(r, g, b)));
+  path_dc_.Clear();
 }
 
 void TurtleFrame::onUpdate(wxTimerEvent& evt)
@@ -171,7 +184,7 @@ void TurtleFrame::velocityCallback(const VelocityConstPtr& vel)
 
 bool TurtleFrame::clearCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
 {
-  path_dc_.Clear();
+  clear();
   return true;
 }
 
@@ -182,7 +195,7 @@ bool TurtleFrame::resetCallback(std_srvs::Empty::Request&, std_srvs::Empty::Resp
   orient_ = 0.0f;
   lin_vel_ = 0.0f;
   ang_vel_ = 0.0f;
-  path_dc_.Clear();
+  clear();
   return true;
 }
 

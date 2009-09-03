@@ -78,6 +78,7 @@ private:
   void onPaint(wxPaintEvent& evt);
 
   void updateTurtle();
+  void clear();
 
   void velocityCallback(const VelocityConstPtr& vel);
   bool clearCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
