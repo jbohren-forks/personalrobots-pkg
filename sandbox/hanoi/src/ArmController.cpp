@@ -3,6 +3,8 @@
 #include <manipulation_msgs/JointTraj.h>
 #include <experimental_controllers/TrajectoryStart.h>
 
+#include <visualization_msgs/Marker.h>
+
 #include "LinearMath/btQuaternion.h"
 
 #include "ArmController.h"
@@ -10,25 +12,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
 ArmController::ArmController(ros::NodeHandle &nh)
-  : nodeHandle_(nh), tf_(nodeHandle_), rm_("robot_description"), km_(&rm_, &tf_)
+  : nodeHandle_(nh), tf_(nodeHandle_), rm_("robot_description")
 {
-  // Subscribe to the cmd topic
-  armCmdSubscriber_ = nodeHandle_.subscribe("~/cmd", 10, 
-      &ArmController::CmdCB, this);
-
-  jointStateSubscriber_ = nodeHandle_.subscribe("joint_states", 100, 
-      &ArmController::MechanismStateCB, this);
-
-  gripperAction_ = new actionlib::SimpleActionClient<move_arm::ActuateGripperAction>(nodeHandle_,"actuate_gripper_right_arm");
-
-
-  // Create a publisher for outputting status of the controller
-  statusPublisher_ = nodeHandle_.advertise<hanoi::ArmStatus>("~/status",1,true);
-
-  positionArmPublisher_ = nodeHandle_.advertise<move_arm::MoveArmActionGoal>(
-      "/move_right_arm/goal", 1, true);
-
-  arm_ = "right_arm";
+  arm_ = "r";
 	names_.push_back( arm_ + "_shoulder_pan_joint" );
 	names_.push_back( arm_ + "_shoulder_lift_joint");
 	names_.push_back( arm_ + "_upper_arm_roll_joint");
@@ -36,6 +22,43 @@ ArmController::ArmController(ros::NodeHandle &nh)
 	names_.push_back( arm_ + "_forearm_roll_joint");
 	names_.push_back( arm_ + "_wrist_flex_joint");
 	names_.push_back( arm_ + "_wrist_roll_joint");
+
+  if (!rm_.loadedModels())
+  {
+    ROS_ERROR("Failed to load the robot models");
+    return;
+  }
+
+  printf("Waiting for state...\n");
+  km_ = new planning_environment::KinematicModelStateMonitor(&rm_, &tf_);
+  km_->waitForState();
+  printf("got state\n");
+
+  this->PrintJoints();
+
+  // Subscribe to the cmd topic
+  armCmdSubscriber_ = nodeHandle_.subscribe("~/cmd", 10, 
+      &ArmController::CmdCB, this);
+
+  moveArmStatusSubscriber_ = nodeHandle_.subscribe("/move_right_arm/status", 10,
+      &ArmController::MoveArmStatusCB, this);
+
+  jointStateSubscriber_ = nodeHandle_.subscribe("joint_states", 100, 
+      &ArmController::MechanismStateCB, this);
+
+  gripperAction_ = new actionlib::SimpleActionClient<move_arm::ActuateGripperAction>(nodeHandle_,"actuate_gripper_right_arm");
+
+  visPublisher_ = nodeHandle_.advertise<visualization_msgs::Marker>( 
+      "visualization_marker", 0 );
+  
+  // Create a publisher for outputting status of the controller
+  statusPublisher_ = nodeHandle_.advertise<hanoi::ArmStatus>("~/status",1,true);
+
+  positionArmPublisher_ = nodeHandle_.advertise<move_arm::MoveArmActionGoal>(
+      "/move_right_arm/goal", 1, true);
+
+  this->IKToGoal(0.4, -0.6, 0.9, 0,0,0,1);
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,46 +71,69 @@ ArmController::~ArmController()
 // Arm controller command
 void ArmController::CmdCB(const hanoi::ArmCmdConstPtr &msg)
 {
-  float shoulderX, shoulderY, shoulderZ;
-  float dist;
-
-  armCmd_ = *msg;
-
-  shoulderX = -0.05;
-  shoulderY = -0.18;
-  shoulderZ = 0.745;
-
-  dist = sqrt( pow(armCmd_.x - shoulderX, 2) + 
-               pow(armCmd_.y - shoulderY, 2) + 
-               pow(armCmd_.z - shoulderZ, 2) );
-
-  printf("Dist[%f]\n",dist);
-
-  if (dist > .82)
+  if (msg->action == "open")
   {
-    char msg[256];
-    sprintf(msg,"Arm Pos[%f %f %f] is invalid",armCmd_.x,armCmd_.y,armCmd_.z);
-    ROS_ERROR("%s\n",msg);
-
-    hanoi::ArmStatus status;
-    status.msg = msg;
-    status.status = -1;
-
-    statusPublisher_.publish( status );
-    return;
+    this->OpenGripper();
   }
-
-  btQuaternion q(armCmd_.yaw, armCmd_.pitch, armCmd_.roll);
-
-  if (msg->mode == "plan")
+  else if (msg->action == "close")
   {
-    this->PlanToGoal(armCmd_.x, armCmd_.y, armCmd_.z, 
-                     q.getX(), q.getY(), q.getZ(), q.getW());
+    this->CloseGripper();
   }
-  else if (msg->mode == "ik")
+  else if (msg->action == "move")
   {
-    this->IKToGoal(armCmd_.x, armCmd_.y, armCmd_.z, 
-                   q.getX(), q.getY(), q.getZ(), q.getW());
+    float shoulderX, shoulderY, shoulderZ;
+    float dist;
+
+    armCmd_ = *msg;
+
+    shoulderX = -0.05;
+    shoulderY = -0.18;
+    shoulderZ = 0.745;
+
+    dist = sqrt( pow(armCmd_.x - shoulderX, 2) + 
+        pow(armCmd_.y - shoulderY, 2) + 
+        pow(armCmd_.z - shoulderZ, 2) );
+
+    printf("Dist[%f]\n",dist);
+
+    if (dist > .82)
+    {
+      char msg[256];
+      sprintf(msg,"Arm Pos[%f %f %f] is invalid",armCmd_.x,armCmd_.y,armCmd_.z);
+      ROS_ERROR("%s\n",msg);
+
+      hanoi::ArmStatus status;
+      status.status = "invalid";
+
+      statusPublisher_.publish( status );
+      return;
+    }
+
+    btQuaternion q(armCmd_.yaw, armCmd_.pitch, armCmd_.roll);
+
+    goalx_ = armCmd_.x;
+    goaly_ = armCmd_.y;
+    goalz_ = armCmd_.z;
+
+    goalqx_ = q.getX();
+    goalqy_ = q.getY();
+    goalqz_ = q.getZ();
+    goalqw_ = q.getW();
+
+    if (msg->mode == "plan")
+    {
+      myState_ = "planning";
+      printf("Planning to goal\n");
+      this->PlanToGoal(armCmd_.x, armCmd_.y, armCmd_.z, 
+          q.getX(), q.getY(), q.getZ(), q.getW());
+    }
+    else if (msg->mode == "ik")
+    {
+      myState_ = "moving";
+      printf("IK move\n");
+      this->IKToGoal(armCmd_.x, armCmd_.y, armCmd_.z, 
+          q.getX(), q.getY(), q.getZ(), q.getW());
+    }
   }
 }
 
@@ -100,6 +146,29 @@ void ArmController::PlanToGoal(float x, float y, float z,
 
   g.header.stamp = ros::Time::now();
   moveArmGoalId_ = ros::Time::now();
+  
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "base_link";
+  marker.header.stamp = ros::Time();
+  marker.ns = "hanoi";
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::ARROW;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.position.x = x;
+  marker.pose.position.y = y;
+  marker.pose.position.z = z;
+  marker.pose.orientation.x = qx;
+  marker.pose.orientation.y = qy;
+  marker.pose.orientation.z = qz;
+  marker.pose.orientation.w = qw;
+  marker.scale.x = .2;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+  marker.color.a = 1.0;
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+  visPublisher_.publish( marker );
 
   std::cout << "Move Arm Goal Id[" << moveArmGoalId_.toNSec() << "]\n";
 
@@ -131,19 +200,18 @@ void ArmController::PlanToGoal(float x, float y, float z,
   g.goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.04;
   g.goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.04;
 
-  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.35;
-  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.35;
-  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.35;
-  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.35;
-  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.35;
-  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.35;
+  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.035;
+  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.035;
+  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.035;
+  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.035;
+  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.035;
+  g.goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.035;
   g.goal.goal_constraints.pose_constraint[0].orientation_importance = 0.2;
 
   positionArmPublisher_.publish(g);
 
   hanoi::ArmStatus msg;
-  msg.status = 0;
-  msg.msg = "Moving to planed goal";
+  msg.status = "moving";
 
   statusPublisher_.publish( msg );
 }
@@ -159,11 +227,12 @@ void ArmController::IKToGoal(float x, float y, float z,
   manipulation_srvs::IKService::Response response;
   manipulation_msgs::JointTraj traj;
 
-  client = nodeHandle_.serviceClient<manipulation_srvs::IKService>("arm_ik");
+  //client = nodeHandle_.serviceClient<manipulation_srvs::IKService>("arm_ik");
+  client = nodeHandle_.serviceClient<manipulation_srvs::IKService>("/pr2_ik_right_arm/ik_service");
   arm_ctrl = nodeHandle_.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
 
   request.data.pose_stamped.header.stamp = ros::Time::now();
-  request.data.pose_stamped.header.frame_id = km_.getFrameId();
+  request.data.pose_stamped.header.frame_id = km_->getFrameId();
   request.data.pose_stamped.pose.position.x = x;
   request.data.pose_stamped.pose.position.y = y;
   request.data.pose_stamped.pose.position.z = z;
@@ -176,10 +245,14 @@ void ArmController::IKToGoal(float x, float y, float z,
   experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
   experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 
-  planning_models::StateParams robot_state(*km_.getRobotState());
+  planning_models::StateParams robot_state(*km_->getRobotState());
   for(unsigned int i = 0; i < names_.size() ; ++i)
   {
-    const unsigned int u = km_.getKinematicModel()->getJoint(names_[i])->usedParams;
+    std::cout << "Joint Name[" << names_[i] << "]\n";
+    //planning_models::KinematicModel::Joint *j = km_->getKinematicModel()->getJoint(names_[i]);
+
+    const unsigned int u = km_->getKinematicModel()->getJoint(names_[i])->usedParams;
+
     for (unsigned int j = 0 ; j < u ; ++j)
       request.data.positions.push_back(*(robot_state.getParamsJoint(names_[i])));
   }
@@ -221,22 +294,38 @@ void ArmController::IKToGoal(float x, float y, float z,
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Joint state callback
-void ArmController::MechanismStateCB(const pr2_mechanism_msgs::MechanismStateConstPtr &msg)
+void ArmController::MechanismStateCB(const sensor_msgs::JointStateConstPtr &msg)
 {
   jointstates_ = *msg;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Get the move arm status message
+void ArmController::MoveArmStatusCB(const actionlib_msgs::GoalStatusArrayConstPtr &msg)
+{
+  moveArmStatus_ = *msg;
+
+  printf("Status[%d]\n",moveArmStatus_.status_list[0].status);
+
+  // Move arm failed, try ik
+  if (myState_ == "moving" && moveArmStatus_.status_list[0].status == 4)
+  {
+    printf("Plan failed...trying IK\n");
+    //this->IKToGoal(goalx_, goaly_, goalz_, goalqx_, goalqy_, goalqz_, goalqw_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Return true if the gripper is open
 bool ArmController::GripperIsOpen()
 {
-  if (jointstates_.joint_states.size() <= 0)
+  if (jointstates_.name.size() <= 0)
     return false;
 
-  for (unsigned int i=0; i < jointstates_.joint_states.size(); i++)
+  for (unsigned int i=0; i < jointstates_.name.size(); i++)
   {
-    if (jointstates_.joint_states[i].name == "r_gripper_joint")
-      if (jointstates_.joint_states[i].position >= 0.05)
+    if (jointstates_.name[i] == "r_gripper_joint")
+      if (jointstates_.position[i] >= 0.05)
         return true;
   }
 
@@ -247,13 +336,13 @@ bool ArmController::GripperIsOpen()
 /// Return true if the gripper is closed
 bool ArmController::GripperIsClosed()
 {
-  if (jointstates_.joint_states.size() <= 0)
+  if (jointstates_.name.size() <= 0)
     return false;
 
-  for (unsigned int i=0; i < jointstates_.joint_states.size(); i++)
+  for (unsigned int i=0; i < jointstates_.name.size(); i++)
   {
-    if (jointstates_.joint_states[i].name == "r_gripper_joint")
-      if (jointstates_.joint_states[i].position <= 0.002)
+    if (jointstates_.name[i] == "r_gripper_joint")
+      if (jointstates_.position[i] <= 0.002)
         return true;
   }
 
@@ -269,11 +358,16 @@ void ArmController::CloseGripper()
 
   gripperAction_->sendGoal(g);
 
-  bool status = gripperAction_->waitForGoalToFinish(ros::Duration(5));
-  if (status)
-    std::cout << "Gripper State:" << gripperAction_->getTerminalState().toString() << "\n";
+  bool gripstatus = gripperAction_->waitForGoalToFinish(ros::Duration(5));
+  if (gripstatus)
+    std::cout << "Gripper State:" 
+      << gripperAction_->getTerminalState().toString() << "\n";
   else
     std::cout << "Gripper unable to reach goal\n";
+
+  hanoi::ArmStatus status;
+  status.status = "closed";
+  statusPublisher_.publish( status );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -285,10 +379,28 @@ void ArmController::OpenGripper()
 
   gripperAction_->sendGoal(g);
 
-  bool status = gripperAction_->waitForGoalToFinish(ros::Duration(5));
-  if (status)
-    std::cout << "Gripper State:" << gripperAction_->getTerminalState().toString() << "\n";
+  bool gripstatus = gripperAction_->waitForGoalToFinish(ros::Duration(5));
+  if (gripstatus)
+    std::cout << "Gripper State:" << 
+      gripperAction_->getTerminalState().toString() << "\n";
   else
     std::cout << "Gripper unable to reach goal\n";
 
+  hanoi::ArmStatus status;
+  status.status = "open";
+  statusPublisher_.publish( status );
 }
+
+void ArmController::PrintJoints()
+{
+  const planning_models::KinematicModel::ModelInfo &mi = km_->getKinematicModel()->getModelInfo();
+
+  for (unsigned int i = 0 ; i < names_.size(); ++i)
+  {
+    int idx = km_->getKinematicModel()->getJointIndex(names_[i]);
+    std::cout << "  " << i << " = " << names_[i] << "  [" 
+      << mi.stateBounds[idx * 2] << ", " << mi.stateBounds[idx * 2 + 1] << "]" 
+      << std::endl;
+  }
+}
+

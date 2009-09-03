@@ -1,4 +1,4 @@
 Header header
 
-int32 status
+string status
 string msg

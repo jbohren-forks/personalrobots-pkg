@@ -114,7 +114,7 @@ class Hanoi
 
   //private: move_arm::MoveArmResult moveArmResult_;
 
-  private: unsigned int colorTrackStatus_;
+  private: std::string colorTrackStatus_;
 
   private: hanoi::ArmStatus armStatus_;
 };

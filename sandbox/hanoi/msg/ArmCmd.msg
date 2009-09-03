@@ -1,5 +1,6 @@
 Header header
 
+string action
 string mode
 
 float32 x

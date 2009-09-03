@@ -21,6 +21,7 @@
   <depend package="bullet"/>
   <depend package="move_arm_tools"/>
   <depend package="actionlib"/>
+  <depend package="actionlib_msgs"/>
   <depend package="robot_mechanism_controllers"/>
   <depend package="planning_environment"/>
 

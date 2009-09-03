@@ -41,25 +41,27 @@ Hanoi::Hanoi(ros::NodeHandle &nh)
 
   colorTrackerStatusSubscriber_ = nodeHandle_.subscribe("/color_tracker/status", 10, &Hanoi::ColorTrackStatusCB, this);
 
-  armStatusSubscriber_ = nodeHandle_.subscribe("/arm_controller/status", 10, &Hanoi::ArmStatusCB, this);
+  armStatusSubscriber_ = nodeHandle_.subscribe("/arm_controller/status", 10, 
+      &Hanoi::ArmStatusCB, this);
 
   // Create the publisher for cylinder data
   cylinderPublisher_ = nodeHandle_.advertise<hanoi::Cylinders>("~/cylinders", 1);
 
   // Create the publisher that controls head tracking
-  colorTrackPublisher_ = nodeHandle_.advertise<hanoi::ColorTrackCmd>("/color_tracker/cmd", 1);
+  colorTrackPublisher_ = nodeHandle_.advertise<hanoi::ColorTrackCmd>(
+      "/color_tracker/cmd", 1);
 
   // Create the publisher that controls head tracking
-  armCmdPublisher_ = nodeHandle_.advertise<hanoi::ArmCmd>("/arm_controller/cmd", 1);
+  armCmdPublisher_ = nodeHandle_.advertise<hanoi::ArmCmd>(
+      "/arm_controller/cmd", 1);
 
   // Subscribe to the point cloud data
   //cloudSubscriber_ = nodeHandle_.subscribe("cloud_data",1,&Hanoi::CloudCB,this);
 
-  ros::service::waitForService("/auto_arm_cmd_server");
+  //ros::service::waitForService("/auto_arm_cmd_server");
 
-  /*updateTimer_ = nodeHandle_.createTimer(ros::Duration(0.5), 
+  updateTimer_ = nodeHandle_.createTimer(ros::Duration(0.5), 
         &Hanoi::UpdateCB, this);
-        */
 
   // Get the point cloud
   tf::MessageNotifier<sensor_msgs::PointCloud> *message_notifier = 
@@ -78,13 +80,14 @@ Hanoi::Hanoi(ros::NodeHandle &nh)
   actions_["grasp"].push_back(CLOSE_GRIPPER);
   actions_["grasp"].push_back(CLOSING_GRIPPER);
 
-  //this->ActivateAction("grasp");
+  this->ActivateAction("grasp");
 
-  hanoi::ColorTrackCmd ctcmd;
+  /*hanoi::ColorTrackCmd ctcmd;
   ctcmd.red = 1;
   ctcmd.green = 0;
   ctcmd.blue = 0;
   colorTrackPublisher_.publish(ctcmd);
+  */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -119,8 +122,6 @@ void Hanoi::UpdateCB( const ros::TimerEvent &e )
 
   iter = actions_.find(currentAction_);
 
-  printf("Update\n");
-
   if (iter != actions_.end())
   {
     switch (*stateIter_)
@@ -138,32 +139,38 @@ void Hanoi::UpdateCB( const ros::TimerEvent &e )
         break;
 
       case OPEN_GRIPPER:
-        /*printf("OPEN_GRIPPER\n");
-        this->OpenGripper();
-        stateIter_++;
-        */
-        break;
+        {
+          printf("OPEN GRIPPER\n");
+          hanoi::ArmCmd armcmd;
+          armcmd.action = "open";
+          armCmdPublisher_.publish(armcmd);
+          stateIter_++;
+          break;
+        }
 
       case OPENING_GRIPPER:
-        /*printf("OPENING_GRIPPER\n");
-        if (this->GripperIsOpen())
+        printf("OPENING GRIPPER\n");
+        if (armStatus_.status == "open" )
           stateIter_++;
-          */
         break;
 
       case CLOSE_GRIPPER:
-        /*printf("CLOSE_GRIPPER\n");
-        this->CloseGripper();
-        stateIter_++;
-        */
-        break;
+        {
+          printf("CLOSE GRIPPER\n");
+          hanoi::ArmCmd armcmd;
+          armcmd.action = "close";
+          armCmdPublisher_.publish(armcmd);
+          stateIter_++;
+          break;
+        }
 
       case CLOSING_GRIPPER:
-        /*printf("CLOSING_GRIPPER\n");
-        if (this->GripperIsClosed())
-          stateIter_++;
-          */
-        break;
+        {
+          printf("CLOSING GRIPPER\n");
+          if (armStatus_.status == "closed" )
+            stateIter_++;
+          break;
+        }
 
       case MOVE_OFFSET:
         printf("MOVE_OFFSET\n");
@@ -231,12 +238,12 @@ bool Hanoi::ArmAtGoal()
 
   tf_.transformPoint( "base_link", point, point );
 
-  dist = sqrt( pow(point.point.x-armGoal_.point.x,2) + 
-               pow(point.point.y-armGoal_.point.y,2) +
-               pow(point.point.z-armGoal_.point.z,2));
+  dist = sqrt( pow(point.point.x - armGoal_.point.x,2) + 
+               pow(point.point.y - armGoal_.point.y,2) +
+               pow(point.point.z - armGoal_.point.z,2));
 
   printf("Distance to goal[%f]\n",dist);
-  if (dist < 0.001)
+  if (dist < 0.07)
     return true;
  
   return false;
@@ -249,6 +256,7 @@ void Hanoi::CommandArm(const std::string &mode, float x, float y, float z,
 {
   hanoi::ArmCmd armcmd;
 
+  armcmd.action = "move";
   armcmd.mode = mode;
 
   armcmd.x = x;
@@ -259,6 +267,11 @@ void Hanoi::CommandArm(const std::string &mode, float x, float y, float z,
   armcmd.pitch = pitch;
   armcmd.yaw = yaw;
 
+  armGoal_.point.x = x;
+  armGoal_.point.y = y;
+  armGoal_.point.z = z;
+
+  printf("Sending arm command\n");
   armCmdPublisher_.publish(armcmd);
 }
 
@@ -276,7 +289,16 @@ void Hanoi::CloudCB(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessageP
 bool Hanoi::MoveArm()
 {
   if (pointcloud_.points.size() <= 0)
+  {
+    printf("No point cloud.\n");
     return false;
+  }
+
+  if (colorTrackStatus_ != "tracking")
+  {
+    printf("Hasn't seen the target\n");
+    return false;
+  }
 
   float dist, minDist;
   int minIndex = 0;
@@ -284,19 +306,22 @@ bool Hanoi::MoveArm()
   float minPointX;
   float xvalue, yvalue;
 
-  minDist = 1000;
   minPointX = 1000;
 
   tf_.transformPointCloud(parameter_frame_, pointcloud_, pointcloud_ );
 
-  for (unsigned int y = redBlob_.y; y < redBlob_.bottom; y++)
+  // Use the center of the blob in the x-direction
+  unsigned int x = redBlob_.x;
+
+  for (unsigned int y = redBlob_.top; y < redBlob_.bottom; y++)
   {
+    minDist = 1000;
     for (unsigned int i=0; i < pointcloud_.channels[1].values.size(); i++)
     {
       yvalue = pointcloud_.channels[2].values[i];
       xvalue = pointcloud_.channels[1].values[i];
 
-      dist = sqrt( pow(xvalue-redBlob_.x, 2) + pow(yvalue-y,2) );
+      dist = sqrt( pow(xvalue-x, 2) + pow(yvalue-y,2) );
       if (dist < minDist)
       {
         minDist = dist;
@@ -304,12 +329,11 @@ bool Hanoi::MoveArm()
       }
     }
 
-    if (pointcloud_.points[minIndex].x < minPointX)
+    if (minDist < 1.0 && pointcloud_.points[minIndex].x < minPointX)
     {
       minPointX = pointcloud_.points[minIndex].x;
       closestIndex = minIndex;
     }
-
   }
 
   printf("MinDist[%f] I[%d] XYZ[%f %f %f]\n",minDist, closestIndex, 

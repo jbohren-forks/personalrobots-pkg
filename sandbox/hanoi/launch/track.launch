@@ -4,6 +4,8 @@
     <remap from="pan_tilt" to="head_controller/command"/>
     <param name="start_tilt" value="0.4"/>
     <param name="start_pan" value="0.0"/>
+    <param name="pan_gain" value="0.08"/>
+    <param name="tilt_gain" value="0.08"/>
   </node>
 
 </launch>

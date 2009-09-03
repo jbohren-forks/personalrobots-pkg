@@ -19,6 +19,9 @@ class ColorTracker
   /// \brief Destructor
   public: virtual ~ColorTracker();
 
+  /// \brief Update callback
+  public: void UpdateCB( const ros::TimerEvent &e );
+
   /// \brief Blob callback
   public: void BlobCB(const cmvision::BlobsConstPtr &msg);
 
@@ -45,6 +48,11 @@ class ColorTracker
   private: ros::Publisher statusPublisher_;
   private: ros::Publisher headPublisher_;
 
+  private: ros::Timer updateTimer_;
+
+  private: bool hasRed_, hasGreen_, hasBlue_;
+
+  private: int imageWidth_, imageHeight_;
   private: cmvision::Blob redBlob_;
   private: cmvision::Blob greenBlob_;
   private: cmvision::Blob blueBlob_;
@@ -52,6 +60,7 @@ class ColorTracker
   private: unsigned int trackRed_, trackGreen_, trackBlue_;
 
   private: float panPos_, tiltPos_;
+  private: double panGain_, tiltGain_;
 
 };
 

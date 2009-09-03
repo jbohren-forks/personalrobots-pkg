@@ -1,11 +1,12 @@
 <launch>
 
-  <node pkg="move_arm_tools" name="auto_arm_cmd" type="auto_arm_cmd" output="screen" args="right">
+  <!--<node pkg="move_arm_tools" name="auto_arm_cmd" type="auto_arm_cmd" output="screen" args="right">
     <remap from="robot_description" to="robot_description" />
     <remap from="arm_ik" to="pr2_ik_right_arm/ik_service" />
     
     <param name="planner_service" value="ompl_planning/plan_kinematic_path" />
   </node>
+  -->
 
   <include file="$(find hanoi)/launch/cmvision.launch"/>
 
