@@ -162,6 +162,7 @@ public:
 
     void create_one_way_descriptor_base()
     {
+		/*m_pose_count = 100;*/
         m_base = new CvOneWayDescriptorObject(m_patch_size, m_pose_count, m_train_path.c_str(), 
                                             m_pca_config.c_str(), m_pca_hr_config.c_str(), 
                                             m_pca_desc_config.c_str());

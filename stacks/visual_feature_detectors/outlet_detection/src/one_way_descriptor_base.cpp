@@ -177,17 +177,23 @@ void CvOneWayDescriptorBase::InitializeDescriptor(int desc_idx, IplImage* train_
     }
 }
 
-void CvOneWayDescriptorBase::FindDescriptor(IplImage* src, Point2f pt, int& desc_idx, int& pose_idx, float& distance) const
+void CvOneWayDescriptorBase::FindDescriptor(CvArr* src, Point2f pt, int& desc_idx, int& pose_idx, float& distance) const
 {
-    CvRect roi = cvRect(pt.x - m_patch_size.width/4, pt.y - m_patch_size.height/4, m_patch_size.width/2, m_patch_size.height/2);
-    cvSetImageROI(src, roi);
+	if (!CV_IS_MAT(src))
+	{
+		CvRect roi = cvRect(pt.x - m_patch_size.width/4, pt.y - m_patch_size.height/4, m_patch_size.width/2, m_patch_size.height/2);
+		cvSetImageROI((IplImage*)src, roi);
+	}
     
     FindDescriptor(src, desc_idx, pose_idx, distance);
     
-    cvResetImageROI(src);
+	if (!CV_IS_MAT(src))
+	{
+		cvResetImageROI((IplImage*)src);
+	}
 }
 
-void CvOneWayDescriptorBase::FindDescriptor(IplImage* patch, int& desc_idx, int& pose_idx, float& distance) const
+void CvOneWayDescriptorBase::FindDescriptor(CvArr* patch, int& desc_idx, int& pose_idx, float& distance) const
 {
 #if 0
     ::FindOneWayDescriptor(m_train_feature_count, m_descriptors, patch, desc_idx, pose_idx, distance, m_pca_avg, m_pca_eigenvectors);
@@ -196,9 +202,12 @@ void CvOneWayDescriptorBase::FindDescriptor(IplImage* patch, int& desc_idx, int&
     const float scale_max = 1.2f;
     const float scale_step = 1.1f;
     float scale = 1.0f;
-    ::FindOneWayDescriptorEx(m_train_feature_count, m_descriptors, patch, 
-                             scale_min, scale_max, scale_step, desc_idx, pose_idx, distance, scale, 
-                             m_pca_avg, m_pca_eigenvectors);
+
+
+	::FindOneWayDescriptorEx(m_train_feature_count, m_descriptors, patch, 
+								scale_min, scale_max, scale_step, desc_idx, pose_idx, distance, scale, 
+								m_pca_avg, m_pca_eigenvectors);
+
 #endif
 }
 

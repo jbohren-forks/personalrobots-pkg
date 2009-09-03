@@ -107,7 +107,7 @@ class CvOneWayDescriptorBase
         // - desc_idx: output index of the closest descriptor to the input patch
         // - pose_idx: output index of the closest pose of the closest descriptor to the input patch
         // - distance: distance from the input patch to the closest feature pose
-        void FindDescriptor(IplImage* patch, int& desc_idx, int& pose_idx, float& distance) const;
+        void FindDescriptor(CvArr* patch, int& desc_idx, int& pose_idx, float& distance) const;
         
         // FindDescriptor: finds the closest descriptor
         // - src: input image 
@@ -115,7 +115,7 @@ class CvOneWayDescriptorBase
         // - desc_idx: output index of the closest descriptor to the input patch
         // - pose_idx: output index of the closest pose of the closest descriptor to the input patch
         // - distance: distance from the input patch to the closest feature pose
-        void FindDescriptor(IplImage* src, Point2f pt, int& desc_idx, int& pose_idx, float& distance) const;
+        void FindDescriptor(CvArr* src, Point2f pt, int& desc_idx, int& pose_idx, float& distance) const;
         
         // InitializePoses: generates random poses
         void InitializePoses();
@@ -150,10 +150,11 @@ class CvOneWayDescriptorBase
         // SetPCALow: sets the low resolution pca matrices (copied to internal structures)
         void SetPCALow(CvMat* avg, CvMat* eigenvectors);
         
-        void GetLowPCA(CvMat** avg, CvMat** eigenvectors)
+        int GetLowPCA(CvMat** avg, CvMat** eigenvectors)
         {
             *avg = m_pca_avg;
             *eigenvectors = m_pca_eigenvectors;
+			return m_pca_dim_low;
         };
         
         

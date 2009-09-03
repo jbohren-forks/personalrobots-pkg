@@ -194,7 +194,7 @@ public:
     // - distance: distance to the closest pose (L2 distance in PCA space)
     // - avg: PCA average vector. If 0, matching without PCA is used
     // - eigenvectors: PCA eigenvectors, one per row
-    void EstimatePosePCA(IplImage* patch, int& pose_idx, float& distance, CvMat* avg, CvMat* eigenvalues) const;
+    void EstimatePosePCA(CvArr* patch, int& pose_idx, float& distance, CvMat* avg, CvMat* eigenvalues) const;
 
     // GetPatchSize: returns the size of each image patch after warping (2 times smaller than the input patch) 
     CvSize GetPatchSize() const
@@ -260,10 +260,10 @@ protected:
     int m_pca_dim_low; // the number of pca components to use for comparison
 };
 
-void FindOneWayDescriptor(int desc_count, const CvOneWayDescriptor* descriptors, IplImage* patch, int& desc_idx, int& pose_idx, float& distance, 
+void FindOneWayDescriptor(int desc_count, const CvOneWayDescriptor* descriptors, CvArr* patch, int& desc_idx, int& pose_idx, float& distance, 
                           CvMat* avg = 0, CvMat* eigenvalues = 0);
 
-void FindOneWayDescriptorEx(int desc_count, const CvOneWayDescriptor* descriptors, IplImage* patch, 
+void FindOneWayDescriptorEx(int desc_count, const CvOneWayDescriptor* descriptors, CvArr* patch, 
                             float scale_min, float scale_max, float scale_step,
                             int& desc_idx, int& pose_idx, float& distance, float& scale, 
                             CvMat* avg, CvMat* eigenvectors);
