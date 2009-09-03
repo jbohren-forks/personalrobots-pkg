@@ -1,13 +1,19 @@
 <package>
-  <description brief="chomp_motion_planner">
+  <description brief="CHOMP - Covariant Hamiltonian Optimization for Motion Planning">
 
-     chomp_motion_planner
+CHOMP is a motion planner based on trajectory optimization.
+It generates smooth, collision-free trajectories. For technical, algorithmic details,
+please refer to:
+
+"CHOMP: Gradient Optimization Techniques for Efficient Motion Planning".
+Nathan Ratliff, Matthew Zucker, J. Andrew Bagnell anhd Siddhartha Srinivasa.
+IEEE International Conference on Robotics and Automation, May 2009. 
 
   </description>
-  <author>Mrinal Kalakrishnan/ kalakris@willowgarage.com</author>
+  <author>Mrinal Kalakrishnan / mail@mrinal.net</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/chomp_motion_planner</url>
+  <url>http://ros.org/wiki/chomp_motion_planner</url>
 
   <depend package="roscpp" />
   <depend package="planning_models" />

@@ -2,7 +2,11 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b chomp_motion_planner is ... 
+\b chomp_motion_planner implements the motion planning interface that the
+move_arm package requires. More details about this interface are available at:
+http://www.ros.org/wiki/motion_planning. The tutorial on that page demonstrates
+how to get started using the entire motion planning stack. All it requires to use CHOMP
+is to launch the chomp_planner.launch instead of xxxx_yyyy_planner.launch.
 
 <!-- 
 In addition to providing an overview of your package,
