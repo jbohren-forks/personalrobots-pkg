@@ -13,6 +13,8 @@ import tf.transformations
 from geometry_msgs.msg import PoseWithCovariance, PoseWithCovarianceStamped, PoseStamped, Pose, Quaternion, Point
 from numpy import float64
 
+from simplify import Simplifier
+
 _map_cache = {}
 _scale_cache = {}
 _tile_cache = {}
@@ -23,6 +25,7 @@ def config_plugin(context):
   pose_publisher = rospy.Publisher('/initialpose', PoseWithCovarianceStamped)
 
   context.register_handler("/map", map_tiler_handler)
+  context.register_subtopic("/move_base/NavfnROS/plan:simplified", Simplifier)
 
 def get_map(service_name):
   map_key = service_name

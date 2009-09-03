@@ -45,8 +45,8 @@ var MapTile = Class.create({
 var MapViewer = Class.create({
     initialize: function(domobj) {
         this.viewer = domobj;
+        this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan:simplified'];
         //this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan'];
-        this.topics = ['/robot_pose_visualization', '/simple_plan'];
         //this.topics = ['/robot_pose_visualization', '/move_base/TrajectoryPlannerROS/robot_footprint'];
         //this.topics = ['/robot_pose_visualization'];
     },
@@ -131,6 +131,7 @@ var MapViewer = Class.create({
                 getDataFromServer('_set_goal_pump', url);
                 this.settingGoal = false;
                 this.settingPose = false;
+                delete this.robot_est;
             }
         }
     },
@@ -141,6 +142,14 @@ var MapViewer = Class.create({
             this.mark = [Event.pointerX(e), Event.pointerY(e)];
             this.panMap(this.mark[0] - old_mark[0],
                         this.mark[1] - old_mark[1]);
+        } else if (this.settingGoal || this.settingPose) {
+            var off = this.viewer.cumulativeOffset();
+            var pos = this.pixelToMap([this.mark[0]-off.left, this.mark[1]-off.top]);
+            var dx = Event.pointerX(e) - this.mark[0];
+            var dy = Event.pointerY(e) - this.mark[1];
+            var angle = Math.atan2(-dy, dx);
+            this.robot_est = {'x': pos.x, 'y': pos.y, 'angle': angle};
+            this.updateCanvas();
         }
     },
 
@@ -253,6 +262,17 @@ var MapViewer = Class.create({
             ctx.drawImage(this.robot_img, -this.robot_img.width / 2, -this.robot_img.height / 2);
             ctx.restore();
         }
+        if (this.robot_est) {
+            var coords = this.mapToPixel(this.robot_est);
+            ctx.save();
+            ctx.translate(coords[0], coords[1]);
+            ctx.rotate(-this.robot_est.angle);
+            var sx = 0.65 / (this.robot_img.width * this.sourceResolution * this.scale);
+            var sy = 0.65 / (this.robot_img.height * this.sourceResolution * this.scale);
+            ctx.scale(sx, sy);
+            ctx.drawImage(this.robot_img, -this.robot_img.width / 2, -this.robot_img.height / 2);
+            ctx.restore();
+        }
 
         // Draw plan
         if (this.plan) {
@@ -310,7 +330,7 @@ var MapViewer = Class.create({
                         'y': msg.pose.position.y,
                         'angle': angle};
         } else if (topic == '/move_base/NavfnROS/plan' ||
-                   topic == '/simple_plan') {
+                   topic == '/move_base/NavfnROS/plan:simplified') {
             this.plan = msg.poses;
         } else if (topic == '/move_base/TrajectoryPlannerROS/robot_footprint') {
             this.footprint = msg.polygon.points;
