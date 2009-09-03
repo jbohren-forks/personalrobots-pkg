@@ -53,8 +53,10 @@ public:
 
   DenseLaserSnapshotter()
   {
+    assembler_.setCacheSize(40*20);
     prev_signal_.header.stamp = ros::Time(0, 0);
     signal_sub_ = n_.subscribe("laser_tilt_controller/laser_scanner_signal", 2, &DenseLaserSnapshotter::scannerSignalCallback, this);
+    scan_sub_ = n_.subscribe("scan", 1, &DenseLaserSnapshotter::scanCallback, this);
     snapshot_pub_ = n_.advertise<calibration_msgs::DenseLaserSnapshot> ("dense_laser_snapshot", 1);
     first_time_ = true;
   }
@@ -62,6 +64,11 @@ public:
   ~DenseLaserSnapshotter()
   {
 
+  }
+
+  void scanCallback(const sensor_msgs::LaserScanConstPtr& scan)
+  {
+    assembler_.add(scan);
   }
 
   void scannerSignalCallback(const pr2_msgs::LaserScannerSignalConstPtr& cur_signal)
