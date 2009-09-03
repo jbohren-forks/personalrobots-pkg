@@ -1,6 +1,7 @@
 <html>
 <head>
 <?cs include:"includes.cs" ?>
+<link rel="stylesheet" type="text/css" href="templates/<?cs var:CGI.cur.device_style?>">
 <script type="text/javascript" src="jslib/map_viewer.js"></script>
 </head>
 
@@ -18,7 +19,7 @@
 <table width=80% align=center>
 <tr>
 <td>
-<div style="position:absolute;overflow:hidden;width:80%;height:600;border:2px solid" objtype=MapViewer></div><br>
+<div class=mapviewer objtype=MapViewer></div><br>
 </td>
 </table>
 
