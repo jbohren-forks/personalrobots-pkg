@@ -1,5 +1,5 @@
 <launch>
-  <rosparam command="load" file="$(find texas)/dallas_base_controller.yaml" ns="pr2_base_controller" />
+  <rosparam command="load" file="$(find texas)/texas.yaml" ns="pr2_base_controller" />
   <node pkg="pr2_mechanism_control" type="spawner.py" args="pr2_base_controller" />
   
   <group name="ps3_teleop">
@@ -28,9 +28,9 @@
     <!-- Buttons have changed for PS3 controller mapping -->
     <param name="run_button" value="11" type="int" />
     <param name="torso_dn_button" value="14" type="int" />
-    <param name="torso_up_button" value="12" type="int" />
+    <param name="torso_up_button" value="10" type="int" />
     <param name="head_button" value="8" type="int" />
-    <param name="deadman_button" value="10" type="int"/>
+    <param name="deadman_button" value="12" type="int"/>
     
     <param name="walk_vel" value="0.20" />
     <param name="run_vel" value="0.5" />
