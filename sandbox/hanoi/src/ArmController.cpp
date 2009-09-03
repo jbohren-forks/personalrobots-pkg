@@ -248,9 +248,6 @@ void ArmController::IKToGoal(float x, float y, float z,
   planning_models::StateParams robot_state(*km_->getRobotState());
   for(unsigned int i = 0; i < names_.size() ; ++i)
   {
-    std::cout << "Joint Name[" << names_[i] << "]\n";
-    //planning_models::KinematicModel::Joint *j = km_->getKinematicModel()->getJoint(names_[i]);
-
     const unsigned int u = km_->getKinematicModel()->getJoint(names_[i])->usedParams;
 
     for (unsigned int j = 0 ; j < u ; ++j)
@@ -303,7 +300,7 @@ void ArmController::MechanismStateCB(const sensor_msgs::JointStateConstPtr &msg)
 // Get the move arm status message
 void ArmController::MoveArmStatusCB(const actionlib_msgs::GoalStatusArrayConstPtr &msg)
 {
-  moveArmStatus_ = *msg;
+  /*moveArmStatus_ = *msg;
 
   printf("Status[%d]\n",moveArmStatus_.status_list[0].status);
 
@@ -313,6 +310,7 @@ void ArmController::MoveArmStatusCB(const actionlib_msgs::GoalStatusArrayConstPt
     printf("Plan failed...trying IK\n");
     //this->IKToGoal(goalx_, goaly_, goalz_, goalqx_, goalqy_, goalqz_, goalqw_);
   }
+  */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -358,7 +356,7 @@ void ArmController::CloseGripper()
 
   gripperAction_->sendGoal(g);
 
-  bool gripstatus = gripperAction_->waitForGoalToFinish(ros::Duration(5));
+  bool gripstatus = gripperAction_->waitForGoalToFinish(ros::Duration(3));
   if (gripstatus)
     std::cout << "Gripper State:" 
       << gripperAction_->getTerminalState().toString() << "\n";
@@ -379,7 +377,7 @@ void ArmController::OpenGripper()
 
   gripperAction_->sendGoal(g);
 
-  bool gripstatus = gripperAction_->waitForGoalToFinish(ros::Duration(5));
+  bool gripstatus = gripperAction_->waitForGoalToFinish(ros::Duration(3));
   if (gripstatus)
     std::cout << "Gripper State:" << 
       gripperAction_->getTerminalState().toString() << "\n";
