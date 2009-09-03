@@ -32,6 +32,7 @@
 
 #include <stdint.h>
 #include <sstream>
+#include <cstdio>
 
 #include <boost/scoped_ptr.hpp>
 
