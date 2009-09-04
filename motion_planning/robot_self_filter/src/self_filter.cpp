@@ -36,7 +36,8 @@
 
 #include <ros/ros.h>
 #include "robot_self_filter/self_mask.h"
-#include <tf/message_notifier.h>
+#include <tf/message_filter.h>
+#include <message_filters/subscriber.h>
 #include <sstream>
     
 class SelfFilter
@@ -70,8 +71,10 @@ public:
 	if (!sensor_frame_.empty())
 	    frames.push_back(sensor_frame_);
 
-	mn_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&SelfFilter::cloudCallback, this, _1), "cloud_in", "", 1);
-	mn_->setTargetFrame(frames);
+	sub_ = new message_filters::Subscriber<sensor_msgs::PointCloud>(nh_, "cloud_in", 1);	
+	mn_ = new tf::MessageFilter<sensor_msgs::PointCloud>(*sub_, tf_, "", 1);
+	mn_->setTargetFrames(frames);
+	mn_->registerCallback(boost::bind(&SelfFilter::cloudCallback, this, _1));
 	
 	nh_.param<std::string>("~annotate", annotate_, std::string());
 	pointCloudPublisher_ = nh_.advertise<sensor_msgs::PointCloud>("cloud_out", 1);
@@ -85,6 +88,8 @@ public:
     {
 	if (mn_)
 	    delete mn_;
+	if (sub_)
+	    delete sub_;
 	if (sf_)
 	    delete sf_;
     }
@@ -177,14 +182,16 @@ private:
 
     }
     
-    tf::TransformListener                         tf_;
-    robot_self_filter::SelfMask                  *sf_;
-    tf::MessageNotifier<sensor_msgs::PointCloud> *mn_;
-    ros::Publisher                                pointCloudPublisher_;
-    std::string                                   sensor_frame_;
-    ros::NodeHandle                               nh_;
-    std::string                                   annotate_;
-    double                                        min_sensor_dist_;
+    tf::TransformListener                                 tf_;
+    robot_self_filter::SelfMask                          *sf_;
+    tf::MessageFilter<sensor_msgs::PointCloud>           *mn_;
+    message_filters::Subscriber<sensor_msgs::PointCloud> *sub_;
+    
+    ros::Publisher                                        pointCloudPublisher_;
+    std::string                                           sensor_frame_;
+    ros::NodeHandle                                       nh_;
+    std::string                                           annotate_;
+    double                                                min_sensor_dist_;
     
 };
 
