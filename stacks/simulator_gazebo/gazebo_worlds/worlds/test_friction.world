@@ -25,7 +25,7 @@
   <!-- here's the global contact cfm/erp -->
   <physics:ode>
     <stepTime>0.001</stepTime>
-    <gravity>0 0 -9.8</gravity>
+    <gravity>0.0 -1.0 -1.0</gravity>
     <cfm>0.0000000001</cfm>
     <erp>0.2</erp>
     <quickStep>true</quickStep>
@@ -64,7 +64,6 @@
     <grid>false</grid>
     <maxUpdateRate>30.0</maxUpdateRate>
   </rendering:ogre>
-
 
 
   <model:physical name="gplane">
@@ -112,9 +111,9 @@
 
 
 
-  <!-- The Slide-->
+  <!-- The Slide
   <model:physical name="slide1_model">
-    <static>true</static>
+    <static>false</static>
     <xyz>   0.0    0.0    0.00</xyz>
     <rpy>   0.0    0.0    0.00</rpy>
     <body:box name="slide1_legs_body">
@@ -126,7 +125,7 @@
         <xyz>   0.0    5.0    13</xyz>
         <rpy>  45.0    0.0    0.00</rpy>
         <size> 50.0   20.0    1.0</size>
-        <mass> 1000.0</mass>
+        <mass> 100.0</mass>
         <visual>
           <size>50.0  20.0    1.0</size>
           <material>PR2/Red</material>
@@ -134,13 +133,24 @@
         </visual>
       </geom:box>
     </body:box>
+    <joint:hinge name="slide_fixed_joint">
+        <body1>slide1_legs_body</body1>
+        <body2>world</body2>
+        <anchor>slide1_legs_body</anchor>
+        <lowStop>0</lowStop>
+        <highStop>0</highStop>
+        <axis>1 0 0</axis>
+    </joint:hinge>
+
   </model:physical>
+  -->
+
 
 
   <!-- boxes -->
   <model:physical name="box_01_model">
-    <xyz>   2.0    8.0   17.42</xyz>
-    <rpy>  45.0    0.0    0.0</rpy>
+    <xyz>   2.0    8.0    0.5</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
     <body:box name="box_01_body">
       <massMatrix>true</massMatrix> 
       <mass>1.0</mass>
@@ -171,8 +181,8 @@
   </model:physical>
 
   <model:physical name="box_02_model">
-    <xyz>   4.0    8.0   17.42</xyz>
-    <rpy>  45.0    0.0    0.0</rpy>
+    <xyz>   4.0    8.0    0.5</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
     <body:box name="box_02_body">
       <massMatrix>true</massMatrix> 
       <mass>1.0</mass>
@@ -203,8 +213,8 @@
   </model:physical>
 
   <model:physical name="box_03_model">
-    <xyz>   6.0    8.0   17.42</xyz>
-    <rpy>  45.0    0.0    0.0</rpy>
+    <xyz>   6.0    8.0    0.5</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
     <body:box name="box_03_body">
       <massMatrix>true</massMatrix> 
       <mass>1.0</mass>
@@ -235,8 +245,8 @@
   </model:physical>
 
   <model:physical name="box_04_model">
-    <xyz>   8.0    8.0   17.42</xyz>
-    <rpy>  45.0    0.0    0.0</rpy>
+    <xyz>   8.0    8.0    0.5</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
     <body:box name="box_04_body">
       <massMatrix>true</massMatrix> 
       <mass>1.0</mass>
@@ -267,8 +277,8 @@
   </model:physical>
 
   <model:physical name="box_05_model">
-    <xyz>  10.0    8.0   17.42</xyz>
-    <rpy>  45.0    0.0    0.0</rpy>
+    <xyz>  10.0    8.0    0.5</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
     <body:box name="box_05_body">
       <massMatrix>true</massMatrix> 
       <mass>1.0</mass>
@@ -299,8 +309,8 @@
   </model:physical>
 
   <model:physical name="box_06_model">
-    <xyz>  12.0    8.0   17.42</xyz>
-    <rpy>  45.0    0.0    0.0</rpy>
+    <xyz>  12.0    8.0    0.5</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
     <body:box name="box_06_body">
       <massMatrix>true</massMatrix> 
       <mass>1.0</mass>
