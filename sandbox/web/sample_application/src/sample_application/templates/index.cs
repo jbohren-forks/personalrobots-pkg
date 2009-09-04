@@ -9,8 +9,7 @@
 
 <table align=right>
 <td>
-<input class=app_button type=button value="" objtype="LaunchButtonWidget2" topic="/app_update" taskid="<?cs var:CGI.cur.app.taskid ?>">
-<div class=app_status objtype=TextWidget topic="/app_update" key=status selector="taskid" selectorValue="<?cs var:CGI.cur.app.taskid?>">&nbsp;</div>
+<div class=app_button objtype="LaunchButtonWidget2" taskid="<?cs var:CGI.cur.app.taskid ?>">
 </td>
 </table>
 

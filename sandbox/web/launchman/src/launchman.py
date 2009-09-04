@@ -110,7 +110,14 @@ class AppRunner:
       print "ALL DONE!"
       self.manager._stopTask(self)
     else:
-      print "too many procs", self.runner.pm.procs
+      if self.runner.pm.procs:
+        self.task.status = "error"
+        self.manager._send_status()
+
+        print "too many processes left:", len(self.runner.pm.procs)
+        for proc in self.runner.pm.procs:
+          proc.stop()
+        
       self.runner = None
       self.manager._stopTask(self)
       
@@ -196,7 +203,6 @@ class TaskManager:
     runner.stop()
 
     runner.task.status = "stopped"
-#    self.app_update.publish(runner.task)
     self._send_status()
 
     if runner.app.depends:

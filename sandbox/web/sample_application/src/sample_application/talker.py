@@ -36,20 +36,23 @@
 ## Simple talker demo that published std_msgs/Strings messages
 ## to the 'chatter' topic
 
-import roslib; roslib.load_manifest('rospy_tutorials')
+import roslib; roslib.load_manifest('sample_application')
 
 import rospy
 from std_msgs.msg import String
+import os, time
 
 def talker():
     pub = rospy.Publisher('chatter', String)
-    rospy.init_node('talker', anonymous=True)
-    r = rospy.Rate(1) # 10hz
+#    rospy.init_node('talker', anonymous=True)
+    rospy.init_node('app_talker')
+    t = 0
     while not rospy.is_shutdown():
-        str = "hello world %s"%rospy.get_time()
+        str = "hello world %s %s" % (os.getpid(), t)
         rospy.loginfo(str)
         pub.publish(str)
-        r.sleep()
+        time.sleep(1)
+        t = t + 1
         
 if __name__ == '__main__':
     try:

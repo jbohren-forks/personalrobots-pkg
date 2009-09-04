@@ -36,7 +36,7 @@
 ## Simple talker demo that listens to std_msgs/Strings published 
 ## to the 'chatter' topic
 
-PKG = 'rospy_tutorials' # this package name
+PKG = 'sample_application' # this package name
 import roslib; roslib.load_manifest(PKG)
 
 import rospy
@@ -52,7 +52,7 @@ def listener():
     # anonymous=True flag means that rospy will choose a unique
     # name for our 'talker' node so that multiple talkers can
     # run simultaenously.
-    rospy.init_node('listener', anonymous=True)
+    rospy.init_node('app_listener')
 
     rospy.Subscriber("chatter", String, callback)
 
