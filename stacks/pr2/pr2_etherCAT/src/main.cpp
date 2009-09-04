@@ -41,6 +41,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
 #include <pr2_mechanism_control/mechanism_control.h>
@@ -144,6 +145,20 @@ static inline double now()
   return double(n.tv_nsec) / NSEC_PER_SEC + n.tv_sec;
 }
 
+
+void *diagnosticLoop(void *args)
+{
+  EthercatHardware *ec((EthercatHardware *) args);
+  struct timespec tick;
+  clock_gettime(CLOCK_MONOTONIC, &tick);
+  while (!g_quit) {
+    ec->collectDiagnostics();
+    tick.tv_sec += 1;
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tick, NULL);
+  }
+  return NULL;
+}
+
 void *controlLoop(void *)
 {
   ros::NodeHandle node;
@@ -188,6 +203,15 @@ void *controlLoop(void *)
   // Publish one-time before entering real-time to pre-allocate message vectors
   publishDiagnostics(publisher);
 
+  //Start Non-realtime diagonostic thread
+  int rv;
+  static pthread_t diagnosticThread;
+  if ((rv = pthread_create(&diagnosticThread, NULL, diagnosticLoop, &ec)) != 0)
+  {
+    ROS_FATAL("Unable to create control thread: rv = %d\n", rv);
+    ROS_BREAK();
+  }
+  
   // Set to realtime scheduler for this thread
   struct sched_param thread_param;
   int policy = SCHED_FIFO;
@@ -241,6 +265,8 @@ void *controlLoop(void *)
     ec.hw_->actuators_[i]->command_.effort_ = 0;
   }
   ec.update(false, true);
+
+  //pthread_join(diagnosticThread, 0);  
 
   publisher.stop();
 
