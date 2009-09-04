@@ -1,9 +1,13 @@
 #!/bin/bash
 
-for bagfile in "$@"
-do
+#for bagfile in "$@"
+#do
 
-#bagfile=$1
+export ROS_MASTER_URI="http://localhost:$1/"
+shift
+
+bagfile=$@
+
 time_per_frame="30.00"
 save_to="$HOME/bags/output"
 record_topics="/box_detector/observations"
@@ -84,9 +88,9 @@ start 80x6-0-600 "roslaunch $HOME/ros/ros-pkg/sandbox/planar_objects/narrow_box_
 
 sleep 1
 
-start 80x6-0-800 "roslaunch $HOME/ros/ros-pkg/sandbox/planar_objects/narrow_mocap_eval$launchsuffix.launch"
+#start 80x6-0-800 "roslaunch $HOME/ros/ros-pkg/sandbox/planar_objects/narrow_mocap_eval$launchsuffix.launch"
 
-sleep 1
+#sleep 1
 
 rosplay -r $rate $bagfile
 
@@ -117,4 +121,4 @@ test "$leftover" != "   " || kill $leftover
 
 echo "Done"
 
-done
+#done

@@ -61,6 +61,11 @@ MocapEval::MocapEval() {
 	newLines = 0;
 	oldLines = 0;
 
+	nh.param("~min_precision", min_precision, 0.7);
+	nh.param("~min_recall", min_recall, 0.7);
+	nh.param("~plane_limit", plane_limit, 0);
+	nh.param("~calibration_type", calibration_type, 0);
+
 	// subscribe to topics
 	mocap_sub = nh.subscribe("/phase_space_snapshot", 1,
 			&MocapEval::mocapCallback, this);
@@ -352,6 +357,12 @@ void MocapEval::callback(
 			continue;
 		if (obs.h > mocap_obs.h * 1.5 || obs.h < mocap_obs.h * 0.5)
 			continue;
+		if(obs.recall<min_recall)
+			continue;
+		if(obs.precision<min_precision)
+			continue;
+		if(plane_limit>0 && obs.plane_id>=plane_limit)
+			continue;
 
 		observations.push_back(obs);
 	}
@@ -383,14 +394,19 @@ void MocapEval::callback(
 
 	evaluateData(mocap_obs2, observations);
 
-
-//		findBestDelta();
+	if(calibration_type>0)
+		findBestDelta();
 
 }
 
 void MocapEval::findBestDelta() {
 	if (delta.size() == 0)
 		return;
+
+	if(calibration_type==1) {
+		bestDelta = delta.back();
+		return;
+	}
 
 	double currentError = deltaError(delta, bestDelta);
 
@@ -525,7 +541,7 @@ void MocapEval::evaluateData( btBoxObservation mocap_obs, std::vector<btBoxObser
 		double h = visual_obs[i].h;
 
 		stringstream s;
-		s <<dist_to_camera<<" "<<(angle_to_camera/M_PI*180.)<<" "<<err_trans<<" "<<(err_rot/M_PI*180.0)<<" " <<w<<" "<<h<<endl;
+		s <<dist_to_camera<<" "<<(angle_to_camera/M_PI*180.)<<" "<<err_trans<<" "<<(err_rot/M_PI*180.0)<<" " <<w<<" "<<h<<" "<<visual_obs[i].plane_id<<endl;
 
 		obs_file << s.str();
 		cout <<s.str();

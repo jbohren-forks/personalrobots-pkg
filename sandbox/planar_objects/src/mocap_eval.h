@@ -45,6 +45,15 @@ public:
   int oldLines;
   int newLines;
 
+  double min_precision;
+  double min_recall;
+  int plane_limit;		// 0: don't limit visible planes
+						  // >0: only consider first n planes
+
+  int calibration_type;	// 0: calibration off
+						  //1 : differencing
+						  //2: least-squares optimization
+
   roslib::Header header;
   // MESSAGES - INCOMING
   ros::Subscriber observations_sub;

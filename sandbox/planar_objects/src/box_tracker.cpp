@@ -45,6 +45,10 @@ BoxTracker::BoxTracker() :
   nh.param("~rotation_tolerance", params.rotation_tolerance, M_PI/8);
   nh.param("~size_tolerance", params.size_tolerance, 0.03);
 
+	nh.param("~min_precision", min_precision, 0.7);
+	nh.param("~min_recall", min_recall, 0.7);
+	nh.param("~plane_limit", plane_limit, 0);
+
   newLines = 0;
   oldLines = 0;
   track_ids = 0;
@@ -71,7 +75,16 @@ void BoxTracker::syncCallback()
   observations.clear();
 
   for(size_t i=0; i<observations_msg->obs.size(); i++) {
-    observations.push_back(btBoxObservation(observations_msg->obs[i], observations_msg->header.stamp));
+	 btBoxObservation obs  = btBoxObservation(observations_msg->obs[i], observations_msg->header.stamp);
+
+		if(obs.recall<min_recall)
+			continue;
+		if(obs.precision<min_precision)
+			continue;
+		if(plane_limit>0 && obs.plane_id>=plane_limit)
+			continue;
+
+    observations.push_back(obs);
   }
 
 //  if(observations.size()==0) return;

@@ -34,6 +34,12 @@ public:
   int newLines;
   int track_ids;
 
+  double min_precision;
+  double min_recall;
+  int plane_limit;		// 0: don't limit visible planes
+						  // >0: only consider first n planes
+
+
   // PARAMETERS
   bool show_obs;
   bool show_tracks;
