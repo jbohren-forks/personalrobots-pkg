@@ -68,8 +68,11 @@ namespace costmap_2d {
         new_data_ = false;
         publishCostmap();
       }
-      if(!r.sleep())
-        ROS_WARN("Map publishing loop missed its desired rate of %.4f the actual time the loop took was %.4f sec", frequency, r.cycleTime().toSec());
+
+      r.sleep();
+      //make sure to sleep for the remainder of our cycle time
+      if(r.cycleTime() > ros::Duration(1 / frequency))
+        ROS_WARN("Map update loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", frequency, r.cycleTime().toSec());
     }
   }
 
