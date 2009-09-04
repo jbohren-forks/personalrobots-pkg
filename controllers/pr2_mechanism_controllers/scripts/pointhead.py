@@ -39,21 +39,16 @@ from time import sleep
 
 import rospy
 from geometry_msgs.msg import PointStamped, Point
-from pr2_mechanism_msgs.msg import JointStates, JointState
+from sensor_msgs.msg import JointState
 
 def point_head_client(pan, tilt):
 
-    head_angles = rospy.Publisher('head_controller/command', JointStates)
+    head_angles = rospy.Publisher('head_controller/command', JointState)
     rospy.init_node('head_commander', anonymous=True)
     sleep(1)
-    ps = JointState()
-    ps.name = 'head_pan_joint'
-    ps.position = pan
-    ts = JointState()
-    ts.name ='head_tilt_joint'
-    ts.position = tilt
-    js = JointStates()
-    js.joints = [ps, ts]
+    js = JointState()
+    js.name = ['head_pan_joint', 'head_tilt_joint'];
+    js.position = [pan,tilt];
     head_angles.publish(js)
     sleep(1)
 
