@@ -495,13 +495,13 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 		bool isValidCell(const short unsigned int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
 		bool isValidCell(const int x, const int y, const int z, const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
     
-		int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);
+//		int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);
 //    int IsValidCoord(const short unsigned int coord[], const std::vector<std::vector<short unsigned int> > &joints, double orientation[3][3], unsigned char ***Grid, const short unsigned int grid_dims[]);
 		int IsValidCoord(short unsigned int coord[], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3], unsigned char &dist);
 		
-		int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, unsigned char ***Grid3D, vector<CELLV>* pTestedCells);
-		int IsValidLineSegment(const short unsigned int xyz0[], const short unsigned int xyz1[], const int &radius, unsigned char*** Grid3D, const int grid_dims[], vector<CELLV>* pTestedCells);
-		int IsValidLineSegment(const short unsigned int a[], const short unsigned int b[], int radius, vector<CELLV>* pTestedCells, unsigned char *** Grid3D,const  boost::shared_ptr<Voxel3d> vGrid);
+//		int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, unsigned char ***Grid3D, vector<CELLV>* pTestedCells);
+		//int IsValidLineSegment(const short unsigned int xyz0[], const short unsigned int xyz1[], const int &radius, unsigned char*** Grid3D, const int grid_dims[], vector<CELLV>* pTestedCells);
+//		int IsValidLineSegment(const short unsigned int a[], const short unsigned int b[], int radius, vector<CELLV>* pTestedCells, unsigned char *** Grid3D,const  boost::shared_ptr<Voxel3d> vGrid);
 		int IsValidLineSegment(const short unsigned int a[],const short unsigned int b[],const unsigned int radius,vector<CELLV>* pTestedCells, unsigned char *** Grid3D, unsigned char &dist);
 		
 		void UpdateEnvironment();
