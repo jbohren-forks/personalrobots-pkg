@@ -20,7 +20,6 @@
   <depend package="backup_safetysound"/>
   <depend package="geometry_msgs"/>
   <depend package="robot_self_filter"/>
-  <depend package="3dnav_pr2"/>
 
   <!-- packages used in the test scripts -->
   <depend package="robot_actions"/>

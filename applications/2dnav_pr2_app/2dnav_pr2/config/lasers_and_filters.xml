@@ -1,7 +1,5 @@
 <launch>
 
-<include file="$(find 3dnav_pr2)/launch/pr2_planning_environment.launch" />
-
 <node pkg="mux" type="throttle" args="3.0 base_scan base_scan_throttled" />
 <node pkg="mux" type="throttle" args="3.0 tilt_scan tilt_scan_throttled" />
 <node pkg="mux" type="throttle" args="3.0 tilt_scan_filtered tilt_scan_filtered_throttled" />
