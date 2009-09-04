@@ -4,7 +4,7 @@ for bagfile in "$@"
 do
 
 #bagfile=$1
-time_per_frame="40.00"
+time_per_frame="30.00"
 save_to="$HOME/bags/output"
 record_topics="/box_detector/observations"
 
@@ -64,8 +64,8 @@ function start {
 
 #  gnome-terminal --geometry $1 --command "bash -i -c \". $HOME/.bashrc; pwd; echo $2; $2; echo Exiting..; sleep 3\""
 
-  $2 &> /dev/null &
-# $2 &
+#  $2 &> /dev/null &
+ $2 &
 }
 
 start 80x6-0-0 "roscore"

@@ -36,6 +36,8 @@ rospack_add_executable(track_visualizer src/track_visualizer.cpp src/vis_utils.c
 
 rospack_add_executable(mocap_eval src/mocap_eval.cpp src/vis_utils.cpp  src/track_utils.cpp)
 
+rospack_add_executable(eval_saver src/eval_saver.cpp)
+
 #rospack_add_executable(stereo_throttle src/stereo_throttle)
 
 rospack_add_executable(box_tracker src/box_tracker.cpp src/vis_utils.cpp src/track_utils.cpp)

@@ -238,7 +238,7 @@ void BoxDetector::syncCallback()
   Time timeStamp = Time::now();
 
   currentTime = Time::now();
-  if (lastTime + lastDuration * 1.1 > currentTime)
+  if (lastTime + lastDuration * 0.1 > currentTime)
   {
     ROS_INFO("skipping frame..");
     return;
