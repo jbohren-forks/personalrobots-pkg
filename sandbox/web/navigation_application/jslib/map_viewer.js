@@ -49,6 +49,20 @@ var MapViewer = Class.create({
         this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan:simplified'];
     },
 
+    buttons: [
+        {'name': 'zoomin', 'desc': 'Zoom In'},
+        {'name': 'zoomout', 'desc': 'Zoom Out'},
+        {'name': 'reset', 'desc': 'Reset the view'},
+        {'name': 'pan', 'desc': 'Pan'},
+        {'name': 'goal', 'desc': 'Set the robot\'s goal'},
+        {'name': 'pose', 'desc': 'Set the robot\'s initial pose'},
+        {'name': 'pin', 'desc': 'Follow the robot'},
+    ],
+
+    addButton: function(b) {
+        this.buttonbar.insert('<img title="'+b.desc+'" style="margin:1;border:1px solid" src="' + window.location.pathname + '/images/'+b.name+'_disable.png"><br>');
+    },
+
     init: function() {
         // Overlay a canvas the same size as this div
         this.canvas = new Element('canvas', {'id': 'map_canvas', 'width': this.viewer.getWidth(), 'height': this.viewer.getHeight(), 'style': 'z-index:1;position:absolute'});
@@ -59,6 +73,11 @@ var MapViewer = Class.create({
         this.panner.left = this.panner.top = 0;
         this.viewer.appendChild(this.panner);
 
+        this.buttonbar = new Element('div', {'style' : 'z-index:10;position:absolute;padding:5'});
+        this.viewer.appendChild(this.buttonbar);
+
+        this.buttons.each(this.addButton.bind(this));
+        
         this.sourceWidth = 2332;
         this.sourceHeight = 1825;
         this.sourceResolution = 0.025;
@@ -290,7 +309,7 @@ var MapViewer = Class.create({
             this.drawRobot(ctx, this.robot, 1.0);
         }
         if (this.robot_est) {
-            this.drawRobot(ctx, this.robot_est, 0.75);
+            this.drawRobot(ctx, this.robot_est, 0.5);
         }
 
     },
