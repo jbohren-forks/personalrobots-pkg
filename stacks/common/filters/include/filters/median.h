@@ -156,7 +156,7 @@ bool MedianFilter<T>::configure()
 template <typename T>
 bool MedianFilter<T>::update(const T& data_in, T& data_out)
 {
-  if (!this->configured_)
+  if (!FilterBase<T>::configured_)
     return false;
 
   data_storage_->push_back(data_in);
@@ -244,7 +244,7 @@ bool MultiChannelMedianFilter<T>::update(const std::vector<T>& data_in, std::vec
   //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
   if (data_in.size() != this->number_of_channels_ || data_out.size() != this->number_of_channels_)
     return false;
-  if (!this->configured_)
+  if (!FilterBase<T>::configured_)
     return false;
 
   data_storage_->push_back(data_in);
