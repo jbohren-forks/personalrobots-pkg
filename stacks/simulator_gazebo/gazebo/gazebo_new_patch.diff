@@ -61,6 +61,56 @@ Index: libgazebo/bindings/ruby/CMakeLists.txt
  endif (RUBY_LIBRARY AND RUBY_INCLUDE_PATH)
  
    IF(RUBY_FOUND)
+Index: server/Global.hh
+===================================================================
+--- server/Global.hh	(revision 8232)
++++ server/Global.hh	(working copy)
+@@ -80,6 +80,6 @@
+ 
+ #define ROUND(x) ( (int)( floor((x)+0.5) ) )
+ 
+-//#define TIMING
++#undef TIMING
+ 
+ #endif
+Index: server/Simulator.cc
+===================================================================
+--- server/Simulator.cc	(revision 8232)
++++ server/Simulator.cc	(working copy)
+@@ -645,6 +645,11 @@
+       world->Update();
+     }
+ 
++#ifdef TIMING
++  double tmpT2 = Simulator::Instance()->GetWallTime();
++  std::cout << " World::Update() DT(" << tmpT2-tmpT1 << ")" << std::endl;
++#endif
++
+     currTime = this->GetRealTime();
+ 
+     // Set a default sleep time
+@@ -678,6 +683,10 @@
+     // Process all incoming messages from simiface
+     world->UpdateSimulationIface();
+ 
++#ifdef TIMING
++  double tmpT3 = Simulator::Instance()->GetWallTime();
++  std::cout << " World::UpdatSimulationIface() DT(" << tmpT3-tmpT2 << ")" << std::endl;
++#endif
+     if (this->timeout > 0 && this->GetRealTime() > this->timeout)
+     {
+       this->userQuit = true;
+@@ -691,8 +700,8 @@
+     }
+ 
+ #ifdef TIMING
+-    double tmpT2 = this->GetWallTime();
+-    std::cout << " Simulator::PhysicsLoop() DT(" << tmpT2-tmpT1 
++    double tmpT4 = this->GetWallTime();
++    std::cout << " Simulator::PhysicsLoop() DT(" << tmpT4-tmpT1 
+       << ")" << std::endl;
+ #endif
+   }
 Index: server/rendering/OgreHeightmap.cc
 ===================================================================
 --- server/rendering/OgreHeightmap.cc	(revision 8232)
