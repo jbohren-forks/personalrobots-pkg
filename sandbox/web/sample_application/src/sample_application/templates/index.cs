@@ -9,7 +9,7 @@
 
 <table align=right>
 <td>
-<div class=app_button objtype="LaunchButtonWidget2" taskid="<?cs var:CGI.cur.app.taskid ?>">
+<div class=app_button objtype="LaunchButtonWidget2" taskid="sample_application/sample_app.app">
 </td>
 </table>
 
@@ -22,5 +22,6 @@
 
 <div id=ErrorDiv></div>
 
+<?cs include:"rosfooter.cs"?>
 </body>
 </html>

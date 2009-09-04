@@ -392,8 +392,10 @@ var TerminalTextWidget = Class.create(ScrollingTextWidget, {
   new_message: function($super, msg) {
     if(msg[this.key] != null) {
       var d = document.createElement("div");
-      d.innerHTML = msg[this.key] + "<br>";
+      d.appendChild(document.createTextNode(msg[this.key]));
+      d.innerHTML = msg[this.key];
       this.textdiv.appendChild(d);      
+
     }
   }
 });

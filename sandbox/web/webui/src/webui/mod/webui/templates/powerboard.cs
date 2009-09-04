@@ -11,6 +11,7 @@
 <body onload="ros_handleOnLoad('/ros')">
 <?cs include:"header.cs" ?>
 <br>
+<?cs include:"status_header.cs" ?>
 
 <br>
 

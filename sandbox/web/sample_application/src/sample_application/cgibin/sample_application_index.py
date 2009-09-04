@@ -11,12 +11,14 @@ from pyclearsilver import CSPage, odb
 
 from webui import MBPage
 
+import db_webui
+
 class MyPage(MBPage.MBPage):
   def setup(self, hdf):
     pass
     
   def display(self, hdf):
-    pass
+    db_webui.grabTopics(hdf, ['/chatter:more'])
     
 
 def run(context):

@@ -14,6 +14,7 @@ from geometry_msgs.msg import PoseWithCovariance, PoseWithCovarianceStamped, Pos
 from numpy import float64
 
 from simplify import Simplifier
+import rosweb
 
 _map_cache = {}
 _scale_cache = {}

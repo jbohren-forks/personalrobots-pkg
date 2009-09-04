@@ -6,7 +6,7 @@
 <body onload="ros_handleOnLoad('/ros')">
 <?cs include:"header.cs" ?>
 <br>
-<br>
+<?cs include:"status_header.cs" ?>
 
 <table style="border: 1px solid black; width: 150px; float: right">
 <tr>

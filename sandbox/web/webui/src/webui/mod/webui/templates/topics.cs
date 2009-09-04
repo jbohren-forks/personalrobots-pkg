@@ -6,6 +6,7 @@
 <body onload="ros_handleOnLoad('/ros')">
 <?cs include:"header.cs" ?>
 <br>
+<?cs include:"status_header.cs" ?>
 
 <h3>Published topics:</h3>
 <ul objtype="ListWidget" topic="/topics" key="pubtopics">

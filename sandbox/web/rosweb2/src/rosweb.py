@@ -235,7 +235,7 @@ class ROSWebSubTopic(object):
 
       self.messages.append((self.factory.counter, newmsg))
       self.factory.counter = self.factory.counter + 1
-      self.newmsg = self.messages[-20:]
+      self.messages = self.messages[-20:]
       
       
     

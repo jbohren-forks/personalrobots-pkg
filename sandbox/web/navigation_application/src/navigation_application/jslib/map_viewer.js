@@ -45,8 +45,8 @@ var MapTile = Class.create({
 var MapViewer = Class.create({
     initialize: function(domobj) {
         this.viewer = domobj;
-        //this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan:simplified', '/base_pose_ground_truth'];
-        this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan:simplified'];
+	this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan:simplified', '/base_pose_ground_truth'];
+        //this.topics = ['/robot_pose_visualization', '/move_base/NavfnROS/plan:simplified'];
     },
 
     buttons: [

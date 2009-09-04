@@ -20,13 +20,9 @@
 </tr>
 </table>
 
-<table class=head_buttons width=100%>
+<table class=head_buttons width=80%>
 <tr>
 <td class=head_buttons width=1% onclick="javascript:location.href='<?cs var:CGI.ScriptName?>/webui/apps.py'">Apps</a></td>
-<!--<td class=head_buttons width=1% onclick="javascript:location.href='<?cs var:CGI.ScriptName?>/webui/move.py'">Move</td> -->
-<td class=head_buttons width=1% onclick="javascript:location.href='<?cs var:CGI.ScriptName?>/webui/topics.py'">Topics</a></td>
-<td class=head_buttons width=1% onclick="javascript:location.href='<?cs var:CGI.ScriptName?>/webui/nodes.py'">Nodes</td>
-<td class=head_buttons width=1% onclick="javascript:location.href='<?cs var:CGI.ScriptName?>/webui/powerboard.py'">Power</td>
 <td class=head_buttons width=1% onclick="javascript:location.href='<?cs var:CGI.ScriptName?>/webui/status.py'">Status</a></td>
 <td class=head_buttons width=1% onclick="javascript:location.href='<?cs var:CGI.ScriptName?>/webui/admin.py'">Admin</a></td>
 
