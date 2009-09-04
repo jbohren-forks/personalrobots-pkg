@@ -41,6 +41,8 @@
 using namespace std;
 using namespace laser_cb_detector;
 
+static const bool DEBUG=false;
+
 calibration_msgs::DenseLaserSnapshot buildSnapshot(double start_range, double start_intensity, double increment,
                                                    const unsigned int H, const unsigned int W)
 {
@@ -96,7 +98,8 @@ TEST(CvLaserBridge, easy)
   EXPECT_EQ(image->height, (int) NUM_SCANS);
   EXPECT_EQ(image->width,  (int) RAYS_PER_SCAN);
 
-  displayImage(image);
+  if (DEBUG)
+    displayImage(image);
 
   // Check the first and last pixel in the image
   EXPECT_EQ( (int) *((unsigned char*)(image->imageData)+0), 0);
@@ -118,7 +121,8 @@ TEST(CvLaserBridge, saturationTest)
   EXPECT_EQ(image->height, (int) NUM_SCANS);
   EXPECT_EQ(image->width,  (int) RAYS_PER_SCAN);
 
-  displayImage(image);
+  if (DEBUG)
+    displayImage(image);
 
   // Check to make sure some of the pixels saturated near the beginning and end of the range
   EXPECT_EQ( (int) *((unsigned char*)(image->imageData)+5), 0);

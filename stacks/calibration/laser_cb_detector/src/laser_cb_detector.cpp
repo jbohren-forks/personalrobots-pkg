@@ -106,7 +106,7 @@ bool LaserCbDetector::detect(const calibration_msgs::DenseLaserSnapshot& snapsho
     for (unsigned int j=0; j < config_.num_x; j++)
     {
       result.object_points[i*config_.num_x + j].x = j*config_.spacing_x;
-      result.object_points[i*config_.num_y + j].y = j*config_.spacing_y;
+      result.object_points[i*config_.num_y + j].y = i*config_.spacing_y;
       result.object_points[i*config_.num_y + j].z = 0.0;
     }
   }
