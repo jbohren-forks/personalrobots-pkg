@@ -21,7 +21,7 @@
  </node>
 
 <!-- Battery Monitor -->
-  <node machine="two" pkg="ocean_battery_driver" type="ocean_server"  respawn="true">
+<!--  <node machine="two" pkg="ocean_battery_driver" type="ocean_server"  respawn="true">
     <param name="number_of_ports" type="int" value="4" />
     <param name="port0" type="string" value="/dev/ttyUSB0" />
     <param name="port1" type="string" value="/dev/ttyUSB1" />
@@ -29,6 +29,7 @@
     <param name="port3" type="string" value="/dev/ttyUSB3" />
     <param name="debug_level" type="int" value="0" />
   </node>
+-->
 
   <node pkg="power_monitor" type="power_monitor"  respawn="true"/>
 
@@ -67,7 +68,7 @@
     <param name="acquisition_mode" type="str" value="Triggered"/>
     <param name="ip_address" type="str" value="10.68.7.20"/>
   </group>
-  <node machine="three" name="prosilica" pkg="prosilica_camera" type="prosilica_node" output="screen" respawn="true"/-->
+  <node machine="two" name="prosilica" pkg="prosilica_camera" type="prosilica_node" output="screen" respawn="true"/-->
 
   <!-- Watts: Need to get driver working for stereo on servers -->
 <!-- Double stereo setup -->
@@ -102,7 +103,7 @@
 
 
 <!-- Forearm Camera -->
-  <node machine="three" name="forearm_camera_r" pkg="wge100_camera" type="wge100_camera_node" respawn="true" output="screen">
+  <node machine="two" name="forearm_camera_r" pkg="wge100_camera" type="wge100_camera_node" respawn="true" output="screen">
     <param name="camera_url" type="str" value="name://forearm_r"/>
     <param name="video_mode" type="str" value="640x480x30" />
     <param name="auto_exposure" type="bool" value="True" />
