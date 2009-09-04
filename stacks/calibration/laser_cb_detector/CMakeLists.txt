@@ -19,6 +19,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_library(${PROJECT_NAME} src/cv_laser_bridge.cpp
                                      src/laser_cb_detector.cpp)
 
+rosbuild_add_executable(laser_cb_detector_node src/laser_cb_detector_node.cpp)
+target_link_libraries(laser_cb_detector_node ${PROJECT_NAME})
+
 rosbuild_genmsg()
 # rosbuild_gensrv()
 
