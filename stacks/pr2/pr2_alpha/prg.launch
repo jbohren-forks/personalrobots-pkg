@@ -1,5 +1,4 @@
 <launch>
-
   <include file="$(find pr2_alpha)/prg.machine" />
   <include file="$(find pr2_alpha)/prg_ethercat_reset.launch" />
 
@@ -21,7 +20,7 @@
  </node>
 
 <!-- Battery Monitor -->
-<!--  <node machine="two" pkg="ocean_battery_driver" type="ocean_server"  respawn="true">
+  <node machine="two" name="ocean_driver" pkg="ocean_battery_driver" type="ocean_server"  respawn="true">
     <param name="number_of_ports" type="int" value="4" />
     <param name="port0" type="string" value="/dev/ttyUSB0" />
     <param name="port1" type="string" value="/dev/ttyUSB1" />
@@ -29,22 +28,20 @@
     <param name="port3" type="string" value="/dev/ttyUSB3" />
     <param name="debug_level" type="int" value="0" />
   </node>
--->
 
   <node pkg="power_monitor" type="power_monitor"  respawn="true"/>
 
 
 <!-- Base Laser -->
   <node machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
-    <param name="port" type="string" value="/dev/ttyACM0" />
+    <param name="port" type="string" value="/dev/ttyACM1" />
     <param name="frameid" type="string" value="base_laser" />
     <param name="min_ang_degrees" type="double" value="-130.0" />
     <param name="max_ang_degrees" type="double" value="130.0" />
   </node>
 
-
 <!-- Tilt Laser -->
-  <node  machine="realtime" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
+  <node  machine="two" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="laser_tilt_link" />
     <param name="min_ang_degrees" type="double" value="-70.0" />
@@ -63,12 +60,12 @@
   <node machine="realtime" pkg="imu_node" type="imu_node" output="screen"/>
 
 <!-- Prosilica camera setup -->
-  <!--group ns="prosilica">
+  <group ns="prosilica">
     <include file="$(find prosilica_camera)/cam_settings.xml"/>
     <param name="acquisition_mode" type="str" value="Triggered"/>
-    <param name="ip_address" type="str" value="10.68.7.20"/>
+    <param name="ip_address" type="str" value="10.68.0.20"/>
   </group>
-  <node machine="two" name="prosilica" pkg="prosilica_camera" type="prosilica_node" output="screen" respawn="true"/-->
+  <node machine="two" name="prosilica" pkg="prosilica_camera" type="prosilica_node" output="screen" respawn="true"/>
 
   <!-- Watts: Need to get driver working for stereo on servers -->
 <!-- Double stereo setup -->
@@ -122,7 +119,8 @@
     -->
 
   <!-- Runtime Diagnostics Logging -->
-  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
+  <node name="runtime_logger" machine="realtime" pkg="rosrecord" 
+  type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
   
 <!-- Joint Calibration Monitor -->
 <!--

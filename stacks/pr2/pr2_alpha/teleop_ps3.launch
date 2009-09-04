@@ -1,5 +1,7 @@
 <launch>
-  <include file="$(find pr2_alpha)/pre.machine" />
+  <machine name="two_root" address="c2" user="root" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  />
+
+  <machine name="two" address="c2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  />
 
   <!-- Start up pairing thing -->
   <node machine="two_root" pkg="ps3joy" output="screen"
