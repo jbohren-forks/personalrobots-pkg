@@ -11,7 +11,8 @@
   <depend package="calibration_msgs"/>
   <depend package="roscpp"/>
   <depend package="opencv_latest" />
-
+  <depend package="actionlib_msgs" />
+  <depend package="camera_calibration" />
 </package>
 
 
