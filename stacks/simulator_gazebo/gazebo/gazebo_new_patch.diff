@@ -192,7 +192,7 @@ Index: server/gui/GLWindow.cc
        }
      }
    }
-@@ -614,6 +624,17 @@
+@@ -614,6 +624,16 @@
            this->directionVec.z -= this->moveAmount;
            break;
  
@@ -204,13 +204,12 @@ Index: server/gui/GLWindow.cc
 +        case XK_Alt_L:
 +        case XK_Alt_R:
 +          this->altKeyPressed = true;
-+          std::cout << "pressing alt" << std::endl;
 +          break;
 +
          default:
            break;
        }
-@@ -641,7 +662,20 @@
+@@ -641,7 +661,20 @@
      case ']':
        CameraManager::Instance()->DecActiveCamera();
        break;
