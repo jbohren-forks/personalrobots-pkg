@@ -71,7 +71,7 @@ class Robot
 {
 public:
   /// Constructor
-  Robot(HardwareInterface *hw): hw_(hw) {}
+  Robot(HardwareInterface *hw);
 
   /// Destructor
   ~Robot()
@@ -107,8 +107,10 @@ public:
   /// get a transmission pointer based on the transmission name. Returns NULL on failure
   Transmission* getTransmission(const std::string &name) const;
 
+  ros::Time getTime() {return hw_->current_time_;};
+
 private:
-  HardwareInterface *hw_;
+  HardwareInterface* hw_;
 };
 
 
@@ -125,7 +127,7 @@ private:
 class RobotState
 {
 public:
-  RobotState(Robot *model, HardwareInterface *hw);
+  RobotState(Robot *model);
 
   Robot *model_;
 
@@ -133,7 +135,7 @@ public:
   JointState *getJointState(const std::string &name);
   const JointState *getJointState(const std::string &name) const;
 
-  ros::Time getTime() {return hw_->current_time_;};
+  ros::Time getTime() {return model_->getTime();};
 
  /**
   * Each transmission refers to the actuators and joints it connects by name.
@@ -151,8 +153,6 @@ public:
   void propagateStateBackwards();
   void propagateEffortBackwards();
 
-private:
-  HardwareInterface *hw_; 
 };
 
 }

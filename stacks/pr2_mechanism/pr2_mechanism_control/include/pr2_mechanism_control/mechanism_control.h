@@ -79,7 +79,6 @@ public:
 
   pr2_mechanism::Robot model_;
   pr2_mechanism::RobotState *state_;
-  HardwareInterface *hw_;
 
 private:
   void getControllerNames(std::vector<std::string> &v);
@@ -106,12 +105,13 @@ private:
 
   // for publishing constroller state/diagnostics
   void publishDiagnostics();
-  void publishState();
+  void publishJointState();
+  void publishMechanismState();
   realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticArray> pub_diagnostics_;
   realtime_tools::RealtimePublisher<sensor_msgs::JointState> pub_joint_state_;
   realtime_tools::RealtimePublisher<pr2_mechanism_msgs::MechanismState> pub_mech_state_;
-  double publish_period_state_, last_published_state_;
-  double publish_period_diagnostics_, last_published_diagnostics_;
+  ros::Duration publish_period_joint_state_, publish_period_mechanism_state_, publish_period_diagnostics_;
+  ros::Time last_published_joint_state_, last_published_mechanism_state_, last_published_diagnostics_;
 
   // services to work with controllers
   bool listControllerTypesSrv(pr2_mechanism_msgs::ListControllerTypes::Request &req,

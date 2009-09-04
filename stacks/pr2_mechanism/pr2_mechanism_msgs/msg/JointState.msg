@@ -4,3 +4,9 @@ float64 velocity
 float64 applied_effort
 float64 commanded_effort
 byte is_calibrated
+byte saturated
+float64 odometer
+float64 min_position
+float64 max_position
+float64 max_abs_velocity
+float64 max_abs_effort

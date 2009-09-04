@@ -44,7 +44,7 @@ using namespace ros;
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
   model_(hw),
-  state_(NULL), hw_(hw),
+  state_(NULL), 
   controller_loader_("pr2_controller_interface", "controller::Controller"),
   start_request_(0),
   stop_request_(0),
@@ -55,8 +55,9 @@ MechanismControl::MechanismControl(HardwareInterface *hw) :
   pub_diagnostics_(node_, "/diagnostics", 1),
   pub_joint_state_(node_, "joint_states", 1),
   pub_mech_state_(node_, "mechanism_state", 1),
-  last_published_state_(ros::Time::now().toSec()),
-  last_published_diagnostics_(ros::Time::now().toSec())
+  last_published_joint_state_(ros::Time::now()),
+  last_published_mechanism_state_(ros::Time::now()),
+  last_published_diagnostics_(ros::Time::now())
 {}
 
 MechanismControl::~MechanismControl()
@@ -69,10 +70,11 @@ MechanismControl::~MechanismControl()
 bool MechanismControl::initXml(TiXmlElement* config)
 {
   model_.initXml(config);
-  state_ = new RobotState(&model_, hw_);
+  state_ = new RobotState(&model_);
 
   // pre-allocate for realtime publishing
-  pub_mech_state_.msg_.set_actuator_states_size(hw_->actuators_.size());
+  pub_mech_state_.msg_.set_controller_states_size(0);
+  pub_mech_state_.msg_.set_actuator_states_size(model_.actuators_.size());
   int joints_size = 0;
   for (unsigned int i = 0; i < model_.joints_.size(); ++i)
   {
@@ -86,6 +88,7 @@ bool MechanismControl::initXml(TiXmlElement* config)
   pub_joint_state_.msg_.set_velocity_size(joints_size);
   pub_joint_state_.msg_.set_effort_size(joints_size);
 
+
   // Advertise services
   srv_list_controllers_ = node_.advertiseService("list_controllers", &MechanismControl::listControllersSrv, this);
   srv_list_controller_types_ = node_.advertiseService("list_controller_types", &MechanismControl::listControllerTypesSrv, this);
@@ -94,11 +97,13 @@ bool MechanismControl::initXml(TiXmlElement* config)
   srv_switch_controller_ = node_.advertiseService("switch_controller", &MechanismControl::switchControllerSrv, this);
 
   // get the publish rate for mechanism state and diagnostics
-  double publish_rate_state, publish_rate_diagnostics;
-  node_.param("~publish_rate_mechanism_state", publish_rate_state, 100.0);
+  double publish_rate_joint_state, publish_rate_mechanism_state, publish_rate_diagnostics;
+  node_.param("~publish_rate_mechanism_state", publish_rate_mechanism_state, 1.0);
+  node_.param("~publish_rate_joint_state", publish_rate_joint_state, 100.0);
   node_.param("~publish_rate_diagnostics", publish_rate_diagnostics, 1.0);
-  publish_period_state_ = 1.0/fmax(0.000001, publish_rate_state);
-  publish_period_diagnostics_ = 1.0/fmax(0.000001, publish_rate_diagnostics);
+  publish_period_mechanism_state_ = Duration(1.0/fmax(0.000001, publish_rate_mechanism_state));
+  publish_period_joint_state_ = Duration(1.0/fmax(0.000001, publish_rate_joint_state));
+  publish_period_diagnostics_ = Duration(1.0/fmax(0.000001, publish_rate_diagnostics));
 
   return true;
 }
@@ -114,32 +119,33 @@ void MechanismControl::update()
   std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
   std::vector<size_t> &scheduling = controllers_scheduling_[used_by_realtime_];
 
-  double start = ros::Time::now().toSec();
+  ros::Time start = ros::Time::now();
   state_->propagateState();
   state_->zeroCommands();
-  double start_update = ros::Time::now().toSec();
-  pre_update_stats_.acc(start_update - start);
+  ros::Time start_update = ros::Time::now();
+  pre_update_stats_.acc((start_update - start).toSec());
 
   // Update all controllers in scheduling order
   for (size_t i=0; i<controllers.size(); i++){
-    double start = ros::Time::now().toSec();
+    ros::Time start = ros::Time::now();
     controllers[scheduling[i]].c->updateRequest();
-    double end = ros::Time::now().toSec();
-    controllers[scheduling[i]].stats->acc(end - start);
+    ros::Time end = ros::Time::now();
+    controllers[scheduling[i]].stats->acc((end - start).toSec());
   }
-  double end_update = ros::Time::now().toSec();
-  update_stats_.acc(end_update - start_update);
+  ros::Time end_update = ros::Time::now();
+  update_stats_.acc((end_update - start_update).toSec());
 
   state_->enforceSafety();
   state_->propagateEffort();
-  double end = ros::Time::now().toSec();
-  post_update_stats_.acc(end - end_update);
+  ros::Time end = ros::Time::now();
+  post_update_stats_.acc((end - end_update).toSec());
 
   // publish diagnostics and state
+  publishMechanismState();
+  publishJointState();
   publishDiagnostics();
-  publishState();
 
-  // there are controllers to atomically start/stop
+  // there are controllers to start/stop
   if (please_switch_)
   {
     // try to start controllers
@@ -285,6 +291,13 @@ bool MechanismControl::spawnController(const std::string& name)
     return false;
   }
 
+  // Resize controller state vector
+  pub_mech_state_.lock();
+  pub_mech_state_.msg_.set_controller_states_size(to.size());
+  for (size_t i=0; i<to.size(); i++)
+    pub_mech_state_.msg_.controller_states[i].name = to[i].name;
+  pub_mech_state_.unlock();
+
   // Success!  Swaps in the new set of controllers.
   int former_current_controllers_list_ = current_controllers_list_;
   current_controllers_list_ = free_controllers_list;
@@ -370,6 +383,13 @@ bool MechanismControl::killController(const std::string &name)
     usleep(200);
   from.clear();
 
+  // Resize controller state vector
+  pub_mech_state_.lock();
+  pub_mech_state_.msg_.set_controller_states_size(to.size());
+  for (size_t i=0; i<to.size(); i++)
+    pub_mech_state_.msg_.controller_states[i].name = to[i].name;
+  pub_mech_state_.unlock();
+
   ROS_DEBUG("Successfully killed controller '%s'", name.c_str());
   return true;
 }
@@ -436,11 +456,12 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
 
 void MechanismControl::publishDiagnostics()
 {
-  if (round ((ros::Time::now().toSec() - last_published_diagnostics_ - publish_period_diagnostics_)/ (0.000001)) >= 0)
+  ros::Time now = ros::Time::now();
+  if (now > last_published_diagnostics_ + publish_period_diagnostics_)
   {
-    last_published_diagnostics_ = ros::Time::now().toSec();
     if (pub_diagnostics_.trylock())
     {
+      last_published_diagnostics_ = now;
       std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
       int active = 0;
       TimeStatistics blank_statistics;
@@ -502,13 +523,49 @@ void MechanismControl::publishDiagnostics()
 }
 
 
-void MechanismControl::publishState()
+void MechanismControl::publishJointState()
 {
-  if (round ((ros::Time::now().toSec() - last_published_state_ - publish_period_state_)/ (0.000001)) >= 0)
+  ros::Time now = ros::Time::now();
+  if (now > last_published_joint_state_ + publish_period_joint_state_)
   {
-    last_published_state_ = ros::Time::now().toSec();
+    if (pub_joint_state_.trylock())
+    {
+      last_published_joint_state_ = now;
+      unsigned int j = 0;
+      for (unsigned int i = 0; i < model_.joints_.size(); ++i)
+      {
+        int type = state_->joint_states_[i].joint_->type_;
+        if (type == urdf::Joint::REVOLUTE || type == urdf::Joint::CONTINUOUS || type == urdf::Joint::PRISMATIC)
+        {
+          assert(j < pub_joint_state_.msg_.get_name_size());
+          assert(j < pub_joint_state_.msg_.get_position_size());
+          assert(j < pub_joint_state_.msg_.get_velocity_size());
+          assert(j < pub_joint_state_.msg_.get_effort_size());
+          pr2_mechanism::JointState *in = &state_->joint_states_[i];
+          pub_joint_state_.msg_.name[j] = model_.joints_[i]->name_;
+          pub_joint_state_.msg_.position[j] = in->position_;
+          pub_joint_state_.msg_.velocity[j] = in->velocity_;
+          pub_joint_state_.msg_.effort[j] = in->applied_effort_;
+
+          j++;
+        }
+      }
+      pub_joint_state_.msg_.header.stamp = ros::Time::now();
+      pub_joint_state_.unlockAndPublish();
+    }
+  }
+}
+
+
+void MechanismControl::publishMechanismState()
+{
+  ros::Time now = ros::Time::now();
+  if (now > last_published_mechanism_state_ + publish_period_mechanism_state_)
+  {
     if (pub_mech_state_.trylock())
     {
+      last_published_mechanism_state_ = now;
+      // joint state
       unsigned int j = 0;
       for (unsigned int i = 0; i < model_.joints_.size(); ++i)
       {
@@ -524,15 +581,23 @@ void MechanismControl::publishState()
           out->applied_effort = in->applied_effort_;
           out->commanded_effort = in->commanded_effort_;
           out->is_calibrated = in->calibrated_;
+          out->saturated = in->joint_statistics_.saturated_;
+          out->odometer = in->joint_statistics_.odometer_;
+          out->min_position = in->joint_statistics_.min_position_;
+          out->max_position = in->joint_statistics_.max_position_;
+          out->max_abs_velocity = in->joint_statistics_.max_abs_velocity_;
+          out->max_abs_effort = in->joint_statistics_.max_abs_effort_;
+          in->joint_statistics_.reset();
           j++;
         }
       }
 
-      for (unsigned int i = 0; i < hw_->actuators_.size(); ++i)
+      // actuator state
+      for (unsigned int i = 0; i < model_.actuators_.size(); ++i)
       {
         pr2_mechanism_msgs::ActuatorState *out = &pub_mech_state_.msg_.actuator_states[i];
-        ActuatorState *in = &hw_->actuators_[i]->state_;
-        out->name = hw_->actuators_[i]->name_;
+        ActuatorState *in = &model_.actuators_[i]->state_;
+        out->name = model_.actuators_[i]->name_;
         out->encoder_count = in->encoder_count_;
         out->position = in->position_;
         out->timestamp = in->timestamp_;
@@ -555,40 +620,26 @@ void MechanismControl::publishState()
         out->motor_voltage = in->motor_voltage_;
         out->num_encoder_errors = in->num_encoder_errors_;
       }
+
+      // controller state
+      std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
+      for (unsigned int i = 0; i < controllers.size(); ++i)
+      {
+        pr2_mechanism_msgs::ControllerState *out = &pub_mech_state_.msg_.controller_states[i];
+        out->running = controllers[i].c->isRunning();
+        out->max_time = max(controllers[i].stats->acc);
+        out->mean_time = mean(controllers[i].stats->acc);
+        out->variance_time = sqrt(variance(controllers[i].stats->acc));
+      }
+
       pub_mech_state_.msg_.header.stamp = ros::Time::now();
-      pub_mech_state_.msg_.time = ros::Time::now().toSec();
 
       pub_mech_state_.unlockAndPublish();
     }
-
-    if (pub_joint_state_.trylock())
-    {
-      unsigned int j = 0;
-      for (unsigned int i = 0; i < model_.joints_.size(); ++i)
-      {
-        int type = state_->joint_states_[i].joint_->type_;
-        if (type == urdf::Joint::REVOLUTE || type == urdf::Joint::CONTINUOUS || type == urdf::Joint::PRISMATIC)
-        {
-          assert(j < pub_joint_state_.msg_.get_name_size());
-          assert(j < pub_joint_state_.msg_.get_position_size());
-          assert(j < pub_joint_state_.msg_.get_velocity_size());
-          assert(j < pub_joint_state_.msg_.get_effort_size());
-          pr2_mechanism::JointState *in = &state_->joint_states_[i];
-          pub_joint_state_.msg_.name[j] = model_.joints_[i]->name_;
-          pub_joint_state_.msg_.position[j] = in->position_;
-          pub_joint_state_.msg_.velocity[j] = in->velocity_;
-          pub_joint_state_.msg_.effort[j] = in->applied_effort_;
-
-          j++;
-        }
-      }
-
-      pub_joint_state_.msg_.header.stamp = ros::Time::now();
-
-      pub_joint_state_.unlockAndPublish();
-    }
   }
 }
+
+
 
 bool MechanismControl::listControllerTypesSrv(
   pr2_mechanism_msgs::ListControllerTypes::Request &req,

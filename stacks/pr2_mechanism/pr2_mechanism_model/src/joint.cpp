@@ -150,3 +150,30 @@ bool Joint::init(const boost::shared_ptr<urdf::Joint> jnt)
   return true;
 }
 
+
+void JointStatistics::update(JointState* jnt)
+{
+  if (initialized_){
+    odometer_ += fabs(old_position_ - jnt->position_); 
+    if (fabs(jnt->commanded_effort_) > jnt->joint_->effort_limit_)
+      saturated_ = true;
+    min_position_ = fmin(jnt->position_, min_position_);
+    max_position_ = fmax(jnt->position_, max_position_);
+    max_abs_velocity_ = fmax(fabs(jnt->velocity_), max_abs_velocity_);
+    max_abs_effort_ = fmax(fabs(jnt->applied_effort_), max_abs_effort_);
+  }
+  else
+    initialized_ = true;
+  old_position_ = jnt->position_;
+}
+
+
+void JointStatistics::reset()
+{
+  double tmp = min_position_;
+  min_position_ = max_position_;
+  max_position_ = tmp;
+  max_abs_velocity_ = 0.0;
+  max_abs_effort_ = 0.0;
+  saturated_ = false;
+}

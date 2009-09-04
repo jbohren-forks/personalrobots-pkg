@@ -85,6 +85,29 @@ public:
 };
 
 
+
+class JointStatistics
+{
+ public:
+  JointStatistics():odometer_(0.0), max_abs_velocity_(0.0), max_abs_effort_(0.0), 
+    saturated_(false), initialized_(false){}
+
+  void update(JointState* s);
+  void reset();
+
+  double odometer_;
+  double min_position_, max_position_;
+  double max_abs_velocity_;
+  double max_abs_effort_;
+  bool saturated_;
+
+ private:
+  bool initialized_;
+  double old_position_;
+};
+
+
+
 class JointState
 {
 public:
@@ -95,17 +118,16 @@ public:
   double velocity_;
   double applied_effort_;
 
+  // joint statistics
+  JointStatistics joint_statistics_;
+
   // Command
   double commanded_effort_;
 
   bool calibrated_;
 
   JointState() : joint_(NULL), position_(0.0), velocity_(0.0), applied_effort_(0.0),
-                 commanded_effort_(0), calibrated_(false) {}
-  JointState(const JointState &s)
-    : joint_(s.joint_), position_(s.position_), velocity_(s.velocity_),
-      applied_effort_(s.applied_effort_), commanded_effort_(s.commanded_effort_), calibrated_(s.calibrated_)
-  {}
+                 commanded_effort_(0.0), calibrated_(false){}
 };
 
 enum
@@ -118,6 +140,7 @@ enum
   JOINT_PLANAR,
   JOINT_TYPES_MAX
 };
+
 
 }
 

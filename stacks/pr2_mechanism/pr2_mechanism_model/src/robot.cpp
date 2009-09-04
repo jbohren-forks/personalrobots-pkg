@@ -41,14 +41,20 @@
 
 namespace pr2_mechanism {
 
+
+Robot::Robot(HardwareInterface *hw)
+  :hw_(hw)
+{}
+
+
 bool Robot::initXml(TiXmlElement *root)
 {
-  // Gets the actuator list from the hardware interface
+  // check if current time is valid
   if (!hw_){
-    ROS_ERROR("Mechanism Model got an invalid pointer to the hardware interface");
+    ROS_ERROR("Mechanism Model received an invalid hardware interface");
     return false;
   }
-  actuators_ = hw_->actuators_;
+    actuators_ = hw_->actuators_;
 
   // Parses the xml into a robot model
   urdf::Model robot_description;
@@ -72,7 +78,14 @@ bool Robot::initXml(TiXmlElement *root)
       delete jnt;
       return false;
     }
-    joints_.push_back(jnt);
+    // only collect joint types we know about
+    if (jnt->type_ == JOINT_PRISMATIC ||
+        jnt->type_ == JOINT_ROTARY ||
+        jnt->type_ == JOINT_FIXED ||
+        jnt->type_ == JOINT_CONTINUOUS)
+      joints_.push_back(jnt);
+    else
+      delete jnt;
   }
 
   // Constructs the transmissions by parsing custom xml.
@@ -100,9 +113,9 @@ bool Robot::initXml(TiXmlElement *root)
       transmissions_.push_back(t);
   }
 
-
   return true;
 }
+
 
 template <class T>
 int findIndexByName(const std::vector<T*>& v, const std::string &name)
@@ -152,11 +165,10 @@ Transmission* Robot::getTransmission(const std::string &name) const
 
 
 
-RobotState::RobotState(Robot *model, HardwareInterface *hw)
-  : model_(model), hw_(hw)
+RobotState::RobotState(Robot *model)
+  : model_(model)
 {
   assert(model_);
-  assert(hw_);
 
   joint_states_.resize(model->joints_.size());
   transmissions_in_.resize(model->transmissions_.size());
@@ -180,7 +192,7 @@ RobotState::RobotState(Robot *model, HardwareInterface *hw)
     {
       int index = model_->getActuatorIndex(t->actuator_names_[j]);
       assert(index >= 0);
-      transmissions_in_[i].push_back(hw_->actuators_[index]);
+      transmissions_in_[i].push_back(model_->actuators_[index]);
     }
     for (unsigned int j = 0; j < t->joint_names_.size(); ++j)
     {
@@ -210,6 +222,11 @@ void RobotState::propagateState()
   {
     model_->transmissions_[i]->propagatePosition(transmissions_in_[i],
                                                  transmissions_out_[i]);
+  }
+
+  for (unsigned int i = 0; i < joint_states_.size(); i++)
+  {
+    joint_states_[i].joint_statistics_.update(&(joint_states_[i]));
   }
 }
 
