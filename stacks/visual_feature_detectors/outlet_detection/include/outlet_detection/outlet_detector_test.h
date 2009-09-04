@@ -55,7 +55,7 @@ IplImage* getRealOutletImage(const outlet_test_elem& test_elem, CvMat* intrinsic
 void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix = 0, CvMat* distortion_params = 0);
 
 // Writes the file with test resultes
-int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data, TestResult* result = 0);
+int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data, TestResult* result = 0, float avg_time = 0);
 
 int compareOutlets(outlet_test_elem& test_elem, int accuracy = 3);
 int compareAllOutlets(vector<outlet_test_elem>& test_data, int accuracy = 3);

@@ -515,7 +515,7 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 	}
 }
 //--------------------------------
-int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data, TestResult* result)
+int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data, TestResult* result, float avg_time)
 {
 	FILE* f = fopen(filename,"w");
 	if (f)
@@ -551,7 +551,9 @@ int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data, 
 		}
 		if (nCorrect+nNA > 0)
 			fprintf(f,"---------------------\n");
-		fprintf(f,"Total images:%d\nSkipped:%d\nCorrect:%d\nIncorrect:%d\nNA:%d",nTotal-nSkipped,nSkipped,nCorrect,(int)test_data.size()-nCorrect-nNA,nNA);
+		fprintf(f,"Total images:%d\nSkipped:%d\nCorrect:%d\nIncorrect:%d\nNA:%d\n",nTotal-nSkipped,nSkipped,nCorrect,(int)test_data.size()-nCorrect-nNA,nNA);
+		if (avg_time > 0)
+			fprintf(f,"---------------------Average detection time: %f",avg_time);
 		fclose(f);
 		if (result)
 		{
