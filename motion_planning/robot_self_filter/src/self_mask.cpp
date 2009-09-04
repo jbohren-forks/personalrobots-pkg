@@ -28,9 +28,13 @@
  */
 
 #include "robot_self_filter/self_mask.h"
-#include <algorithm>
-#include <climits>
+#include <urdf/model.h>
+#include <resource_retriever/retriever.h>
+#include <ogre_tools/stl_loader.h>
 #include <ros/console.h>
+#include <algorithm>
+#include <sstream>
+#include <climits>
 
 void robot_self_filter::SelfMask::freeMemory(void)
 {
@@ -45,23 +49,145 @@ void robot_self_filter::SelfMask::freeMemory(void)
     bodies_.clear();
 }
 
+
+namespace robot_self_filter
+{
+    static inline btTransform urdfPose2btTransform(const urdf::Pose &pose)
+    {
+	return btTransform(btQuaternion(pose.rotation.x, pose.rotation.y, pose.rotation.z, pose.rotation.w),
+			   btVector3(pose.position.x, pose.position.y, pose.position.z));
+    }
+
+    static shapes::Shape* constructShape(const urdf::Geometry *geom)
+    {
+	ROS_ASSERT(geom);
+	
+	shapes::Shape *result = NULL;
+	switch (geom->type)
+	{
+	case urdf::Geometry::SPHERE:
+	    result = new shapes::Sphere(dynamic_cast<const urdf::Sphere*>(geom)->radius);
+	    break;	
+	case urdf::Geometry::BOX:
+	    {
+		urdf::Vector3 dim = dynamic_cast<const urdf::Box*>(geom)->dim;
+		result = new shapes::Box(dim.x, dim.y, dim.z);
+	    }
+	    break;
+	case urdf::Geometry::CYLINDER:
+	    result = new shapes::Cylinder(dynamic_cast<const urdf::Cylinder*>(geom)->radius,
+					  dynamic_cast<const urdf::Cylinder*>(geom)->length);
+	    break;
+	case urdf::Geometry::MESH:
+	    {
+		const urdf::Mesh *mesh = dynamic_cast<const urdf::Mesh*>(geom);
+		if (!mesh->filename.empty())
+		{
+		    resource_retriever::Retriever retriever;
+		    resource_retriever::MemoryResource res;
+		    bool ok = true;
+		    
+		    try
+		    {
+			res = retriever.get(mesh->filename);
+		    }
+		    catch (resource_retriever::Exception& e)
+		    {
+			ROS_ERROR("%s", e.what());
+			ok = false;
+		    }
+		    
+		    if (ok)
+		    {
+			if (res.size == 0)
+			    ROS_WARN("Retrieved empty mesh for resource '%s'", mesh->filename.c_str());
+			else
+			{
+			    ogre_tools::STLLoader loader;
+			    if (loader.load(res.data.get()))
+			    {
+				std::vector<btVector3> triangles;
+				for (unsigned int i = 0 ; i < loader.triangles_.size() ; ++i)
+				{
+				    triangles.push_back(btVector3(loader.triangles_[i].vertices_[0].x, loader.triangles_[i].vertices_[0].y, loader.triangles_[i].vertices_[0].z));
+				    triangles.push_back(btVector3(loader.triangles_[i].vertices_[1].x, loader.triangles_[i].vertices_[1].y, loader.triangles_[i].vertices_[1].z));
+				    triangles.push_back(btVector3(loader.triangles_[i].vertices_[2].x, loader.triangles_[i].vertices_[2].y, loader.triangles_[i].vertices_[2].z));
+				}
+				result = shapes::createMeshFromVertices(triangles);
+			    }
+			    else
+				ROS_ERROR("Failed to load mesh '%s'", mesh->filename.c_str());
+			}
+		    }
+		}
+		else
+		    ROS_WARN("Empty mesh filename");
+	    }
+	    
+	    break;
+	default:
+	    ROS_ERROR("Unknown geometry type: %d", (int)geom->type);
+	    break;
+	}
+	
+	return result;
+    }
+}
+
 bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &links, double scale, double padd)
 {
     // in case configure was called before, we free the memory
     freeMemory();
     sensor_pos_.setValue(0, 0, 0);
     
+    std::string content;
+    boost::shared_ptr<urdf::Model> urdfModel;
+
+    if (nh_.getParam("robot_description", content))
+    {
+	urdfModel = boost::shared_ptr<urdf::Model>(new urdf::Model());
+	if (!urdfModel->initString(content))
+	{
+	    ROS_ERROR("Unable to parse URDF description!");
+	    return false;
+	}
+    }
+    else
+    {
+	ROS_ERROR("Robot model not found! Did you remap 'robot_description'?");
+	return false;
+    }
+    
+    std::stringstream missing;
+    
     // from the geometric model, find the shape of each link of interest
     // and create a body from it, one that knows about poses and can 
     // check for point inclusion
     for (unsigned int i = 0 ; i < links.size() ; ++i)
     {
-	planning_models::KinematicModel::Link *link = rm_.getKinematicModel()->getLink(links[i]);
+	const urdf::Link *link = urdfModel->getLink(links[i]).get();
 	if (!link)
+	{
+	    missing << " " << links[i];
 	    continue;
+	}
+	
+	if (!(link->collision && link->collision->geometry))
+	{
+	    ROS_WARN("No collision geometry specified for link '%s'", links[i].c_str());
+	    continue;
+	}
+	
+	shapes::Shape *shape = constructShape(link->collision->geometry.get());
+	
+	if (!shape)
+	{
+	    ROS_ERROR("Unable to construct collision shape for link '%s'", links[i].c_str());
+	    continue;
+	}
 	
 	SeeLink sl;
-	sl.body = bodies::createBodyFromShape(link->shape);
+	sl.body = bodies::createBodyFromShape(shape);
 
 	if (sl.body)
 	{
@@ -69,19 +195,25 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
 	    
 	    // collision models may have an offset, in addition to what TF gives
 	    // so we keep it around
-	    sl.constTransf = link->constGeomTrans;
+	    sl.constTransf = urdfPose2btTransform(link->collision->origin);
+
 	    sl.body->setScale(scale);
 	    sl.body->setPadding(padd);
 	    sl.volume = sl.body->computeVolume();
-	    sl.unscaledBody = bodies::createBodyFromShape(link->shape);
+	    sl.unscaledBody = bodies::createBodyFromShape(shape);
 	    bodies_.push_back(sl);
 	}
 	else
 	    ROS_WARN("Unable to create point inclusion body for link '%s'", links[i].c_str());
+	
+	delete shape;
     }
     
+    if (missing.str().size() > 0)
+	ROS_WARN("Some links were included for self mask but they do not exist in the model:%s", missing.str().c_str());
+    
     if (bodies_.empty())
-	ROS_WARN("No robot links will be checked for self collision");
+	ROS_WARN("No robot links will be checked for self mask");
     
     // put larger volume bodies first -- higher chances of containing a point
     std::sort(bodies_.begin(), bodies_.end(), SortBodies());

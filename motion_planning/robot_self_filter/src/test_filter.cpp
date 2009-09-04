@@ -42,7 +42,7 @@ class TestSelfFilter
 {
 public:
 
-    TestSelfFilter(void) : rm_("robot_description")
+    TestSelfFilter(void) 
     {
 	id_ = 1;
 	vmPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
@@ -146,7 +146,6 @@ protected:
 
     tf::TransformListener             tf_;
     robot_self_filter::SelfMask      *sf_;
-    planning_environment::RobotModels rm_;
     ros::Publisher                    vmPub_;
     ros::NodeHandle                   nodeHandle_;        
     int                               id_;

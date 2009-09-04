@@ -31,7 +31,6 @@
 #define ROBOT_SELF_FILTER_SELF_MASK_
 
 #include <sensor_msgs/PointCloud.h>
-#include <planning_environment/models/robot_models.h>
 #include <geometric_shapes/bodies.h>
 #include <tf/transform_listener.h>
 #include <boost/bind.hpp>
@@ -82,7 +81,7 @@ namespace robot_self_filter
     public:
 	
 	/** \brief Construct the filter */
-	SelfMask(tf::TransformListener &tf, const std::vector<std::string> &links, double scale, double padd) : rm_("robot_description"), tf_(tf)
+	SelfMask(tf::TransformListener &tf, const std::vector<std::string> &links, double scale, double padd) : tf_(tf)
 	{
 	    configure(links, scale, padd);
 	}
@@ -170,7 +169,6 @@ namespace robot_self_filter
 	/** \brief Perform the actual mask computation. */
 	void maskAuxIntersection(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask, const boost::function<void(const btVector3&)> &callback);
 	
-	planning_environment::RobotModels   rm_;
 	tf::TransformListener              &tf_;
 	ros::NodeHandle                     nh_;
 	
