@@ -2,19 +2,25 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b texas contains the scripts necessary to launch and drive the DallasBot/SkypeBot.
+\b texas package contains the descriptions and launch files needed to operate the telepresence robot known as Texas. 
 
 \section codeapi Code API
 
-Launching the DallasBot:
+Launching Texas:
 \verbatim
 roslaunch texas.launch
+roslaunch ps3_drive.launch
 \endverbatim
 
-Driving the Dallas Bot:
+Driving Texas using a PS3 joystick connected through USB to a local computer.
+From the local computer:
 \verbatim
-roslaunch drive.launch
+sudo chmod 666 /dev/input/js0
+roscd joy
+./joy
 \endverbatim
+
+The chmod command is only needed once after every time the joystick is plugged in.
 
 <!--
 Provide links to specific auto-generated API documentation within your
