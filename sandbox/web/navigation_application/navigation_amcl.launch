@@ -7,7 +7,6 @@
     <param name="base_watchdog_timeout" value="0.2"/>
   </node>
   <include file="$(find move_base_stage)/config/amcl_node.xml"/>
-  <include file="$(find move_base_stage)/move_base/nav_view.xml"/>
 
   <node pkg="tf" type="change_notifier" respawn="false" />
 </launch>
