@@ -84,7 +84,9 @@ class AppRunner:
       loader.load(fn, config)
     except:
       self.task.status = "error"
-      self.manager.app_update.publish(self.task)
+      #self.manager.app_update.publish(self.task)
+      self.manager._send_status()
+      
       return
 
     self.runner = ROSLaunchRunner(rospy.get_param("/run_id"), config, is_core=False)
@@ -167,12 +169,13 @@ class TaskManager:
     runner.task.started = rospy.get_rostime()
     runner.task.status = "starting"
 
-    self.app_update.publish(runner.task)
+#    self.app_update.publish(runner.task)
+    self._send_status()
 
     runner.launch()
 
     runner.task.status = "running"
-    self.app_update.publish(runner.task)
+#    self.app_update.publish(runner.task)
     self._send_status()
 
     return StartTaskResponse("done")
@@ -184,7 +187,8 @@ class TaskManager:
 
   def _stopTask(self, runner):
     runner.task.status = "stopping"
-    self.app_update.publish(runner.task)
+#    self.app_update.publish(runner.task)
+    self._send_status()
 
     for cgroup in runner.childGroups[:]:
       self._stopTask(cgroup)
@@ -192,7 +196,8 @@ class TaskManager:
     runner.stop()
 
     runner.task.status = "stopped"
-    self.app_update.publish(runner.task)
+#    self.app_update.publish(runner.task)
+    self._send_status()
 
     if runner.app.depends:
       pgroup = self._taskGroups.get(runner.app.depends, None)
@@ -221,8 +226,9 @@ class TaskManager:
     return StopTaskResponse("done")
 
   def status_update(self, req):
-    for provides, runner in self._taskGroups.items():
-      self.app_update.publish(runner.task)
+    self._send_status()
+#    for provides, runner in self._taskGroups.items():
+#      self.app_update.publish(runner.task)
     return StatusUpdateResponse("done")
 
 

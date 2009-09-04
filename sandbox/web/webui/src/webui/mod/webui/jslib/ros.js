@@ -223,6 +223,7 @@ function ros_handleOnLoad(prefix)
     gPump.evalMessages(window.gMessage);
   }
   gPump.pump();
+  gPump.service_call("status_update", []);
 }
 
 // *******************************************

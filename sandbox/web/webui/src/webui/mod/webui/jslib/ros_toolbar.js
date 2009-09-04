@@ -7,23 +7,40 @@ var LaunchButtonWidget = Class.create({
     this.domobj = domobj;
     this.taskid = domobj.getAttribute("taskid");
     this.state = false;
-    this.topics = [domobj.getAttribute("topic")];
+    this.topics = ["/app_update", "/app_status"];
   },
 
   init: function() {
     var obj = this;
     this.domobj.onmousedown = function() {obj.onmousedown();};
 
-    if(this.state == true) {
-      this.domobj.setAttribute("class", "buttonOn");
-    } else {
-      this.domobj.setAttribute("class", "buttonOff");
-    }
+    this.set_state();
+  },
 
-    //this.pump.service_call("status_update", []);
+  set_state: function() {
+    var button = this.domobj;
+    if(button != null) {
+      this.domobj.style.border = "solid";
+      if(this.state == true) {
+	button.setAttribute("class", "buttonOn");
+      } else {
+	button.setAttribute("class", "buttonOff");
+      }
+    }
   },
 
   receive: function(topic, msg) {
+    if(topic == "/app_update") this.receive_app_update(msg);
+    else if(topic == "/app_status") this.receive_app_status(msg);
+  },
+
+  receive_app_status: function(msg) {
+    for(var i=0; i<msg.active.length; i++) {
+      this.receive_app_update(msg.active[i]);
+    }
+  },
+
+  receive_app_update: function(msg) {
     if(msg.taskid != this.taskid) return;
 
     var prev_state = this.state;
@@ -33,15 +50,7 @@ var LaunchButtonWidget = Class.create({
     if(state == "stopped") this.state = false;
 
     if(prev_state != this.state) {
-      var button = this.domobj;
-      if(button != null) {
-	this.domobj.style.border = "solid";
-	if(this.state == true) {
-	  button.setAttribute("class", "buttonOn");
-	} else {
-	  button.setAttribute("class", "buttonOff");
-	}
-      }
+      this.set_state();
     }
   },
 
@@ -70,28 +79,57 @@ var LaunchButtonWidget2 = Class.create({
     this.pump = null;
     this.domobj = domobj;
     this.taskid = domobj.getAttribute("taskid");
-    this.state = false;
-    this.topics = [domobj.getAttribute("topic")];
+    this.state = null;
+    this.topics = ["/app_status"];
+
+    this.button = null;
+    this.statusdiv = null;
   },
 
   init: function() {
     var obj = this;
-    this.domobj.onmousedown = function() {obj.onmousedown();};
+
+    this.domobj.innerHTML = '<input class=app_button type=button value="">\n<div class=app_status>&nbsp;</div>';
+    this.button = this.domobj.childNodes[0];
+    this.statusdiv = this.domobj.childNodes[2];
+
+    this.button.onmousedown = function() {obj.onmousedown();};
 
     this.set_state();
   },
 
   receive: function(topic, msg) {
+    if(topic == "/app_update") this.receive_app_update(msg);
+    else if(topic == "/app_status") this.receive_app_status(msg);
+  },
+
+  receive_app_status: function(msg) {
+    var active = false;
+    for(var i=0; i<msg.active.length; i++) {
+      if(msg.active[i].taskid == this.taskid) {
+	this.receive_app_update(msg.active[i]);
+	active = true;
+      }
+    }
+    if(active == false) {
+      this.state = false;
+      this.set_state();
+    }
+  },
+
+  receive_app_update: function(msg) {
     if(msg.taskid != this.taskid) return;
 
     var prev_state = this.state;
+
+    this.statusdiv.innerHTML = msg.status;
 
     var state = msg.status;
     if(state == "running") this.state = true;
     if(state == "stopped") this.state = false;
 
     if(prev_state != this.state) {
-      this.set_state(this.state);
+      this.set_state();
     }
   },
 
@@ -99,14 +137,14 @@ var LaunchButtonWidget2 = Class.create({
     if(this.domobj == null) return;
 
     if(this.state == true) {
-      //      this.domobj.disabled = 0;
-      this.domobj.value = "Stop";
+      this.button.disabled = 0;
+      this.button.value = "Stop";
     } else if (this.state == false) {
-      //      this.domobj.disabled = 0;
-      this.domobj.value = "Launch";
+      this.button.disabled = 0;
+      this.button.value = "Launch";
     } else {
-      this.domobj.disabled = 1;
-      this.domobj.value = "";
+      this.button.disabled = 1;
+      this.button.value = "";
     }
   },
 

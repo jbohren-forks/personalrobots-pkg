@@ -29,8 +29,7 @@
 <div class=app_description><?cs var:_app.description ?></div>
 </td>
 <td valign=top>
-<input class=app_button type=button value="" objtype="LaunchButtonWidget2" topic="/app_update" taskid="<?cs var:_app.taskid ?>">
-<div class=app_status objtype=TextWidget topic="/app_update" key=status selector="taskid" selectorValue="<?cs var:_app.taskid?>">&nbsp;</div>
+<div class=app_button objtype="LaunchButtonWidget2" taskid="<?cs var:_app.taskid ?>">
 </td>
 </tr>
 </table>
@@ -43,5 +42,6 @@
 <div id=ErrorDiv></div>
 
 
+<?cs include:"rosfooter.cs"?>
 </body>
 </html>

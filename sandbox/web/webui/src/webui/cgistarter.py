@@ -100,7 +100,7 @@ class Page:
     else:
       n = 0
 
-    debug("self.path", self.path)
+    #warn("self.path", self.path)
 
     if len(self.path) > 1:
       module = self.path[n]
@@ -113,13 +113,13 @@ class Page:
       app = module
       n = n + 1
       
-      modpath = getPackagePath(module)
+      modpath = os.path.join(getPackagePath(module), "src")
       #roslib.load_manifest(module)
 
-      fn = apply(os.path.join, [modpath] + self.path[n:])
+      fn = apply(os.path.join, [modpath] + [module] + self.path[n:])
       moduleRootPath = modpath
-      handlerRoot = apply(os.path.join, [modpath, "cgibin"])
-      moduleTemplatePath = apply(os.path.join, [modpath, "templates"])
+      handlerRoot = apply(os.path.join, [modpath, module, "cgibin"])
+      moduleTemplatePath = apply(os.path.join, [modpath, module, "templates"])
     else:
       moduleRootPath = apply(os.path.join, ["mod", module])
       handlerRoot = apply(os.path.join, ["mod", module, "cgibin"])
@@ -130,7 +130,7 @@ class Page:
     systemTemplatePath = apply(os.path.join, [cwd, "mod", "webui", "templates"])
     systemJLIBPath = apply(os.path.join, [cwd, "mod", "webui", "jslib"])
 
-    debug("fn", fn)
+    #warn("fn", fn)
 
     ## if requesting a file, then just output it to the browser.
     if os.path.isfile(fn):
@@ -141,7 +141,7 @@ class Page:
     if modpath: sys.path.insert(0, os.path.abspath(modpath))
     sys.path.insert(0, os.path.abspath(moduleRootPath))
 
-    debug("sys.path", sys.path)
+    #debug("sys.path", sys.path)
 
     handlerPath = ''
 
@@ -169,8 +169,9 @@ class Page:
     else:
       modulePath, moduleFilename = os.path.split(handlerPath)
 
-    debug(handlerPath, pathinfo)
-    #warn("PATH", handlerPath, pathinfo, modulePath, moduleFilename)
+    #debug(handlerPath, pathinfo)
+    #warn("handlerRoot", handlerRoot)
+    #warn("handlerPath", handlerPath, "pathinfo", pathinfo, "modulePath", modulePath, "moduleFilename", moduleFilename)
     #warn("PATH", self.path)
 
     if not os.path.isfile(handlerPath):
@@ -183,7 +184,7 @@ class Page:
 
     #module = __import__(moduleName)
     if app:
-      module = __import__("cgibin.%s" % (moduleName, ), {}, {}, (None,))
+      module = __import__("%s.cgibin.%s" % (module, moduleName, ), {}, {}, (None,))
     else:
       module = __import__("mod.%s.cgibin.%s" % (module, moduleName), {}, {}, (None,))
 

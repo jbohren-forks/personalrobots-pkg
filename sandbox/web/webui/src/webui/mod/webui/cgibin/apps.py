@@ -20,6 +20,8 @@ class MyPage(MBPage.MBPage):
     self.db = db_webui.initSchema()
 
   def display(self, hdf):
+    db_webui.grabTopics(hdf, [])
+
     hdf.setValue("CGI.now", str(time.time()))
 
     apps = self.db.apps.fetchAllRows()
