@@ -9,8 +9,8 @@ fi
 # Set up a build directory with suitable soft link & environment variable bindings. This is set
 # at the root of the user tree to avoid problems with very long paths to build files which
 # cause problems with jam, which has a hard limit on the command line length
-ln -s `rospack find trex_core` ~/trex_core_build
-cd ~/trex_core_build
+ln -s `rospack find trex_core` $HOME/trex_core_build
+cd $HOME/trex_core_build
 source ./TREX/devConfig
 cd TREX
 
@@ -29,7 +29,7 @@ function run_jam {
 
   if [ $? -ne 0 ] ; then
     echo "Jam of $1 failed."
-    rm -rf ~/trex_core_build
+    rm -rf $HOME/trex_core_build
     exit $3
   fi
 }
@@ -38,13 +38,13 @@ function run_jam {
 if [ "$1" = "test" ] ; then
   if [ $? -ne 0 ] ; then
     echo "TREX test file creation failed."
-    rm -rf ~/trex_core_build
+    rm -rf $HOME/trex_core_build
     exit 1
   fi
   jam run-agent-module-tests
   if [ $? -ne 0 ] ; then
     echo "TREX tests failed."
-    rm -rf ~/trex_core_build
+    rm -rf $HOME/trex_core_build
     exit 1
   fi
 
@@ -54,6 +54,6 @@ else
   fi
   jam nddl-reader
   run_jam "libTREX_o" "-sVARIANTS=OPTIMIZED -sLIBRARIES=SHARED" 2
-  rm -rf ~/trex_core_build
+  rm -rf $HOME/trex_core_build
 fi
 
