@@ -1,0 +1,10 @@
+<launch>
+  <include file="$(find plug_in_gazebo)/launch/pr2_plug_outlet.launch"/>
+  <include file="$(find milestone2_actions)/milestone2.launch" />
+  <node pkg="plugs_core" type="test_executive" output="screen"/>
+  <!--<node pkg="rosrecord" type="rosrecord" args=" -f door_demos_test.bag " />-->
+
+  <param name="/base_shadow_filter/notifier_tolerance" value="0.09" type="double" />
+  <param name="/tilt_shadow_filter/notifier_tolerance" value="0.09" type="double" />
+</launch>
+ 
