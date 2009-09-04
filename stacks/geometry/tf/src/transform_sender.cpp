@@ -37,6 +37,8 @@ public:
   //constructor
   TransformSender(double x, double y, double z, double yaw, double pitch, double roll, ros::Time time, const std::string& frame_id, const std::string& parent_id) :
     transform_(btTransform(btQuaternion(yaw,pitch,roll), btVector3(x,y,z)), time, frame_id , parent_id){};
+  TransformSender(double x, double y, double z, double qx, double qy, double qz, double qw, ros::Time time, const std::string& frame_id, const std::string& parent_id) :
+    transform_(btTransform(btQuaternion(qx,qy,qz,qw), btVector3(x,y,z)), time, frame_id , parent_id){};
   //Clean up ros connections
   ~TransformSender() { }
 
@@ -61,34 +63,64 @@ int main(int argc, char ** argv)
   //Initialize ROS
   ros::init(argc, argv,"transform_sender", ros::init_options::AnonymousName);
 
-  if(argc != 10)
+  if(argc == 11)
+  {
+    ros::Duration sleeper(atof(argv[10])/1000.0);
+
+    if (strcmp(argv[8], argv[9]) == 0)
+      ROS_FATAL("target_frame and source frame are the same (%s, %s) this cannot work", argv[8], argv[9]);
+
+    TransformSender tf_sender(atof(argv[1]), atof(argv[2]), atof(argv[3]),
+                              atof(argv[4]), atof(argv[5]), atof(argv[6]), atof(argv[7]),
+                              ros::Time::now() + sleeper, //Future dating to allow slower sending w/o timeout
+                              argv[8], argv[9]);
+
+
+
+    while(tf_sender.node_.ok())
     {
-      printf("A command line utility for manually sending a transform.\n");
-      printf("It will periodicaly republish the given transform. \n");
-      printf("Usage: transform_sender x y z yaw pitch roll frame_id parent_id  period(miliseconds) \n");
-      ROS_ERROR("transform_sender exited due to not having the right number of arguments");
-      return -1;
+      tf_sender.send(ros::Time::now() + sleeper);
+      ROS_DEBUG("Sending transform from %s with parent %s\n", argv[8], argv[9]);
+      sleeper.sleep();
     }
 
-  ros::Duration sleeper(atof(argv[9])/1000.0);
-
-  if (strcmp(argv[7], argv[8]) == 0)
-    ROS_FATAL("target_frame and source frame are the same (%s, %s) this cannot work", argv[7], argv[8]);
-
-  TransformSender tf_sender(atof(argv[1]), atof(argv[2]), atof(argv[3]),
-                            atof(argv[4]), atof(argv[5]), atof(argv[6]),
-                            ros::Time::now() + sleeper, //Future dating to allow slower sending w/o timeout
-                            argv[7], argv[8]);
-
-
-
-  while(tf_sender.node_.ok())
+    return 0;
+  } 
+  else if (argc == 10)
   {
-    tf_sender.send(ros::Time::now() + sleeper);
-    ROS_DEBUG("Sending transform from %s with parent %s\n", argv[7], argv[8]);
-    sleeper.sleep();
+    ros::Duration sleeper(atof(argv[9])/1000.0);
+
+    if (strcmp(argv[7], argv[8]) == 0)
+      ROS_FATAL("target_frame and source frame are the same (%s, %s) this cannot work", argv[7], argv[8]);
+
+    TransformSender tf_sender(atof(argv[1]), atof(argv[2]), atof(argv[3]),
+                              atof(argv[4]), atof(argv[5]), atof(argv[6]),
+                              ros::Time::now() + sleeper, //Future dating to allow slower sending w/o timeout
+                              argv[7], argv[8]);
+
+
+
+    while(tf_sender.node_.ok())
+    {
+      tf_sender.send(ros::Time::now() + sleeper);
+      ROS_DEBUG("Sending transform from %s with parent %s\n", argv[7], argv[8]);
+      sleeper.sleep();
+    }
+
+    return 0;
+
+  }
+  else
+  {
+    printf("A command line utility for manually sending a transform.\n");
+    printf("It will periodicaly republish the given transform. \n");
+    printf("Usage: transform_sender x y z yaw pitch roll frame_id parent_id  period(miliseconds) \n");
+    printf("OR \n");
+    printf("Usage: transform_sender x y z qx qy qz qw frame_id parent_id  period(miliseconds) \n");
+    ROS_ERROR("transform_sender exited due to not having the right number of arguments");
+    return -1;
   }
 
-  return 0;
+
 };
 
