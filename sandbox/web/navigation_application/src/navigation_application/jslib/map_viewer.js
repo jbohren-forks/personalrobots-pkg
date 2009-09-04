@@ -41,7 +41,6 @@ var MapTile = Class.create({
     },
 });
 
-
 var MapViewer = Class.create({
     initialize: function(domobj) {
         this.viewer = domobj;
@@ -60,7 +59,30 @@ var MapViewer = Class.create({
     ],
 
     addButton: function(b) {
-        this.buttonbar.insert('<img title="'+b.desc+'" style="margin:1;border:1px solid" src="' + window.location.pathname + '/images/'+b.name+'_disable.png"><br>');
+        this.buttonbar.insert('<img id="' + b.name + '_button" title="'+b.desc+'" style="margin:1;border:1px solid" src="' + window.location.pathname + '/images/'+b.name+'_disable.png"><br>');
+        $(b.name + '_button').observe('click', this.handleClick.bind(this));
+        $(b.name + '_button').observe('mousedown', function(e) {e.stop()});
+    },
+
+    mode : {'PAN' : 0, 'GOAL' : 1, 'POSE': 2},
+
+    handleClick : function(e) {
+        var button = e.element();
+        if (button.id == "zoomin_button") {
+            this.zoom(-0.25, this.dim.width/2, this.dim.height/2);
+        } else if (button.id == "zoomout_button") {
+            this.zoom(0.25, this.dim.width/2, this.dim.height/2);
+        } else if (button.id == "pan_button") {
+            this.currentMode = this.mode.PAN;
+            button.src = window.location.pathname + '/images/pan_enable.png'
+        } else if (button.id == "goal_button") {
+            this.currentMode = this.mode.GOAL;
+        } else if (button.id == "pose_button") {
+            this.currentMode = this.mode.POSE;
+        } else if (button.id == "pin_button") {
+            this.follow = !this.follow;
+        }
+        return false;
     },
 
     init: function() {
@@ -102,9 +124,9 @@ var MapViewer = Class.create({
         Event.observe(document, 'mouseup', this.handleMouseUp.bind(this));
         Event.observe(document, 'mousemove', this.handleMouseMove.bind(this));
         Event.observe(document, 'keypress', this.handleKeyPress.bind(this));
-        this.panning = false;
-        this.settingGoal = false;
-        this.settingPose = false;
+
+        this.currentMode = this.mode.PAN;
+        this.follow = false;
 
         this.robot_img = new Image();
         this.robot_img.src = window.location.pathname + '/images/pr2_small.png';
@@ -120,29 +142,22 @@ var MapViewer = Class.create({
     },
 
     handleMouseDown : function(e) {
-        this.mark = [Event.pointerX(e), Event.pointerY(e)];
         if (Event.isLeftClick(e)) {
-            this.panning = true;
-        } else if (Event.isMiddleClick(e)) {
-            if (e.ctrlKey)
-              this.settingPose = true;
-            else
-              this.settingGoal = true;
+            this.mark = [Event.pointerX(e), Event.pointerY(e)];
         }
     },
 
     handleMouseUp : function(e) {
         if (Event.isLeftClick(e)) {
-            this.panning = false;
-        } else if (Event.isMiddleClick(e)) {
-            if (this.settingGoal || this.settingPose) {
+            if (this.currentMode == this.mode.GOAL ||
+                this.currentMode == this.mode.POSE) {
                 var dx = Event.pointerX(e) - this.mark[0];
                 var dy = Event.pointerY(e) - this.mark[1];
                 var angle = Math.atan2(-dy, dx);
                 var off = this.viewer.cumulativeOffset();
                 var pos = this.pixelToMap([this.mark[0]-off.left, this.mark[1]-off.top]);
                 var url = 'http://' + window.location.hostname + ':8080';
-                url += this.settingGoal ? '/map/set_goal' : '/map/set_pose';
+                url += this.currentMode == this.mode.GOAL ? '/map/set_goal' : '/map/set_pose';
                 url += '?x=' + pos.x;
                 url += '&y=' + pos.y;
                 url += '&angle=' + angle;
@@ -152,23 +167,27 @@ var MapViewer = Class.create({
                 delete this.robot_est;
                 delete this.plan;
             }
+            delete this.mark;
         }
     },
 
     handleMouseMove : function(e) {
-        if (this.panning) {
-            var old_mark = this.mark;
-            this.mark = [Event.pointerX(e), Event.pointerY(e)];
-            this.panMap(this.mark[0] - old_mark[0],
-                        this.mark[1] - old_mark[1]);
-        } else if (this.settingGoal || this.settingPose) {
-            var off = this.viewer.cumulativeOffset();
-            var pos = this.pixelToMap([this.mark[0]-off.left, this.mark[1]-off.top]);
-            var dx = Event.pointerX(e) - this.mark[0];
-            var dy = Event.pointerY(e) - this.mark[1];
-            var angle = Math.atan2(dy, dx);
-            this.robot_est = {'x': pos.x, 'y': pos.y, 'angle': angle};
-            this.updateCanvas();
+        if (this.mark) {
+            if (this.currentMode == this.mode.PAN) {
+                var old_mark = this.mark;
+                this.mark = [Event.pointerX(e), Event.pointerY(e)];
+                this.panMap(this.mark[0] - old_mark[0],
+                            this.mark[1] - old_mark[1]);
+            } else if (this.currentMode == this.mode.GOAL ||
+                       this.currentMode == this.mode.POSE) {
+                var off = this.viewer.cumulativeOffset();
+                var pos = this.pixelToMap([this.mark[0]-off.left, this.mark[1]-off.top]);
+                var dx = Event.pointerX(e) - this.mark[0];
+                var dy = Event.pointerY(e) - this.mark[1];
+                var angle = Math.atan2(dy, dx);
+                this.robot_est = {'x': pos.x, 'y': pos.y, 'angle': angle};
+                this.updateCanvas();
+            }
         }
     },
 
@@ -341,7 +360,8 @@ var MapViewer = Class.create({
           var coords = this.mapToPixel(msg.pose.position);
           coords[0] -= this.panner.left;
           coords[1] -= this.panner.top;
-          //this.panMap(this.dim.width/2-coords[0], this.dim.height/2-coords[1], false);
+          if (this.follow)
+              this.panMap(this.dim.width/2-coords[0], this.dim.height/2-coords[1], false);
           this.robot = {'x': msg.pose.position.x,
                         'y': msg.pose.position.y,
                         'angle': angle};
