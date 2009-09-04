@@ -52,16 +52,22 @@ var MapViewer = Class.create({
         {'name': 'zoomin', 'desc': 'Zoom In'},
         {'name': 'zoomout', 'desc': 'Zoom Out'},
         {'name': 'reset', 'desc': 'Reset the view'},
+        {'name': '',},
         {'name': 'pan', 'desc': 'Pan'},
         {'name': 'goal', 'desc': 'Set the robot\'s goal'},
         {'name': 'pose', 'desc': 'Set the robot\'s initial pose'},
+        {'name': '',},
         {'name': 'pin', 'desc': 'Follow the robot'},
     ],
 
     addButton: function(b) {
-        this.buttonbar.insert('<img id="' + b.name + '_button" title="'+b.desc+'" style="margin:1;border:1px solid" src="' + window.location.pathname + '/images/'+b.name+'_disable.png"><br>');
-        $(b.name + '_button').observe('click', this.handleClick.bind(this));
-        $(b.name + '_button').observe('mousedown', function(e) {e.stop()});
+        if (b.name == '') {
+            this.buttonbar.insert('<br>');
+        } else {
+            this.buttonbar.insert('<img id="' + b.name + '_button" title="'+b.desc+'" style="margin:1;border:1px solid" src="' + window.location.pathname + '/images/'+b.name+'_disable.png"><br>');
+            $(b.name + '_button').observe('click', this.handleClick.bind(this));
+            $(b.name + '_button').observe('mousedown', function(e) {e.stop()});
+        }
     },
 
     mode : {'PAN' : 0, 'GOAL' : 1, 'POSE': 2},
@@ -72,6 +78,8 @@ var MapViewer = Class.create({
             this.zoom(-0.25, this.dim.width/2, this.dim.height/2);
         } else if (button.id == "zoomout_button") {
             this.zoom(0.25, this.dim.width/2, this.dim.height/2);
+        } else if (button.id == "reset_button") {
+            this.zoom(this.sourceWidth/this.dim.width, this.dim.width/2, this.dim.height/2, true);
         } else if (button.id == "pan_button") {
             this.currentMode = this.mode.PAN;
             button.src = window.location.pathname + '/images/pan_enable.png'
@@ -209,9 +217,12 @@ var MapViewer = Class.create({
         }
     },
 
-    zoom : function(factor, center_x, center_y) {
+    zoom : function(factor, center_x, center_y, absolute) {
         var center = this.pixelToMap([center_x, center_y]);
-        this.scale += factor;
+        if (absolute)
+          this.scale = factor;
+        else
+          this.scale += factor;
 
         var x = Math.floor(center.x / this.scale / this.sourceResolution);
         var y = this.sourceHeight / this.scale - Math.floor(center.y / this.scale / this.sourceResolution);
