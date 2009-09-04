@@ -1,6 +1,6 @@
 Index: ode/src/quickstep.cpp
 ===================================================================
---- ode/src/quickstep.cpp	(revision 1684)
+--- ode/src/quickstep.cpp	(revision 1690)
 +++ ode/src/quickstep.cpp	(working copy)
 @@ -63,6 +63,7 @@
  
@@ -635,7 +635,7 @@ Index: ode/src/quickstep.cpp
        // solve the LCP problem and get lambda and invM*constraint_force
 Index: ode/src/util.h
 ===================================================================
---- ode/src/util.h	(revision 1684)
+--- ode/src/util.h	(revision 1690)
 +++ ode/src/util.h	(working copy)
 @@ -23,6 +23,7 @@
  #ifndef _ODE_UTIL_H_
@@ -647,7 +647,7 @@ Index: ode/src/util.h
  
 Index: ode/src/util.cpp
 ===================================================================
---- ode/src/util.cpp	(revision 1684)
+--- ode/src/util.cpp	(revision 1690)
 +++ ode/src/util.cpp	(working copy)
 @@ -24,6 +24,8 @@
  #include "objects.h"
@@ -662,21 +662,24 @@ Index: ode/src/util.cpp
    dxBody *const *bodystart = body;
    dxJoint *const *jointstart = joint;
  
-+  std::cout << "number of islands: " << islandcount << std::endl;
++  //std::cout << "number of islands: " << islandcount << std::endl;
 +  boost::thread* island_threads[islandcount];
 +
 +  int thread_count = 0;
    int const *const sizesend = islandsizes + islandcount * sizeelements;
    for (int const *sizescurr = islandsizes; sizescurr != sizesend; sizescurr += sizeelements) {
      int bcount = sizescurr[0];
-@@ -541,12 +547,20 @@
+@@ -541,12 +547,26 @@
  
      BEGIN_STATE_SAVE(context, stepperstate) {
        // now do something with body and joint lists
--      stepper (context,world,bodystart,bcount,jointstart,jcount,stepsize);
-+      //stepper (context,world,bodystart,bcount,jointstart,jcount,stepsize);
++#undef BTTEST
++#if BTTEST
 +      std::cout << "spawning island: " << thread_count << std::endl;
 +      island_threads[thread_count] = new boost::thread( boost::bind( stepper, context,world,bodystart,bcount,jointstart,jcount,stepsize)  );
++#else
+       stepper (context,world,bodystart,bcount,jointstart,jcount,stepsize);
++#endif
      } END_STATE_SAVE(context, stepperstate);
  
      bodystart += bcount;
@@ -684,10 +687,12 @@ Index: ode/src/util.cpp
 +
 +    thread_count++;
    }
++#if BTTEST
 +  for (int j = 0 ; j < thread_count ; j++)
 +    island_threads[j]->join();
 +  for (int j = 0 ; j < thread_count ; j++)
 +    delete island_threads[j];
++#endif
  
    context->CleanupContext();
    dIASSERT(context->IsStructureValid());
