@@ -69,12 +69,18 @@ namespace planning_environment
 	
 	virtual ~CollisionSpaceMonitor(void)
 	{
-	    if (objectInMapNotifier_)
-		delete objectInMapNotifier_;
-	    if (collisionMapNotifier_)
-		delete collisionMapNotifier_;
-	    if (collisionMapUpdateNotifier_)
-		delete collisionMapUpdateNotifier_;
+	    if (objectInMapFilter_)
+		delete objectInMapFilter_;
+	    if (objectInMapSubscriber_)
+		delete objectInMapSubscriber_;
+	    if (collisionMapFilter_)
+		delete collisionMapFilter_;
+	    if (collisionMapSubscriber_)
+		delete collisionMapSubscriber_;
+	    if (collisionMapUpdateFilter_)
+		delete collisionMapUpdateFilter_;
+	    if (collisionMapUpdateSubscriber_)
+		delete collisionMapUpdateSubscriber_;
 	}
 
 	/** \brief Start the environment monitor. By default, the monitor is started after creation */
@@ -188,9 +194,13 @@ namespace planning_environment
 	
 	bool                                                            haveMap_;
 	ros::Time                                                       lastMapUpdate_;	
-	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapNotifier_;
-	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapUpdateNotifier_;
-	tf::MessageNotifier<mapping_msgs::ObjectInMap>                 *objectInMapNotifier_;
+	
+	message_filters::Subscriber<mapping_msgs::CollisionMap>        *collisionMapSubscriber_;
+	tf::MessageFilter<mapping_msgs::CollisionMap>                  *collisionMapFilter_;
+	message_filters::Subscriber<mapping_msgs::CollisionMap>        *collisionMapUpdateSubscriber_;
+	tf::MessageFilter<mapping_msgs::CollisionMap>                  *collisionMapUpdateFilter_;
+	message_filters::Subscriber<mapping_msgs::ObjectInMap>         *objectInMapSubscriber_;
+	tf::MessageFilter<mapping_msgs::ObjectInMap>                   *objectInMapFilter_;
 	
 	boost::function<void(const mapping_msgs::CollisionMapConstPtr, bool)> onBeforeMapUpdate_;
 	boost::function<void(const mapping_msgs::CollisionMapConstPtr, bool)> onAfterMapUpdate_;

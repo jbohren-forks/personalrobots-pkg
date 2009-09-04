@@ -58,9 +58,13 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     onAfterMapUpdate_  = NULL;
     onObjectInMapUpdate_ = NULL;
     
-    collisionMapNotifier_ = NULL;
-    collisionMapUpdateNotifier_ = NULL;
-    objectInMapNotifier_ = NULL;
+    collisionMapFilter_ = NULL;
+    collisionMapUpdateFilter_ = NULL;
+    objectInMapFilter_ = NULL;
+    
+    collisionMapSubscriber_ = NULL;
+    collisionMapUpdateSubscriber_ = NULL;
+    objectInMapSubscriber_ = NULL;
     
     haveMap_ = false;
 
@@ -74,15 +78,21 @@ void planning_environment::CollisionSpaceMonitor::startEnvironmentMonitor(void)
 {
     if (envMonitorStarted_)
 	return;
+
+    collisionMapSubscriber_ = new message_filters::Subscriber<mapping_msgs::CollisionMap>(nh_, "collision_map", 1);
+    collisionMapFilter_ = new tf::MessageFilter<mapping_msgs::CollisionMap>(*collisionMapSubscriber_, *tf_, getFrameId(), 1);
+    collisionMapFilter_->registerCallback(boost::bind(&CollisionSpaceMonitor::collisionMapCallback, this, _1));
+    ROS_DEBUG("Listening to collision_map using message notifier with target frame %s", collisionMapFilter_->getTargetFramesString().c_str());
+
+    collisionMapUpdateSubscriber_ = new message_filters::Subscriber<mapping_msgs::CollisionMap>(nh_, "collision_map_update", 1);
+    collisionMapUpdateFilter_ = new tf::MessageFilter<mapping_msgs::CollisionMap>(*collisionMapUpdateSubscriber_, *tf_, getFrameId(), 1);
+    collisionMapUpdateFilter_->registerCallback(boost::bind(&CollisionSpaceMonitor::collisionMapUpdateCallback, this, _1));
+    ROS_DEBUG("Listening to collision_map_update using message notifier with target frame %s", collisionMapUpdateFilter_->getTargetFramesString().c_str());
     
-    collisionMapNotifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapCallback, this, _1), "collision_map", getFrameId(), 1);
-    ROS_DEBUG("Listening to collision_map using message notifier with target frame %s", collisionMapNotifier_->getTargetFramesString().c_str());
-
-    collisionMapUpdateNotifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapUpdateCallback, this, _1), "collision_map_update", getFrameId(), 1);
-    ROS_DEBUG("Listening to collision_map_update using message notifier with target frame %s", collisionMapUpdateNotifier_->getTargetFramesString().c_str());
-
-    objectInMapNotifier_ = new tf::MessageNotifier<mapping_msgs::ObjectInMap>(*tf_, boost::bind(&CollisionSpaceMonitor::objectInMapCallback, this, _1), "object_in_map", getFrameId(), 1024);
-    ROS_DEBUG("Listening to object_in_map using message notifier with target frame %s", collisionMapUpdateNotifier_->getTargetFramesString().c_str());
+    objectInMapSubscriber_ = new message_filters::Subscriber<mapping_msgs::ObjectInMap>(nh_, "object_in_map", 1024);
+    objectInMapFilter_ = new tf::MessageFilter<mapping_msgs::ObjectInMap>(*objectInMapSubscriber_, *tf_, getFrameId(), 1024);
+    objectInMapFilter_->registerCallback(boost::bind(&CollisionSpaceMonitor::objectInMapCallback, this, _1));
+    ROS_DEBUG("Listening to object_in_map using message notifier with target frame %s", collisionMapUpdateFilter_->getTargetFramesString().c_str());
 
     envMonitorStarted_ = true;
 }
@@ -92,14 +102,20 @@ void planning_environment::CollisionSpaceMonitor::stopEnvironmentMonitor(void)
     if (!envMonitorStarted_)
 	return;
     
-    delete collisionMapUpdateNotifier_;
-    collisionMapUpdateNotifier_ = NULL;
+    delete collisionMapUpdateFilter_;
+    collisionMapUpdateFilter_ = NULL;
+    delete collisionMapUpdateSubscriber_;
+    collisionMapUpdateSubscriber_ = NULL;
     
-    delete collisionMapNotifier_;
-    collisionMapNotifier_ = NULL;
+    delete collisionMapFilter_;
+    collisionMapFilter_ = NULL;
+    delete collisionMapSubscriber_;
+    collisionMapSubscriber_ = NULL;
     
-    delete objectInMapNotifier_;
-    objectInMapNotifier_ = NULL;
+    delete objectInMapFilter_;
+    objectInMapFilter_ = NULL;
+    delete objectInMapSubscriber_;
+    objectInMapSubscriber_ = NULL;
 
     ROS_DEBUG("Environment state is no longer being monitored");
 

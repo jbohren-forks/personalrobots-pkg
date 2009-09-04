@@ -47,7 +47,8 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     robotState_ = NULL;
     onStateUpdate_ = NULL;
     onAfterAttachBody_ = NULL;
-    attachedBodyNotifier_ = NULL;
+    attachedBodyFilter_ = NULL;
+    attachedBodySubscriber_ = NULL;
     havePose_ = haveJointState_ = false;
     robotVelocity_ = 0.0;
     
@@ -94,9 +95,12 @@ void planning_environment::KinematicModelStateMonitor::startStateMonitor(void)
 	jointStateSubscriber_ = nh_.subscribe("joint_states", 1, &KinematicModelStateMonitor::jointStateCallback, this);
 	ROS_DEBUG("Listening to joint states");
 	
-	attachedBodyNotifier_ = new tf::MessageNotifier<mapping_msgs::AttachedObject>(*tf_, boost::bind(&KinematicModelStateMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
-	attachedBodyNotifier_->setTargetFrame(rm_->getCollisionCheckLinks());
-	ROS_DEBUG("Listening to attach_object using message notifier with target frame %s", attachedBodyNotifier_->getTargetFramesString().c_str());
+	attachedBodySubscriber_ = new message_filters::Subscriber<mapping_msgs::AttachedObject>(nh_, "attach_object", 1);	
+	attachedBodyFilter_ = new tf::MessageFilter<mapping_msgs::AttachedObject>(*attachedBodySubscriber_, *tf_, "", 1);
+	attachedBodyFilter_->setTargetFrames(rm_->getCollisionCheckLinks());
+	attachedBodyFilter_->registerCallback(boost::bind(&KinematicModelStateMonitor::attachObjectCallback, this, _1));
+	
+	ROS_DEBUG("Listening to attach_object using message notifier with target frame %s", attachedBodyFilter_->getTargetFramesString().c_str());
     }
     stateMonitorStarted_ = true;
 }
@@ -106,8 +110,11 @@ void planning_environment::KinematicModelStateMonitor::stopStateMonitor(void)
     if (!stateMonitorStarted_)
 	return;
     
-    delete attachedBodyNotifier_;
-    attachedBodyNotifier_ = NULL;
+    delete attachedBodyFilter_;
+    attachedBodyFilter_ = NULL;
+
+    delete attachedBodySubscriber_;
+    attachedBodySubscriber_ = NULL;
     
     jointStateSubscriber_.shutdown();
     

@@ -41,7 +41,8 @@
 #include "planning_models/kinematic_state.h"
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
-#include <tf/message_notifier.h>
+#include <tf/message_filter.h>
+#include <message_filters/subscriber.h>
 #include <sensor_msgs/JointState.h>
 #include <mapping_msgs/AttachedObject.h>
 #include <boost/bind.hpp>
@@ -81,8 +82,10 @@ namespace planning_environment
 	{
 	    if (robotState_)
 		delete robotState_;
-	    if (attachedBodyNotifier_)
-		delete attachedBodyNotifier_;
+	    if (attachedBodyFilter_)
+		delete attachedBodyFilter_;
+	    if (attachedBodySubscriber_)
+		delete attachedBodySubscriber_;
 	}
 
 	/** \brief Start the state monitor. By default, the monitor is started after creation */
@@ -208,8 +211,11 @@ namespace planning_environment
 	ros::Subscriber                  jointStateSubscriber_;
 	tf::TransformListener           *tf_;
 
-	tf::MessageNotifier<mapping_msgs::AttachedObject>
-	                                *attachedBodyNotifier_;
+	message_filters::Subscriber<mapping_msgs::AttachedObject>
+	                                *attachedBodySubscriber_;
+	
+	tf::MessageFilter<mapping_msgs::AttachedObject>
+	                                *attachedBodyFilter_;
 
 	planning_models::KinematicState *robotState_;
  	double                           robotVelocity_;

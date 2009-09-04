@@ -46,7 +46,8 @@ collision map.
 #include "planning_environment/util/construct_object.h"
 
 #include <geometric_shapes/bodies.h>
-#include <tf/message_notifier.h>
+#include <tf/message_filter.h>
+#include <message_filters/subscriber.h>
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <mapping_msgs/AttachedObject.h>
@@ -71,23 +72,35 @@ public:
 	    
 	    cloudPublisher_ = nh_.advertise<sensor_msgs::PointCloud>("cloud_out", 1);	    
 	    kmsm_->setOnAfterAttachBodyCallback(boost::bind(&ClearKnownObjects::attachObjectEvent, this, _1));
-	    cloudNotifier_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&ClearKnownObjects::cloudCallback, this, _1), "cloud_in", fixed_frame_, 1);
-	    objectInMapNotifier_ = new tf::MessageNotifier<mapping_msgs::ObjectInMap>(tf_, boost::bind(&ClearKnownObjects::objectInMapCallback, this, _1), "object_in_map", fixed_frame_, 1024);
+	    
+	    cloudSubscriber_ = new message_filters::Subscriber<sensor_msgs::PointCloud>(nh_, "cloud_in", 1);
+	    cloudFilter_ = new tf::MessageFilter<sensor_msgs::PointCloud>(*cloudSubscriber_, tf_, fixed_frame_, 1);
+	    cloudFilter_->registerCallback(boost::bind(&ClearKnownObjects::cloudCallback, this, _1));
+	    
+	    objectInMapSubscriber_ = new message_filters::Subscriber<mapping_msgs::ObjectInMap>(nh_, "object_in_map", 1024);
+	    objectInMapFilter_ = new tf::MessageFilter<mapping_msgs::ObjectInMap>(*objectInMapSubscriber_, tf_, fixed_frame_, 1024);
+	    objectInMapFilter_->registerCallback(boost::bind(&ClearKnownObjects::objectInMapCallback, this, _1));
 	}
 	else
 	{
 	    kmsm_ = NULL;
-	    cloudNotifier_ = NULL;
-	    objectInMapNotifier_ = NULL;
+	    cloudFilter_ = NULL;
+	    cloudSubscriber_ = NULL;
+	    objectInMapFilter_ = NULL;
+	    objectInMapSubscriber_ = NULL;
 	}
     }
 
     ~ClearKnownObjects(void)
     {
-	if (cloudNotifier_)
-	    delete cloudNotifier_;
-	if (objectInMapNotifier_)
-	    delete objectInMapNotifier_;
+	if (cloudFilter_)
+	    delete cloudFilter_;
+	if (cloudSubscriber_)
+	    delete cloudSubscriber_;
+	if (objectInMapFilter_)
+	    delete objectInMapFilter_;
+	if (objectInMapSubscriber_)
+	    delete objectInMapSubscriber_;
 	if (kmsm_)
 	    delete kmsm_;
 	if (rm_)
@@ -361,8 +374,12 @@ private:
     tf::TransformListener                                              tf_;
     planning_environment::RobotModels                                 *rm_;
     planning_environment::KinematicModelStateMonitor                  *kmsm_;
-    tf::MessageNotifier<sensor_msgs::PointCloud>                      *cloudNotifier_;
-    tf::MessageNotifier<mapping_msgs::ObjectInMap>                    *objectInMapNotifier_;
+
+    message_filters::Subscriber<mapping_msgs::ObjectInMap>            *objectInMapSubscriber_;
+    tf::MessageFilter<mapping_msgs::ObjectInMap>                      *objectInMapFilter_;
+    message_filters::Subscriber<sensor_msgs::PointCloud>              *cloudSubscriber_;
+    tf::MessageFilter<sensor_msgs::PointCloud>                        *cloudFilter_;
+
     std::string                                                        fixed_frame_;
     boost::mutex                                                       updateObjects_;
     ros::Publisher                                                     cloudPublisher_;    
