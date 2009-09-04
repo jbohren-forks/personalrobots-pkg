@@ -1,0 +1,21 @@
+[ 25%] Building CXX object
+CMakeFiles/dynamics_estimation.dir/src/dynamics_estimation_node.o
+/u/gerkey/code/personalrobots/sandbox/dynamics_estimation/src/dynamics_estimation_node.cpp:
+In member function ‘void
+dynamics_estimation::DynamicsEstimationNode::mechanismStateCallback(const
+boost::shared_ptr<const pr2_mechanism_msgs::MechanismState>&)’:
+/u/gerkey/code/personalrobots/sandbox/dynamics_estimation/src/dynamics_estimation_node.cpp:173:
+error: ‘const class pr2_mechanism_msgs::MechanismState’ has no member named
+‘time’
+make[3]: ***
+[CMakeFiles/dynamics_estimation.dir/src/dynamics_estimation_node.o] Error 1
+make[3]: Leaving directory
+`/wg/stor6a/gerkey/code/personalrobots/sandbox/dynamics_estimation/build'
+make[2]: *** [CMakeFiles/dynamics_estimation.dir/all] Error 2
+make[2]: Leaving directory
+`/wg/stor6a/gerkey/code/personalrobots/sandbox/dynamics_estimation/build'
+make[1]: *** [all] Error 2
+make[1]: Leaving directory
+`/wg/stor6a/gerkey/code/personalrobots/sandbox/dynamics_estimation/build'
+make: *** [all] Error 2
+
