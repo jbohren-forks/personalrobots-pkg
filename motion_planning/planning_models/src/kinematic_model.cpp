@@ -36,7 +36,7 @@
 
 #include <planning_models/kinematic_model.h>
 #include <resource_retriever/retriever.h>
-#include <ogre_tools/stl_loader.h>
+#include <queue>
 #include <ros/console.h>
 #include <cmath>
 
@@ -363,23 +363,12 @@ shapes::Shape* planning_models::KinematicModel::constructShape(const urdf::Geome
 		if (ok)
 		{
 		    if (res.size == 0)
-			ROS_WARN("Retrieved empty mesh for resource [%s]", mesh->filename.c_str());
+			ROS_WARN("Retrieved empty mesh for resource '%s'", mesh->filename.c_str());
 		    else
 		    {
-			ogre_tools::STLLoader loader;
-			if (loader.load(res.data.get()))
-			{
-			    std::vector<btVector3> triangles;
-			    for (unsigned int i = 0 ; i < loader.triangles_.size() ; ++i)
-			    {
-				triangles.push_back(btVector3(loader.triangles_[i].vertices_[0].x, loader.triangles_[i].vertices_[0].y, loader.triangles_[i].vertices_[0].z));
-				triangles.push_back(btVector3(loader.triangles_[i].vertices_[1].x, loader.triangles_[i].vertices_[1].y, loader.triangles_[i].vertices_[1].z));
-				triangles.push_back(btVector3(loader.triangles_[i].vertices_[2].x, loader.triangles_[i].vertices_[2].y, loader.triangles_[i].vertices_[2].z));
-			    }
-			    result = shapes::createMeshFromVertices(triangles);
-			}
-			else
-			    ROS_ERROR("Failed to load mesh [%s]", mesh->filename.c_str());
+			result = shapes::createMeshFromBinaryStlData(reinterpret_cast<char*>(res.data.get()), res.size);
+			if (result == NULL)
+			    ROS_ERROR("Failed to load mesh '%s'", mesh->filename.c_str());
 		    }
 		}
 	    }
