@@ -1,0 +1,27 @@
+<launch>
+
+<remap from="/tf_message" to="/tf_message_muxed" />
+
+<node pkg="laser_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
+      <remap from="scan_in" to="tilt_scan_muxed"/>
+      <param name="tf_cache_time_secs" type="double" value="10.0"/>
+      <param name="tf_tolerance_secs" type="double" value="0.03"/>
+      <param name="max_scans" type="int" value="400"/>
+      <param name="fixed_frame" type="string" value="base_link"/>
+      <param name="downsample_factor" type="int" value="2" />
+      <param name="ignore_laser_skew" type="bool" value="true" />
+      <rosparam command="load" file="$(find laser_filters)/examples/default_scan_shadows.yaml" />
+</node>
+
+<node pkg="pr2_laser_snapshotter" type="pr2_laser_snapshotter" output="screen" name="snapshotter" >
+      <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal" />
+      <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
+      <remap from="full_cloud" to="full_cloud_filtered" />
+</node>
+
+<node pkg="height_classifier" type="point_cloud_writer" output="screen" name="point_cloud_writer">
+      <remap from="point_cloud" to="full_cloud_filtered" />
+      <param name="out_directory" type="string" value="$(find height_classifier)/scans/" />
+</node>
+
+</launch>

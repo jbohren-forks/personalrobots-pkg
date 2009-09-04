@@ -1,0 +1,20 @@
+<package>
+  <description brief="height_classifier">
+
+     height_classifier
+
+  </description>
+  <author>Caroline Pantofaru</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/height_classifier</url>
+  <!--depend package="laser_geometry"/-->
+  <depend package="sensor_msgs"/>
+  <depend package="std_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="geometry_msgs"/>
+  <depend package="opencv_latest"/>
+  <depend package="tf"/> 
+</package>
+
+

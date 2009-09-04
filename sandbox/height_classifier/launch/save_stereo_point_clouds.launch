@@ -1,0 +1,24 @@
+<launch>
+
+<remap from="/tf_message" to="/tf_message_muxed" />
+
+  <group ns="wide_stereo">
+    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen" name="stereoproc">
+      <param name="videre_mode" type="str" value="none"/>
+      <param name="do_colorize" type="bool" value="True"/>
+      <param name="do_rectify" type="bool" value="True"/>
+      <param name="do_stereo" type="bool" value="True"/>
+      <param name="do_calc_points" type="bool" value="True"/>
+      <param name="do_keep_coords" type="bool" value="False"/>
+      <param name="num_disp" type="int" value="64"/>
+    </node>
+  </group>
+
+
+
+<node pkg="height_classifier" type="point_cloud_writer" output="screen" name="point_cloud_writer">
+      <remap from="point_cloud" to="full_cloud_filtered" />
+      <param name="out_directory" type="string" value="$(find height_classifier)/scans/" />
+</node>
+
+</launch>
