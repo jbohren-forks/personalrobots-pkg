@@ -66,6 +66,9 @@
 #include <pr2_msgs/SetPeriodicCmd.h>
 #include <pr2_msgs/SetLaserTrajCmd.h>
 
+#include <visualization_msgs/Marker.h>
+#include <door_handle_detector/DoorsDetector.h>
+
 using namespace ros;
 using namespace std;
 using namespace door_functions;
@@ -110,6 +113,7 @@ class DoorPlannerExecutive
 
     std::map<std::string, std::string> controller_targets_;
     std::vector<std::string> current_controllers_;
+    double gripper_palm_wrist_distance_;
 
     void registerController(const std::string name, const std::string group)
     {
@@ -294,7 +298,7 @@ class DoorPlannerExecutive
       sbpl_door_planner_.reset(new robot_actions::ActionClient<door_msgs::DoorCmd, pr2_robot_actions::DoorCmdActionState, door_msgs::Door>("sbpl_door_planner"));
 
       move_base_client_.reset(new MoveBaseClient("move_base_local"));
-      move_arm_client_.reset(new MoveArmClient("move_arm_client"));
+      move_arm_client_.reset(new MoveArmClient("move_right_arm"));
 
       current_controllers_.clear();
 
@@ -370,9 +374,9 @@ class DoorPlannerExecutive
       switchlist_.start_controllers.clear();  
       switchlist_.stop_controllers.clear();
 /*      if(door_open_direction == door_msgs::DoorCmd::PULL)
-      {
+        {
         switchlist_.start_controllers.push_back("laser_tilt_controller");
-      }
+        }
 */
       switchlist_.start_controllers.push_back("head_controller");
       switchlist_.start_controllers.push_back("head_pan_joint_position_controller");
@@ -524,14 +528,14 @@ class DoorPlannerExecutive
     }
 
 /*    bool refineDoorModel(const door_msgs::Door &door)
-    {
+      {
       door_msgs::Door tmp_door;
       ROS_INFO("Refining door model");
       boost::thread* thread;
       thread = new boost::thread(boost::bind(&robot_actions::ActionClient<door_msgs::Door, 
-                                             pr2_robot_actions::DoorActionState, door_msgs::Door>::execute,
-                                             *refine_door_, door, tmp_door, timeout_long));
-    }
+      pr2_robot_actions::DoorActionState, door_msgs::Door>::execute,
+      *refine_door_, door, tmp_door, timeout_long));
+      }
 */
     bool pushThroughDoor(const door_msgs::Door &door)
     {
@@ -620,7 +624,7 @@ class DoorPlannerExecutive
       return true;
     }
 
-    bool openDoorUsingPlanner(const door_msgs::Door &door, int door_open_direction)
+    bool openDoorUsingPlanner(door_msgs::Door &door, int door_open_direction)
     {
       ROS_INFO("Open door using the planner");
       door_msgs::Door tmp_door;
@@ -643,6 +647,7 @@ class DoorPlannerExecutive
         ROS_INFO("Door planner failed");
         return false;
       }
+      door = tmp_door;
       ROS_INFO("Door planner done");
       return true;
     }
@@ -739,7 +744,7 @@ class DoorPlannerExecutive
         }
         if(!unlatchHandle(door,door_open_direction))
         {
-//          return false;
+          return false;
         }
         if(!openDoorUsingPlanner(door,door_open_direction))
         {
@@ -756,12 +761,40 @@ class DoorPlannerExecutive
       return true;
     }
 
+    bool visualizeMarker(geometry_msgs::PoseStamped p_in)
+    {
+      ros::NodeHandle nh;
+      visualization_msgs::Marker marker;
+      marker.header.frame_id = p_in.header.frame_id;
+      marker.header.stamp = ros::Time::now();
+      marker.ns = "~";
+      marker.id = 1;
+      marker.type = visualization_msgs::Marker::ARROW;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.pose = p_in.pose;
+      marker.scale.x = 0.40;
+      marker.scale.y = 0.25;
+      marker.scale.z = 0.25;
+      marker.color.a = 1.0;
+      marker.color.r = 0.0;
+      marker.color.g = 1.0;
+      marker.color.b = 0.0;
+      ros::Publisher viz_markers = nh.advertise<visualization_msgs::Marker>("visualization_marker",1);
+      viz_markers.publish(marker);
+      sleep(1.0);
+      viz_markers.publish(marker);
+      return true;
+    }
+
     bool graspHandleUsingPlanner(const door_msgs::Door &door, int side)
     {
+      ros::NodeHandle nh;
+      nh.param("~gripper_palm_wrist_distance",gripper_palm_wrist_distance_,0.10);
+
       ROS_INFO("Grasp handle using planner");
       // Use move arm to grasp the other handle
       // Then use the door opening code to open the door
-      switchlist_.start_controllers.push_back("r_arm_joint_trajectory_controller");
+      switchlist_.start_controllers.push_back("r_arm_trajectory_controller");
       switchlist_.stop_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
       switchlist_.stop_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
       switchlist_.stop_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
@@ -770,10 +803,16 @@ class DoorPlannerExecutive
         return false;
 
       tf::Stamped<tf::Pose> handle_pose = getHandlePose(door,side);
+      tf::Pose gripper_pullback(tf::Quaternion(0,0,0),tf::Vector3(-gripper_palm_wrist_distance_,0.0,0.0));
+      tf::Pose gripper_rotate(tf::Quaternion(0.0,0.0,M_PI/2.0),tf::Vector3(0.0,0.0,0.0));
+      handle_pose.mult(handle_pose,gripper_rotate);
+      handle_pose.mult(handle_pose,gripper_pullback);
+
+
       geometry_msgs::PoseStamped handle_msg;
       handle_pose.stamp_ = ros::Time::now();
       poseStampedTFToMsg(handle_pose, handle_msg);
-
+      visualizeMarker(handle_msg);
       if(!setLaserParams("linear",10.0,0.75,0.25))
       {
         ROS_ERROR("Could not set laser periodic command for move arm");
@@ -784,8 +823,16 @@ class DoorPlannerExecutive
       move_arm_goal.goal_constraints.set_pose_constraint_size(1);
 
       move_arm_goal.goal_constraints.pose_constraint[0].pose = handle_msg;
-      move_arm_goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
-      move_arm_goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "torso_lift_link";
+
+      ROS_INFO("Desired pose for handle: %s, %f %f %f :: %f %f %f %f",handle_msg.header.frame_id.c_str(),handle_msg.pose.position.x,handle_msg.pose.position.y,handle_msg.pose.position.z,handle_msg.pose.orientation.x,handle_msg.pose.orientation.y,handle_msg.pose.orientation.z,handle_msg.pose.orientation.w);
+
+      move_arm_goal.goal_constraints.pose_constraint[0].pose.pose.position.x = 0.65;
+      move_arm_goal.goal_constraints.pose_constraint[0].pose.pose.position.y = 0;
+      move_arm_goal.goal_constraints.pose_constraint[0].pose.pose.position.z = 0.877;
+
+      move_arm_goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time();
+      move_arm_goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "base_link";
+//      move_arm_goal.goal_constraints.pose_constraint[0].pose.header.frame_id = door.header.frame_id;
 
       move_arm_goal.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
       move_arm_goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.005;
@@ -805,8 +852,49 @@ class DoorPlannerExecutive
       move_arm_goal.goal_constraints.pose_constraint[0].orientation_importance = 0.1;
       move_arm_goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z + motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y;   
       move_arm_client_->sendGoal(move_arm_goal);
-      return true;
+
+      int counter = 0;
+      bool done = false;
+      ros::Duration timeout_small(1.0);
+      while(!done && counter < 20)
+      {
+        bool finished_before_timeout = move_arm_client_->waitForGoalToFinish(timeout_small);
+        if (finished_before_timeout)
+        {
+          std::cout << "Final state is " << move_arm_client_->getTerminalState().toString() << std::endl;
+          return true;
+        }
+        else
+        {
+          std::cerr << "Not yet achieved goal" << std::endl;
+        }
+        ros::spinOnce();
+        counter++;
+      }
+      return false;
     }
+
+    bool getTrackedDoor(const door_msgs::Door &door_msg_in, door_msgs::Door &door_msg_out)
+    {
+	ROS_INFO("getTrackedDoor() is DISABLED");
+      ros::NodeHandle node_handle;
+      ros::ServiceClient door_tracker_client = node_handle.serviceClient<door_handle_detector::DoorsDetector>("/doors_detector",true);
+      door_handle_detector::DoorsDetector srv;
+      srv.request.door = door_msg_in;
+
+      if(door_tracker_client.call(srv))
+      {
+        if(srv.response.doors.empty())
+          return false;
+        door_msg_out = srv.response.doors[0]; 
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
+
 };
 
 /* Door location in Gazebo 
@@ -843,6 +931,8 @@ int main (int argc, char **argv)
   door.hinge = door_msgs::Door::HINGE_P1;
   door.header.frame_id = "base_footprint";
 
+  tf::TransformListener tf;
+
   DoorPlannerExecutive dpe;
   dpe.init();
   std::cout << "before " << door << std::endl;
@@ -856,6 +946,34 @@ int main (int argc, char **argv)
     return(-1);
   }
 
+/*  if(!dpe.getTrackedDoor(door,tmp_door))
+  {
+    ROS_INFO("Could not track door");
+    return -1;
+  }
+
+  tmp_door.header.stamp = ros::Time();
+  door_msgs::Door tmp_door_tr;
+  if(!door_functions::transformTo(tf,door.header.frame_id,tmp_door,tmp_door_tr))
+  {
+    ROS_ERROR("Could not transform tracked door");
+    return(-1);
+  }
+
+  tmp_door_tr.frame_p1 = door.frame_p1;
+  tmp_door_tr.frame_p2 = door.frame_p2;
+  tmp_door_tr.handle = door.handle;
+  tmp_door_tr.height = door.height;
+  tmp_door_tr.rot_dir = door.rot_dir;
+  tmp_door_tr.latch_state = door.latch_state;
+
+  ROS_INFO("Door angle is now : %f",getDoorAngle(tmp_door_tr));
+  std::cout << "new door position " << tmp_door_tr << std::endl;
+
+  tmp_door = tmp_door_tr;
+*/
+  tmp_door = door;
+  std::cout << "new door position " << tmp_door << std::endl;
   ROS_INFO("Door angle is now : %f",getDoorAngle(tmp_door));
 
   if(fabs(getDoorAngle(tmp_door)) < (M_PI/2.0-0.3))
@@ -869,11 +987,9 @@ int main (int argc, char **argv)
       return(-1);
     }
   }
-    
   if(!dpe.tuckArm())
   {
     return(-1);
   }
-
   return (0);
 }

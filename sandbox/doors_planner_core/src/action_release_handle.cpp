@@ -99,7 +99,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const std_msgs::Empty&,
 
 
   // move gripper away from the door
-  Pose offset(Quaternion(0,0,0), Vector3(-0.2,0,0));
+  Pose offset(Quaternion(0,0,0), Vector3(-0.1,0,0));
   Pose gripper_goal = gripper_pose_ * offset;
   poseStampedTFToMsg(Stamped<Pose>(gripper_goal, Time::now(), gripper_pose_.frame_id_), req_moveto.pose);
 
