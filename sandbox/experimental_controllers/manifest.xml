@@ -12,7 +12,6 @@
   <depend package="pr2_controller_interface" />
   <depend package="sensor_msgs" />
   <depend package="pr2_mechanism_model" />
-  <depend package="pr2_mechanism_control" />
   <depend package="pluginlib" />
   <depend package="control_toolbox" />
   <depend package="tinyxml" />

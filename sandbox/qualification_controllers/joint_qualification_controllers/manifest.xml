@@ -10,7 +10,6 @@
   <depend package="control_toolbox" />
   <depend package="roscpp" />
   <depend package="robot_mechanism_controllers" />
-  <depend package="pr2_mechanism_control" />
   <depend package="pluginlib" />
   <url>http://pr.willowgarage.com/joint_qualification_controllers</url>
   <rosdep name="wxwidgets"/>

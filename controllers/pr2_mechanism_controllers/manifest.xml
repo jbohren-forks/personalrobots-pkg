@@ -33,7 +33,6 @@
   <depend package="control_toolbox" />
   <depend package="filters" />
   <depend package="diagnostic_updater" />
-  <depend package="pr2_mechanism_control" />
   
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>

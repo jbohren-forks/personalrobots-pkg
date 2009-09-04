@@ -34,7 +34,6 @@
 
 
 #include <algorithm>
-#include <pr2_mechanism_control/mechanism_control.h>
 #include "kdl/chainfksolverpos_recursive.hpp"
 #include "experimental_controllers/cartesian_trajectory_controller.h"
 #include "pluginlib/class_list_macros.h"
