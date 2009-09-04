@@ -73,7 +73,7 @@ namespace anti_collision_base_controller
     ros_node_.param("~min_in_place_vel_th", min_in_place_vel_th_, 0.4);
 
     //initialize the copy of the costmap the controller will use
-    costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
+    costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 4, circumscribed_radius_ * 4);
     costmap_ros_->getCostmapCopy(costmap_);
 
     string odom_topic, base_cmd_topic, joy_listen_topic, world_model_type;

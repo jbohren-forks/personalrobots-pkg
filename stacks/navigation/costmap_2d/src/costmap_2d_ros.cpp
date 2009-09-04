@@ -260,7 +260,7 @@ namespace costmap_2d {
       ros_node_.param("origin_z", map_origin_z, 0.0);
 
       int unknown_threshold, mark_threshold;
-      ros_node_.param("unknown_threshold", unknown_threshold, 0);
+      ros_node_.param("unknown_threshold", unknown_threshold, z_voxels);
       ros_node_.param("mark_threshold", mark_threshold, 0);
 
       ROS_ASSERT(z_voxels >= 0 && unknown_threshold >= 0 && mark_threshold >= 0);

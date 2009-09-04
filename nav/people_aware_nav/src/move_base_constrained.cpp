@@ -83,8 +83,8 @@ namespace people_aware_nav {
     tc_ = new TrajectoryPlannerROS("TrajectoryPlannerROS", &tf_, controller_costmap_ros_);
 
     //initially clear any unknown space around the robot
-    planner_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
-    controller_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
+    planner_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 4, circumscribed_radius_ * 4);
+    controller_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 4, circumscribed_radius_ * 4);
 
     //TODO:spawn planning thread here?
   }
