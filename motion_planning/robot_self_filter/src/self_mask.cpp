@@ -30,7 +30,6 @@
 #include "robot_self_filter/self_mask.h"
 #include <urdf/model.h>
 #include <resource_retriever/retriever.h>
-#include <ogre_tools/stl_loader.h>
 #include <ros/console.h>
 #include <algorithm>
 #include <sstream>
@@ -103,19 +102,8 @@ namespace robot_self_filter
 			    ROS_WARN("Retrieved empty mesh for resource '%s'", mesh->filename.c_str());
 			else
 			{
-			    ogre_tools::STLLoader loader;
-			    if (loader.load(res.data.get()))
-			    {
-				std::vector<btVector3> triangles;
-				for (unsigned int i = 0 ; i < loader.triangles_.size() ; ++i)
-				{
-				    triangles.push_back(btVector3(loader.triangles_[i].vertices_[0].x, loader.triangles_[i].vertices_[0].y, loader.triangles_[i].vertices_[0].z));
-				    triangles.push_back(btVector3(loader.triangles_[i].vertices_[1].x, loader.triangles_[i].vertices_[1].y, loader.triangles_[i].vertices_[1].z));
-				    triangles.push_back(btVector3(loader.triangles_[i].vertices_[2].x, loader.triangles_[i].vertices_[2].y, loader.triangles_[i].vertices_[2].z));
-				}
-				result = shapes::createMeshFromVertices(triangles);
-			    }
-			    else
+			    result = shapes::createMeshFromBinaryStlData(reinterpret_cast<char*>(res.data.get()), res.size);
+			    if (result == NULL)
 				ROS_ERROR("Failed to load mesh '%s'", mesh->filename.c_str());
 			}
 		    }

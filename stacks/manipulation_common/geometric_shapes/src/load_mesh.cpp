@@ -187,10 +187,67 @@ namespace shapes
 	
 	return mesh;
     }
+
+    shapes::Mesh* createMeshFromBinaryStlData(const char *data, unsigned int size)
+    {
+	const char* pos = data;
+	pos += 80; // skip the 80 byte header
+	
+	unsigned int numTriangles = *(unsigned int*)pos;
+	pos += 4;
+	
+	// make sure we have read enough data
+	if ((long)(50 * numTriangles + 84) <= size)
+	{
+	    std::vector<btVector3> vertices;
+	    
+	    for (unsigned int currentTriangle = 0 ; currentTriangle < numTriangles ; ++currentTriangle)
+	    {
+		// skip the normal
+		pos += 12;
+		
+		// read vertices 
+		btVector3 v1(0,0,0);
+		btVector3 v2(0,0,0);
+		btVector3 v3(0,0,0);
+		
+		v1.setX(*(float*)pos);
+		pos += 4;
+		v1.setY(*(float*)pos);
+		pos += 4;
+		v1.setZ(*(float*)pos);
+		pos += 4;
+		
+		v2.setX(*(float*)pos);
+		pos += 4;
+		v2.setY(*(float*)pos);
+		pos += 4;
+		v2.setZ(*(float*)pos);
+		pos += 4;
+		
+		v3.setX(*(float*)pos);
+		pos += 4;
+		v3.setY(*(float*)pos);
+		pos += 4;
+		v3.setZ(*(float*)pos);
+		pos += 4;
+		
+		// skip attribute
+		pos += 2;
+		
+		vertices.push_back(v1);
+		vertices.push_back(v2);
+		vertices.push_back(v3);
+	    }
+	    
+	    return createMeshFromVertices(vertices);
+	}
+	
+	return NULL;
+    }
     
     shapes::Mesh* createMeshFromBinaryStl(const char *filename)
     {
-	
 	FILE* input = fopen(filename, "r");
 	if (!input)
 	    return NULL;
@@ -204,65 +261,14 @@ namespace shapes
 	
 	fclose(input);
 	
-	if (rd == 1)
-	{
-	    char* pos = buffer;
-	    pos += 80; // skip the 80 byte header
-	    
-	    unsigned int numTriangles = *(unsigned int*)pos;
-	    pos += 4;
-	    
-	    // make sure we have read enough data
-	    if ((long)(50 * numTriangles + 84) <= fileSize)
-	    {
-		std::vector<btVector3> vertices;
-		
-		for (unsigned int currentTriangle = 0 ; currentTriangle < numTriangles ; ++currentTriangle)
-		{
-		    // skip the normal
-		    pos += 12;
-		    
-		    // read vertices 
-		    btVector3 v1(0,0,0);
-		    btVector3 v2(0,0,0);
-		    btVector3 v3(0,0,0);
-		    
-		    v1.setX(*(float*)pos);
-		    pos += 4;
-		    v1.setY(*(float*)pos);
-		    pos += 4;
-		    v1.setZ(*(float*)pos);
-		    pos += 4;
-		    
-		    v2.setX(*(float*)pos);
-		    pos += 4;
-		    v2.setY(*(float*)pos);
-		    pos += 4;
-		    v2.setZ(*(float*)pos);
-		    pos += 4;
-		    
-		    v3.setX(*(float*)pos);
-		    pos += 4;
-		    v3.setY(*(float*)pos);
-		    pos += 4;
-		    v3.setZ(*(float*)pos);
-		    pos += 4;
-		    
-		    // skip attribute
-		    pos += 2;
-		    
-		    vertices.push_back(v1);
-		    vertices.push_back(v2);
-		    vertices.push_back(v3);
-		}
-		
-		delete[] buffer;
-		
-		return createMeshFromVertices(vertices);
-	    }
-	}
+	shapes::Mesh *result = NULL;
 	
-	return NULL;	
+	if (rd == 1)
+    	    result = createMeshFromBinaryStlData(buffer, fileSize);
+	
+	delete[] buffer;
+	
+	return result;
     }
     
 }

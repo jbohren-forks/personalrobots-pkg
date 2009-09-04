@@ -237,6 +237,10 @@ namespace shapes
 	recomputed and repeating vertices are identified. */
     Mesh* createMeshFromBinaryStl(const char *filename);
 
+    /** \brief Load a mesh from a binary STL stream. Normals are
+	recomputed and repeating vertices are identified. */
+    Mesh* createMeshFromBinaryStlData(const char *data, unsigned int size);
+
     /** \brief Create a copy of a shape */
     Shape* cloneShape(const Shape *shape);
 
