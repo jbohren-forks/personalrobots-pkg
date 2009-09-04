@@ -58,6 +58,7 @@ planning_models::KinematicModel::KinematicModel(const KinematicModel &source)
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	    groupContent[groups[i]->name] = groups[i]->jointNames;
 	buildGroups(groupContent);
+	buildConvenientDatastructures();
     }
     else
 	root_ = NULL;
@@ -95,6 +96,7 @@ planning_models::KinematicModel::KinematicModel(const urdf::Model &model, const 
 	{
 	    root_ = buildRecursive(NULL, root);
 	    buildGroups(groups);
+	    buildConvenientDatastructures();
 	}
     }
     else
@@ -171,6 +173,23 @@ void planning_models::KinematicModel::defaultState(void)
 	    params[i] = (stateBounds_[2 * i] + stateBounds_[2 * i + 1]) / 2.0;
     }
     computeTransforms(params);
+}
+
+void planning_models::KinematicModel::buildConvenientDatastructures(void)
+{
+    if (root_)
+    {
+	std::queue<Link*> links;
+	links.push(root_->after);
+	while (!links.empty())
+	{
+	    Link *link = links.front();
+	    links.pop();
+	    updatedLinks_.push_back(link);
+	    for (unsigned int i = 0 ; i < link->after.size() ; ++i)
+		links.push(link->after[i]->after);
+	}
+    }
 }
 
 void planning_models::KinematicModel::buildGroups(const std::map< std::string, std::vector<std::string> > &groups)
@@ -387,23 +406,13 @@ shapes::Shape* planning_models::KinematicModel::constructShape(const urdf::Geome
 
 void planning_models::KinematicModel::computeTransforms(const double *params)
 {
-    for (unsigned int i = 0  ; i < jointList_.size() ; ++i)
+    const unsigned int js = jointList_.size();
+    for (unsigned int i = 0  ; i < js ; ++i)
 	jointList_[i]->updateVariableTransform(params + jointIndex_[i]);
     
-    if (root_)
-    {
-	std::queue<Link*> links;
-	links.push(root_->after);
-	while (!links.empty())
-	{
-	    Link *link = links.front();
-	    links.pop();
-	    
-	    link->computeTransform();
-	    for (unsigned int i = 0 ; i < link->after.size() ; ++i)
-		links.push(link->after[i]->after);
-	}
-    }
+    const unsigned int ls = updatedLinks_.size();
+    for (unsigned int i = 0 ; i < ls ; ++i)
+	updatedLinks_[i]->computeTransform();
 }
 
 const planning_models::KinematicModel::Joint* planning_models::KinematicModel::getRoot(void) const
@@ -862,6 +871,21 @@ planning_models::KinematicModel::JointGroup::JointGroup(KinematicModel *model, c
 	if (!found)
 	    jointRoots.push_back(joints[i]);
     }
+
+    for (unsigned int i = 0 ; i < jointRoots.size() ; ++i)
+    {
+	std::queue<Link*> links;
+	links.push(jointRoots[i]->after);
+	
+	while (!links.empty())
+	{
+	    Link *link = links.front();
+	    links.pop();
+	    updatedLinks.push_back(link);
+	    for (unsigned int i = 0 ; i < link->after.size() ; ++i)
+		links.push(link->after[i]->after);
+	}
+    }
 }
 
 planning_models::KinematicModel::JointGroup::~JointGroup(void)
@@ -887,22 +911,11 @@ int planning_models::KinematicModel::JointGroup::getJointPosition(const std::str
 
 void planning_models::KinematicModel::JointGroup::computeTransforms(const double *params)
 {
-    for (unsigned int i = 0  ; i < joints.size() ; ++i)
+    const unsigned int js = joints.size();
+    for (unsigned int i = 0  ; i < js ; ++i)
 	joints[i]->updateVariableTransform(params + jointIndex[i]);
 
-    for (unsigned int i = 0 ; i < jointRoots.size() ; ++i)
-    {
-	std::queue<Link*> links;
-	links.push(jointRoots[i]->after);
-	
-	while (!links.empty())
-	{
-	    Link *link = links.front();
-	    links.pop();
-	    
-	    link->computeTransform();
-	    for (unsigned int i = 0 ; i < link->after.size() ; ++i)
-		links.push(link->after[i]->after);
-	}
-    }
+    const unsigned int ls = updatedLinks.size();
+    for (unsigned int i = 0 ; i < ls ; ++i)
+	updatedLinks[i]->computeTransform();
 }

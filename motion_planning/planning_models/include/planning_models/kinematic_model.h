@@ -297,6 +297,9 @@ namespace planning_models
 	    /** \brief The list of joints that are roots in this group */
 	    std::vector<Joint*>                 jointRoots;
 
+	    /** \brief The list of links that are updated when computeTransforms() is called, in the order they are updated */
+	    std::vector<Link*>                  updatedLinks;
+	    
 	    /** \brief Perform forward kinematics starting at the roots
 		within a group. Links that are not in the group are also
 		updated, but transforms for joints that are not in the
@@ -434,6 +437,9 @@ namespace planning_models
 	/** \brief The index at which a joint starts reading values in the state vector */
 	std::vector<unsigned int>                         jointIndex_;
 	
+	/** \brief The list of links that are updated when computeTransforms() is called, in the order they are updated */
+	std::vector<Link*>                                updatedLinks_;	
+	
 	/** \brief The root joint */
 	Joint                                            *root_;
 	
@@ -453,7 +459,9 @@ namespace planning_models
 	btTransform                                       rootTransform_;
 	
 	boost::mutex                                      lock_;
-	
+
+
+	void buildConvenientDatastructures(void);	
 	void buildGroups(const std::map< std::string, std::vector<std::string> > &groups);
 	Joint* buildRecursive(Link *parent, const urdf::Link *link);
 	Joint* constructJoint(const urdf::Joint *urdfJoint, std::vector<double> &bounds);
