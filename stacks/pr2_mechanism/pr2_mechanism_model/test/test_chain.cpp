@@ -61,7 +61,7 @@ TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
   HardwareInterface hw(0);
   Robot model(&hw);
   ASSERT_TRUE(model.initXml(root));
-  RobotState state(&model, &hw);
+  RobotState state(&model);
 
   // extract chain
   Chain chain;
