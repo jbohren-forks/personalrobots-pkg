@@ -4,7 +4,7 @@
 START=`pwd`
 cd `rospack find trex_core`
 pwd
-. devConfig
+. TREX/devConfig
 cd $START
 pwd 
 rosrun trex nddl-reader_g_rt $1
